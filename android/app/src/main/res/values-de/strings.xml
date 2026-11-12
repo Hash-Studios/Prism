@@ -19,6 +19,20 @@
     <string name="wotd_widget_set_description">Heutiges Hintergrundbild festlegen</string>
     <string name="wotd_widget_set_done">Hintergrundbild festgelegt</string>
     <string name="wotd_widget_set_failed">Hintergrundbild konnte nicht festgelegt werden</string>
+    <string name="streak_widget_label">Serie</string>
+    <string name="streak_widget_description">Deine Prism-Serie auf einen Blick.</string>
+    <string name="streak_widget_keep">Halte deine Serie</string>
+    <string name="streak_widget_kept">Heute gehalten</string>
+    <string name="streak_widget_start">Starte heute eine Serie</string>
+    <string name="streak_widget_signed_out">Melde dich an, um deine Serie zu sehen</string>
+    <plurals name="streak_widget_kept_description">
+        <item quantity="one">%d-Tage-Serie, heute gehalten</item>
+        <item quantity="other">%d-Tage-Serie, heute gehalten</item>
+    </plurals>
+    <plurals name="streak_widget_open_description">
+        <item quantity="one">%d-Tage-Serie, heute noch offen</item>
+        <item quantity="other">%d-Tage-Serie, heute noch offen</item>
+    </plurals>
     <string name="media_saved_in_pictures">Unter Pictures/%1$s gespeichert!</string>
     <string name="notif_push_wall_approved_for_artist_title">Dein Hintergrundbild ist jetzt online! 🎉</string>
     <string name="notif_push_wall_approved_for_artist_body">„%1$s“ wurde freigegeben und ist jetzt für alle sichtbar.</string>

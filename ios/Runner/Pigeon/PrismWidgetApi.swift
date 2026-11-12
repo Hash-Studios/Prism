@@ -273,7 +273,7 @@ class PrismWidgetApiPigeonCodec: FlutterStandardMessageCodec, @unchecked Sendabl
 
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol PrismWidgetHostApi {
-  /// Saves the snapshot for the Lock Screen streak widgets and reloads them. Null clears it (signed out).
+  /// Saves the snapshot for the streak widgets (iOS Lock Screen, Android home screen) and reloads them. Null clears it (signed out).
   func setStreakSnapshot(snapshot: StreakWidgetSnapshot?) throws
   /// Reloads the Wall of the Day widgets, for example after a Wall of the Day push.
   func reloadWallOfTheDay() throws
@@ -285,7 +285,7 @@ class PrismWidgetHostApiSetup {
   /// Sets up an instance of `PrismWidgetHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: PrismWidgetHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
-    /// Saves the snapshot for the Lock Screen streak widgets and reloads them. Null clears it (signed out).
+    /// Saves the snapshot for the streak widgets (iOS Lock Screen, Android home screen) and reloads them. Null clears it (signed out).
     let setStreakSnapshotChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.Prism.PrismWidgetHostApi.setStreakSnapshot\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setStreakSnapshotChannel.setMessageHandler { message, reply in

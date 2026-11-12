@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="prism_launch_background">#000000</color>
+    <color name="prism_widget_surface">#FF1D1B20</color>
+    <color name="prism_widget_on_surface">#FFE6E0E9</color>
+    <color name="prism_widget_on_surface_variant">#FFCAC4D0</color>
+    <color name="prism_widget_accent">#FFD0BCFF</color>
+    <color name="prism_widget_track">#FFCAC4D0</color>
+    <color name="prism_widget_accent_container">#FF4A4458</color>
+    <color name="prism_widget_on_accent_container">#FFE8DEF8</color>
 </resources>

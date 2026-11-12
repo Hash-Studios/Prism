@@ -38,6 +38,8 @@ fvm dart run pigeon \
 fvm dart run pigeon \
   --input=pigeons/prism_widget_api.dart \
   --dart_out=lib/core/platform/pigeon/prism_widget_api.g.dart \
+  --kotlin_out=android/app/src/main/kotlin/com/hash/prism/pigeon/PrismWidgetApi.kt \
+  --kotlin_package=com.hash.prism.pigeon \
   --swift_out=ios/Runner/Pigeon/PrismWidgetApi.swift
 
 fvm dart run pigeon \
@@ -56,5 +58,5 @@ echo "  - Swift: ios/Runner/Pigeon/PrismMediaApi.swift"
 echo "  - App icon: lib/core/platform/pigeon/prism_app_icon_api.g.dart (+ Kotlin, Swift)"
 echo "  - Live Activities: lib/core/platform/pigeon/prism_live_activity_api.g.dart (+ Swift)"
 echo "  - Instagram Stories share: lib/core/platform/pigeon/prism_share_api.g.dart (+ Kotlin, Swift)"
-echo "  - Widgets: lib/core/platform/pigeon/prism_widget_api.g.dart (+ Swift)"
+echo "  - Widgets: lib/core/platform/pigeon/prism_widget_api.g.dart (+ Kotlin, Swift)"
 echo "  - Live Photo: lib/core/platform/pigeon/prism_live_photo_api.g.dart (+ Swift)"

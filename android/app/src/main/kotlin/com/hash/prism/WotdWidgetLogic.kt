@@ -55,7 +55,7 @@ internal fun certificateFingerprint(certificate: ByteArray): String =
 
 internal fun wotdShareLink(wall: WotdWall): String? =
     if (wall.id.isEmpty()) null else "prism://share?id=${encodePart(wall.id)}&source=prism&url=${encodePart(wall.originalUrl)}" +
-        if (wall.url != wall.originalUrl) "&thumb=${encodePart(wall.url)}" else ""
+        (if (wall.url != wall.originalUrl) "&thumb=${encodePart(wall.url)}" else "") + "&widget=wotd_android"
 
 internal fun firestoreStringField(document: String, name: String): String? = runCatching {
     JSONObject(document).optJSONObject("fields")?.optJSONObject(name)?.optString("stringValue", "")?.trim()?.ifEmpty { null }

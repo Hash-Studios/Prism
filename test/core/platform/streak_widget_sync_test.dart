@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:Prism/core/coins/coins_service.dart';
-import 'package:Prism/core/platform/ios_widget_channel.dart';
 import 'package:Prism/core/platform/pigeon/prism_widget_api.g.dart';
 import 'package:Prism/core/platform/streak_widget_sync.dart';
+import 'package:Prism/core/platform/widget_channel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -62,8 +62,8 @@ StreakStatus _nextStatus() => const StreakStatus(
 );
 
 void main() {
-  final PrismWidgetHostApi defaultApi = IosWidgetChannel.api;
-  final bool Function() defaultSupported = IosWidgetChannel.isSupportedPlatform;
+  final PrismWidgetHostApi defaultApi = WidgetChannel.api;
+  final bool Function() defaultSupported = WidgetChannel.isSupportedPlatform;
   final ValueListenable<StreakStatus> Function() defaultStreak = StreakWidgetSync.streak;
   final bool Function() defaultSignedIn = StreakWidgetSync.isSignedIn;
   final String Function() defaultOwnerId = StreakWidgetSync.ownerId;
@@ -76,8 +76,8 @@ void main() {
 
   setUp(() {
     fake = _FakeWidgetApi();
-    IosWidgetChannel.api = fake;
-    IosWidgetChannel.isSupportedPlatform = () => true;
+    WidgetChannel.api = fake;
+    WidgetChannel.isSupportedPlatform = () => true;
     notifier = ValueNotifier<StreakStatus>(StreakStatus.empty);
     StreakWidgetSync.streak = () => notifier;
     signedIn = true;
@@ -92,8 +92,8 @@ void main() {
   tearDown(() {
     StreakWidgetSync.resetForTest();
     notifier.dispose();
-    IosWidgetChannel.api = defaultApi;
-    IosWidgetChannel.isSupportedPlatform = defaultSupported;
+    WidgetChannel.api = defaultApi;
+    WidgetChannel.isSupportedPlatform = defaultSupported;
     StreakWidgetSync.streak = defaultStreak;
     StreakWidgetSync.isSignedIn = defaultSignedIn;
     StreakWidgetSync.ownerId = defaultOwnerId;
@@ -230,7 +230,7 @@ void main() {
     notifier.value = _status;
     StreakWidgetSync.start();
     await pumpEventQueue();
-    await IosWidgetChannel.clearStreak();
+    await WidgetChannel.clearStreak();
     StreakWidgetSync.start();
     await pumpEventQueue();
     expect(fake.snapshots.last, isNull);
@@ -262,7 +262,7 @@ void main() {
     StreakWidgetSync.start();
     await pumpEventQueue();
     fake.failNextSet = true;
-    await IosWidgetChannel.clearStreak();
+    await WidgetChannel.clearStreak();
     StreakWidgetSync.start();
     notifier.value = _nextStatus();
     await pumpEventQueue();

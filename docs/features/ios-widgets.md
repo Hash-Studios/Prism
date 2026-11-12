@@ -32,7 +32,7 @@ Prism has Home Screen and Lock Screen widgets on iPhone and iPad. They show the 
 | `ios/Runner/Shortcuts/Core/PrismWidgetCore.swift` | Shared logic: timeline schedule, "kept today" rule, REST parsing, links, the streak store. Plain Foundation, so tests compile it. |
 | `ios/Runner/PrismWidgetHostApiImpl.swift` | Writes the streak snapshot and reloads timelines. |
 | `pigeons/prism_widget_api.dart` | Pigeon API `PrismWidgetHostApi`. Run `make pigeon-gen` after a change. |
-| `lib/core/platform/ios_widget_channel.dart` | Dart calls. No-op off iOS. Never throws. |
+| `lib/core/platform/widget_channel.dart` | Dart calls. No-op off iOS. Never throws. |
 | `lib/core/platform/streak_widget_sync.dart` | Writes the streak snapshot on app open and on each streak change. |
 | `lib/features/ios_widgets/` | Guide sheet and the Wall of the Day card. |
 
@@ -89,6 +89,6 @@ Automated tests:
 ```sh
 cd ios && swift test --filter PrismWidgetCoreTests
 xcodebuild test -workspace ios/Runner.xcworkspace -scheme Runner -destination 'platform=iOS Simulator,name=<simulator>' -parallel-testing-enabled NO -only-testing:RunnerTests/PrismWidgetCoreTests
-fvm flutter test --no-pub test/core/platform/ios_widget_channel_test.dart test/core/platform/streak_widget_sync_test.dart \
+fvm flutter test --no-pub test/core/platform/widget_channel_test.dart test/core/platform/streak_widget_sync_test.dart \
   test/features/ios_widgets test/core/router/deep_link_dispatcher_test.dart test/auth/sign_out_test.dart
 ```

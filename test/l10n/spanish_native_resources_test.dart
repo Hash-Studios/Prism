@@ -27,7 +27,7 @@ void main() {
     final Map<String, String> english = _readAndroidStrings(_androidEnglishPath);
     final Map<String, String> spanish = _readAndroidStrings(_androidSpanishPath);
 
-    expect(english, hasLength(84));
+    expect(english, hasLength(90));
     expect(spanish.keys.toSet(), english.keys.toSet());
 
     for (final MapEntry<String, String> entry in english.entries) {

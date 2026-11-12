@@ -23,7 +23,7 @@ internal class WotdWidgetLogicTest {
         assertNotNull(wall)
         assertEquals("https://cdn.example/preview.jpg", wall?.url)
         assertEquals("", wall?.originalUrl)
-        assertEquals("prism://share?id=today&source=prism&url=&thumb=https%3A%2F%2Fcdn.example%2Fpreview.jpg", wotdShareLink(wall!!))
+        assertEquals("prism://share?id=today&source=prism&url=&thumb=https%3A%2F%2Fcdn.example%2Fpreview.jpg&widget=wotd_android", wotdShareLink(wall!!))
     }
 
     @Test internal fun previewDoesNotReplaceTheOriginalForSettingWallpaper() {
@@ -45,7 +45,7 @@ internal class WotdWidgetLogicTest {
 
     @Test internal fun shareLinkOpensTheWallInPrism() {
         assertEquals(
-            "prism://share?id=wall-1&source=prism&url=https%3A%2F%2Fcdn.example%2Fa%20b.jpg%3Fx%3D1%26y%3D2",
+            "prism://share?id=wall-1&source=prism&url=https%3A%2F%2Fcdn.example%2Fa%20b.jpg%3Fx%3D1%26y%3D2&widget=wotd_android",
             wotdShareLink(WotdWall("wall-1", "https://cdn.example/a b.jpg?x=1&y=2")),
         )
         assertNull(wotdShareLink(WotdWall("", "https://cdn.example/a.jpg")))

@@ -8,8 +8,8 @@ import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
-import 'package:Prism/core/platform/ios_widget_channel.dart';
 import 'package:Prism/core/platform/pigeon/prism_widget_api.g.dart';
+import 'package:Prism/core/platform/widget_channel.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/favourite_walls/data/guest_favourites_store.dart';
@@ -224,19 +224,19 @@ void main() {
 
     setUp(() {
       widgets = _FakeWidgetApi();
-      IosWidgetChannel.api = widgets;
-      IosWidgetChannel.isSupportedPlatform = () => true;
+      WidgetChannel.api = widgets;
+      WidgetChannel.isSupportedPlatform = () => true;
     });
 
     tearDown(() {
-      IosWidgetChannel.api = PrismWidgetHostApi();
-      IosWidgetChannel.isSupportedPlatform = () => false;
+      WidgetChannel.api = PrismWidgetHostApi();
+      WidgetChannel.isSupportedPlatform = () => false;
     });
 
     test('clears the snapshot once the deleted account is signed out', () async {
       app_state.prismUser = profileUser(id: '', loggedIn: false);
 
-      await LocalAccountDataCleaner.clearIosWidgetStreakForUser('deleted');
+      await LocalAccountDataCleaner.clearWidgetStreakForUser('deleted');
 
       expect(widgets.snapshots, <StreakWidgetSnapshot?>[null]);
     });
@@ -244,7 +244,7 @@ void main() {
     test('keeps the snapshot of another account that signed in first', () async {
       app_state.prismUser = profileUser(id: 'other');
 
-      await LocalAccountDataCleaner.clearIosWidgetStreakForUser('deleted');
+      await LocalAccountDataCleaner.clearWidgetStreakForUser('deleted');
 
       expect(widgets.snapshots, isEmpty);
     });

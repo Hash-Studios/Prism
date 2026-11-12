@@ -433,8 +433,10 @@ enums:
       - wotd_medium
       - wotd_large
       - wotd_lock
+      - wotd_android
       - streak_circular
       - streak_inline
+      - streak_android
   - name: widget_guide_source
     dart_type: WidgetGuideSourceValue
     values:

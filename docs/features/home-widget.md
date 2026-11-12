@@ -1,4 +1,6 @@
-# Home widget (Android)
+# Home widgets (Android)
+
+Prism has two Android home screen widgets: Wall of the Day and Streak.
 
 The Wall of the Day widget shows today's Wall of the Day on the Android home screen. It updates by itself. The user does not need to open Prism.
 
@@ -23,6 +25,7 @@ The Wall of the Day widget shows today's Wall of the Day on the Android home scr
 |---|---|
 | Android | Supported. |
 | iOS | Supported. See [ios-widgets.md](ios-widgets.md). |
+| Streak widget | Android: supported. iOS: see [ios-widgets.md](ios-widgets.md). |
 
 The widget is free. It has no Pro gate.
 
@@ -49,10 +52,77 @@ Code: `android/app/src/main/kotlin/com/hash/prism/WotdWidgetProvider.kt` (widget
 
 ### Tap and "Set"
 
-- The tap opens `MainActivity` with the link `prism://share?id=<wallId>&source=prism&url=<full image URL>`. `DeepLinkParser` turns it into the wall detail screen. If the widget has only the cached URL and no wall id, the tap opens the app home.
+- The tap opens `MainActivity` with the link `prism://share?id=<wallId>&source=prism&url=<full image URL>&widget=wotd_android`. When the thumbnail differs from the full image, the link also has `&thumb=<thumbnail URL>` before `&widget=wotd_android`. `DeepLinkParser` turns it into the wall detail screen. If the widget has only the cached URL and no wall id, the tap opens the app home.
 - "Set" sends a broadcast to `WotdWidgetProvider` with the action `com.hash.prism.action.WOTD_SET_WALLPAPER`. The `PendingIntent` has an explicit component and `FLAG_IMMUTABLE`. The receiver is not exported, so only the widget can send this broadcast. The broadcast carries the URL of the wall that the widget shows, as an extra that the widget put in the `PendingIntent` when it drew the wall. So "Set" sets the image on screen even after the daily wall changes, and even when the widget could not save its cache. Only when the extra is missing does "Set" use the URL the widget saved, then fetch the current wall, and then use the URL the app stored. The download uses the same deadline-bounded connection as the update. The whole "Set" work (fetch, download, decode) has a budget of 40 seconds, under the limit for a background broadcast. The widget checks that the file is an image, decodes it to the screen size, and calls `WallpaperManager.setBitmap` with `FLAG_SYSTEM`. This runs off the main thread. A second tap is ignored while the first one runs.
 - The receiver stays `exported="false"`.
 - The layouts use only classes that `RemoteViews` can inflate (`FrameLayout`, `LinearLayout`, `ImageView`, `TextView`). The scrim is an `ImageView` with a gradient drawable. A plain `View` makes the launcher show "Can't load widget". `test/android/widget_layout_test.dart` fails on any other class.
+
+## Colours
+
+On Android 12 and later, the widgets use Material You dynamic colours. The colours come from `@android:color/system_*` in `android/app/src/main/res/values-v31/colors.xml` and `android/app/src/main/res/values-night-v31/colors.xml`.
+
+Before Android 12, the widgets use fixed light and dark colours. These come from `android/app/src/main/res/values/colors.xml` and `android/app/src/main/res/values-night/colors.xml`.
+
+The tokens have the same names in every file:
+
+- `prism_widget_surface`: the widget background.
+- `prism_widget_on_surface`: the main text.
+- `prism_widget_on_surface_variant`: the secondary text.
+- `prism_widget_accent`: the filled streak ring.
+- `prism_widget_track`: the empty streak ring.
+- `prism_widget_accent_container`: the background of the "Set" button.
+- `prism_widget_on_accent_container`: the text of the "Set" button.
+
+The launcher applies light or dark from the system setting.
+
+The Wall of the Day image stays full bleed. The "Prism" label has white text on a small, rounded black backing (90% opacity). So you can read it on a white image too. The label uses white, not a token.
+
+The "Set" button uses the accent container colour with its on-colour. So its contrast does not depend on the image.
+
+## Streak widget
+
+The Streak widget shows the streak of the signed-in user.
+
+### What it does
+
+- Compact (1x1 and 2x1): shows the count in a ring. The ring is full when today is kept. It is a light track when not.
+- Large (2x2 and up): shows "Streak", the count in a ring, and one status line:
+  - "Kept today" when today is kept.
+  - "Keep your streak" when today is not kept yet.
+  - "Start a streak today" when the count is 0. A lapsed streak shows 0.
+- The default size is 2x2. The user can resize the widget to 1x1.
+- Signed out: shows "Sign in to track your streak". A tap opens the app.
+- Signed in: a tap opens `prism://streak?widget=streak_android`. That link opens Rewards.
+- TalkBack reads "12-day streak, kept today" or "12-day streak, not kept yet today".
+
+### How it works
+
+- Code: `android/app/src/main/kotlin/com/hash/prism/StreakWidgetProvider.kt` (widget, snapshot store, midnight alarm), `android/app/src/main/kotlin/com/hash/prism/StreakWidgetLogic.kt` (pure rule), `android/app/src/main/kotlin/com/hash/prism/PrismWidgetHostApiImpl.kt` (Pigeon host API), layouts `android/app/src/main/res/layout/streak_widget_compact.xml`, `android/app/src/main/res/layout/streak_widget_large.xml`, `android/app/src/main/res/layout/streak_widget_signed_out.xml`, `android/app/src/main/res/layout/streak_widget_preview.xml`, and `android/app/src/main/res/xml/streak_widget_info.xml`.
+- Data: The widget does not read Firestore. The streak belongs to the signed-in owner. The app writes a snapshot of it:
+  - `lib/core/platform/streak_widget_sync.dart` calls `WidgetChannel.setStreak` (`lib/core/platform/widget_channel.dart`).
+  - `WidgetChannel.setStreak` calls the Pigeon API `PrismWidgetHostApi.setStreakSnapshot` (`pigeons/prism_widget_api.dart`).
+  - The same Dart code writes the iOS snapshot.
+- The snapshot has four fields: count, last kept day (yyyy-MM-dd), UTC offset in minutes, and freezes.
+- Android keeps the snapshot in the private SharedPreferences file `prism_streak_widget`.
+- A null snapshot clears it. Sign-out and account deletion clear it.
+- Rule: The widget uses the same rule as `isStreakAlive` in `lib/core/coins/coin_policy.dart`. `StreakWidgetLogic.kt` mirrors that rule.
+  - The streak lives while the gap since the last kept day is at most 1 day plus the freezes.
+  - Kept today means the gap is 0.
+  - Days use the UTC offset of the snapshot. They do not use the time zone of the phone.
+  - The shared cases are in `test/fixtures/streak_rule_cases.csv`. Both `test/core/coins/streak_rule_fixture_test.dart` (Dart) and `android/app/src/test/kotlin/com/hash/prism/StreakWidgetLogicTest.kt` (Kotlin) run them.
+- Updates: The widget updates when the app writes a new snapshot. It also updates at its midnight alarm, after a restart of the phone, after an app update, and after a change to the clock or the time zone. Each update sets the next alarm again.
+  - The midnight alarm is set only when a widget shows a streak that is more than 0. When you sign out, or when the streak lapses, the widget cancels the alarm. It also cancels the alarm when you remove the last Streak widget.
+  - `updatePeriodMillis` is 0. The widget has no periodic update.
+  - The midnight alarm uses `AlarmManager.setWindow` with `RTC`, not a wakeup alarm. It never wakes a sleeping phone. The widget redraws when the phone next wakes.
+  - The window is 1 minute. Android 12 and later can make it 10 minutes. So the ring can empty up to 10 minutes after midnight.
+  - A lapsed streak shows 0. The widget follows the Dart rule for all inputs, also for a last kept day after today and for odd freeze values.
+  - The update reads only SharedPreferences. It does no network work.
+- PendingIntents: The tap and the midnight alarm use explicit components, with `FLAG_IMMUTABLE` and `FLAG_UPDATE_CURRENT`. The receiver is `exported="false"`.
+
+### Analytics
+
+- The event `widget_tapped` has the `kind` `wotd_android` or `streak_android`.
+- `DeepLinkDispatcher` records it from the `widget` query value.
 
 ## Limits
 
@@ -63,14 +133,17 @@ Code: `android/app/src/main/kotlin/com/hash/prism/WotdWidgetProvider.kt` (widget
   - Tap "Set" on a protected wall. The app opens at the wall. There is no public original to set.
   - Day change: seed a fake "yesterday" cache key and image. Then force `APPWIDGET_UPDATE` as root (`adb root`, `am broadcast -n com.hash.prism/.WotdWidgetProvider`). Offline, the widget keeps the cached image. Online, it fetches today's wall.
   - With no cache and offline, the empty state reads "Today's wallpaper appears here when you are online".
-- The widget uses a fixed dark background (#121212) in light mode, dark mode and every Material You palette. It does not follow the system colours.
 - Android and the launcher decide when the widget updates. A launcher can run the update later than 3 hours, mainly when the battery saver is on.
 - The widget needs the Firebase resources `project_id` and `google_api_key`. A local build without `google-services.json` does not have them. Then the widget uses the cached URL.
 - "Set" changes the home screen wallpaper only. It does not change the lock screen.
 - The widget shows a wall that the Firestore rules let anyone read. A wall that is not reviewed does not show.
 - If the `walls` read rule is changed to signed-in only, this widget and the iOS widget ([ios-widgets.md](ios-widgets.md)) both stop showing new walls.
+- The Streak widget shows the last snapshot the app wrote on this phone. A claim on another device shows after Prism opens on this phone.
+- Device proof (Streak widget and colours): not done yet. On 2026-11-11 no Simlock Android device was available. The unit tests and the resource tests cover the rule, the strings and the colour files. The look on a real launcher, in light, dark and Material You, is not checked.
 
 ## How to test
+
+Wall of the Day widget:
 
 1. Use an Android phone or emulator. Add the "Wall of the Day" widget to the home screen without you opening Prism first (clear the app data first). Wait a few seconds. Make sure the image appears.
 2. Tap the image. Make sure Prism opens the wall detail screen.
@@ -80,8 +153,20 @@ Code: `android/app/src/main/kotlin/com/hash/prism/WotdWidgetProvider.kt` (widget
 6. Open the widget picker. Make sure the preview shows.
 7. Clear the app data, turn on airplane mode, and add the widget. Make sure the empty state shows.
 
+Streak widget:
+
+1. Sign in to Prism. Open Rewards and note the streak count.
+2. Add the "Streak" widget to the home screen. Make sure that the widget count matches the count in Rewards.
+3. Tap the widget. Make sure that Rewards opens.
+4. Sign out. Make sure that the widget shows "Sign in to track your streak".
+5. Switch the phone between light and dark mode. On Android 12 and later, also change the wallpaper. Make sure that the widget colours change.
+
 Automated tests:
 
 - `android/app/src/test/kotlin/com/hash/prism/WotdWidgetLogicTest.kt` checks the REST JSON parsing, the URL builder, the share link, the sample sizes, the timeouts, and the certificate hex format. CI runs it with `:app:testDebugUnitTest` (`make native-android-check`).
 - `android/app/src/test/kotlin/com/hash/prism/PrismNativeTest.kt` checks the widget bitmap sample size.
 - `test/android/manifest_test.dart` checks the receiver, the 3 hour update period, the preview files and the strings.
+- `android/app/src/test/kotlin/com/hash/prism/StreakWidgetLogicTest.kt` runs the shared streak rule cases in `test/fixtures/streak_rule_cases.csv`.
+- `test/core/coins/streak_rule_fixture_test.dart` runs the same streak rule cases in Dart.
+- `test/core/platform/streak_widget_sync_test.dart` checks the streak snapshot that the app writes.
+- `test/android/widget_layout_test.dart` checks the layouts of the Wall of the Day and Streak widgets.

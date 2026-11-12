@@ -43,7 +43,7 @@
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:text="@string/wotd_widget_set"
-        android:textColor="@android:color/white"
+        android:textColor="@color/prism_widget_on_accent_container"
         android:textSize="12sp"
         android:textStyle="bold" />
 </FrameLayout>

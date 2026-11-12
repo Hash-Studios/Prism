@@ -185,7 +185,7 @@ class PrismWidgetHostApi {
 
   final String pigeonVar_messageChannelSuffix;
 
-  /// Saves the snapshot for the Lock Screen streak widgets and reloads them. Null clears it (signed out).
+  /// Saves the snapshot for the streak widgets (iOS Lock Screen, Android home screen) and reloads them. Null clears it (signed out).
   Future<void> setStreakSnapshot(StreakWidgetSnapshot? snapshot) async {
     final pigeonVar_channelName =
         'dev.flutter.pigeon.Prism.PrismWidgetHostApi.setStreakSnapshot$pigeonVar_messageChannelSuffix';

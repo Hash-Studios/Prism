@@ -459,6 +459,7 @@ class DeepLinkDispatcher {
           WidgetKindValue.wotdMedium,
           WidgetKindValue.wotdLarge,
           WidgetKindValue.wotdLock,
+          WidgetKindValue.wotdAndroid,
         }.contains(kind) &&
         query['source']?.singleOrNull == 'prism' &&
         query['id']?.singleOrNull == action.wallId) {

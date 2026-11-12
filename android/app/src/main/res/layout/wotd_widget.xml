@@ -27,7 +27,7 @@
             android:layout_marginTop="8dp"
             android:gravity="center"
             android:text="@string/wotd_widget_hint"
-            android:textColor="#B3FFFFFF"
+            android:textColor="@color/prism_widget_on_surface_variant"
             android:textSize="12sp" />
     </LinearLayout>
 
@@ -55,6 +55,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|start"
         android:layout_margin="10dp"
+        android:background="@drawable/wotd_widget_label_bg"
         android:gravity="center_vertical"
         android:importantForAccessibility="no"
         android:minHeight="36dp"
@@ -64,6 +65,8 @@
         android:textColor="@android:color/white"
         android:textSize="12sp"
         android:textStyle="bold"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
         android:visibility="gone" />
 
     <TextView
@@ -79,7 +82,7 @@
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:text="@string/wotd_widget_set"
-        android:textColor="@android:color/white"
+        android:textColor="@color/prism_widget_on_accent_container"
         android:textSize="12sp"
         android:textStyle="bold"
         android:visibility="gone" />
