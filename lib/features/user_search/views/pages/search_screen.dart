@@ -529,17 +529,21 @@ class _SearchScreenState extends State<SearchScreen> {
                                 onPressed: () => unawaited(_searchByPhoto()),
                               ),
                             ),
-                            Badge.count(
-                              count: _filters.activeNames.length,
-                              isLabelVisible: _filters.activeNames.isNotEmpty,
-                              alignment: AlignmentDirectional.topEnd,
-                              offset: const Offset(-10, 4),
-                              backgroundColor: Theme.of(context).colorScheme.primary,
-                              textColor: Theme.of(context).colorScheme.onPrimary,
-                              child: PrismIconButton(
-                                icon: Icons.tune_rounded,
-                                tooltip: context.l10n.searchFiltersCount(_filters.activeNames.length),
-                                onPressed: _openFilters,
+                            // The count grows with the text size and clips at the screen edge, while the icon does not.
+                            MediaQuery.withClampedTextScaling(
+                              maxScaleFactor: 1.5,
+                              child: Badge.count(
+                                count: _filters.activeNames.length,
+                                isLabelVisible: _filters.activeNames.isNotEmpty,
+                                alignment: AlignmentDirectional.topEnd,
+                                offset: const Offset(-10, 4),
+                                backgroundColor: Theme.of(context).colorScheme.primary,
+                                textColor: Theme.of(context).colorScheme.onPrimary,
+                                child: PrismIconButton(
+                                  icon: Icons.tune_rounded,
+                                  tooltip: context.l10n.searchFiltersCount(_filters.activeNames.length),
+                                  onPressed: _openFilters,
+                                ),
                               ),
                             ),
                           ],
@@ -775,30 +779,35 @@ class _ActiveFilters extends StatelessWidget {
         removable(l10n.searchFilterPrismOnly, () => onChanged(filters.copyWith(source: SearchSource.all))),
     ];
     if (filters.activeNames.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Wrap(
-            spacing: PrismSpace.xs,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: <Widget>[
-              ...chips,
-              PrismButton(
-                label: l10n.searchFilterClearAll,
-                variant: PrismButtonVariant.ghost,
-                size: PrismButtonSize.compact,
-                onPressed: onClearAll,
-              ),
-            ],
-          ),
-          if (filters.kinds.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: PrismSpace.xxs),
-              child: Text(l10n.searchKindsPrismOnlyNote, style: PrismTextStyles.caption(context)),
+    // At large text the chips and the note can be taller than the screen. They scroll in at most a third of it, so
+    // the results keep the rest.
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height / 3),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Wrap(
+              spacing: PrismSpace.xs,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: <Widget>[
+                ...chips,
+                PrismButton(
+                  label: l10n.searchFilterClearAll,
+                  variant: PrismButtonVariant.ghost,
+                  size: PrismButtonSize.compact,
+                  onPressed: onClearAll,
+                ),
+              ],
             ),
-        ],
+            if (filters.kinds.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: PrismSpace.xxs),
+                child: Text(l10n.searchKindsPrismOnlyNote, style: PrismTextStyles.caption(context)),
+              ),
+          ],
+        ),
       ),
     );
   }

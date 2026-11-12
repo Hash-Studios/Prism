@@ -1057,6 +1057,16 @@ void main() {
       expect(find.text('Clear all'), findsOneWidget);
     });
 
+    testWidgets('at 3x text the filter count stays inside the screen', (tester) async {
+      await pumpWithScale(tester, textScaler: const TextScaler.linear(3));
+      await sendRequest(tester, (query: '', filters: liveOnly));
+
+      final Finder count = find.descendant(of: find.byType(Badge), matching: find.text('1'));
+      final double width = tester.view.physicalSize.width / tester.view.devicePixelRatio;
+      expect(tester.getRect(count).right, lessThanOrEqualTo(width));
+      expect(tester.getSize(count).height, lessThan(14 * 2), reason: 'the count scales at most 1.5 times');
+    });
+
     testWidgets('in RTL the same kind state renders without an exception', (tester) async {
       await pumpWithScale(tester, direction: TextDirection.rtl);
 
