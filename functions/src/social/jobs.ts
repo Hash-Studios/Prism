@@ -91,10 +91,9 @@ export interface SocialDeps {
 
 async function recentlyPosted(now: Date, blockedIds: string[]): Promise<Set<string>> {
   const since = admin.firestore.Timestamp.fromMillis(now.getTime() - COOLDOWN_MS.wallhaven);
-  const [seen, queued] = await Promise.all([
-    db.collection(SEEN).where("lastPostedAt", ">=", since).get(),
-    db.collection(SOCIAL_POSTS).where("status", "in", ["pending_approval", "approved", "posting", "uncertain"]).get(),
-  ]);
+  // Reservations first: a post that turns posted between the reads is then still seen in its cooldown.
+  const queued = await db.collection(SOCIAL_POSTS).where("status", "in", ["pending_approval", "approved", "posting", "uncertain"]).get();
+  const seen = await db.collection(SEEN).where("lastPostedAt", ">=", since).get();
   const out = new Set(blockedIds);
   for (const doc of seen.docs) {
     const kind = str(doc.data().kind) === "wallhaven" ? "wallhaven" : "prism";
