@@ -726,6 +726,81 @@ test("runs from 21:00 IST prepare tomorrow; earlier runs prepare today", () => {
   assert.equal(prepareFor(new Date("2026-11-12T20:59:00+05:30")), "2026-11-12");
   assert.equal(prepareFor(new Date("2026-11-12T22:00:00+05:30")), "2026-11-13");
   assert.equal(prepareFor(new Date("2026-11-30T23:59:00+05:30")), "2026-12-01");
+  assert.equal(prepareFor(new Date("2026-12-31T21:00:00+05:30")), "2027-01-01");
+  assert.equal(prepareFor(new Date("2028-02-28T21:00:00+05:30")), "2028-02-29");
+  assert.equal(prepareFor(new Date("2026-11-13T00:00:00+05:30")), "2026-11-13");
+  // UTC instants stay on the same IST rule through northern DST transitions.
+  assert.equal(prepareFor(new Date("2026-03-08T15:30:00Z")), "2026-03-09");
+  assert.equal(prepareFor(new Date("2026-11-01T15:29:59Z")), "2026-11-01");
+});
+
+test("next-day preparation reserves walls in unfinished posts across days", async (t) => {
+  installSocialDb(t, Object.fromEntries(["pending_approval", "approved", "posting", "uncertain"].map((status, i) =>
+    [`socialPosts/2026-11-12_${i}`, postDoc({status, source: {kind: "prism", ids: [status]}})])));
+  const now = new Date("2026-11-12T22:00:00+05:30");
+  const excluded: Set<string>[] = [];
+  const build = async (_day: string, exclude: Set<string>) => {
+    excluded.push(new Set(exclude));
+    return null;
+  };
+  await prepareDay(deps(null, now), {grid: build, panorama: build, still: build});
+  assert.equal(excluded.length, 4);
+  for (const id of ["pending_approval", "approved", "posting", "uncertain"]) assert.ok(excluded[0].has(id), id);
+});
+
+test("morning catch-up retries empty or failed night-before builds, not owner skips or X failures", async (t) => {
+  const store = installSocialDb(t);
+  const cfg = config({slots: {am: true, noon: true, eve: false, night: false}});
+  let fail = true;
+  const build = async (_day: string, _exclude: Set<string>, slot: string) => {
+    if (fail) {
+      if (slot === "am") throw new Error("offline");
+      return null;
+    }
+    return {pipeline: "still" as const, source: {kind: "prism" as const, ids: [slot]},
+      media: [{jpeg: BYTES, alt: "wall", sensitive: false}], text: "wall", replyText: ""};
+  };
+  const builders = {grid: build, panorama: build, still: build};
+  await prepareDay(deps(null, new Date("2026-11-11T22:00:00+05:30"), cfg), builders);
+  assert.equal(store.get(PATH)?.error, "build_failed");
+  assert.equal(store.get("socialPosts/2026-11-12_noon")?.error, "no_content");
+  fail = false;
+  assert.deepEqual(await prepareDay(deps(null, NOW, cfg), builders), ["2026-11-12_am", "2026-11-12_noon"]);
+  store.set(PATH, postDoc({status: "skipped", error: "owner_skipped"}));
+  store.set("socialPosts/2026-11-12_noon", postDoc({slot: "noon", status: "failed", error: "create_refused"}));
+  assert.deepEqual(await prepareDay(deps(null, NOW, cfg), builders), []);
+});
+
+test("night-before previews retry without early publication or expiry", async (t) => {
+  const now = new Date("2026-12-31T22:00:00+05:30");
+  const due = scheduledAt("2027-01-01", "am", () => 0.5);
+  const path = "socialPosts/2027-01-01_am";
+  const post = postDoc({day: "2027-01-01", status: "pending_approval", scheduledAt: ts(due.getTime()),
+    replyText: "", approval: {required: true}});
+  const store = installSocialDb(t, {[path]: post});
+  let photos = 0;
+  const tg: Telegram = {sendPhotos: async () => {
+    if (++photos === 1) throw new Error("offline");
+  }, sendButtons: async () => undefined, sendText: async () => undefined, answer: async () => undefined,
+  markDone: async () => undefined, setWebhook: async () => undefined};
+  const {x, creates} = fakeX();
+  await publishDue({...deps(x, now), telegram: tg});
+  assert.equal(store.get(path)?.previewSentAt, undefined);
+  await publishDue({...deps(x, now), telegram: tg});
+  assert.ok(store.get(path)?.previewSentAt);
+  assert.equal(photos, 2);
+  assert.equal(creates.length, 0);
+  assert.equal(await applyPress({...press("approve", String(post.contentHash).slice(0, 12)),
+    postId: "2027-01-01_am"}), "Approved.");
+  await publishDue(deps(x, new Date(due.getTime() - 1)));
+  assert.equal(store.get(path)?.status, "approved");
+  assert.equal(creates.length, 0);
+  await publishDue(deps(x, due));
+  assert.equal(store.get(path)?.status, "posted");
+  assert.equal(creates.length, 1);
+  store.set(path, post);
+  await publishDue(deps(x, new Date(due.getTime() + 2 * 3_600_000 + 1)));
+  assert.equal(store.get(path)?.error, "expired");
 });
 
 test("a post with no reply text never sends a reply", async (t) => {
@@ -897,7 +972,7 @@ test("duplicate webhook deliveries cannot repeat approvals or main/reply retry d
 });
 
 test("prepare registers the v2 regional alias on every run and survives registration failure", async (t) => {
-  const {store, calls} = webhookSetup(t, {"socialConfig/current": {...config({slots: {am: false, noon: false, eve: true, night: false}})}});
+  const {store, calls} = webhookSetup(t, {"socialConfig/current": {...config({dryRun: true, slots: {am: false, noon: false, eve: true, night: false}})}});
   const env = {...process.env};
   t.after(() => {
     process.env = env;
@@ -913,14 +988,19 @@ test("prepare registers the v2 regional alias on every run and survives registra
   t.mock.method(R2Storage.prototype, "put", async () => true);
   t.mock.method(defaultBuilders, "still", async () => ({pipeline: "still", source: {kind: "prism", ids: ["W"]},
     media: [{jpeg: BYTES, alt: "alt", sensitive: false}], text: "wall", replyText: ""}));
+  t.mock.timers.enable({apis: ["Date"], now: new Date("2026-12-31T22:00:00+05:30").getTime()});
   await socialPrepare.run({scheduleTime: NOW.toISOString()});
-  assert.equal(store.get(`socialPosts/${postDay(new Date())}_eve`)?.status, "approved");
+  assert.equal(store.get("socialPosts/2027-01-01_eve")?.status, "approved");
   delete process.env.GCLOUD_PROJECT;
   await socialPrepare.run({scheduleTime: NOW.toISOString()});
-  assert.deepEqual(calls, ["test-project", "fallback-project"].map((project) => ({method: "setWebhook", body: {
+  assert.equal(store.has("socialPosts/2026-12-31_eve"), false);
+  assert.deepEqual(store.get("socialState/dryRunSeen"), {day: "2027-01-01", ids: ["W"]});
+  assert.deepEqual(calls.filter((call) => call.method === "setWebhook"), ["test-project", "fallback-project"].map((project) => ({method: "setWebhook", body: {
     url: `https://asia-south1-${project}.cloudfunctions.net/socialTelegramWebhook`,
     secret_token: webhookSecret(BOT_TOKEN), allowed_updates: ["callback_query"],
   }})));
+  assert.equal(socialPrepare.__endpoint.scheduleTrigger?.schedule, "0 7,10,22 * * *");
+  assert.equal(socialPrepare.__endpoint.scheduleTrigger?.timeZone, "Asia/Kolkata");
   assert.equal(socialTelegramWebhook.__endpoint.platform, "gcfv2");
   assert.deepEqual(socialTelegramWebhook.__endpoint.region, ["asia-south1"]);
   assert.deepEqual(socialTelegramWebhook.__endpoint.httpsTrigger?.invoker, ["public"]);
@@ -1041,7 +1121,8 @@ test("repeated dry runs never show a wall from any earlier run that day", async 
   const shown: string[] = [];
   // The repeat showed on the third run: A, B, A. Three runs prove every earlier run is remembered.
   for (let run = 0; run < 3; run++) {
-    await prepareDay(deps(null, NOW, config({dryRun: true})), builders);
+    const now = new Date(run === 0 ? "2026-11-11T22:00:00+05:30" : "2026-11-12T07:00:00+05:30");
+    await prepareDay(deps(null, now, config({dryRun: true})), builders);
     for (const [key, doc] of store) {
       if (key.startsWith("socialPosts/")) shown.push(...(doc.source as {ids: string[]}).ids);
     }

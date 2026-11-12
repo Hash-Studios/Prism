@@ -91,12 +91,19 @@ export interface SocialDeps {
 
 async function recentlyPosted(now: Date, blockedIds: string[]): Promise<Set<string>> {
   const since = admin.firestore.Timestamp.fromMillis(now.getTime() - COOLDOWN_MS.wallhaven);
-  const seen = await db.collection(SEEN).where("lastPostedAt", ">=", since).get();
+  const [seen, queued] = await Promise.all([
+    db.collection(SEEN).where("lastPostedAt", ">=", since).get(),
+    db.collection(SOCIAL_POSTS).where("status", "in", ["pending_approval", "approved", "posting", "uncertain"]).get(),
+  ]);
   const out = new Set(blockedIds);
   for (const doc of seen.docs) {
     const kind = str(doc.data().kind) === "wallhaven" ? "wallhaven" : "prism";
     const at = doc.data().lastPostedAt?.toMillis?.() ?? 0;
     if (now.getTime() - at < COOLDOWN_MS[kind]) out.add(str(doc.data().id));
+  }
+  // Prepared walls are reserved before posting records their cooldown, including across IST days.
+  for (const doc of queued.docs) {
+    for (const id of doc.data().source?.ids ?? []) out.add(String(id));
   }
   return out;
 }
@@ -129,7 +136,7 @@ export async function prepareDay(deps: SocialDeps, builders: Builders = defaultB
   const day = prepareFor(now);
   const exclude = await recentlyPosted(now, config.blockedIds);
   const existing = await db.collection(SOCIAL_POSTS).where("day", "==", day).get();
-  // Every wall previewed in today's earlier dry runs, so a rebuild never shows an older set again.
+  // Every wall previewed in the prepared day's earlier dry runs, so a rebuild never shows an older set again.
   const drySeenRef = db.collection(STATE).doc("dryRunSeen");
   const drySeen = config.dryRun ? (await drySeenRef.get()).data() : undefined;
   const previewed = new Set<string>(drySeen?.day === day && Array.isArray(drySeen.ids) ? drySeen.ids.map(String) : []);
@@ -144,11 +151,14 @@ export async function prepareDay(deps: SocialDeps, builders: Builders = defaultB
   if (config.dryRun && previewed.size > 0) await drySeenRef.set({day, ids: [...previewed]});
   const kept = new Set<string>();
   for (const doc of existing.docs) {
-    // In a dry run, every trigger rebuilds today's unposted posts with new walls, so the owner can try many sets.
-    const removed = config.dryRun && await db.runTransaction(async (tx) => {
+    // In a dry run, every trigger rebuilds the prepared day's unposted posts with new walls, so the owner can try many sets.
+    const removed = await db.runTransaction(async (tx) => {
       const post = (await tx.get(doc.ref)).data();
+      // Empty/failed builds may recover by morning. Never retry owner skips or X refusals.
+      const retryBuild = (post?.status === "failed" && post.error === "build_failed") ||
+        (post?.status === "skipped" && post.error === "no_content");
       // Recheck under the publisher's claim lock. Owner drop/retry changes the status but retains attemptAt.
-      if (!post || !DRY_RUN_REBUILDS.has(str(post.status)) ||
+      if (!post || !(config.dryRun ? DRY_RUN_REBUILDS.has(str(post.status)) : retryBuild) ||
           post.attemptAt || post.attemptId || post.dispatchedAt || post.tweetId || post.postedAt) return false;
       tx.delete(doc.ref);
       return true;
