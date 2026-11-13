@@ -7,7 +7,7 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db} from "../common";
-import {assertFits, DARK_STILL_TAILS, GRID_DETAIL_BUDGET, GRID_LINES, gridContent, gridVisionDecision, PANORAMA_LINES, panoramaPanels, STILL_TAILS, stillCaption, stillContent, wallhavenCandidates, wallhavenDetails, YOUTH_TAG, type WallhavenWall} from "../social/content";
+import {assertFits, DARK_STILL_TAILS, GRID_DETAIL_BUDGET, GRID_LINES, gridContent, gridVisionDecision, PANORAMA_LINES, panoramaPanels, rotate, SET_MIN, SET_SIZE, setContent, STILL_TAILS, stillCaption, stillContent, THEMES, themedStillContent, wallhavenCandidates, wallhavenDetails, wallhavenThemeCandidates, YOUTH_TAG, type WallhavenWall} from "../social/content";
 import {applyPress, contentHash, defaultBuilders, handleTelegramUpdate, JITTER_MS, loadSocialConfig, measurePosts, normalizePostText, prepareDay, prepareFor, publishDue, scheduledAt, socialPrepare, socialTelegramWebhook, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
 import {callbackData, parsePress, socialBotToken, socialOwnerChatId, telegramClient, type Telegram, webhookSecret} from "../social/telegram";
 import {R2Storage} from "../r2Storage";
@@ -205,7 +205,7 @@ const TEXT = "Today's finds";
 const ts = (ms: number) => admin.firestore.Timestamp.fromMillis(ms);
 
 const config = (patch: Partial<SocialConfig> = {}): SocialConfig => ({enabled: true, dryRun: false,
-  autoApprove: {panorama: true, still: true}, slots: {am: true, noon: true, eve: true, night: true},
+  autoApprove: {panorama: true, still: true}, slots: {am: true, noon: true, set: true, eve: true, night: true},
   sketchyPerPost: 2, blockedTags: [], blockedIds: [], ...patch});
 
 function fakeX(opts: {create?: () => Promise<string>; own?: () => XOwnPost[]} = {}) {
@@ -577,7 +577,7 @@ test("build failures never persist or log signed URLs", async (t) => {
   const broken = async () => {
     throw new Error("https://private/image?secret=TOKEN");
   };
-  await prepareDay(deps(null, NOW), {grid: broken, panorama: broken, still: broken});
+  await prepareDay(deps(null, NOW), {grid: broken, panorama: broken, still: broken, set: broken});
   assert.equal(store.get(PATH)?.error, "build_failed");
   assert.ok(!JSON.stringify([...store]).includes("TOKEN"));
   assert.ok(!JSON.stringify(messages).includes("TOKEN"));
@@ -677,7 +677,7 @@ test("prepare surfaces queue write failures so the scheduler can retry", async (
   });
   const build = async () => ({pipeline: "still" as const, source: {kind: "prism" as const, ids: ["W"]},
     media: [{jpeg: BYTES, alt: "alt", sensitive: false}], text: "wall", replyText: "link"});
-  await assert.rejects(prepareDay(deps(null, NOW), {grid: build, panorama: build, still: build}), /unavailable/);
+  await assert.rejects(prepareDay(deps(null, NOW), {grid: build, panorama: build, still: build, set: build}), /unavailable/);
 });
 
 test("metrics still measure an old queue document reconciled recently", async (t) => {
@@ -708,7 +708,7 @@ test("Sunday night waits for the run after Wall of the Day is picked", async (t)
     return {pipeline: "still" as const, source: {kind: "prism" as const, ids: [`W-${slot}`]},
       media: [{jpeg: BYTES, alt: "alt", sensitive: false}], text: "wall", replyText: "link"};
   };
-  const builders = {grid: build, panorama: build, still: build};
+  const builders = {grid: build, panorama: build, still: build, set: build};
   const sunday = (hour: string) => new Date(`2026-11-15T${hour}:00:00+05:30`);
   // Saturday's 22:00 run prepares Sunday, but not the Wall of the Day post.
   await prepareDay(deps(null, new Date("2026-11-14T22:00:00+05:30")), builders);
@@ -743,14 +743,14 @@ test("next-day preparation reserves walls in unfinished posts across days", asyn
     excluded.push(new Set(exclude));
     return null;
   };
-  await prepareDay(deps(null, now), {grid: build, panorama: build, still: build});
+  await prepareDay(deps(null, now), {grid: build, panorama: build, still: build, set: build});
   assert.equal(excluded.length, 4);
   for (const id of ["pending_approval", "approved", "posting", "uncertain"]) assert.ok(excluded[0].has(id), id);
 });
 
 test("morning catch-up retries empty or failed night-before builds, not owner skips or X failures", async (t) => {
   const store = installSocialDb(t);
-  const cfg = config({slots: {am: true, noon: true, eve: false, night: false}});
+  const cfg = config({slots: {am: true, noon: true, set: false, eve: false, night: false}});
   let fail = true;
   const build = async (_day: string, _exclude: Set<string>, slot: string) => {
     if (fail) {
@@ -760,7 +760,7 @@ test("morning catch-up retries empty or failed night-before builds, not owner sk
     return {pipeline: "still" as const, source: {kind: "prism" as const, ids: [slot]},
       media: [{jpeg: BYTES, alt: "wall", sensitive: false}], text: "wall", replyText: ""};
   };
-  const builders = {grid: build, panorama: build, still: build};
+  const builders = {grid: build, panorama: build, still: build, set: build};
   await prepareDay(deps(null, new Date("2026-11-11T22:00:00+05:30"), cfg), builders);
   assert.equal(store.get(PATH)?.error, "build_failed");
   assert.equal(store.get("socialPosts/2026-11-12_noon")?.error, "no_content");
@@ -972,7 +972,7 @@ test("duplicate webhook deliveries cannot repeat approvals or main/reply retry d
 });
 
 test("prepare registers the v2 regional alias on every run and survives registration failure", async (t) => {
-  const {store, calls} = webhookSetup(t, {"socialConfig/current": {...config({dryRun: true, slots: {am: false, noon: false, eve: true, night: false}})}});
+  const {store, calls} = webhookSetup(t, {"socialConfig/current": {...config({dryRun: true, slots: {am: false, noon: false, set: false, eve: true, night: false}})}});
   const env = {...process.env};
   t.after(() => {
     process.env = env;
@@ -1027,7 +1027,7 @@ test("a dry-run trigger rebuilds unposted posts with new walls; a live run never
     return {pipeline: "still" as const, source: {kind: "prism" as const, ids: [`NEW-${slot}`]},
       media: [{jpeg: BYTES, alt: "alt", sensitive: false}], text: "wall", replyText: ""};
   };
-  const builders = {grid: build, panorama: build, still: build};
+  const builders = {grid: build, panorama: build, still: build, set: build};
   await prepareDay(deps(null, NOW, config({dryRun: true})), builders);
   const am = store.get(`socialPosts/${day}_am`);
   assert.deepEqual((am?.source as {ids: string[]}).ids, ["NEW-am"]);
@@ -1071,7 +1071,7 @@ test("dry-run rebuild preserves a post claimed after the prepare query", async (
         return null;
       };
       await prepareDay(deps(null, NOW, config({dryRun: true,
-        slots: {am: true, noon: false, eve: false, night: false}})), {grid: build, panorama: build, still: build});
+        slots: {am: true, noon: false, set: false, eve: false, night: false}})), {grid: build, panorama: build, still: build, set: build});
       assert.equal(creates.length, 1);
       assert.equal(store.get(PATH)?.status, unknown ? "posting" : "posted");
       assert.ok(store.get(PATH)?.dispatchedAt);
@@ -1101,7 +1101,7 @@ test("dry-run rebuild preserves uncertain history after owner drop or retry", as
         return null;
       };
       await prepareDay(deps(null, NOW, config({dryRun: true,
-        slots: {am: true, noon: false, eve: false, night: false}})), {grid: build, panorama: build, still: build});
+        slots: {am: true, noon: false, set: false, eve: false, night: false}})), {grid: build, panorama: build, still: build, set: build});
       assert.deepEqual(store.get(PATH), before);
       assert.equal(builds, 0);
     });
@@ -1117,7 +1117,7 @@ test("repeated dry runs never show a wall from any earlier run that day", async 
     return id ? {pipeline: "still" as const, source: {kind: "prism" as const, ids: [id]},
       media: [{jpeg: BYTES, alt: slot, sensitive: false}], text: "wall", replyText: ""} : null;
   };
-  const builders = {grid: build, panorama: build, still: build};
+  const builders = {grid: build, panorama: build, still: build, set: build};
   const shown: string[] = [];
   // The repeat showed on the third run: A, B, A. Three runs prove every earlier run is remembered.
   for (let run = 0; run < 3; run++) {
@@ -1164,9 +1164,9 @@ test("a failed dry-run history save cannot erase the previous preview's ids", as
     return id ? {pipeline: "still" as const, source: {kind: "prism" as const, ids: [id]},
       media: [{jpeg: BYTES, alt: "wall", sensitive: false}], text: "wall", replyText: ""} : null;
   };
-  const builders = {grid: build, panorama: build, still: build};
+  const builders = {grid: build, panorama: build, still: build, set: build};
   const dry = deps(null, NOW, config({dryRun: true,
-    slots: {am: true, noon: false, eve: false, night: false}}));
+    slots: {am: true, noon: false, set: false, eve: false, night: false}}));
   await assert.rejects(prepareDay(dry, builders), /history unavailable/);
   await prepareDay(dry, builders);
   assert.deepEqual((store.get(PATH)?.source as {ids: string[]}).ids, ["C"]);
@@ -1180,8 +1180,8 @@ test("live preparation ignores dry-run history and does not change it", async (t
     return {pipeline: "still" as const, source: {kind: "prism" as const, ids: ["A"]},
       media: [{jpeg: BYTES, alt: "wall", sensitive: false}], text: "wall", replyText: ""};
   };
-  await prepareDay(deps(null, NOW, config({slots: {am: true, noon: false, eve: false, night: false}})),
-    {grid: build, panorama: build, still: build});
+  await prepareDay(deps(null, NOW, config({slots: {am: true, noon: false, set: false, eve: false, night: false}})),
+    {grid: build, panorama: build, still: build, set: build});
   assert.deepEqual((store.get(PATH)?.source as {ids: string[]}).ids, ["A"]);
   assert.deepEqual(store.get("socialState/dryRunSeen"), history);
 });
@@ -1196,8 +1196,8 @@ test("dry-run history resets when the prepared day changes at 21:00 IST", async 
     return {pipeline: "still" as const, source: {kind: "prism" as const, ids: [id]},
       media: [{jpeg: BYTES, alt: "wall", sensitive: false}], text: "wall", replyText: ""};
   };
-  const builders = {grid: build, panorama: build, still: build};
-  const cfg = config({dryRun: true, slots: {am: true, noon: false, eve: false, night: false}});
+  const builders = {grid: build, panorama: build, still: build, set: build};
+  const cfg = config({dryRun: true, slots: {am: true, noon: false, set: false, eve: false, night: false}});
   await prepareDay(deps(null, before, cfg), builders);
   assert.deepEqual((store.get(`socialPosts/${prepareFor(before)}_am`)?.source as {ids: string[]}).ids, ["B"]);
   await prepareDay(deps(null, after, cfg), builders);
@@ -1413,7 +1413,7 @@ test("Approve + flag flags the suggested images, reaches X, and metadata errors 
     await t.test(String(failure), async (t) => {
       const store = installSocialDb(t);
       const captions: string[] = [];
-      const cfg = config({slots: {am: true, noon: false, eve: false, night: false}});
+      const cfg = config({slots: {am: true, noon: false, set: false, eve: false, night: false}});
       const stored = new Map<string, Buffer>();
       const metadata: Array<{metadata: {sensitive_media_warning?: {adult_content: boolean}}}> = [];
       let uploads = 0;
@@ -1456,7 +1456,7 @@ test("Approve + flag flags the suggested images, reaches X, and metadata errors 
       const made = await prepareDay(run, {grid: (day, exclude) => gridContent(day, exclude, cfg, {...d,
         annotate: async () => ({safeSearchAnnotation: {adult: ["POSSIBLE", "LIKELY", "VERY_UNLIKELY"][checked++],
           racy: "VERY_UNLIKELY", violence: "VERY_UNLIKELY", medical: "VERY_UNLIKELY"}}) as never}),
-      panorama: async () => null, still: async () => null});
+      panorama: async () => null, still: async () => null, set: async () => null});
       assert.equal(made.length, 1);
       const path = `socialPosts/${made[0]}`;
       const post = store.get(path);
@@ -1592,4 +1592,135 @@ test("flag is a no-op for every non-pending state and for non-grids", async (t) 
       assert.deepEqual(store.get(PATH), post);
     }
   }
+});
+
+// ---------- weekly themed set and themed stills ----------
+
+/** Wallhaven deps where every id downloads its own noise image, except ids listed in `same` share one picture. */
+async function themeDeps(candidates: Array<{id: string; purity: string}>, opts: {same?: string[];
+  flagHint?: string[]} = {}) {
+  const shared = await sharp({create: {width: 90, height: 160, channels: 3, background: {r: 0, g: 0, b: 0},
+    noise: {type: "gaussian", mean: 128, sigma: 60}}}).jpeg().toBuffer();
+  const images = new Map<string, Buffer>();
+  for (const {id} of candidates) {
+    images.set(id, opts.same?.includes(id) ? shared : await sharp({create: {width: 90, height: 160, channels: 3,
+      background: {r: 0, g: 0, b: 0}, noise: {type: "gaussian", mean: 128, sigma: 60}}}).jpeg().toBuffer());
+  }
+  const queries: string[] = [];
+  return {
+    queries,
+    candidates: async (query: string) => {
+      queries.push(query);
+      return candidates;
+    },
+    details: async (id: string): Promise<WallhavenWall> => ({id, purity: candidates.find((c) => c.id === id)?.purity ?? "sfw",
+      path: `https://w.wallhaven.cc/full/${id}.jpg`, tags: ["landscape"]}),
+    download: async (url: string) => images.get(url.split("/").pop()!.replace(".jpg", ""))!,
+    annotate: async (jpeg: Buffer) => ({safeSearchAnnotation: {adult: opts.flagHint?.some((id) => images.get(id) === jpeg) ?
+      "POSSIBLE" : "VERY_UNLIKELY", racy: "VERY_UNLIKELY", violence: "VERY_UNLIKELY", medical: "VERY_UNLIKELY"}}) as never,
+  };
+}
+
+test("a set takes 12 SFW walls of one theme, without flag hints, sketchy walls or re-uploads", async () => {
+  const candidates = [{id: "k1", purity: "sketchy"}, ...Array.from({length: 20}, (_, i) => ({id: `w${i}`, purity: "sfw"}))];
+  const d = await themeDeps(candidates, {same: ["w0", "w1"], flagHint: ["w2"]});
+  const content = await setContent("2026-11-14", new Set(["w3"]), {blockedTags: []}, d);
+  assert.ok(content);
+  assert.equal(content.pipeline, "set");
+  assert.equal(content.media.length, SET_SIZE);
+  for (const id of ["k1", "w1", "w2", "w3"]) assert.ok(!content.source.ids.includes(id), id);
+  assert.ok(content.source.ids.includes("w0"), "the first copy of a re-upload stays");
+  assert.ok(content.media.every((m) => m.sensitive === false && !m.suggestFlag));
+  const theme = rotate(THEMES, "2026-11-14");
+  assert.deepEqual(d.queries, [theme.query]);
+  assert.equal(content.text, `12 ${theme.name} wallpapers\nwhich one is yours? 👇`);
+  assertFits(content);
+
+  // Fewer than SET_MIN passing walls makes no set.
+  const few = await themeDeps(Array.from({length: SET_MIN - 1}, (_, i) => ({id: `f${i}`, purity: "sfw"})));
+  assert.equal(await setContent("2026-11-14", new Set(), {blockedTags: []}, few), null);
+});
+
+test("Saturdays rotate through every theme before one repeats", () => {
+  const saturdays = Array.from({length: THEMES.length}, (_, i) =>
+    new Date(Date.parse("2026-11-14T00:00:00Z") + i * 7 * 86_400_000).toISOString().slice(0, 10));
+  assert.equal(new Set(saturdays.map((day) => rotate(THEMES, day).name)).size, THEMES.length);
+});
+
+test("theme searches ask Wallhaven for SFW portrait walls by all-time favourites", async (t) => {
+  const requests: URL[] = [];
+  t.mock.method(globalThis, "fetch", async (input: string | URL | Request) => {
+    requests.push(new URL(String(input)));
+    return {ok: true, json: async () => ({data: [{id: "a1", purity: "sfw"}, {id: "n1", purity: "nsfw"}]})} as Response;
+  });
+  assert.deepEqual(await wallhavenThemeCandidates("sunset -women"), [{id: "a1", purity: "sfw"}]);
+  assert.deepEqual(requests.map((url) => [url.searchParams.get("q"), url.searchParams.get("purity"),
+    url.searchParams.get("sorting"), url.searchParams.get("ratios"), url.searchParams.get("page")]),
+  [["sunset -women", "100", "favorites", "portrait", "1"], ["sunset -women", "100", "favorites", "portrait", "2"]]);
+});
+
+test("a themed still is the top unposted wall of a theme other than the set's", async () => {
+  const d = await themeDeps([{id: "top", purity: "sfw"}, {id: "next", purity: "sfw"}], {flagHint: ["next"]});
+  const day = "2026-11-14";
+  const eve = await themedStillContent(day, new Set(), {blockedTags: []}, 0, d);
+  assert.deepEqual(eve?.source, {kind: "wallhaven", ids: ["top"], tags: ["landscape"]});
+  assert.ok(eve?.text.startsWith(rotate(THEMES, day, 3).name));
+  assert.equal(await themedStillContent(day, new Set(["top"]), {blockedTags: []}, 1, d), null,
+    "a wall with a flag hint never becomes a still");
+  const themes = [rotate(THEMES, day).query, rotate(THEMES, day, 3).query, rotate(THEMES, day, 5).query];
+  assert.equal(new Set(themes).size, 3);
+  assert.deepEqual(d.queries, themes.slice(1));
+});
+
+test("the set slot runs on Saturdays only, and every Wallhaven post waits for approval", async (t) => {
+  const store = installSocialDb(t);
+  const slots: string[] = [];
+  const build = (kind: "prism" | "wallhaven") => async (_day: string, _exclude: Set<string>, slot: string) => {
+    slots.push(slot);
+    return {pipeline: "still" as const, source: {kind, ids: [`W-${slot}`]},
+      media: [{jpeg: BYTES, alt: "alt", sensitive: false}], text: "wall", replyText: ""};
+  };
+  const builders = {grid: build("wallhaven"), panorama: build("prism"), still: build("wallhaven"), set: build("wallhaven")};
+  await prepareDay(deps(null, NOW), builders);
+  assert.deepEqual(slots, ["am", "noon", "eve", "night"], "Thursday has no set");
+  slots.length = 0;
+  // Friday's 22:00 run prepares Saturday, set included.
+  await prepareDay(deps(null, new Date("2026-11-13T22:00:00+05:30")), builders);
+  assert.deepEqual(slots, ["am", "noon", "set", "eve", "night"]);
+  assert.equal(store.get("socialPosts/2026-11-14_set")?.status, "pending_approval");
+  assert.equal(store.get("socialPosts/2026-11-14_eve")?.status, "pending_approval", "a Wallhaven still needs the owner");
+  assert.equal(store.get("socialPosts/2026-11-14_noon")?.status, "approved", "auto-approved Prism posts stay so");
+  const at = (store.get("socialPosts/2026-11-14_set")?.scheduledAt as admin.firestore.Timestamp).toMillis();
+  assert.ok(Math.abs(at - Date.parse("2026-11-14T15:00:00+05:30")) <= JITTER_MS);
+});
+
+test("the still builder falls back to a Studio wall when Wallhaven fails", async (t) => {
+  const store = installSocialDb(t);
+  const jpeg = await sharp({create: {width: 4, height: 6, channels: 3, background: "black"}}).jpeg().toBuffer();
+  store.set("walls/S1", {review: true, origin: "studio", title: "Deep Lure · Jade", aiPrompt: "Quiet water",
+    wallpaper_url: "https://example.test/wall.jpg"});
+  t.mock.method(globalThis, "fetch", async (input: string | URL | Request) =>
+    String(input).startsWith("https://wallhaven.cc") ? new Response("busy", {status: 429}) :
+      new Response(new Uint8Array(jpeg)));
+  const content = await defaultBuilders.still("2026-11-12", new Set(), "eve", config());
+  assert.deepEqual(content?.source, {kind: "prism", ids: ["S1"]});
+});
+
+test("Telegram splits a set into even albums with the caption on the first", async () => {
+  const calls: Array<{method: string; form: FormData}> = [];
+  const client = telegramClient("T", "42", async (url, init) => {
+    calls.push({method: String(url).split("/").pop()!, form: init?.body as FormData});
+    return new Response(JSON.stringify({ok: true, result: {}}));
+  });
+  const photos = Array.from({length: 11}, (_, i) => Buffer.from(`p${i}`));
+  await client.sendPhotos("caption", photos);
+  assert.deepEqual(calls.map((c) => c.method), ["sendMediaGroup", "sendMediaGroup"]);
+  const media = calls.map((c) => JSON.parse(String(c.form.get("media"))));
+  assert.deepEqual(media.map((m) => m.length), [6, 5]);
+  assert.equal(media[0][0].caption, "caption");
+  assert.ok(media.flat().filter((m) => m.caption).length === 1);
+  calls.length = 0;
+  await client.sendPhotos("one", [Buffer.from("x")]);
+  assert.deepEqual(calls.map((c) => c.method), ["sendPhoto"]);
+  assert.equal(calls[0].form.get("caption"), "one");
 });

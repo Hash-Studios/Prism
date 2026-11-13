@@ -64,19 +64,25 @@ export function telegramClient(token: string, ownerChatId: string, request: type
   }
   return {
     async sendPhotos(caption, photos) {
-      const form = new FormData();
       const blob = (bytes: Buffer) => new Blob([new Uint8Array(bytes)], {type: "image/jpeg"});
-      form.set("chat_id", ownerChatId);
-      if (photos.length === 1) {
-        form.set("caption", caption.slice(0, 1024));
-        form.set("photo", blob(photos[0]), "p0.jpg");
-        await call("sendPhoto", form);
-        return;
+      // An album holds 2 to 10 photos. A larger set goes as even albums (11 is 6 + 5), the caption on the first.
+      const size = Math.ceil(photos.length / Math.ceil(photos.length / 10));
+      for (let start = 0; start < photos.length; start += size) {
+        const album = photos.slice(start, start + size);
+        const text = start === 0 ? {caption: caption.slice(0, 1024)} : {};
+        const form = new FormData();
+        form.set("chat_id", ownerChatId);
+        if (album.length === 1) {
+          if (text.caption) form.set("caption", text.caption);
+          form.set("photo", blob(album[0]), "p0.jpg");
+          await call("sendPhoto", form);
+          continue;
+        }
+        form.set("media", JSON.stringify(album.map((_, i) => ({type: "photo", media: `attach://p${i}`,
+          ...(i === 0 ? text : {})}))));
+        album.forEach((bytes, i) => form.set(`p${i}`, blob(bytes), `p${i}.jpg`));
+        await call("sendMediaGroup", form);
       }
-      form.set("media", JSON.stringify(photos.map((_, i) => ({type: "photo", media: `attach://p${i}`,
-        ...(i === 0 ? {caption: caption.slice(0, 1024)} : {})}))));
-      photos.forEach((bytes, i) => form.set(`p${i}`, blob(bytes), `p${i}.jpg`));
-      await call("sendMediaGroup", form);
     },
     async sendButtons(text, buttons) {
       await call("sendMessage", {chat_id: ownerChatId, text, reply_markup: {inline_keyboard: [buttons.map((b) => ({

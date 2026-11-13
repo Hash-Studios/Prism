@@ -8,8 +8,9 @@ Backend only. Three scheduled functions post wallpapers to the @PrismWallpapers 
 |---|---|---|---|
 | `am` | 09:30 | `grid` | 3 phone walls from the Wallhaven toplist (SFW and sketchy, never NSFW) |
 | `noon` | 13:00 | `panorama` | A Studio desktop companion (2560 x 1600) cut into 3 tall panels |
-| `eve` | 17:00 | `still` | One Studio wall, After Dark first |
-| `night` | 20:00 | `still` | One Studio wall. Sunday: today's Wall of the Day and a question |
+| `set` | 15:00, Saturdays only | `set` | 12 SFW Wallhaven walls of one theme in one post (8 minimum) |
+| `eve` | 17:00 | `still` | The most favourited unposted Wallhaven wall of a theme; a Studio wall when Wallhaven fails |
+| `night` | 20:00 | `still` | The same, with another theme. Sunday: today's Wall of the Day and a question |
 
 Each post lands at its slot time plus or minus up to 15 minutes, uniformly at random, so posting times change every day. Posts carry no link and no link reply: X bills a post with a URL at about $0.20 against about $0.015 for a plain post. Links live in the account bio and a pinned post.
 
@@ -40,9 +41,9 @@ A post with a non-empty `replyText` also gets a reply, with the same rules on `r
 
 | Pipeline | Approval |
 |---|---|
-| `grid` | Always |
+| `grid`, `set`, Wallhaven stills | Always (every Wallhaven post) |
 | `panorama` | Until `autoApprove.panorama` is `true` |
-| `still` | Not needed unless `autoApprove.still` is `false` |
+| Studio and Wall of the Day stills | Not needed unless `autoApprove.still` is `false` |
 
 An approval binds to `contentHash` (image hashes, text, link reply, alt text, and sensitive flags). The publisher recomputes it and requires a matching owner approval for every grid. Only presses from the owner in the owner's chat count. Telegram calls `socialTelegramWebhook` with a secret header derived from the bot token; any other request gets 403. `socialPrepare` registers the webhook on every run. Failed approval previews retry during publish passes until delivered or expired. No decision by 2 hours after the jittered `scheduledAt`: skipped.
 
@@ -59,6 +60,16 @@ The webhook accepts only POST requests and compares the secret in constant time.
 - Cooldowns: Wallhaven walls 180 days, Prism walls 60 days (`socialSeen`). Walls in unfinished queue entries are also excluded, so tomorrow does not repeat today's still-unposted walls.
 - Takedown: delete the post on X and add the Wallhaven id to `blockedIds`.
 
+## Themes (sets and stills)
+
+`THEMES` in `content.ts` holds 8 Wallhaven queries: sunsets, mountains, pixel art, snow, forests, space, landscapes, Studio Ghibli. Each was checked by eye for one look across its top walls. `-women` and `-anime` keep out portrait art; city, flowers, night and minimalism were dropped because their top walls were a mix.
+
+- Search: `purity=100` (SFW only), `categories=110`, `sorting=favorites` (all time), portrait, at least 1080 x 1920, 2 pages.
+- The set uses the day's theme. Saturdays step through all 8 themes before one repeats. The eve and night stills use 2 other themes of the same rotation.
+- Same checks as the grid, but stricter: the detail purity must be SFW, and a wall with any Vision flag hint is dropped, so no set or still needs the flag. A set also drops near-duplicate images (difference hash), because Wallhaven holds re-uploads under new ids.
+- Budgets: a set checks at most 30 walls in 2 minutes, a still at most 8 in 45 seconds.
+- X takes up to 20 images in one post (its request check refuses 21). Telegram albums take 10, so a set preview arrives as 2 albums.
+
 ## Setup
 
 1. Secrets (Secret Manager): `X_API_KEY`, `X_API_SECRET`, `X_ACCESS_TOKEN`, `X_ACCESS_SECRET` (OAuth 1.0a user tokens for @PrismWallpapers, Read and Write), `SOCIAL_TELEGRAM_BOT_TOKEN` (a new bot, not the channel bot), `SOCIAL_TELEGRAM_OWNER_CHAT_ID` (the owner's private chat with that bot). All six must exist before deploy, even in dry run.
@@ -66,7 +77,7 @@ The webhook accepts only POST requests and compares the secret in constant time.
 3. Create `socialConfig/current`:
 
    ```json
-   {"enabled": true, "dryRun": true, "slots": {"am": true, "noon": true, "eve": true, "night": true},
+   {"enabled": true, "dryRun": true, "slots": {"am": true, "noon": true, "set": true, "eve": true, "night": true},
     "sketchyPerPost": 2, "autoApprove": {"panorama": false, "still": true}, "blockedTags": [], "blockedIds": []}
    ```
 

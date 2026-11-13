@@ -6,7 +6,9 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {db, REGION, str} from "../common";
 import {R2Storage, r2Secrets} from "../r2Storage";
 import {postDay} from "../studio/telegram";
-import {assertFits, gridContent, panoramaContent, type Pipeline, type SocialContent, stillContent} from "./content";
+import {
+  assertFits, gridContent, panoramaContent, type Pipeline, setContent, type SocialContent, stillContent, themedStillContent,
+} from "./content";
 import {
   type ApprovalPress, parsePress, socialBotToken, socialOwnerChatId, socialTelegramSecrets, type Telegram, telegramClient,
   webhookSecret,
@@ -21,10 +23,12 @@ export const SOCIAL_POSTS = "socialPosts";
 const SEEN = "socialSeen";
 const STATE = "socialState";
 
-export type Slot = "am" | "noon" | "eve" | "night";
-export const SLOTS: Record<Slot, {time: string; pipeline: Pipeline}> = {
+export type Slot = "am" | "noon" | "set" | "eve" | "night";
+/** `weekday` (0 is Sunday, in IST) limits a slot to one day of the week. */
+export const SLOTS: Record<Slot, {time: string; pipeline: Pipeline; weekday?: number}> = {
   am: {time: "09:30", pipeline: "grid"},
   noon: {time: "13:00", pipeline: "panorama"},
+  set: {time: "15:00", pipeline: "set", weekday: 6},
   eve: {time: "17:00", pipeline: "still"},
   night: {time: "20:00", pipeline: "still"},
 };
@@ -110,7 +114,8 @@ async function recentlyPosted(now: Date, blockedIds: string[]): Promise<Set<stri
 export type Builders = Record<Pipeline, (day: string, exclude: Set<string>, slot: Slot, config: SocialConfig) =>
   Promise<SocialContent | null>>;
 
-const isSunday = (day: string) => new Date(`${day}T12:00:00+05:30`).getUTCDay() === 0;
+const weekday = (day: string) => new Date(`${day}T12:00:00+05:30`).getUTCDay();
+const isSunday = (day: string) => weekday(day) === 0;
 const istHour = (now: Date) => new Intl.DateTimeFormat("en-GB", {timeZone: "Asia/Kolkata", hour: "2-digit", hourCycle: "h23"})
   .format(now);
 
@@ -121,8 +126,17 @@ export const prepareFor = (now: Date) =>
 export const defaultBuilders: Builders = {
   grid: (day, exclude, _slot, config) => gridContent(day, exclude, config),
   panorama: (day, exclude) => panoramaContent(day, exclude),
-  still: (day, exclude, slot) => stillContent(day, exclude, {
-    wotd: slot === "night" && isSunday(day), salt: slot === "eve" ? 0 : 1}),
+  still: async (day, exclude, slot, config) => {
+    const wotd = slot === "night" && isSunday(day);
+    const salt = slot === "eve" ? 0 : 1;
+    // Wallhaven's most favourited walls of a theme first. Studio walls fill in when Wallhaven fails or runs dry.
+    const themed = wotd ? null : await themedStillContent(day, exclude, config, salt).catch(() => {
+      logger.warn("social: themed still failed.", {day, slot});
+      return null;
+    });
+    return themed ?? stillContent(day, exclude, {wotd, salt});
+  },
+  set: (day, exclude, _slot, config) => setContent(day, exclude, config),
 };
 
 /** States a dry-run trigger may replace. Never anything that reached, or may have reached, X. */
@@ -168,6 +182,7 @@ export async function prepareDay(deps: SocialDeps, builders: Builders = defaultB
   for (const slot of Object.keys(SLOTS) as Slot[]) {
     const postId = `${day}_${slot}`;
     if (!config.slots[slot] || kept.has(postId)) continue;
+    if (SLOTS[slot].weekday !== undefined && SLOTS[slot].weekday !== weekday(day)) continue;
     // Wall of the Day is picked at 09:00 IST, so the Sunday night post waits for Sunday's 10:00 run.
     if (slot === "night" && isSunday(day) && (postDay(now) !== day || Number(istHour(now)) < 10)) continue;
     const pipeline = SLOTS[slot].pipeline;
@@ -197,7 +212,9 @@ export async function prepareDay(deps: SocialDeps, builders: Builders = defaultB
     }
     const hash = contentHash(media.map((m) => m.sha256), content.text, content.replyText,
       media.map((m) => ({alt: m.alt, sensitive: m.sensitive})));
-    const needsApproval = pipeline === "grid" || !config.autoApprove[pipeline];
+    // Every Wallhaven post (grid, set, themed still) needs the owner: tags and Vision cannot prove what is in a picture.
+    const needsApproval = content.source.kind === "wallhaven" ||
+      !(config.autoApprove as Record<string, boolean | undefined>)[pipeline];
     const queued = {...base, status: needsApproval ? "pending_approval" : "approved", source: content.source, media,
       text: content.text, replyText: content.replyText, contentHash: hash, approval: {required: needsApproval}};
     try {
