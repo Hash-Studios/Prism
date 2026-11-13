@@ -8,7 +8,7 @@ Backend only. Three scheduled functions post wallpapers to the @PrismWallpapers 
 |---|---|---|---|
 | `am` | 09:30 | `grid` | 3 phone walls from the Wallhaven toplist (SFW and sketchy, never NSFW) |
 | `noon` | 13:00 | `panorama` | A Studio desktop companion (2560 x 1600) cut into 3 tall panels |
-| `set` | 15:00, Saturdays only | `set` | 12 SFW Wallhaven walls of one theme in one post (8 minimum) |
+| `set` | 15:00 | `set` | 12 SFW Wallhaven walls of one theme and one art style in one post (8 minimum) |
 | `eve` | 17:00 | `still` | The most favourited unposted Wallhaven wall of a theme; a Studio wall when Wallhaven fails |
 | `night` | 20:00 | `still` | The same, with another theme. Sunday: today's Wall of the Day and a question |
 
@@ -63,12 +63,14 @@ The webhook accepts only POST requests and compares the secret in constant time.
 
 ## Themes (sets and stills)
 
-`THEMES` in `content.ts` holds 8 Wallhaven queries: sunsets, mountains, pixel art, snow, forests, space, landscapes, Studio Ghibli. Each was checked by eye for one look across its top walls. `-women` and `-anime` keep out portrait art; city, flowers, night and minimalism were dropped because their top walls were a mix.
+`THEMES` in `content.ts` holds 16 Wallhaven queries, landscapes and subjects in turn: sunsets, batman, mountains, japan, pixel art, spider-man, snow, cats, forests, samurai, space, dragons, landscapes, star wars, studio ghibli, flowers. Each was checked by eye on its top walls. Dropped: minimalism, city, night (mixed styles), cars (neon cities, not cars).
 
-- Search: `purity=100` (SFW only), `categories=110`, `sorting=favorites` (all time), portrait, at least 1080 x 1920, 2 pages.
-- The set uses the day's theme. Saturdays step through all 8 themes before one repeats. The eve and night stills use 2 other themes of the same rotation.
-- Same checks as the grid, but stricter: the detail purity must be SFW, and a wall with any Vision flag hint is dropped, so no set or still needs the flag. A set also drops near-duplicate images (difference hash), because Wallhaven holds re-uploads under new ids.
-- Budgets: a grid checks at most 30 walls in 3 minutes, a set at most 30 in 2 minutes, and a still at most 8 in 45 seconds. These deadlines include searches and rate-limit waits.
+- Search: `purity=100` (SFW only), `sorting=favorites` (all time), portrait, at least 1080 x 1920. Landscapes use `categories=110` (keeps painted anime-style skies). Subjects use `categories=100`, because their anime walls are mostly portraits. Flowers is `+flowers +photography`.
+- Pages: up to 8 (24 walls each), read until 40 unposted walls are found or the theme ends, so a daily set goes months deep.
+- Rotation: the set uses the day's theme, so each theme comes back every 16 days. When it has no style group of 8 left, the next theme takes the rest of the time. The eve and night stills use 2 other themes (offsets 3 and 5).
+- One art style per set: details come first, and each wall gets a medium from its tags (pixel art, anime, comic art, minimal, photography, 3d, digital art; first match wins). Walls with no medium tag are left out. A specific style with 8 or more walls wins over the catch-all digital art group. Only that group is then downloaded and checked. Batman, for example, becomes a comic-art set. The caption names the style: "12 batman wallpapers, all comic art".
+- Same checks as the grid, but stricter: the detail purity must be SFW, and a wall with any Vision flag hint is dropped, so no set or still needs the flag. Portrait and pin-up tags (`PORTRAIT_TAGS`) and collage posters (more than 30 tags) are skipped. A set also drops near-duplicate images (difference hash), because Wallhaven holds re-uploads under new ids.
+- Budgets: a grid checks at most 30 walls in 3 minutes, a set reads at most 40 details in 2.5 minutes (both themes together), and a still checks at most 8 walls in 45 seconds. These deadlines include searches and rate-limit waits.
 - Wallhaven still captions name the theme without claiming that the image is available in Prism.
 - X takes up to 20 images in one post (its request check refuses 21). Telegram albums take 10, so a set preview arrives as 2 albums.
 

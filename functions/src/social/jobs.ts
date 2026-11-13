@@ -24,11 +24,10 @@ const SEEN = "socialSeen";
 const STATE = "socialState";
 
 export type Slot = "am" | "noon" | "set" | "eve" | "night";
-/** `weekday` (0 is Sunday, in IST) limits a slot to one day of the week. */
-export const SLOTS: Record<Slot, {time: string; pipeline: Pipeline; weekday?: number}> = {
+export const SLOTS: Record<Slot, {time: string; pipeline: Pipeline}> = {
   am: {time: "09:30", pipeline: "grid"},
   noon: {time: "13:00", pipeline: "panorama"},
-  set: {time: "15:00", pipeline: "set", weekday: 6},
+  set: {time: "15:00", pipeline: "set"},
   eve: {time: "17:00", pipeline: "still"},
   night: {time: "20:00", pipeline: "still"},
 };
@@ -133,8 +132,7 @@ async function recentlyPosted(now: Date, blockedIds: string[]): Promise<Set<stri
 export type Builders = Record<Pipeline, (day: string, exclude: Set<string>, slot: Slot, config: SocialConfig) =>
   Promise<SocialContent | null>>;
 
-const weekday = (day: string) => new Date(`${day}T12:00:00+05:30`).getUTCDay();
-const isSunday = (day: string) => weekday(day) === 0;
+const isSunday = (day: string) => new Date(`${day}T12:00:00+05:30`).getUTCDay() === 0;
 const istHour = (now: Date) => new Intl.DateTimeFormat("en-GB", {timeZone: "Asia/Kolkata", hour: "2-digit", hourCycle: "h23"})
   .format(now);
 
@@ -203,7 +201,6 @@ export async function prepareDay(deps: SocialDeps, builders: Builders = defaultB
     if (Date.now() >= deadline) break;
     const postId = `${day}_${slot}`;
     if (!config.slots[slot] || kept.has(postId)) continue;
-    if (SLOTS[slot].weekday !== undefined && SLOTS[slot].weekday !== weekday(day)) continue;
     // Wall of the Day is picked at 09:00 IST, so the Sunday night post waits for Sunday's 10:00 run.
     if (slot === "night" && isSunday(day) && (postDay(now) !== day || Number(istHour(now)) < 10)) continue;
     const pipeline = SLOTS[slot].pipeline;

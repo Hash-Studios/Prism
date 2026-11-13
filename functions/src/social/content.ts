@@ -212,7 +212,7 @@ export async function stillContent(day: string, exclude: Set<string>, options: {
 /** Youth-coded tags. A backup guard: the owner approves every grid, because tags cannot prove age. */
 export const YOUTH_TAG = /\b(lolis?|lolicon|shota|shotacon|child(?:ren)?|kids?|(?:pre)?teen(?:s|age|agers?)?|adolescents?|toddlers?|infants?|bab(?:y|ies)|school[\s_-]*(?:girls?|boys?|uniforms?)|students?|underage|minors?|(?:little|young)[\s_-]+(?:girls?|boys?)|preschool|kindergarten|elementary)\b/i;
 
-export interface WallhavenWall {id: string; purity: string; path: string; tags: string[]}
+export interface WallhavenWall {id: string; purity: string; path: string; tags: string[]; category?: string}
 
 /**
  * Grid rules on Vision SafeSearch. Wallhaven's sketchy level already excludes nudity, yet Vision rates almost every
@@ -271,7 +271,8 @@ async function wallhavenJson(path: string, deadline = Infinity): Promise<any> {
 export type WallhavenCandidate = {id: string; purity: string};
 
 /** Runs the searches in order and keeps each id once. A failed page 2 only narrows the pool; a failed page 1 throws. */
-async function wallhavenSearch(searches: Array<Record<string, string>>, deadline: number): Promise<WallhavenCandidate[]> {
+async function wallhavenSearch(searches: Array<Record<string, string>>, deadline: number,
+  enough: (out: WallhavenCandidate[], pageSize: number) => boolean = () => false): Promise<WallhavenCandidate[]> {
   const seen = new Set<string>();
   const out: WallhavenCandidate[] = [];
   for (const search of searches) {
@@ -283,13 +284,15 @@ async function wallhavenSearch(searches: Array<Record<string, string>>, deadline
       if (search.page === "1") throw err;
       continue;
     }
-    for (const item of Array.isArray(data) ? data : []) {
+    const items = Array.isArray(data) ? data : [];
+    for (const item of items) {
       const id = str(item?.id);
       if (/^[a-z0-9]{1,16}$/.test(id) && !seen.has(id) && ["sfw", "sketchy"].includes(str(item?.purity))) {
         seen.add(id);
         out.push({id, purity: str(item.purity)});
       }
     }
+    if (enough(out, items.length)) break;
   }
   return out;
 }
@@ -303,25 +306,64 @@ export async function wallhavenCandidates(deadline = Infinity): Promise<Wallhave
 }
 
 /**
- * Themes for the weekly set and the Wallhaven stills. Each query was checked by eye for one look across its top walls
- * (2026-11-13). "-women" and "-anime" keep out portrait art, which made other themes (city, flowers, minimalism) a mix.
+ * Themes for the daily set and the Wallhaven stills, landscapes and subjects in turn so neighbouring days differ. Each
+ * was checked by eye on its top walls (2026-11-13). Landscapes search general and anime ("110"), which keeps the
+ * painted anime-style skies; subjects search general only ("100"), where anime is mostly portraits. "-women" and
+ * PORTRAIT_TAGS keep out pin-ups. Dropped: minimalism, city, night (mixed), cars (neon cities, not cars).
  */
-export const THEMES = [
-  {name: "sunsets", query: "sunset -women"},
-  {name: "mountains", query: "mountains -women -anime"},
-  {name: "pixel art", query: "pixel art -women"},
-  {name: "snow", query: "snow -women -anime"},
-  {name: "forests", query: "forest -women -anime"},
-  {name: "space", query: "space -women -anime"},
-  {name: "landscapes", query: "landscape -women -anime"},
-  {name: "studio ghibli", query: "Studio Ghibli"},
-] as const;
+export const THEMES: ReadonlyArray<{name: string; query: string; categories: string}> = [
+  {name: "sunsets", query: "sunset -women", categories: "110"},
+  {name: "batman", query: "Batman -women", categories: "100"},
+  {name: "mountains", query: "mountains -women -anime", categories: "110"},
+  {name: "japan", query: "Japan -women", categories: "100"},
+  {name: "pixel art", query: "pixel art -women", categories: "110"},
+  {name: "spider-man", query: "Spider-Man -women", categories: "100"},
+  {name: "snow", query: "snow -women -anime", categories: "110"},
+  {name: "cats", query: "cats -women", categories: "100"},
+  {name: "forests", query: "forest -women -anime", categories: "110"},
+  {name: "samurai", query: "samurai -women", categories: "100"},
+  {name: "space", query: "space -women -anime", categories: "110"},
+  {name: "dragons", query: "dragon -women", categories: "100"},
+  {name: "landscapes", query: "landscape -women -anime", categories: "110"},
+  {name: "star wars", query: "Star Wars -women", categories: "100"},
+  {name: "studio ghibli", query: "Studio Ghibli", categories: "110"},
+  {name: "flowers", query: "+flowers +photography", categories: "100"},
+];
 export type Theme = (typeof THEMES)[number];
 
-/** A theme's SFW walls, the most favourited of all time first: the community's best picks, not this week's. */
-export async function wallhavenThemeCandidates(query: string, deadline = Infinity): Promise<WallhavenCandidate[]> {
-  return wallhavenSearch(["1", "2"].map((page) => ({q: query, categories: "110", purity: "100", sorting: "favorites",
-    ratios: "portrait", atleast: "1080x1920", page})), deadline);
+/** Search pages read per theme at most. 24 walls a page, so a daily set can go months deep into a theme. */
+export const THEME_PAGES = 8;
+
+/**
+ * A theme's SFW walls, the most favourited of all time first: the community's best picks, not this week's. Reads pages
+ * until `want` walls are not in `exclude`, or the theme ends (a page under 24 walls).
+ */
+export async function wallhavenThemeCandidates(query: string, deadline = Infinity, exclude: Set<string> = new Set(),
+  want = 24, categories = "110"): Promise<WallhavenCandidate[]> {
+  return wallhavenSearch(Array.from({length: THEME_PAGES}, (_, i) => ({q: query, categories, purity: "100",
+    sorting: "favorites", ratios: "portrait", atleast: "1080x1920", page: String(i + 1)})), deadline,
+  (out, pageSize) => pageSize < 24 || out.filter((c) => !exclude.has(c.id)).length >= want);
+}
+
+/**
+ * The medium of a wall from its Wallhaven tags, first match wins: comic walls are also tagged "artwork", so the more
+ * specific styles come first. Null when no tag names a medium, so unknown walls never join a set.
+ */
+const ART_STYLES: Array<[string, string[]]> = [
+  ["pixel art", ["pixel art"]],
+  ["anime", ["anime", "anime girls", "anime boys", "manga"]],
+  ["comic art", ["comic art", "comics", "comic books"]],
+  ["minimal", ["minimalism"]],
+  ["photography", ["photography", "photo"]],
+  ["3d", ["cgi", "3d", "render", "digital render", "blender"]],
+  ["digital art", ["digital art", "artwork", "fantasy art", "illustration", "painting", "concept art", "drawing",
+    "artstation", "fan art", "digital painting"]],
+];
+const GENERIC_STYLE = "digital art";
+export function artStyle(wall: Pick<WallhavenWall, "tags" | "category">): string | null {
+  if (wall.category === "anime") return "anime";
+  const tags = new Set(wall.tags.map((tag) => tag.toLowerCase()));
+  return ART_STYLES.find(([, names]) => names.some((name) => tags.has(name)))?.[0] ?? null;
 }
 
 /** 64-bit difference hash as 64 "0"/"1" characters. Wallhaven holds re-uploads of one image under new ids. */
@@ -335,6 +377,14 @@ export async function dHash(jpeg: Buffer): Promise<string> {
   return hash;
 }
 const NEAR_DUPLICATE_BITS = 8;
+/**
+ * Tags of portrait and pin-up art. Sets and stills skip them: in subject themes (Spider-Man, Star Wars) most top walls
+ * were pin-ups that "-women" alone missed, which broke the set's look.
+ */
+const MAX_SET_TAGS = 30;
+export const PORTRAIT_TAGS = new Set(["women", "fantasy girl", "anime girls", "looking at viewer", "cleavage", "blonde",
+  "brunette", "redhead", "long hair", "short hair", "model", "portrait", "face", "girls", "cosplay", "bodysuit", "thighs",
+  "boobs", "legs", "lingerie", "bikini", "stockings", "pantyhose", "gwen stacy"]);
 const bitsApart = (a: string, b: string) => [...a].filter((bit, i) => bit !== b[i]).length;
 
 export interface WallhavenDeps {
@@ -346,27 +396,40 @@ export interface WallhavenDeps {
 const wallhavenDeps: WallhavenDeps = {annotate: annotateWithVision, details: (id, deadline) => wallhavenDetails(id, deadline),
   download: (url) => downloadJpeg(url, 2400)};
 
-interface Picked {wall: WallhavenWall; jpeg: Buffer; sensitive: boolean}
+interface Picked {wall: WallhavenWall; jpeg: Buffer; sensitive: boolean; style?: string}
 
 /**
  * Checks candidates in order until `count` pass, the detail budget is spent, or the deadline passes. `strict` (sets and
  * stills) takes SFW walls with no flag hint only, and drops near-duplicates. Null when fewer than `min` pass.
+ * `oneStyle` first reads details only, groups the walls by `artStyle`, then downloads the largest group alone, so a
+ * set never mixes comic art with photos or anime.
  */
 async function pickWallhaven(candidates: (deadline: number) => Promise<WallhavenCandidate[]>, exclude: Set<string>,
   opts: {count: number; min: number; budget: number; deadlineMs: number; sketchyPerPost: number; blockedTags: string[];
-    strict: boolean}, deps: WallhavenDeps): Promise<Picked[] | null> {
+    strict: boolean; oneStyle?: boolean}, deps: WallhavenDeps): Promise<Picked[] | null> {
   const picked: Picked[] = [];
   const hashes: string[] = [];
   let sketchy = 0;
   let checked = 0;
   const blocked = opts.blockedTags.map((t) => t.toLowerCase());
   const deadline = Date.now() + (deps.deadlineMs ?? opts.deadlineMs);
-  // One candidate: null when it does not pass.
-  const check = async (candidate: WallhavenCandidate) => {
+  // The checks on Wallhaven's details alone: null when the wall cannot pass.
+  const detailsOk = async (candidate: WallhavenCandidate) => {
     const wall = await deps.details(candidate.id, deadline);
     if (wall.purity !== candidate.purity || !(opts.strict ? ["sfw"] : ["sfw", "sketchy"]).includes(wall.purity)) return null;
     if (wall.tags.some((tag) => YOUTH_TAG.test(tag) || blocked.includes(tag.toLowerCase()))) return null;
+    if (opts.strict && wall.tags.some((tag) => PORTRAIT_TAGS.has(tag.toLowerCase()))) return null;
+    // A wall tagged with dozens of franchises is a collage poster, not one subject.
+    if (opts.strict && wall.tags.length > MAX_SET_TAGS) return null;
     if (!/^https:\/\/w\.wallhaven\.cc\//.test(wall.path)) return null;
+    return wall;
+  };
+  // One candidate: null when it does not pass.
+  const check = async (candidate: WallhavenCandidate) => {
+    const wall = await detailsOk(candidate);
+    return wall ? imageOk(wall) : null;
+  };
+  const imageOk = async (wall: WallhavenWall) => {
     const jpeg = await fitFiveMb(await deps.download(wall.path));
     const decision = gridVisionDecision((await deps.annotate(jpeg)).safeSearchAnnotation as Record<string, unknown>);
     if (!decision.ok || (opts.strict && decision.sensitive)) return null;
@@ -383,6 +446,39 @@ async function pickWallhaven(candidates: (deadline: number) => Promise<Wallhaven
   };
   const pool = await bounded(candidates(deadline));
   if (pool === "timeout") return null;
+  if (opts.oneStyle) {
+    // Phase 1: details only, grouped by medium. Stops early once one group has enough to spare for image rejects.
+    const groups = new Map<string, WallhavenWall[]>();
+    for (const candidate of pool) {
+      if (checked >= opts.budget || Date.now() >= deadline) break;
+      if (exclude.has(candidate.id)) continue;
+      checked++;
+      const wall = await bounded(detailsOk(candidate).catch(() => null));
+      if (wall === "timeout") break;
+      const style = wall ? artStyle(wall) : null;
+      if (!wall || !style) continue;
+      groups.set(style, [...(groups.get(style) ?? []), wall]);
+      // "digital art" is the catch-all, so only a specific style may end the scan early.
+      if (style !== GENERIC_STYLE && (groups.get(style)?.length ?? 0) >= opts.count + 4) break;
+    }
+    // Phase 2: specific styles before the catch-all, then the largest; a group whose images fail falls to the next.
+    const ranked = [...groups].filter(([, walls]) => walls.length >= opts.min).sort((a, b) =>
+      Number(a[0] === GENERIC_STYLE) - Number(b[0] === GENERIC_STYLE) || b[1].length - a[1].length);
+    for (const [style, walls] of ranked) {
+      picked.length = 0;
+      hashes.length = 0;
+      for (const wall of walls) {
+        if (picked.length === opts.count || Date.now() >= deadline) break;
+        const result = await bounded(imageOk(wall).catch(() => null));
+        if (result === "timeout") break;
+        if (!result) continue;
+        hashes.push(result.hash);
+        picked.push({...result, style});
+      }
+      if (picked.length >= opts.min) return picked;
+    }
+    return null;
+  }
   for (const candidate of pool) {
     if (picked.length === opts.count || checked >= opts.budget || Date.now() >= deadline) break;
     if (exclude.has(candidate.id) || (candidate.purity === "sketchy" && sketchy >= opts.sketchyPerPost)) continue;
@@ -416,32 +512,49 @@ export async function gridContent(day: string, exclude: Set<string>, config: {sk
   };
 }
 
-// ---------- P7 weekly themed set ----------
+// ---------- P7 daily themed set ----------
 
 /** Walls in a set. X takes up to 20 photos in one post; 12 keeps the carousel tight. */
 export const SET_SIZE = 12;
 export const SET_MIN = 8;
-/** Maximum detail checks for a set. Searches also count toward the shared request limit. */
-export const SET_DETAIL_BUDGET = 30;
-export const SET_DEADLINE_MS = 120_000;
+/**
+ * Details read per set. A subject theme (Batman) spreads its top walls over several styles; its comic art group held
+ * 13 of the top 40. Searches and details share the 45-a-minute limiter.
+ */
+export const SET_DETAIL_BUDGET = 40;
+export const SET_DEADLINE_MS = 150_000;
 
-/** Up to 12 SFW walls of one theme, like a curated thread. Themes rotate, so each comes back every 8 weeks. */
+/**
+ * Up to 12 SFW walls of one theme and one medium, like a curated thread. Themes rotate daily. When the day's theme has
+ * no style group of 8 left, the next theme takes the rest of the time.
+ */
 export async function setContent(day: string, exclude: Set<string>, config: {blockedTags: string[]},
   deps: WallhavenDeps & {candidates: typeof wallhavenThemeCandidates} =
   {...wallhavenDeps, candidates: wallhavenThemeCandidates}): Promise<SocialContent | null> {
-  const theme = rotate(THEMES, day);
-  const picked = await pickWallhaven((deadline) => deps.candidates(theme.query, deadline), exclude, {count: SET_SIZE,
-    min: SET_MIN,
-    budget: SET_DETAIL_BUDGET, deadlineMs: SET_DEADLINE_MS, sketchyPerPost: 0, blockedTags: config.blockedTags,
-    strict: true}, deps);
+  const end = Date.now() + (deps.deadlineMs ?? SET_DEADLINE_MS);
+  let theme: Theme = rotate(THEMES, day);
+  let picked: Picked[] | null = null;
+  for (const offset of [0, 1]) {
+    if (Date.now() >= end) break;
+    theme = rotate(THEMES, day, offset);
+    const query = theme.query;
+    const categories = theme.categories;
+    picked = await pickWallhaven((deadline) => deps.candidates(query, deadline, exclude, SET_DETAIL_BUDGET, categories),
+      exclude,
+      {count: SET_SIZE, min: SET_MIN, budget: SET_DETAIL_BUDGET, deadlineMs: end - Date.now(), sketchyPerPost: 0,
+        blockedTags: config.blockedTags, strict: true, oneStyle: true}, {...deps, deadlineMs: end - Date.now()});
+    if (picked) break;
+  }
   if (!picked) return null;
+  const style = picked[0].style ?? "";
+  const medium = style && !theme.name.includes(style) ? `, all ${style}` : "";
   return {
     pipeline: "set",
     source: {kind: "wallhaven", ids: picked.map((p) => p.wall.id), tags: picked.flatMap((p) => p.wall.tags)},
     media: picked.map((p, i) => ({jpeg: p.jpeg, sensitive: false,
       alt: `${theme.name} phone wallpaper ${i + 1} of ${picked.length}${p.wall.tags.length ?
         `: ${p.wall.tags.slice(0, 4).join(", ")}` : ""}.`})),
-    text: `${picked.length} ${theme.name} wallpapers\nwhich one is yours? 👇`,
+    text: `${picked.length} ${theme.name} wallpapers${medium}\nwhich one is yours? 👇`,
     replyText: NO_REPLY,
   };
 }
@@ -451,14 +564,16 @@ export const THEMED_STILL_BUDGET = 8;
 export const THEMED_STILL_DEADLINE_MS = 45_000;
 
 /**
- * The most favourited SFW wall of a theme not posted yet. Eve and night use different themes (offsets 3 and 5 of 8),
- * and both differ from the day's set theme (offset 0).
+ * The most favourited SFW wall of a theme not posted yet. Eve and night use different themes (offsets 3 and 5), and
+ * both differ from the day's set theme (offset 0, or 1 when that theme runs dry).
  */
 export async function themedStillContent(day: string, exclude: Set<string>, config: {blockedTags: string[]}, salt: number,
   deps: WallhavenDeps & {candidates: typeof wallhavenThemeCandidates} =
   {...wallhavenDeps, candidates: wallhavenThemeCandidates}): Promise<SocialContent | null> {
   const theme = rotate(THEMES, day, salt === 0 ? 3 : 5);
-  const picked = await pickWallhaven((deadline) => deps.candidates(theme.query, deadline), exclude, {count: 1, min: 1,
+  const picked = await pickWallhaven((deadline) => deps.candidates(theme.query, deadline, exclude, THEMED_STILL_BUDGET,
+    theme.categories),
+  exclude, {count: 1, min: 1,
     budget: THEMED_STILL_BUDGET, deadlineMs: THEMED_STILL_DEADLINE_MS, sketchyPerPost: 0, blockedTags: config.blockedTags,
     strict: true}, deps);
   if (!picked) return null;
@@ -475,7 +590,7 @@ export async function themedStillContent(day: string, exclude: Set<string>, conf
 
 export async function wallhavenDetails(id: string, deadline = Infinity): Promise<WallhavenWall> {
   const data = (await wallhavenJson(`/w/${encodeURIComponent(id)}`, deadline))?.data;
-  return {id, purity: str(data?.purity), path: str(data?.path),
+  return {id, purity: str(data?.purity), path: str(data?.path), category: str(data?.category),
     tags: Array.isArray(data?.tags) ? data.tags.map((t: any) => str(t?.name)).filter(Boolean) : []};
 }
 

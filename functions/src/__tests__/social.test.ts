@@ -7,7 +7,7 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db} from "../common";
-import {assertFits, DARK_STILL_TAILS, GRID_DETAIL_BUDGET, GRID_LINES, gridContent, gridVisionDecision, PANORAMA_LINES, panoramaPanels, rotate, SET_MIN, SET_SIZE, setContent, STILL_TAILS, stillCaption, stillContent, THEMES, themedStillContent, wallhavenCandidates, wallhavenDetails, wallhavenThemeCandidates, YOUTH_TAG, type WallhavenWall} from "../social/content";
+import {assertFits, DARK_STILL_TAILS, GRID_DETAIL_BUDGET, GRID_LINES, gridContent, gridVisionDecision, PANORAMA_LINES, panoramaPanels, rotate, SET_MIN, SET_SIZE, setContent, STILL_TAILS, stillCaption, stillContent, THEMES, themedStillContent, wallhavenCandidates, wallhavenDetails, wallhavenThemeCandidates, THEME_PAGES, artStyle, YOUTH_TAG, type WallhavenWall} from "../social/content";
 import {applyPress, contentHash, defaultBuilders, handleTelegramUpdate, JITTER_MS, loadSocialConfig, measurePosts, normalizePostText, prepareDay, prepareFor, publishDue, scheduledAt, socialPrepare, socialTelegramWebhook, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
 import {callbackData, parsePress, socialBotToken, socialOwnerChatId, telegramClient, type Telegram, webhookSecret} from "../social/telegram";
 import {R2Storage} from "../r2Storage";
@@ -711,12 +711,12 @@ test("Sunday night waits for the run after Wall of the Day is picked", async (t)
   const sunday = (hour: string) => new Date(`2026-11-15T${hour}:00:00+05:30`);
   // Saturday's 22:00 run prepares Sunday, but not the Wall of the Day post.
   await prepareDay(deps(null, new Date("2026-11-14T22:00:00+05:30")), builders);
-  assert.deepEqual(slots, ["am", "noon", "eve"]);
+  assert.deepEqual(slots, ["am", "noon", "set", "eve"]);
   assert.equal(store.get("socialPosts/2026-11-15_am")?.day, "2026-11-15");
   await prepareDay(deps(null, sunday("07")), builders);
-  assert.deepEqual(slots, ["am", "noon", "eve"]);
+  assert.deepEqual(slots, ["am", "noon", "set", "eve"]);
   await prepareDay(deps(null, sunday("10")), builders);
-  assert.deepEqual(slots, ["am", "noon", "eve", "night"]);
+  assert.deepEqual(slots, ["am", "noon", "set", "eve", "night"]);
   assert.equal(store.get("socialPosts/2026-11-15_night")?.slot, "night");
 });
 
@@ -743,7 +743,7 @@ test("next-day preparation reserves walls in unfinished posts across days", asyn
     return null;
   };
   await prepareDay(deps(null, now), {grid: build, panorama: build, still: build, set: build});
-  assert.equal(excluded.length, 4);
+  assert.equal(excluded.length, 5);
   for (const id of ["pending_approval", "approved", "posting", "uncertain"]) assert.ok(excluded[0].has(id), id);
 });
 
@@ -1109,7 +1109,7 @@ test("dry-run rebuild preserves uncertain history after owner drop or retry", as
 
 test("repeated dry runs never show a wall from any earlier run that day", async (t) => {
   const store = installSocialDb(t);
-  const pool = "ABCDEFGHIJKLMN".split("");
+  const pool = "ABCDEFGHIJKLMNOP".split("");
   // Like the toplist: always the first wall that is not excluded.
   const build = async (_day: string, exclude: Set<string>, slot: string) => {
     const id = pool.find((wall) => !exclude.has(wall));
@@ -1127,7 +1127,7 @@ test("repeated dry runs never show a wall from any earlier run that day", async 
     }
   }
   assert.equal(new Set(shown).size, shown.length, `a wall came back: ${shown.join(",")}`);
-  assert.equal(shown.length, 12);
+  assert.equal(shown.length, 15);
 });
 
 test("a failed dry-run history save cannot erase the previous preview's ids", async (t) => {
@@ -1597,7 +1597,7 @@ test("flag is a no-op for every non-pending state and for non-grids", async (t) 
 
 /** Wallhaven deps where every id downloads its own noise image, except ids listed in `same` share one picture. */
 async function themeDeps(candidates: Array<{id: string; purity: string}>, opts: {same?: string[];
-  flagHint?: string[]} = {}) {
+  flagHint?: string[]; tags?: Record<string, string[]>} = {}) {
   const shared = await sharp({create: {width: 90, height: 160, channels: 3, background: {r: 0, g: 0, b: 0},
     noise: {type: "gaussian", mean: 128, sigma: 60}}}).jpeg().toBuffer();
   const images = new Map<string, Buffer>();
@@ -1613,7 +1613,7 @@ async function themeDeps(candidates: Array<{id: string; purity: string}>, opts: 
       return candidates;
     },
     details: async (id: string): Promise<WallhavenWall> => ({id, purity: candidates.find((c) => c.id === id)?.purity ?? "sfw",
-      path: `https://w.wallhaven.cc/full/${id}.jpg`, tags: ["landscape"]}),
+      path: `https://w.wallhaven.cc/full/${id}.jpg`, tags: opts.tags?.[id] ?? ["landscape", "digital art"]}),
     download: async (url: string) => images.get(url.split("/").pop()!.replace(".jpg", ""))!,
     annotate: async (jpeg: Buffer) => ({safeSearchAnnotation: {adult: opts.flagHint?.some((id) => images.get(id) === jpeg) ?
       "POSSIBLE" : "VERY_UNLIKELY", racy: "VERY_UNLIKELY", violence: "VERY_UNLIKELY", medical: "VERY_UNLIKELY"}}) as never,
@@ -1632,7 +1632,7 @@ test("a set takes 12 SFW walls of one theme, without flag hints, sketchy walls o
   assert.ok(content.media.every((m) => m.sensitive === false && !m.suggestFlag));
   const theme = rotate(THEMES, "2026-11-14");
   assert.deepEqual(d.queries, [theme.query]);
-  assert.equal(content.text, `12 ${theme.name} wallpapers\nwhich one is yours? 👇`);
+  assert.equal(content.text, `12 ${theme.name} wallpapers, all digital art\nwhich one is yours? 👇`);
   assertFits(content);
 
   // Fewer than SET_MIN passing walls makes no set.
@@ -1640,29 +1640,48 @@ test("a set takes 12 SFW walls of one theme, without flag hints, sketchy walls o
   assert.equal(await setContent("2026-11-14", new Set(), {blockedTags: []}, few), null);
 });
 
-test("Saturdays rotate through every theme before one repeats", () => {
+test("consecutive Saturdays still reach every theme", () => {
   const saturdays = Array.from({length: THEMES.length}, (_, i) =>
     new Date(Date.parse("2026-11-14T00:00:00Z") + i * 7 * 86_400_000).toISOString().slice(0, 10));
   assert.equal(new Set(saturdays.map((day) => rotate(THEMES, day).name)).size, THEMES.length);
 });
 
-test("theme searches ask Wallhaven for SFW portrait walls by all-time favourites", async (t) => {
+test("theme searches read SFW favourites page by page until enough unposted walls", async (t) => {
   const requests: URL[] = [];
+  let full = true;
   t.mock.method(globalThis, "fetch", async (input: string | URL | Request) => {
-    requests.push(new URL(String(input)));
-    return {ok: true, json: async () => ({data: [{id: "a1", purity: "sfw"}, {id: "n1", purity: "nsfw"}]})} as Response;
+    const url = new URL(String(input));
+    requests.push(url);
+    const page = url.searchParams.get("page");
+    const count = full ? 24 : 2;
+    return {ok: true, json: async () => ({data: [...Array.from({length: count}, (_, i) => ({id: `p${page}w${i}`,
+      purity: "sfw"})), {id: `n${page}`, purity: "nsfw"}]})} as Response;
   });
-  assert.deepEqual(await wallhavenThemeCandidates("sunset -women"), [{id: "a1", purity: "sfw"}]);
+  // Page 1 is all posted, so page 2 is read; 48 walls leave 24 unposted, enough for the default want.
+  const posted = new Set(Array.from({length: 24}, (_, i) => `p1w${i}`));
+  const walls = await wallhavenThemeCandidates("sunset -women", Infinity, posted);
+  assert.equal(walls.length, 48);
+  assert.ok(walls.every((w) => w.purity === "sfw"));
   assert.deepEqual(requests.map((url) => [url.searchParams.get("q"), url.searchParams.get("purity"),
     url.searchParams.get("sorting"), url.searchParams.get("ratios"), url.searchParams.get("page")]),
   [["sunset -women", "100", "favorites", "portrait", "1"], ["sunset -women", "100", "favorites", "portrait", "2"]]);
+  // A short page is the end of the theme.
+  requests.length = 0;
+  full = false;
+  await wallhavenThemeCandidates("x", Infinity, new Set(), 100);
+  assert.equal(requests.length, 1);
+  // Never past THEME_PAGES, however much is posted.
+  requests.length = 0;
+  full = true;
+  await wallhavenThemeCandidates("x", Infinity, new Set(), 10_000);
+  assert.equal(requests.length, THEME_PAGES);
 });
 
 test("a themed still is the top unposted wall of a theme other than the set's", async () => {
   const d = await themeDeps([{id: "top", purity: "sfw"}, {id: "next", purity: "sfw"}], {flagHint: ["next"]});
   const day = "2026-11-14";
   const eve = await themedStillContent(day, new Set(), {blockedTags: []}, 0, d);
-  assert.deepEqual(eve?.source, {kind: "wallhaven", ids: ["top"], tags: ["landscape"]});
+  assert.deepEqual(eve?.source, {kind: "wallhaven", ids: ["top"], tags: ["landscape", "digital art"]});
   assert.ok(eve?.text.startsWith(rotate(THEMES, day, 3).name));
   assert.equal(await themedStillContent(day, new Set(["top"]), {blockedTags: []}, 1, d), null,
     "a wall with a flag hint never becomes a still");
@@ -1671,7 +1690,7 @@ test("a themed still is the top unposted wall of a theme other than the set's", 
   assert.deepEqual(d.queries, themes.slice(1));
 });
 
-test("the set slot runs on Saturdays only, and every Wallhaven post waits for approval", async (t) => {
+test("the set slot runs every day, and every Wallhaven post waits for approval", async (t) => {
   const store = installSocialDb(t);
   const slots: string[] = [];
   const build = (kind: "prism" | "wallhaven") => async (_day: string, _exclude: Set<string>, slot: string) => {
@@ -1681,9 +1700,9 @@ test("the set slot runs on Saturdays only, and every Wallhaven post waits for ap
   };
   const builders = {grid: build("wallhaven"), panorama: build("prism"), still: build("wallhaven"), set: build("wallhaven")};
   await prepareDay(deps(null, NOW), builders);
-  assert.deepEqual(slots, ["am", "noon", "eve", "night"], "Thursday has no set");
+  assert.deepEqual(slots, ["am", "noon", "set", "eve", "night"], "Thursday has a set too");
   slots.length = 0;
-  // Friday's 22:00 run prepares Saturday, set included.
+  // Friday's 22:00 run prepares Saturday.
   await prepareDay(deps(null, new Date("2026-11-13T22:00:00+05:30")), builders);
   assert.deepEqual(slots, ["am", "noon", "set", "eve", "night"]);
   assert.equal(store.get("socialPosts/2026-11-14_set")?.status, "pending_approval");
@@ -2006,4 +2025,76 @@ test("a late preview cannot mark replacement content as previewed", async (t) =>
   await publishDue({...deps(null, NOW), telegram});
   assert.equal(store.get(PATH)?.contentHash, replacement.contentHash);
   assert.equal(store.get(PATH)?.previewSentAt, undefined);
+});
+
+test("artStyle reads the medium from Wallhaven tags, specific styles first", () => {
+  assert.equal(artStyle({tags: ["Batman", "comic art", "artwork"]}), "comic art");
+  assert.equal(artStyle({tags: ["fantasy art", "minimalism", "Batman"]}), "minimal");
+  assert.equal(artStyle({tags: ["Batman", "CGI"]}), "3d");
+  assert.equal(artStyle({tags: ["Japan", "Photography"]}), "photography");
+  assert.equal(artStyle({tags: ["Batman"], category: "anime"}), "anime");
+  assert.equal(artStyle({tags: ["Batman", "DC Comics"]}), null, "a subject tag alone names no medium");
+});
+
+test("a subject set keeps the largest style group and never mixes media", async () => {
+  // Favourites order mixes styles; comic art is the largest group, then photos, then untagged walls.
+  const candidates = Array.from({length: 24}, (_, i) => ({id: `b${i}`, purity: "sfw"}));
+  const tags: Record<string, string[]> = {};
+  candidates.forEach(({id}, i) => {
+    tags[id] = ["Batman", ...(i % 6 === 0 ? ["photography"] : i % 3 === 1 ? ["comic art", "artwork"] : [])];
+  });
+  const d = await themeDeps(candidates, {tags});
+  const content = await setContent("2026-11-14", new Set(), {blockedTags: []}, d);
+  assert.ok(content);
+  assert.ok(content.source.ids.every((id) => tags[id].includes("comic art")), content.source.ids.join());
+  assert.equal(content.media.length, 8, "8 comic walls in the pool");
+  assert.match(content.text, /, all comic art\n/);
+
+  // No group reaches SET_MIN on the day's theme: the next theme in the rotation is tried.
+  const next = Array.from({length: 12}, (_, i) => ({id: `f${i}`, purity: "sfw"}));
+  const thin = await themeDeps([...candidates, ...next], {tags: Object.fromEntries(candidates.map(({id}, i) =>
+    [id, [i < 4 ? "comic art" : i < 8 ? "photography" : "Batman"]]))});
+  const queries: string[] = [];
+  const fallback = await setContent("2026-11-14", new Set(), {blockedTags: []}, {...thin,
+    candidates: async (query: string) => {
+      queries.push(query);
+      return query === rotate(THEMES, "2026-11-14").query ? candidates : next;
+    }});
+  assert.deepEqual(queries, [rotate(THEMES, "2026-11-14").query, rotate(THEMES, "2026-11-14", 1).query]);
+  assert.equal(fallback?.media.length, 12);
+  assert.ok(fallback?.text.startsWith(`12 ${rotate(THEMES, "2026-11-14", 1).name} wallpapers`));
+});
+
+test("sets skip pin-up tags and search each theme in its own categories", async () => {
+  const candidates = Array.from({length: 16}, (_, i) => ({id: `s${i}`, purity: "sfw"}));
+  const d = await themeDeps(candidates, {tags: {s0: ["Spider-Man", "digital art", "Looking At Viewer"],
+    s1: ["Spider-Man", "digital art", "fantasy girl"]}});
+  const calls: string[] = [];
+  const subject = THEMES.findIndex((theme) => theme.categories === "100");
+  const day = new Date(Date.parse("2026-11-14T00:00:00Z") + (subject - rotate(THEMES.map((_, i) => i), "2026-11-14")) *
+    86_400_000).toISOString().slice(0, 10);
+  assert.equal(rotate(THEMES, day), THEMES[subject]);
+  const content = await setContent(day, new Set(), {blockedTags: []}, {...d,
+    candidates: async (query: string, _deadline?: number, _exclude?: Set<string>, _want?: number, categories?: string) => {
+      calls.push(`${query}|${categories}`);
+      return candidates;
+    }});
+  assert.deepEqual(calls, [`${THEMES[subject].query}|100`]);
+  assert.ok(content && !content.source.ids.includes("s0") && !content.source.ids.includes("s1"));
+  assert.ok(THEMES.some((theme) => theme.categories === "110"), "landscape themes keep anime-style skies");
+});
+
+test("a specific style beats a larger catch-all digital art group, and collage posters never join", async () => {
+  const candidates = Array.from({length: 24}, (_, i) => ({id: `c${i}`, purity: "sfw"}));
+  const tags: Record<string, string[]> = {};
+  // 14 generic digital art walls, then 9 comic walls and one 40-tag collage tagged comic art.
+  candidates.forEach(({id}, i) => {
+    tags[id] = i < 14 ? ["Batman", "digital art"] : ["Batman", "comic art"];
+  });
+  tags.c23 = ["comic art", ...Array.from({length: 40}, (_, i) => `franchise ${i}`)];
+  const content = await setContent("2026-11-14", new Set(), {blockedTags: []}, await themeDeps(candidates, {tags}));
+  assert.ok(content);
+  assert.ok(content.source.ids.every((id) => tags[id].includes("comic art")), content.source.ids.join());
+  assert.ok(!content.source.ids.includes("c23"), "a collage poster is not one subject");
+  assert.equal(content.media.length, 9);
 });
