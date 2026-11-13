@@ -33,6 +33,7 @@ Automatic retries never intentionally resend a possibly accepted create. X provi
 - A network error or 5xx on the create call can mean X made the post. The doc stays `posting`. After 10 minutes the next run reads the account's own posts and matches the text, exact uploaded media IDs, image count, and dispatch time. Timeline reads paginate. Link replies require matching text, parent, and dispatch time. With no match after 30 minutes, the doc becomes `uncertain` and the owner gets **Post again** and **Leave it** buttons.
 - A 429 puts the post back to `approved`.
 - One new main post per run, so a late run never sends a burst. Replies and reconciliation still run. Unfinished queue entries are scanned regardless of day.
+- Images upload concurrently, with media IDs kept in carousel order. Previews and media preparation share a 210-second publish budget, leaving time for the create call and queue writes. A media timeout returns the post to `approved` without dispatch, so the next run can retry safely.
 - Uncertain buttons bind to the attempt and distinguish main posts from replies. Old approval buttons cannot resolve uncertainty. Failed uncertain alerts retry on later passes.
 
 A post with a non-empty `replyText` also gets a reply, with the same rules on `replyStatus`. The pipelines set it empty, so no reply is sent.
@@ -45,14 +46,14 @@ A post with a non-empty `replyText` also gets a reply, with the same rules on `r
 | `panorama` | Until `autoApprove.panorama` is `true` |
 | Studio and Wall of the Day stills | Not needed unless `autoApprove.still` is `false` |
 
-An approval binds to `contentHash` (image hashes, text, link reply, alt text, and sensitive flags). The publisher recomputes it and requires a matching owner approval for every grid. Only presses from the owner in the owner's chat count. Telegram calls `socialTelegramWebhook` with a secret header derived from the bot token; any other request gets 403. `socialPrepare` registers the webhook on every run. Failed approval previews retry during publish passes until delivered or expired. No decision by 2 hours after the jittered `scheduledAt`: skipped.
+An approval binds to `contentHash` (image hashes, text, link reply, alt text, and sensitive flags). The publisher recomputes it and requires a matching owner approval for every grid and every Wallhaven source, including old queued posts without `approval.required`. Only presses from the owner in the owner's chat count. Telegram calls `socialTelegramWebhook` with a secret header derived from the bot token; any other request gets 403. `socialPrepare` registers the webhook on every run. Failed approval previews retry during publish passes until delivered or expired. No decision by 2 hours after the jittered `scheduledAt`: skipped.
 
 The webhook accepts only POST requests and compares the secret in constant time. An empty bot token fails closed. Authenticated updates return 200 even if processing fails, so Telegram does not repeat a failed press. The owner can press an unresolved button again. Telegram feedback calls each time out after 5 seconds, within the function's 30-second limit. Registration failures do not stop preparation.
 
 ## Grid checks
 
 - Wallhaven `purity=110` (SFW and sketchy, never NSFW), `categories=111`, toplist 3 days then 1 week, portrait, at least 1080 x 1920. Search and detail responses must have matching SFW or sketchy purity.
-- Four searches (two pages per range) and at most 30 details use at most 34 API requests per grid run. This is below Wallhaven's 45/minute limit for one run, not a shared limit across overlapping runs.
+- Four searches (two pages per range) and at most 30 details use at most 34 API requests per grid run. A process-wide limiter allows at most 45 search and detail requests per rolling minute across all slots. Separate function instances do not share this limiter.
 - At most `sketchyPerPost` sketchy walls (default 2).
 - Youth-coded tags reject, including teenage, schoolboy, student, minor, and young-child variants. `blockedTags` and `blockedIds` reject. Grid source tags are retained so current blocklists can be checked again before posting.
 - Vision SafeSearch: `adult` VERY_LIKELY rejects. `violence` or `medical` LIKELY or higher rejects. Any UNKNOWN or missing rating rejects.
@@ -67,7 +68,8 @@ The webhook accepts only POST requests and compares the secret in constant time.
 - Search: `purity=100` (SFW only), `categories=110`, `sorting=favorites` (all time), portrait, at least 1080 x 1920, 2 pages.
 - The set uses the day's theme. Saturdays step through all 8 themes before one repeats. The eve and night stills use 2 other themes of the same rotation.
 - Same checks as the grid, but stricter: the detail purity must be SFW, and a wall with any Vision flag hint is dropped, so no set or still needs the flag. A set also drops near-duplicate images (difference hash), because Wallhaven holds re-uploads under new ids.
-- Budgets: a set checks at most 30 walls in 2 minutes, a still at most 8 in 45 seconds.
+- Budgets: a grid checks at most 30 walls in 3 minutes, a set at most 30 in 2 minutes, and a still at most 8 in 45 seconds. These deadlines include searches and rate-limit waits.
+- Wallhaven still captions name the theme without claiming that the image is available in Prism.
 - X takes up to 20 images in one post (its request check refuses 21). Telegram albums take 10, so a set preview arrives as 2 albums.
 
 ## Setup
@@ -103,5 +105,6 @@ Lock screen setup (P3), creator spotlight (P4), video (P6), weekly report. See t
 
 - Each night at 22:00 IST, approval previews for the next day arrive in Telegram (all posts in dry run), so the owner can approve them the night before. A run from 21:00 IST prepares tomorrow. The 07:00 and 10:00 runs build anything still missing for today.
 - Sunday night is built by Sunday's 10:00 IST run, after Wall of the Day is picked at 09:00 IST. Saturday's 22:00 run leaves it out.
+- Preparation has a 480-second budget for builds, storage uploads, and previews. Unfinished slots remain missing for catch-up runs. A late preview cannot mark replacement content as delivered.
 - An owner **Post again** gives the post a fresh posting window, so the old slot's 2-hour expiry does not skip it.
 - The sensitive metadata payload remains a launch blocker until phase 0 validates that X applies the warning. Offline tests prove fail-closed handling of metadata errors, not that X honors the payload.

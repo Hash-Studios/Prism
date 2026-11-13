@@ -70,6 +70,14 @@ export function stillCaption(title: string, day: string, salt: number, dark: boo
   return captionWithTitle(title, "", tail ? `\n${tail}` : "");
 }
 
+/** Still tails that make no Prism claim, for Wallhaven walls that are not Prism uploads. */
+const NEUTRAL_STILL_TAILS = STILL_TAILS.filter((tail) => !tail.includes("prism"));
+/** "sunsets" over a tail line, like a Studio still. */
+export function themedStillCaption(theme: string, day: string, salt: number): string {
+  const tail = rotate(NEUTRAL_STILL_TAILS, day, salt);
+  return captionWithTitle(theme, "", tail ? `\n${tail}` : "");
+}
+
 /** Wall of the Day can be a creator wall with an unbounded legacy title. Keep the fixed caption lines intact. */
 function captionWithTitle(title: string, prefix: string, suffix: string): string {
   const lower = title.toLowerCase();
@@ -226,15 +234,35 @@ export function gridVisionDecision(safe: Record<string, unknown> | null | undefi
 
 const WALLHAVEN = "https://wallhaven.cc/api/v1";
 /**
- * Candidates checked per grid. At 15, a pool of mostly rejected sketchy walls left no grid at all. 30 details plus 4
- * searches stay under Wallhaven's 45 requests a minute for one run.
+ * Candidates checked per grid. At 15, a pool of mostly rejected sketchy walls left no grid at all.
+ * The shared limiter counts searches and details across all slots.
  */
 export const GRID_DETAIL_BUDGET = 30;
 /** Time to pick grid walls, so socialPrepare (540 s) keeps time to record the grid and build the other slots. */
 export const GRID_DEADLINE_MS = 180_000;
 
-async function wallhavenJson(path: string): Promise<any> {
-  const res = await fetch(`${WALLHAVEN}${path}`, {signal: AbortSignal.timeout(20_000),
+export function wallhavenLimiter(now = Date.now,
+  sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))): (deadline?: number) => Promise<void> {
+  const starts: number[] = [];
+  let queue = Promise.resolve();
+  return (deadline = Infinity) => {
+    const next = queue.then(async () => {
+      while (starts.length && now() - starts[0] >= 60_001) starts.shift();
+      if (starts.length >= 45) await sleep(Math.min(60_001 - (now() - starts[0]), Math.max(0, deadline - now())));
+      if (now() >= deadline) throw new Error("Wallhaven deadline exceeded.");
+      while (starts.length && now() - starts[0] >= 60_001) starts.shift();
+      starts.push(now());
+    });
+    queue = next.catch(() => undefined);
+    return next;
+  };
+}
+const waitForWallhaven = wallhavenLimiter();
+
+async function wallhavenJson(path: string, deadline = Infinity): Promise<any> {
+  await waitForWallhaven(deadline);
+  const timeout = Math.max(1, Math.min(20_000, Math.floor(deadline - Date.now())));
+  const res = await fetch(`${WALLHAVEN}${path}`, {signal: AbortSignal.timeout(timeout),
     headers: {"User-Agent": "PrismWallpapers/1.0"}});
   if (!res.ok) throw new Error(`Wallhaven ${path.split("?")[0]} failed: ${res.status}`);
   return res.json();
@@ -243,13 +271,13 @@ async function wallhavenJson(path: string): Promise<any> {
 export type WallhavenCandidate = {id: string; purity: string};
 
 /** Runs the searches in order and keeps each id once. A failed page 2 only narrows the pool; a failed page 1 throws. */
-async function wallhavenSearch(searches: Array<Record<string, string>>): Promise<WallhavenCandidate[]> {
+async function wallhavenSearch(searches: Array<Record<string, string>>, deadline: number): Promise<WallhavenCandidate[]> {
   const seen = new Set<string>();
   const out: WallhavenCandidate[] = [];
   for (const search of searches) {
     let data: unknown;
     try {
-      data = (await wallhavenJson(`/search?${new URLSearchParams(search)}`))?.data;
+      data = (await wallhavenJson(`/search?${new URLSearchParams(search)}`, deadline))?.data;
     } catch (err) {
       // Page 2 only widens the pool. Its failure (a 429, a timeout) keeps the page-1 walls already collected.
       if (search.page === "1") throw err;
@@ -267,11 +295,11 @@ async function wallhavenSearch(searches: Array<Record<string, string>>): Promise
 }
 
 /** Toplist of the last 3 days, then the last week. Portrait, phone-size, SFW + sketchy. Never NSFW. */
-export async function wallhavenCandidates(): Promise<WallhavenCandidate[]> {
+export async function wallhavenCandidates(deadline = Infinity): Promise<WallhavenCandidate[]> {
   // Two pages per range: page 1 alone is about 24 walls, mostly sketchy, so the same top walls would win every day.
   // Keep both original page-1 pools first so page 2 cannot exhaust the detail budget before the weekly fallback.
   return wallhavenSearch([["3d", "1"], ["1w", "1"], ["3d", "2"], ["1w", "2"]].map(([topRange, page]) => ({
-    categories: "111", purity: "110", sorting: "toplist", topRange, ratios: "portrait", atleast: "1080x1920", page})));
+    categories: "111", purity: "110", sorting: "toplist", topRange, ratios: "portrait", atleast: "1080x1920", page})), deadline);
 }
 
 /**
@@ -291,9 +319,9 @@ export const THEMES = [
 export type Theme = (typeof THEMES)[number];
 
 /** A theme's SFW walls, the most favourited of all time first: the community's best picks, not this week's. */
-export async function wallhavenThemeCandidates(query: string): Promise<WallhavenCandidate[]> {
+export async function wallhavenThemeCandidates(query: string, deadline = Infinity): Promise<WallhavenCandidate[]> {
   return wallhavenSearch(["1", "2"].map((page) => ({q: query, categories: "110", purity: "100", sorting: "favorites",
-    ratios: "portrait", atleast: "1080x1920", page})));
+    ratios: "portrait", atleast: "1080x1920", page})), deadline);
 }
 
 /** 64-bit difference hash as 64 "0"/"1" characters. Wallhaven holds re-uploads of one image under new ids. */
@@ -311,11 +339,11 @@ const bitsApart = (a: string, b: string) => [...a].filter((bit, i) => bit !== b[
 
 export interface WallhavenDeps {
   annotate: VisionAnnotate;
-  details: (id: string) => Promise<WallhavenWall>;
+  details: (id: string, deadline?: number) => Promise<WallhavenWall>;
   download: (url: string) => Promise<Buffer>;
   deadlineMs?: number;
 }
-const wallhavenDeps: WallhavenDeps = {annotate: annotateWithVision, details: (id) => wallhavenDetails(id),
+const wallhavenDeps: WallhavenDeps = {annotate: annotateWithVision, details: (id, deadline) => wallhavenDetails(id, deadline),
   download: (url) => downloadJpeg(url, 2400)};
 
 interface Picked {wall: WallhavenWall; jpeg: Buffer; sensitive: boolean}
@@ -324,7 +352,7 @@ interface Picked {wall: WallhavenWall; jpeg: Buffer; sensitive: boolean}
  * Checks candidates in order until `count` pass, the detail budget is spent, or the deadline passes. `strict` (sets and
  * stills) takes SFW walls with no flag hint only, and drops near-duplicates. Null when fewer than `min` pass.
  */
-async function pickWallhaven(candidates: WallhavenCandidate[], exclude: Set<string>,
+async function pickWallhaven(candidates: (deadline: number) => Promise<WallhavenCandidate[]>, exclude: Set<string>,
   opts: {count: number; min: number; budget: number; deadlineMs: number; sketchyPerPost: number; blockedTags: string[];
     strict: boolean}, deps: WallhavenDeps): Promise<Picked[] | null> {
   const picked: Picked[] = [];
@@ -335,7 +363,7 @@ async function pickWallhaven(candidates: WallhavenCandidate[], exclude: Set<stri
   const deadline = Date.now() + (deps.deadlineMs ?? opts.deadlineMs);
   // One candidate: null when it does not pass.
   const check = async (candidate: WallhavenCandidate) => {
-    const wall = await deps.details(candidate.id);
+    const wall = await deps.details(candidate.id, deadline);
     if (wall.purity !== candidate.purity || !(opts.strict ? ["sfw"] : ["sfw", "sketchy"]).includes(wall.purity)) return null;
     if (wall.tags.some((tag) => YOUTH_TAG.test(tag) || blocked.includes(tag.toLowerCase()))) return null;
     if (!/^https:\/\/w\.wallhaven\.cc\//.test(wall.path)) return null;
@@ -346,16 +374,21 @@ async function pickWallhaven(candidates: WallhavenCandidate[], exclude: Set<stri
     if (opts.strict && hashes.some((h) => bitsApart(h, hash) <= NEAR_DUPLICATE_BITS)) return null;
     return {wall, jpeg, sensitive: decision.sensitive, hash};
   };
-  for (const candidate of candidates) {
-    if (picked.length === opts.count || checked >= opts.budget || Date.now() >= deadline) break;
-    if (exclude.has(candidate.id) || (candidate.purity === "sketchy" && sketchy >= opts.sketchyPerPost)) continue;
-    checked++;
-    // The deadline also bounds a check in flight, so a slow download cannot use up the run.
+  const bounded = async <T>(work: Promise<T>): Promise<T | "timeout"> => {
     let timer: NodeJS.Timeout | undefined;
     const timedOut = new Promise<"timeout">((resolve) => {
       timer = setTimeout(() => resolve("timeout"), Math.max(0, deadline - Date.now()));
     });
-    const result = await Promise.race([check(candidate), timedOut]).finally(() => clearTimeout(timer));
+    return Promise.race([work, timedOut]).finally(() => clearTimeout(timer));
+  };
+  const pool = await bounded(candidates(deadline));
+  if (pool === "timeout") return null;
+  for (const candidate of pool) {
+    if (picked.length === opts.count || checked >= opts.budget || Date.now() >= deadline) break;
+    if (exclude.has(candidate.id) || (candidate.purity === "sketchy" && sketchy >= opts.sketchyPerPost)) continue;
+    checked++;
+    // The deadline also bounds a check in flight, so a slow download cannot use up the run.
+    const result = await bounded(check(candidate));
     if (result === "timeout") break;
     if (!result) continue;
     if (result.wall.purity === "sketchy") sketchy++;
@@ -368,7 +401,8 @@ async function pickWallhaven(candidates: WallhavenCandidate[], exclude: Set<stri
 export async function gridContent(day: string, exclude: Set<string>, config: {sketchyPerPost: number; blockedTags: string[]},
   deps: WallhavenDeps & {candidates: typeof wallhavenCandidates} = {...wallhavenDeps, candidates: wallhavenCandidates}):
   Promise<SocialContent | null> {
-  const picked = await pickWallhaven(await deps.candidates(), exclude, {count: 3, min: 3, budget: GRID_DETAIL_BUDGET,
+  const picked = await pickWallhaven((deadline) => deps.candidates(deadline), exclude, {count: 3, min: 3,
+    budget: GRID_DETAIL_BUDGET,
     deadlineMs: GRID_DEADLINE_MS, sketchyPerPost: config.sketchyPerPost, blockedTags: config.blockedTags, strict: false},
   deps);
   if (!picked) return null;
@@ -387,7 +421,7 @@ export async function gridContent(day: string, exclude: Set<string>, config: {sk
 /** Walls in a set. X takes up to 20 photos in one post; 12 keeps the carousel tight. */
 export const SET_SIZE = 12;
 export const SET_MIN = 8;
-/** 30 details plus 2 searches stay under Wallhaven's 45 requests a minute. */
+/** Maximum detail checks for a set. Searches also count toward the shared request limit. */
 export const SET_DETAIL_BUDGET = 30;
 export const SET_DEADLINE_MS = 120_000;
 
@@ -396,7 +430,8 @@ export async function setContent(day: string, exclude: Set<string>, config: {blo
   deps: WallhavenDeps & {candidates: typeof wallhavenThemeCandidates} =
   {...wallhavenDeps, candidates: wallhavenThemeCandidates}): Promise<SocialContent | null> {
   const theme = rotate(THEMES, day);
-  const picked = await pickWallhaven(await deps.candidates(theme.query), exclude, {count: SET_SIZE, min: SET_MIN,
+  const picked = await pickWallhaven((deadline) => deps.candidates(theme.query, deadline), exclude, {count: SET_SIZE,
+    min: SET_MIN,
     budget: SET_DETAIL_BUDGET, deadlineMs: SET_DEADLINE_MS, sketchyPerPost: 0, blockedTags: config.blockedTags,
     strict: true}, deps);
   if (!picked) return null;
@@ -423,7 +458,7 @@ export async function themedStillContent(day: string, exclude: Set<string>, conf
   deps: WallhavenDeps & {candidates: typeof wallhavenThemeCandidates} =
   {...wallhavenDeps, candidates: wallhavenThemeCandidates}): Promise<SocialContent | null> {
   const theme = rotate(THEMES, day, salt === 0 ? 3 : 5);
-  const picked = await pickWallhaven(await deps.candidates(theme.query), exclude, {count: 1, min: 1,
+  const picked = await pickWallhaven((deadline) => deps.candidates(theme.query, deadline), exclude, {count: 1, min: 1,
     budget: THEMED_STILL_BUDGET, deadlineMs: THEMED_STILL_DEADLINE_MS, sketchyPerPost: 0, blockedTags: config.blockedTags,
     strict: true}, deps);
   if (!picked) return null;
@@ -433,13 +468,13 @@ export async function themedStillContent(day: string, exclude: Set<string>, conf
     source: {kind: "wallhaven", ids: [wall.id], tags: wall.tags},
     media: [{jpeg, sensitive: false,
       alt: `${theme.name} phone wallpaper${wall.tags.length ? `: ${wall.tags.slice(0, 4).join(", ")}` : ""}.`}],
-    text: stillCaption(theme.name, day, salt, false),
+    text: themedStillCaption(theme.name, day, salt),
     replyText: NO_REPLY,
   };
 }
 
-export async function wallhavenDetails(id: string): Promise<WallhavenWall> {
-  const data = (await wallhavenJson(`/w/${encodeURIComponent(id)}`))?.data;
+export async function wallhavenDetails(id: string, deadline = Infinity): Promise<WallhavenWall> {
+  const data = (await wallhavenJson(`/w/${encodeURIComponent(id)}`, deadline))?.data;
   return {id, purity: str(data?.purity), path: str(data?.path),
     tags: Array.isArray(data?.tags) ? data.tags.map((t: any) => str(t?.name)).filter(Boolean) : []};
 }

@@ -342,7 +342,6 @@ test("publishDue returns a stale posting doc with no dispatch to approved", asyn
   assert.deepEqual(calls, []);
 });
 
-
 test("gridContent rejects youth variants before downloading", async () => {
   for (const tag of ["teenage", "teenagers", "minors", "students", "schoolboy", "schoolboys",
     "school-uniform", "young boys", "young girls"]) {
@@ -1709,7 +1708,7 @@ test("the still builder falls back to a Studio wall when Wallhaven fails", async
 test("Telegram splits a set into even albums with the caption on the first", async () => {
   const calls: Array<{method: string; form: FormData}> = [];
   const client = telegramClient("T", "42", async (url, init) => {
-    calls.push({method: String(url).split("/").pop()!, form: init?.body as FormData});
+    calls.push({method: String(url).split("/").pop() ?? "", form: init?.body as FormData});
     return new Response(JSON.stringify({ok: true, result: {}}));
   });
   const photos = Array.from({length: 11}, (_, i) => Buffer.from(`p${i}`));
@@ -1723,4 +1722,288 @@ test("Telegram splits a set into even albums with the caption on the first", asy
   await client.sendPhotos("one", [Buffer.from("x")]);
   assert.deepEqual(calls.map((c) => c.method), ["sendPhoto"]);
   assert.equal(calls[0].form.get("caption"), "one");
+});
+
+test("Wallhaven builder deadlines include candidate searches", async () => {
+  const d = await gridDeps([]);
+  const candidates = async () => new Promise<Array<{id: string; purity: string}>>(() => undefined);
+  const options = {...d, candidates, deadlineMs: 20};
+  const builds = [
+    () => gridContent("2026-11-14", new Set(), {sketchyPerPost: 2, blockedTags: []}, options),
+    () => setContent("2026-11-14", new Set(), {blockedTags: []}, options),
+    () => themedStillContent("2026-11-14", new Set(), {blockedTags: []}, 0, options),
+  ];
+  for (const build of builds) {
+    let timer: NodeJS.Timeout | undefined;
+    const result = await Promise.race([build(), new Promise<string>((resolve) => {
+      timer = setTimeout(() => resolve("deadline ignored"), 150);
+    })]).finally(() => clearTimeout(timer));
+    assert.equal(result, null);
+  }
+});
+
+test("Telegram preserves every photo and captions once for all supported carousel sizes", async () => {
+  for (let count = 0; count <= 20; count++) {
+    const calls: Array<{method: string; form: FormData}> = [];
+    const client = telegramClient("T", "42", async (url, init) => {
+      calls.push({method: String(url).split("/").pop() ?? "", form: init?.body as FormData});
+      return Response.json({ok: true, result: {}});
+    });
+    await client.sendPhotos("c".repeat(1100), Array.from({length: count}, (_, i) => Buffer.from(`photo${i}`)));
+    const received: string[] = [];
+    const captions: string[] = [];
+    for (const {method, form} of calls) {
+      assert.equal(form.get("chat_id"), "42");
+      if (method === "sendPhoto") {
+        assert.equal(count, 1);
+        received.push(await (form.get("photo") as Blob).text());
+        captions.push(String(form.get("caption")));
+      } else {
+        assert.equal(method, "sendMediaGroup");
+        const media: Array<{media: string; caption?: string}> = JSON.parse(String(form.get("media")));
+        assert.ok(media.length >= 2 && media.length <= 10);
+        for (const photo of media) {
+          received.push(await (form.get(photo.media.replace("attach://", "")) as Blob).text());
+          if (photo.caption) captions.push(photo.caption);
+        }
+      }
+    }
+    assert.deepEqual(received, Array.from({length: count}, (_, i) => `photo${i}`));
+    assert.deepEqual(captions, count ? ["c".repeat(1024)] : []);
+  }
+});
+
+test("a 12-image set uploads every image and reconciles only the complete carousel", async (t) => {
+  const base = postDoc({pipeline: "set", slot: "set", source: {kind: "wallhaven", ids: ["set-wall"]}, replyText: ""});
+  const media = Array.from({length: 12}, (_, i) => ({...(base.media as Doc[])[0], alt: `wall ${i + 1}`}));
+  const post = postDoc({...base, media, approval: {required: true}});
+  (post.approval as Doc).approvedHash = post.contentHash;
+  (post.approval as Doc).decision = "approve";
+  const store = installSocialDb(t, {[PATH]: post});
+  const ids = Array.from({length: 12}, (_, i) => `M${i}`);
+  let uploaded = 0;
+  let metadata = 0;
+  const own: XOwnPost[] = [];
+  const {x, creates} = fakeX({create: async () => {
+    throw new XError("unknown", 0, true);
+  }, own: () => own});
+  x.uploadImage = async () => ids[uploaded++];
+  x.setMediaMetadata = async (id, alt) => {
+    assert.equal(id, ids[metadata]);
+    assert.equal(alt, `wall ${++metadata}`);
+  };
+  await publishDue(deps(x, NOW));
+  assert.equal(uploaded, 12);
+  assert.equal(metadata, 12);
+  assert.deepEqual(creates[0].options.mediaIds, ids);
+  own.push({id: "wrong", text: TEXT, createdAt: NOW.toISOString(), mediaCount: 11, mediaIds: ids, replyTo: null});
+  await publishDue(deps(x, later(11)));
+  assert.equal(store.get(PATH)?.status, "posting");
+  own.push({id: "complete", text: TEXT, createdAt: NOW.toISOString(), mediaCount: 12, mediaIds: ids, replyTo: null});
+  await publishDue(deps(x, later(12)));
+  assert.equal(store.get(PATH)?.status, "posted");
+  assert.equal(store.get(PATH)?.tweetId, "complete");
+  assert.equal(creates.length, 1);
+});
+
+test("legacy Wallhaven stills and sets need a current owner approval even without required", async (t) => {
+  for (const pipeline of ["still", "set"]) {
+    for (const required of [undefined, false]) {
+      await t.test(`${pipeline} required=${required}`, async (t) => {
+        const post = postDoc({pipeline, source: {kind: "wallhaven", ids: ["W1"]}, replyText: "",
+          approval: required === undefined ? undefined : {required}});
+        const store = installSocialDb(t, {[PATH]: post});
+        const {x, calls} = fakeX();
+        const buttons: Array<Array<{action: string}>> = [];
+        const telegram: Telegram = {sendPhotos: async () => undefined,
+          sendButtons: async (_text, choices) => void buttons.push(choices), sendText: async () => undefined,
+          answer: async () => undefined, markDone: async () => undefined, setWebhook: async () => undefined};
+        await publishDue({...deps(x, NOW), telegram});
+        assert.equal(store.get(PATH)?.status, "pending_approval");
+        assert.deepEqual(calls, []);
+        await publishDue({...deps(x, NOW), telegram});
+        assert.deepEqual(buttons.at(-1)?.map((b) => b.action), ["approve", "skip"]);
+        const id = PATH.split("/")[1];
+        await applyPress({...press("approve", "ffffffffffff"), postId: id});
+        assert.equal(store.get(PATH)?.status, "pending_approval");
+        await applyPress({...press("approve", String(post.contentHash).slice(0, 12)), postId: id});
+        await publishDue(deps(x, NOW));
+        assert.equal(store.get(PATH)?.status, "posted");
+      });
+    }
+  }
+});
+
+test("set media uploads start together and retain carousel order", async (t) => {
+  const base = postDoc({pipeline: "set", replyText: ""});
+  const post = postDoc({...base, media: Array.from({length: 12}, (_, i) => ({...(base.media as Doc[])[0], alt: `wall${i}`}))});
+  const store = installSocialDb(t, {[PATH]: post});
+  const {x, creates} = fakeX();
+  let started = 0;
+  let release: () => void = () => undefined;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  x.uploadImage = async () => {
+    const id = `M${started++}`;
+    await gate;
+    return id;
+  };
+  const run = publishDue(deps(x, NOW));
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  const concurrent = started;
+  release();
+  await run;
+  assert.equal(concurrent, 12);
+  assert.deepEqual(creates[0].options.mediaIds, Array.from({length: 12}, (_, i) => `M${i}`));
+  assert.equal(store.get(PATH)?.status, "posted");
+});
+
+test("media preparation exceeding the publish budget never dispatches", async (t) => {
+  const store = installSocialDb(t, {[PATH]: postDoc()});
+  const start = Date.now();
+  let now = start;
+  t.mock.method(Date, "now", () => now);
+  const {x, creates} = fakeX();
+  x.uploadImage = async () => {
+    now += 211_000;
+    return "M1";
+  };
+  await publishDue(deps(x, NOW));
+  assert.equal(creates.length, 0);
+  assert.equal(store.get(PATH)?.status, "approved");
+  assert.equal(store.get(PATH)?.error, "media_failed");
+  assert.equal(store.get(PATH)?.dispatchedAt, undefined);
+});
+
+test("Wallhaven requests share a rolling limit and expired waits do not poison retries", async () => {
+  let now = 0;
+  const waits: number[] = [];
+  const {wallhavenLimiter} = await import("../social/content.js") as unknown as {wallhavenLimiter: (now: () => number,
+    sleep: (ms: number) => Promise<void>) => (deadline?: number) => Promise<void>};
+  const wait = wallhavenLimiter(() => now, async (ms) => {
+    waits.push(ms);
+    now += ms;
+  });
+  await Promise.all(Array.from({length: 45}, () => wait()));
+  assert.deepEqual(waits, []);
+  await assert.rejects(wait(1000), /deadline/);
+  assert.equal(now, 1000);
+  await wait();
+  assert.deepEqual(waits, [1000, 59001]);
+  assert.equal(now, 60001);
+  await Promise.all(Array.from({length: 44}, () => wait()));
+  assert.equal(waits.length, 2);
+  await wait();
+  assert.equal(now, 120002);
+});
+
+test("Wallhaven themed still captions never claim the image is in Prism", async () => {
+  const d = await themeDeps([{id: "wall", purity: "sfw"}]);
+  let promotionalDays = 0;
+  const tails = new Set<string>();
+  for (let i = 0; i < 14; i++) {
+    const day = `2026-11-${String(10 + i).padStart(2, "0")}`;
+    if (/prism/.test(stillCaption("theme", day, 0, false))) promotionalDays++;
+    const content = await themedStillContent(day, new Set(), {blockedTags: []}, 0, d);
+    assert.ok(content);
+    assert.ok(!/prism/i.test(content.text), content.text);
+    assert.ok(content.text.startsWith(rotate(THEMES, day, 3).name), content.text);
+    tails.add(content.text.split("\n")[1] ?? "");
+  }
+  assert.equal(promotionalDays, 2);
+  assert.ok(tails.size >= 5, "themed stills keep a rotating tail line");
+});
+
+test("prepare stops at its run budget and leaves timed-out slots retryable", async (t) => {
+  for (const slow of ["builder", "storage"]) {
+    await t.test(slow, async (t) => {
+      const store = installSocialDb(t);
+      let now = Date.now();
+      t.mock.method(Date, "now", () => now);
+      let builds = 0;
+      let timeout = true;
+      const build = async () => {
+        builds++;
+        if (timeout && slow === "builder") now += 480001;
+        return {pipeline: "still" as const, source: {kind: "prism" as const, ids: ["W1"]},
+          media: [{jpeg: BYTES, alt: "wall", sensitive: false}], text: "wall", replyText: ""};
+      };
+      const options = deps(null, NOW);
+      options.storage.put = async () => {
+        if (timeout && slow === "storage") now += 480001;
+        return true;
+      };
+      const builders = {grid: build, panorama: build, still: build, set: build};
+      assert.deepEqual(await prepareDay(options, builders), []);
+      assert.equal(builds, 1);
+      assert.equal(store.get(PATH), undefined);
+      timeout = false;
+      const made = await prepareDay(options, builders);
+      assert.ok(made.includes(PATH.split("/")[1]));
+      assert.ok(store.get(PATH));
+    });
+  }
+});
+
+test("missing set config defaults on while false disables Saturday preparation", async (t) => {
+  const store = installSocialDb(t, {"socialConfig/current": {enabled: true, dryRun: false,
+    slots: {am: false, noon: false, eve: false, night: false}}});
+  let cfg = await loadSocialConfig();
+  assert.equal(cfg.slots.set, true);
+  let builds = 0;
+  const build = async () => {
+    builds++;
+    return null;
+  };
+  const builders = {grid: build, panorama: build, still: build, set: build};
+  const saturday = new Date("2026-11-14T10:00:00+05:30");
+  await prepareDay(deps(null, saturday, cfg), builders);
+  assert.equal(builds, 1);
+  store.set("socialConfig/current", {enabled: true, slots: {am: false, noon: false, set: false, eve: false, night: false}});
+  cfg = await loadSocialConfig();
+  assert.equal(cfg.slots.set, false);
+  await prepareDay(deps(null, saturday, cfg), builders);
+  assert.equal(builds, 1);
+});
+
+test("Saturday sets retry failed and empty builds and dry-run rebuilds reserve prior picks", async (t) => {
+  const store = installSocialDb(t);
+  const cfg = config({slots: {am: false, noon: false, set: true, eve: false, night: false}});
+  const friday = new Date("2026-11-13T22:00:00+05:30");
+  const saturday = new Date("2026-11-14T10:00:00+05:30");
+  let attempts = 0;
+  const build = async (_day: string, exclude: Set<string>) => {
+    attempts++;
+    if (attempts === 1) throw new Error("offline");
+    if (attempts === 2) return null;
+    const id = attempts === 3 ? "first" : "next";
+    if (attempts === 4) assert.ok(exclude.has("first"));
+    return {pipeline: "set" as const, source: {kind: "wallhaven" as const, ids: [id]},
+      media: [{jpeg: BYTES, alt: "wall", sensitive: false}], text: "wall", replyText: ""};
+  };
+  const builders = {grid: build, panorama: build, still: build, set: build};
+  const path = "socialPosts/2026-11-14_set";
+  await prepareDay(deps(null, friday, cfg), builders);
+  assert.equal(store.get(path)?.error, "build_failed");
+  await prepareDay(deps(null, saturday, cfg), builders);
+  assert.equal(store.get(path)?.error, "no_content");
+  await prepareDay(deps(null, saturday, cfg), builders);
+  assert.equal(store.get(path)?.status, "pending_approval");
+  await prepareDay(deps(null, saturday, {...cfg, dryRun: true}), builders);
+  assert.deepEqual((store.get(path)?.source as Doc).ids, ["next"]);
+  await prepareDay(deps(null, saturday, cfg), builders);
+  assert.equal(attempts, 4);
+});
+
+test("a late preview cannot mark replacement content as previewed", async (t) => {
+  const post = postDoc({status: "pending_approval", approval: {required: true}});
+  const replacement = postDoc({status: "pending_approval", approval: {required: true}, text: "different wall"});
+  const store = installSocialDb(t, {[PATH]: post});
+  const telegram: Telegram = {sendPhotos: async () => void store.set(PATH, replacement),
+    sendButtons: async () => undefined, sendText: async () => undefined, answer: async () => undefined,
+    markDone: async () => undefined, setWebhook: async () => undefined};
+  await publishDue({...deps(null, NOW), telegram});
+  assert.equal(store.get(PATH)?.contentHash, replacement.contentHash);
+  assert.equal(store.get(PATH)?.previewSentAt, undefined);
 });
