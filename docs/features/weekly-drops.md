@@ -21,7 +21,7 @@ Client phase (`DropPhase`): `live`, then `lastCall` in the final 24 hours, then 
 
 ## Which walls a Drop gets
 
-A Drop has 4 to 10 walls. The walls must be from different series, so that one series cannot fill the Drop.
+A Drop has 4 to 10 walls. When more than one series has ready walls, the Drop takes walls from each of these series. One series fills the Drop only when no other series has ready walls.
 
 `planWeeklyDrop` runs on Monday at 00:30 UTC. It reads all ready reserves: `dropReserved: true`, `review: false`, `origin: studio`, `releaseAt` reached, and a verified proof for a live wall. Then it uses this rule:
 
