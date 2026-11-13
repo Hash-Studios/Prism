@@ -1,5 +1,13 @@
 ## Changelog
 
+### v3.29.0
+- Filter search by live walls, desktop sets and light and dark pairs. Discover has a Live walls row
+- The weekly Drop mixes walls from different series
+- Walls land in better categories
+- The free AI trial tries again when the image service fails for a moment
+- On Android, a link that opens Prism goes to the right page
+- Security and stability fixes
+
 ### v3.28.0
 - Add a Streak widget to your Android home screen. Prism widgets now follow your Material You colours
 - Bigger tap targets and a clearer reading order for screen readers and large text
