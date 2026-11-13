@@ -2209,3 +2209,14 @@ test("a rejected style group cannot poison duplicate hashes in the fallback grou
   assert.deepEqual(content.source.ids, walls.slice(9).map(({id}) => id));
   assert.match(content.text, /all digital art/);
 });
+
+test("one failing wall is skipped and keeps the walls already picked", async () => {
+  const candidates = Array.from({length: 5}, (_, i) => ({id: `g${i}`, purity: "sfw"}));
+  const d = await gridDeps(candidates);
+  const content = await gridContent("2026-11-12", new Set(), {sketchyPerPost: 2, blockedTags: []}, {...d,
+    details: async (id: string) => {
+      if (id === "g1") throw new Error("Wallhaven /w failed: 404");
+      return d.details(id);
+    }});
+  assert.deepEqual(content?.source.ids, ["g0", "g2", "g3"]);
+});

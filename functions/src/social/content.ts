@@ -488,8 +488,9 @@ async function pickWallhaven(candidates: (deadline: number) => Promise<Wallhaven
     if (picked.length === opts.count || checked >= opts.budget || Date.now() >= deadline) break;
     if (exclude.has(candidate.id) || (candidate.purity === "sketchy" && sketchy >= opts.sketchyPerPost)) continue;
     checked++;
-    // The deadline also bounds a check in flight, so a slow download cannot use up the run.
-    const result = await bounded(check(candidate));
+    // The deadline also bounds a check in flight, so a slow download cannot use up the run. One wall's failure (a 404,
+    // a failed download) skips that wall and keeps the walls already picked.
+    const result = await bounded(check(candidate).catch(() => null));
     if (result === "timeout") break;
     if (!result) continue;
     if (result.wall.purity === "sketchy") sketchy++;
