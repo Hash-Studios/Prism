@@ -19,6 +19,20 @@ A Drop is a small set of Studio walls that the user can buy with coins for one w
 
 Client phase (`DropPhase`): `live`, then `lastCall` in the final 24 hours, then `ended`.
 
+## Which walls a Drop gets
+
+A Drop has 4 to 10 walls. The walls must be from different series, so that one series cannot fill the Drop.
+
+`planWeeklyDrop` runs on Monday at 00:30 UTC. It reads all ready reserves: `dropReserved: true`, `review: false`, `origin: studio`, `releaseAt` reached, and a verified proof for a live wall. Then it uses this rule:
+
+- The planner takes the walls round-robin by `seriesId`. Each series gives its oldest wall. Then each series gives its second-oldest wall, and so on, until the Drop has 10 walls.
+- If only one series has ready walls, the Drop still gets them. A week with 4 or more ready walls always gets a Drop.
+- A reserve that the Drop does not use keeps `dropReserved: true`. It waits for the next Drop. In that Drop, it is the first wall of its series, so it cannot wait forever.
+
+Studio limits the reserves at the source. Studio reserves a wall only when its series has fewer than 3 walls that wait for a Drop (`STUDIO_DROP_SERIES_CAP`). See the Studio doc.
+
+Before the fix, Studio reserved the first wall that it published each day. After Dark always publishes first, so all Drops were dark.
+
 ## Pushes
 
 `sendDropPushes` runs every hour at minute 30 UTC. A table holds each push kind and the time it is due:
