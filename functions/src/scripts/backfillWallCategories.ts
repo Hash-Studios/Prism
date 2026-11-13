@@ -9,6 +9,7 @@ const BATCH_SIZE = 300;
 
 export type WallCategoryBackfillCounts = {
   scanned: number;
+  studio: number;
   noLabels: number;
   creatorPicked: number;
   changed: number;
@@ -20,10 +21,11 @@ export type WallCategoryBackfillCounts = {
   samples: string[];
 };
 
-export const USAGE = `Usage: node lib/scripts/backfillWallCategories.js [--apply]
+export const USAGE = `Usage: npm run recategorize:walls -- [--classified-only] [--apply]
 
 Recategorizes approved walls from their stored Vision labels with the current classifier rules.
-A wall keeps its category when a creator picked it, and a wall in Gaming or Pastel stays there.
+A wall keeps its category when Prism Studio made it, when a creator or an admin picked it, or when it has no labels.
+A wall in Gaming or Pastel stays there.
 The classifier owns a wall that it categorized or that has General.
 A dry run is the default. It reads approved walls and writes nothing. It calls no paid service.
 --classified-only leaves General walls that the classifier never set (labels saved, category never chosen).
@@ -33,9 +35,12 @@ Credentials come from Application Default Credentials, as in the other backfills
 /** The category change for a wall, or why there is none. */
 export function planCategoryChange(
   wall: admin.firestore.DocumentData,
-): {from: string; to: string} | "noLabels" | "creatorPicked" | null {
+): {from: string; to: string} | "studio" | "noLabels" | "creatorPicked" | null {
+  if (wall.origin === "studio") {
+    return "studio";
+  }
   const labels = wall.visionLabels;
-  if (!Array.isArray(labels) || labels.length === 0 || !labels.every((label) => typeof label === "string")) {
+  if (!Array.isArray(labels) || labels.length === 0 || !labels.every((label) => typeof label === "string" && label.trim().length > 0)) {
     return "noLabels";
   }
   const current = typeof wall.category === "string" ? wall.category.trim() : "";
@@ -63,7 +68,7 @@ export async function backfillWallCategories(
   options: {apply: boolean; classifiedOnly?: boolean},
   log: (line: string) => void = console.log,
 ): Promise<WallCategoryBackfillCounts> {
-  const counts: WallCategoryBackfillCounts = {scanned: 0, noLabels: 0, creatorPicked: 0, changed: 0, unclassified: 0, written: 0,
+  const counts: WallCategoryBackfillCounts = {scanned: 0, studio: 0, noLabels: 0, creatorPicked: 0, changed: 0, unclassified: 0, written: 0,
     failed: 0, moves: {}, samples: []};
   const writer = options.apply ? db.bulkWriter() : undefined;
   let last: admin.firestore.QueryDocumentSnapshot | undefined;
@@ -86,6 +91,10 @@ export async function backfillWallCategories(
       last = doc;
       const data = doc.data();
       const plan = planCategoryChange(data);
+      if (plan === "studio") {
+        counts.studio += 1;
+        continue;
+      }
       if (plan === "noLabels") {
         counts.noLabels += 1;
         continue;
@@ -128,11 +137,11 @@ export async function backfillWallCategories(
   }
 
   await writer?.close();
-  for (const [move, n] of Object.entries(counts.moves)) {
+  for (const [move, n] of Object.entries(counts.moves).sort((a, b) => b[1] - a[1]).slice(0, 20)) {
     log(`move ${move}: ${n}`);
   }
   log(`samples: ${counts.samples.join(" ")}`);
-  log(`done scanned=${counts.scanned} noLabels=${counts.noLabels} creatorPicked=${counts.creatorPicked} ` +
+  log(`done scanned=${counts.scanned} studio=${counts.studio} noLabels=${counts.noLabels} creatorPicked=${counts.creatorPicked} ` +
     `changed=${counts.changed} unclassified=${counts.unclassified} written=${counts.written} failed=${counts.failed} applied=${options.apply}`);
   if (options.apply && counts.failed > 0) {
     throw new Error(`${counts.failed} category writes failed`);

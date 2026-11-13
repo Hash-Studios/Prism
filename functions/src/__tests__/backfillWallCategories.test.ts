@@ -14,9 +14,10 @@ type Write = {ref: Ref; data: Doc; precondition: unknown};
 
 /** A fake bulkWriter that records each update and applies it to the fake store with its precondition. */
 function installBulkWriter(t: TestContext, options: {failWrites?: boolean; staleWrites?: boolean} = {}):
-  {writes: Write[]; creations: {count: number}} {
+  {writes: Write[]; creations: {count: number}; flushSizes: number[]} {
   const writes: Write[] = [];
   const creations = {count: 0};
+  const flushSizes: number[] = [];
   const pending: Array<Promise<unknown>> = [];
   t.mock.method(db, "bulkWriter", () => {
     creations.count += 1;
@@ -30,13 +31,14 @@ function installBulkWriter(t: TestContext, options: {failWrites?: boolean; stale
       },
       flush: async () => {
         await Promise.allSettled(pending);
+        flushSizes.push(writes.length);
       },
       close: async () => {
         await Promise.allSettled(pending);
       },
     };
   });
-  return {writes, creations};
+  return {writes, creations, flushSizes};
 }
 
 const SEED: Record<string, Doc> = {
@@ -77,7 +79,7 @@ test("the category backfill is a dry run by default and writes nothing", async (
   const logs: string[] = [];
   const counts = await backfillWallCategories(db, parseWallCategoryArgs([]), (line) => logs.push(line));
 
-  assert.deepEqual(counts, {scanned: 4, noLabels: 0, creatorPicked: 1, changed: 2, unclassified: 1, written: 0, failed: 0,
+  assert.deepEqual(counts, {scanned: 4, studio: 0, noLabels: 0, creatorPicked: 1, changed: 2, unclassified: 1, written: 0, failed: 0,
     moves: {"Anime -> Gaming": 1, "General -> Pastel": 1}, samples: ["a", "b"]});
   assert.equal(writes.length, 0);
   assert.equal(creations.count, 0, "dry run must not create a bulk writer");
@@ -88,7 +90,7 @@ test("the category backfill is a dry run by default and writes nothing", async (
     "move Anime -> Gaming: 1",
     "move General -> Pastel: 1",
     "samples: a b",
-    "done scanned=4 noLabels=0 creatorPicked=1 changed=2 unclassified=1 written=0 failed=0 applied=false",
+    "done scanned=4 studio=0 noLabels=0 creatorPicked=1 changed=2 unclassified=1 written=0 failed=0 applied=false",
   ]);
 });
 
@@ -145,7 +147,7 @@ test("the category backfill rejects after logging failed apply writes", async (t
   await assert.rejects(backfillWallCategories(db, parseWallCategoryArgs(["--apply"]), (line) => logs.push(line)),
     /2 category writes failed/);
   assert.equal(writes.length, 2);
-  assert.ok(logs.includes("done scanned=4 noLabels=0 creatorPicked=1 changed=2 unclassified=1 written=0 failed=2 applied=true"));
+  assert.ok(logs.includes("done scanned=4 studio=0 noLabels=0 creatorPicked=1 changed=2 unclassified=1 written=0 failed=2 applied=true"));
 });
 
 test("the category backfill does not overwrite walls changed since the scan", async (t) => {
@@ -170,7 +172,88 @@ test("--classified-only leaves General walls the classifier never set", async (t
   assert.deepEqual(writes.map((w) => w.ref.id), ["a"]);
 });
 
+test("planCategoryChange skips Studio walls, picked categories and walls with no labels", () => {
+  assert.equal(planCategoryChange({origin: "studio", category: "General", visionLabels: ["Sports car", "Sky"]}), "studio");
+  assert.equal(planCategoryChange({origin: "studio", aiCategorized: true, category: "Nature",
+    visionLabels: ["Sports car", "Sky"]}), "studio");
+  assert.equal(planCategoryChange({category: "Nature", visionLabels: ["Sports car", "Sky"]}), "creatorPicked");
+  assert.equal(planCategoryChange({aiCategorized: true, category: "Nature", visionLabels: []}), "noLabels");
+  assert.equal(planCategoryChange({aiCategorized: true, category: "Nature", visionLabels: [3]}), "noLabels");
+  assert.deepEqual(planCategoryChange({aiCategorized: true, category: "Nature", visionLabels: ["Sports car", "Sky"]}),
+    {from: "Nature", to: "Cars"});
+});
+
+test("a dry run over every skip case writes nothing and counts each skip", async (t) => {
+  const seed: Record<string, Doc> = {
+    "walls/car": {review: true, category: "Nature", aiCategorized: true, visionLabels: ["Sports car", "Sky"]},
+    "walls/picked": {review: true, category: "Nature", visionLabels: ["Sports car", "Sky"]},
+    "walls/studio": {review: true, category: "General", origin: "studio", visionLabels: ["Sports car", "Sky"]},
+    "walls/unlabelled": {review: true, category: "Nature", aiCategorized: true},
+    "walls/pending": {review: false, category: "Nature", aiCategorized: true, visionLabels: ["Sports car"]},
+  };
+  const store = installFakeDb(t, seed);
+  const {writes, creations} = installBulkWriter(t);
+  const before = JSON.stringify([...store.entries()]);
+  const counts = await backfillWallCategories(db, parseWallCategoryArgs([]), () => undefined);
+
+  assert.deepEqual(counts, {scanned: 4, studio: 1, noLabels: 1, creatorPicked: 1, changed: 1, unclassified: 0,
+    written: 0, failed: 0, moves: {"Nature -> Cars": 1}, samples: ["car"]});
+  assert.equal(writes.length, 0);
+  assert.equal(creations.count, 0);
+  assert.equal(JSON.stringify([...store.entries()]), before);
+});
+
+test("the summary lists the 20 most common moves, most common first", async (t) => {
+  const seed: Record<string, Doc> = {};
+  const labels = ["Sports car", "Video game", "Tower", "Coral", "Petal", "Galaxy", "Neon", "Darkness", "Geometric",
+    "CGI", "Plain", "Gradient", "Generated", "Robot", "Retro", "Desert", "Milky Way", "Pastel", "Anime", "Mountain",
+    "Anime"];
+  labels.forEach((label, i) => {
+    for (let n = 0; n <= i; n += 1) {
+      seed[`walls/${String(i).padStart(2, "0")}-${n}`] = i === 20 ?
+        {review: true, category: "Nature", aiCategorized: true, visionLabels: [label]} :
+        {review: true, category: "General", visionLabels: [label]};
+    }
+  });
+  installFakeDb(t, seed);
+  installBulkWriter(t);
+  const logs: string[] = [];
+  await backfillWallCategories(db, parseWallCategoryArgs([]), (line) => logs.push(line));
+
+  const moves = logs.filter((line) => line.startsWith("move "));
+  assert.equal(moves.length, 20);
+  assert.equal(moves[0], "move Nature -> Anime: 21");
+  assert.equal(moves[19], "move General -> Gaming: 2");
+});
+
 test("parseWallCategoryArgs reads --apply", () => {
   assert.equal(parseWallCategoryArgs(["--apply"]).apply, true);
   assert.equal(parseWallCategoryArgs([]).apply, false);
+});
+
+test("the category backfill skips empty and whitespace labels without changing categories", async (t) => {
+  const seed = Object.fromEntries([[""], ["   \t\n"], ["Mountain", ""]].map((visionLabels, i) =>
+    [`walls/${i}`, {review: true, category: "Nature", aiCategorized: true, visionLabels}]));
+  const store = installFakeDb(t, seed);
+  const {writes} = installBulkWriter(t);
+  const before = JSON.stringify([...store.entries()]);
+  const counts = await backfillWallCategories(db, {apply: true}, () => undefined);
+
+  assert.equal(counts.noLabels, 3);
+  assert.equal(counts.changed, 0);
+  assert.equal(writes.length, 0);
+  assert.equal(JSON.stringify([...store.entries()]), before);
+});
+
+test("the category backfill flushes each apply page before it queues the next page", async (t) => {
+  const seed = Object.fromEntries(Array.from({length: 301}, (_, i) => [`walls/${String(i).padStart(3, "0")}`,
+    {review: true, category: "General", visionLabels: ["PC game"]}]));
+  installFakeDb(t, seed);
+  const {writes, flushSizes} = installBulkWriter(t);
+  const counts = await backfillWallCategories(db, {apply: true}, () => undefined);
+
+  assert.equal(counts.scanned, 301);
+  assert.equal(counts.written, 301);
+  assert.equal(new Set(writes.map(({ref}) => ref.id)).size, 301);
+  assert.deepEqual(flushSizes, [300, 301]);
 });

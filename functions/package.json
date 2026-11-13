@@ -22,7 +22,7 @@
     "migrate:dedupe-wall-ids": "npm run build && node lib/scripts/dedupeWallIds.js",
     "migrate:wall-authors": "npm run build && node lib/scripts/backfillWallAuthors.js",
     "migrate:wall-spatial": "npm run build && node lib/scripts/backfillWallSpatial.js",
-    "migrate:wall-categories": "npm run build && node lib/scripts/backfillWallCategories.js",
+    "recategorize:walls": "npm run build && node lib/scripts/backfillWallCategories.js",
     "migrate:published-at": "npm run build && node lib/scripts/backfillPublishedAt.js",
     "measure:follow-graph":"npm run build && node lib/scripts/measureFollowGraph.js",
     "migrate:favourite-keys": "npm run build && node lib/scripts/qualifyFavouriteKeys.js",
