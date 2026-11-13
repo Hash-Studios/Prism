@@ -1,3 +1,4 @@
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/features/admin_review/biz/bloc/review_batch_bloc.dart';
@@ -16,6 +17,45 @@ Map<String, dynamic> _wall({String? origin, bool review = false, String? dropWee
   'dropWeek': ?dropWeek,
 };
 
+class _TransactionalFakeFirestoreClient extends FakeFirestoreClient {
+  _TransactionalFakeFirestoreClient({super.docs});
+
+  @override
+  Future<T> runTransaction<T>(
+    Future<T> Function(FirestoreTransaction transaction) action, {
+    required String sourceTag,
+    required String collection,
+    String? docId,
+  }) async {
+    final _TestTransaction transaction = _TestTransaction(this);
+    final T result = await action(transaction);
+    for (final ({String collection, String id, Map<String, dynamic> data}) write in transaction.writes) {
+      await updateDoc(write.collection, write.id, write.data, sourceTag: sourceTag);
+    }
+    return result;
+  }
+}
+
+class _TestTransaction implements FirestoreTransaction {
+  _TestTransaction(this.client);
+  final _TransactionalFakeFirestoreClient client;
+  final List<({String collection, String id, Map<String, dynamic> data})> writes = [];
+
+  @override
+  Future<Map<String, dynamic>?> getDoc(String collection, String id) async => client.docs[collection]?[id];
+
+  @override
+  void updateDoc(String collection, String id, Map<String, dynamic> data) =>
+      writes.add((collection: collection, id: id, data: Map<String, dynamic>.of(data)));
+
+  @override
+  void setDoc(String collection, String id, Map<String, dynamic> data, {bool merge = false}) =>
+      throw UnimplementedError();
+
+  @override
+  void deleteDoc(String collection, String id) => throw UnimplementedError();
+}
+
 void main() {
   group('canReserveForDrop', () {
     test('is true only for Studio walls that are not approved', () {
@@ -27,11 +67,11 @@ void main() {
   });
 
   group('review batch', () {
-    late FakeFirestoreClient client;
+    late _TransactionalFakeFirestoreClient client;
     late ReviewBatchBloc bloc;
 
     setUp(() {
-      client = FakeFirestoreClient(
+      client = _TransactionalFakeFirestoreClient(
         docs: <String, Map<String, Map<String, dynamic>>>{
           FirebaseCollections.walls: <String, Map<String, dynamic>>{
             'studio': _wall(origin: 'studio'),

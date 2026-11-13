@@ -1,3 +1,4 @@
+import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/features/admin_review/data/admin_moderation_repository.dart';
@@ -8,11 +9,11 @@ import '../../support/fake_firestore_client.dart';
 import 'fake_review_callables.dart';
 
 void main() {
-  late FakeFirestoreClient client;
+  late _TransactionalFirestoreClient client;
   late AdminModerationRepository repository;
 
   setUp(() {
-    client = FakeFirestoreClient();
+    client = _TransactionalFirestoreClient();
     repository = AdminModerationRepository.withCaller(client, FakeReviewCallables(client.docs).call);
   });
 
@@ -26,31 +27,52 @@ void main() {
 
   test('approving a wall due in 2 hours writes releaseApprovedAt and leaves review and createdAt alone', () async {
     final DateTime releaseAt = DateTime.now().add(const Duration(hours: 2));
+    final FirestoreDocument wall = pendingWall(releaseAt: releaseAt);
+    client.docs[FirebaseCollections.walls] = {'wall-1': wall.payload};
 
-    final bool scheduled = await repository.approveWall(pendingWall(releaseAt: releaseAt));
+    final bool scheduled = await repository.approveWall(wall);
 
     expect(scheduled, isTrue);
     final Map<String, dynamic> data = client.writes.single.data!;
     expect(data['releaseApprovedAt'], isA<FieldValue>());
     expect(data.containsKey('review'), isFalse);
     expect(data.containsKey('createdAt'), isFalse);
+    expect(data['dropReserved'], FieldValue.delete());
     expect(client.writes.single.collection, FirebaseCollections.walls);
   });
 
   test('approving a wall with no releaseAt writes review true and returns false', () async {
-    final bool scheduled = await repository.approveWall(pendingWall());
+    final FirestoreDocument wall = pendingWall();
+    client.docs[FirebaseCollections.walls] = {'wall-1': wall.payload};
+    final bool scheduled = await repository.approveWall(wall);
 
     expect(scheduled, isFalse);
     final Map<String, dynamic> data = client.writes.single.data!;
     expect(data['review'], isTrue);
     expect(data.containsKey('releaseApprovedAt'), isFalse);
     expect(data['createdAt'], isA<DateTime>());
+    expect(data['dropReserved'], FieldValue.delete());
+  });
+
+  test('approval uses the current release date, not a stale queue snapshot', () async {
+    final FirestoreDocument staleWall = pendingWall();
+    final DateTime releaseAt = DateTime.now().add(const Duration(hours: 2));
+    client.docs[FirebaseCollections.walls] = {
+      'wall-1': <String, dynamic>{...staleWall.payload, 'releaseAt': releaseAt},
+    };
+
+    final bool scheduled = await repository.approveWall(staleWall);
+
+    expect(scheduled, isTrue);
+    final Map<String, dynamic> data = client.writes.single.data!;
+    expect(data.containsKey('review'), isFalse);
+    expect(data['dropReserved'], FieldValue.delete());
   });
 
   test('approving a wall whose releaseAt is 1 hour in the past writes review true and returns false', () async {
-    final bool scheduled = await repository.approveWall(
-      pendingWall(releaseAt: DateTime.now().subtract(const Duration(hours: 1))),
-    );
+    final FirestoreDocument wall = pendingWall(releaseAt: DateTime.now().subtract(const Duration(hours: 1)));
+    client.docs[FirebaseCollections.walls] = {'wall-1': wall.payload};
+    final bool scheduled = await repository.approveWall(wall);
 
     expect(scheduled, isFalse);
     final Map<String, dynamic> data = client.writes.single.data!;
@@ -137,4 +159,36 @@ void main() {
       );
     });
   });
+}
+
+class _TransactionalFirestoreClient extends FakeFirestoreClient {
+  @override
+  Future<T> runTransaction<T>(
+    Future<T> Function(FirestoreTransaction transaction) action, {
+    required String sourceTag,
+    required String collection,
+    String? docId,
+  }) {
+    return action(_Transaction(this));
+  }
+}
+
+class _Transaction implements FirestoreTransaction {
+  _Transaction(this.client);
+  final _TransactionalFirestoreClient client;
+
+  @override
+  Future<Map<String, dynamic>?> getDoc(String collection, String id) async => client.docs[collection]?[id];
+
+  @override
+  void updateDoc(String collection, String id, Map<String, dynamic> data) {
+    client.writes.add((op: 'update', collection: collection, id: id, data: data));
+  }
+
+  @override
+  void setDoc(String collection, String id, Map<String, dynamic> data, {bool merge = false}) =>
+      throw UnimplementedError();
+
+  @override
+  void deleteDoc(String collection, String id) => throw UnimplementedError();
 }

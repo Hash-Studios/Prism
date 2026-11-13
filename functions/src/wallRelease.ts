@@ -82,7 +82,8 @@ export async function publishCreatorWalls(email: string, refs: admin.firestore.D
     const snaps = await Promise.all(refs.map((ref) => tx.get(ref)));
     const due = snaps.filter((snap) => {
       const wall = snap.data();
-      return wall && str(wall.email) === email && isScheduledWall(wall) && (millis(wall.releaseAt) ?? Infinity) <= nowMs &&
+      return wall && str(wall.email) === email && wall.dropReserved !== true && wall.dropWeek == null && isScheduledWall(wall) &&
+        (millis(wall.releaseAt) ?? Infinity) <= nowMs &&
         (wall.kind !== "live" || wall.live?.verified === true);
     });
     const releasing = new Set(due.map((snap) => snap.id));

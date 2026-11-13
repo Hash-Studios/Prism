@@ -61,11 +61,37 @@ class _ControlledUpdateClient extends _BatchFirestoreClient {
   final List<String> started = <String>[];
 
   @override
+  Future<T> runTransaction<T>(
+    Future<T> Function(FirestoreTransaction transaction) action, {
+    required String sourceTag,
+    required String collection,
+    String? docId,
+  }) async {
+    final _ControlledTransaction transaction = _ControlledTransaction(this);
+    final T result = await action(transaction);
+    for (final ({String collection, String id, Map<String, dynamic> data}) write in transaction.writes) {
+      await updateDoc(write.collection, write.id, write.data, sourceTag: sourceTag);
+    }
+    return result;
+  }
+
+  @override
   Future<void> updateDoc(String collection, String id, Map<String, dynamic> data, {required String sourceTag}) async {
     final int call = started.length;
     started.add(id);
     await beforeWrite?.call(call);
     return super.updateDoc(collection, id, data, sourceTag: sourceTag);
+  }
+}
+
+class _ControlledTransaction extends _DocsBatch {
+  _ControlledTransaction(super.client);
+
+  final List<({String collection, String id, Map<String, dynamic> data})> writes = [];
+
+  @override
+  void updateDoc(String collection, String id, Map<String, dynamic> data) {
+    writes.add((collection: collection, id: id, data: Map<String, dynamic>.of(data)));
   }
 }
 
