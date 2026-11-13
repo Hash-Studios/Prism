@@ -139,7 +139,12 @@ The Streak widget shows the streak of the signed-in user.
 - The widget shows a wall that the Firestore rules let anyone read. A wall that is not reviewed does not show.
 - If the `walls` read rule is changed to signed-in only, this widget and the iOS widget ([ios-widgets.md](ios-widgets.md)) both stop showing new walls.
 - The Streak widget shows the last snapshot the app wrote on this phone. A claim on another device shows after Prism opens on this phone.
-- Device proof (Streak widget and colours): not done yet. On 2026-11-11 no Simlock Android device was available. The unit tests and the resource tests cover the rule, the strings and the colour files. The look on a real launcher, in light, dark and Material You, is not checked.
+- Emulator proof of the Streak widget (2026-11-13, API 36, Pixel launcher, signed in):
+  - The widget was added from the widget picker. It shows "Kept today" after the daily claim.
+  - With the date set to the next day, it shows "Keep your streak" and an empty ring.
+  - Light and dark mode change the surface. A new wallpaper changes the ring colour (Material You).
+  - A tap opens Rewards. This is true when Prism runs and after the system stops Prism in the background. Before the fix in `lib/core/router/launch_link_buffer.dart`, a tap after a background stop opened Home. See "Links during a restart" in [deep-links.md](deep-links.md).
+  - The signed-out state is not checked on a device.
 
 ## How to test
 

@@ -150,6 +150,10 @@ Analytics record receipt, resolution, and the navigation result separately throu
 
 A network failure during short-code resolution can defer the request until connectivity returns or the app resumes online. The scheduler retries each queued code once. A retry keeps the original entry source and does not record another receipt. Deferred attempts do not record a final navigation result until retry or cancellation. Cancellation discards queued requests and prevents late lookups from navigating.
 
+### Links during a restart (Android)
+
+Android can stop Prism in the background and keep its task in Recents. A later widget, tile, or link tap then creates the old Activity again from its first intent. Android sends the new link with `onNewIntent` while Dart still starts, before the router listens. `LaunchLinkBuffer` (`lib/core/router/launch_link_buffer.dart`) keeps these links from the moment the binding is ready. `_MyAppState.initState` gives them to the dispatcher. A kept link replaces the old first intent of the task, so the old link does not open again. The process launch link opens one time only, also after a logout rebuilds the router.
+
 ## Shares from other apps
 
 Native code turns a share into a `prism://share-in` link. Android uses `ShareTargetActivity`. iOS uses the Share Extension. The dispatcher handles this link like any other link. It waits for startup, then records `deep_link_received` with `target_type` `shared_item`. For the share flow, see [share-to-prism.md](share-to-prism.md).

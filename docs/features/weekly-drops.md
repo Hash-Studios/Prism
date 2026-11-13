@@ -30,6 +30,10 @@ Client phase (`DropPhase`): `live`, then `lastCall` in the final 24 hours, then 
 
 Each push goes to the FCM topic `drops`, with an inbox doc (`modifier: all`, fixed doc id) and the route `drops`. The client subscribes to `drops` by default and has a "Weekly Drops" switch in notification settings. Android channel: `drops`.
 
+## Device proof
+
+Android emulator (2026-11-13, signed in): `prism://drops` opened the live Drop with its name, dates, and walls in full with a lock and price. One wall was unlocked for 30 coins and set on the home screen.
+
 ## Preview
 
 Tap a locked wall to open a full-screen pager over the Drop. It shows the wall in a phone frame with a lock-screen clock, a foil watermark and the unlock buttons. No save, set, share or download action exists on this page.
