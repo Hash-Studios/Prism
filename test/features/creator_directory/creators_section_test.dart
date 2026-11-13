@@ -30,7 +30,9 @@ class _MockFollow extends Mock implements FollowUserUseCase {}
 
 class _MockUnfollow extends Mock implements UnfollowUserUseCase {}
 
-class _MockSummaries extends Mock implements FetchUserSummariesPageUseCase {}
+class _MockRelationPage extends Mock implements FetchRelationPageUseCase {}
+
+class _MockRelationIds extends Mock implements FetchRelationIdsUseCase {}
 
 class _MockSearch extends Mock implements SearchUsersByUsernameUseCase {}
 
@@ -101,7 +103,8 @@ void main() {
       walls,
       follow,
       _MockUnfollow(),
-      _MockSummaries(),
+      _MockRelationPage(),
+      _MockRelationIds(),
       _MockSearch(),
     );
     const MethodChannel toastChannel = MethodChannel('PonnamKarthik/fluttertoast');

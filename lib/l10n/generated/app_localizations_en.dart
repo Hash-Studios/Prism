@@ -551,6 +551,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get accountRelationLoadMoreFailed => 'Could not load more. Check your connection.';
+
+  @override
+  String get accountRelationLoadingMore => 'Loading more people';
+
+  @override
   String get accountCouldNotLoadFollowers => 'Could not load followers';
 
   @override

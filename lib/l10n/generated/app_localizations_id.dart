@@ -543,6 +543,12 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get accountRelationLoadMoreFailed => 'Tidak dapat memuat lebih banyak. Periksa koneksi Anda.';
+
+  @override
+  String get accountRelationLoadingMore => 'Memuat lebih banyak orang';
+
+  @override
   String get accountCouldNotLoadFollowers => 'Pengikut tidak dapat dimuat';
 
   @override

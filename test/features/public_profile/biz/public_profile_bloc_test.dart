@@ -13,6 +13,7 @@ import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dar
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
+import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/domain/usecases/public_profile_usecases.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/foundation.dart';
@@ -31,7 +32,9 @@ class _MockFollow extends Mock implements FollowUserUseCase {}
 
 class _MockUnfollow extends Mock implements UnfollowUserUseCase {}
 
-class _MockSummaries extends Mock implements FetchUserSummariesPageUseCase {}
+class _MockRelationPage extends Mock implements FetchRelationPageUseCase {}
+
+class _MockRelationIds extends Mock implements FetchRelationIdsUseCase {}
 
 class _MockSearch extends Mock implements SearchUsersByUsernameUseCase {}
 
@@ -76,7 +79,6 @@ UserSummaryEntity _user(String email, {String? id, bool followed = false}) => Us
   isFollowedByCurrentUser: followed,
 );
 
-typedef _Summaries = ({List<UserSummaryEntity> items, bool hasMore});
 typedef _Walls = ({List<PublicProfileWallEntity> items, bool hasMore});
 
 void main() {
@@ -91,7 +93,8 @@ void main() {
     );
     registerFallbackValue(profileUser());
     registerFallbackValue(const FetchPublicProfileWallsParams(userId: '', refresh: false));
-    registerFallbackValue(const FetchUserSummariesPageParams(userIds: <String>[], page: 0));
+    registerFallbackValue(const FetchRelationPageParams(profileUid: '', kind: UserRelationKind.followers));
+    registerFallbackValue(const FetchRelationIdsParams(profileUid: '', kind: UserRelationKind.followers));
     registerFallbackValue(const SearchUsersByUsernameParams(query: '', scopeUserIds: <String>[]));
     registerFallbackValue(
       const UnfollowUserParams(currentUserId: '', currentUserEmail: '', targetUserId: '', targetUserEmail: ''),
@@ -111,7 +114,8 @@ void main() {
   late _MockWalls walls;
   late _MockFollow follow;
   late _MockUnfollow unfollow;
-  late _MockSummaries summaries;
+  late _MockRelationPage relationPage;
+  late _MockRelationIds relationIds;
   late _MockSearch search;
 
   setUp(() {
@@ -120,7 +124,8 @@ void main() {
     walls = _MockWalls();
     follow = _MockFollow();
     unfollow = _MockUnfollow();
-    summaries = _MockSummaries();
+    relationPage = _MockRelationPage();
+    relationIds = _MockRelationIds();
     search = _MockSearch();
     app_state.prismUser = profileUser(id: 'me')..email = 'me@x.com';
     getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
@@ -137,7 +142,7 @@ void main() {
     app_state.prismUser = profileUser(id: '', loggedIn: false);
   });
 
-  PublicProfileBloc buildBloc() => PublicProfileBloc(walls, follow, unfollow, summaries, search);
+  PublicProfileBloc buildBloc() => PublicProfileBloc(walls, follow, unfollow, relationPage, relationIds, search);
 
   final loading = PublicProfileState.initial().copyWith(profileId: 'a@x.com', status: LoadStatus.loading);
 
@@ -398,123 +403,216 @@ void main() {
   );
 
   group('relation lists', () {
-    blocTest<PublicProfileBloc, PublicProfileState>(
-      'the first page replaces the list and a later page merges without repeats',
-      build: () {
-        final pages = <_Summaries>[
-          (items: [_user('a@x.com'), _user('b@x.com')], hasMore: true),
-          (
-            items: [
-              _user('B@x.com', id: 'b@x.com'),
-              _user('c@x.com'),
-            ],
-            hasMore: false,
+    test('pages through 75 edges in 3 pages with no duplicates and stops at the end', () async {
+      final List<String> ids = <String>[for (int i = 0; i < 75; i++) 'u${i.toString().padLeft(2, '0')}'];
+      List<UserSummaryEntity> users(int from, int to) => <UserSummaryEntity>[
+        for (final String id in ids.sublist(from, to)) _user('$id@x.com', id: id),
+      ];
+      when(() => relationPage(any())).thenAnswer((invocation) async {
+        final FetchRelationPageParams params = invocation.positionalArguments.first as FetchRelationPageParams;
+        return switch (params.cursor?.edgeId) {
+          null => Result.success<RelationPage>(
+            RelationPage(
+              users: users(0, 30),
+              next: const RelationCursor(createdAt: 1, edgeId: 'u29'),
+            ),
           ),
-        ];
-        when(() => summaries(any())).thenAnswer((_) async => Result.success<_Summaries>(pages.removeAt(0)));
-        return buildBloc();
-      },
-      act: (bloc) async {
-        bloc.add(
-          const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, userIds: ['x'], page: 0),
-        );
-        await pumpEventQueue();
-        bloc.add(
-          const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, userIds: ['x'], page: 1),
-        );
-      },
-      verify: (bloc) {
-        expect(bloc.state.followers.summaries.map((u) => u.email), <String>['a@x.com', 'B@x.com', 'c@x.com']);
-        expect(bloc.state.followers.page, 1);
-        expect(bloc.state.followers.hasMore, isFalse);
-        expect(bloc.state.followers.isFetching, isFalse);
-        expect(bloc.state.following.summaries, isEmpty);
-      },
-    );
-
-    blocTest<PublicProfileBloc, PublicProfileState>(
-      'a page after the last one is not requested',
-      build: buildBloc,
-      act: (bloc) => bloc.add(
-        const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.following, userIds: ['x'], page: 1),
-      ),
-      expect: () => <PublicProfileState>[],
-      verify: (_) => verifyNever(() => summaries(any())),
-    );
-
-    test('a page request with appended ids fetches past hasMore false', () async {
-      // Pages slice the carried ids the way the repository does (20 per page).
-      when(() => summaries(any())).thenAnswer((invocation) async {
-        final FetchUserSummariesPageParams params =
-            invocation.positionalArguments.first as FetchUserSummariesPageParams;
-        final int start = params.page * 20;
-        final int end = start + 20 < params.userIds.length ? start + 20 : params.userIds.length;
-        return Result.success<_Summaries>((
-          items: <UserSummaryEntity>[
-            for (final String id in params.userIds.sublist(start, end)) _user('$id@x.com', id: id),
-          ],
-          hasMore: end < params.userIds.length,
-        ));
+          'u29' => Result.success<RelationPage>(
+            RelationPage(
+              users: users(30, 60),
+              next: const RelationCursor(createdAt: 1, edgeId: 'u59'),
+            ),
+          ),
+          'u59' => Result.success<RelationPage>(RelationPage(users: users(60, 75), next: null)),
+          _ => throw StateError('unexpected cursor'),
+        };
       });
       final bloc = buildBloc();
-      final List<String> firstIds = <String>[for (int i = 0; i < 500; i++) 'id-$i'];
-      for (int page = 0; page < 25; page++) {
-        bloc.add(
-          PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, userIds: firstIds, page: page),
-        );
+      addTearDown(bloc.close);
+
+      for (int request = 0; request < 4; request++) {
+        bloc.add(const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, profileUid: 'p'));
         await pumpEventQueue();
       }
-      expect(bloc.state.followers.hasMore, isFalse);
-      expect(bloc.state.followers.page, 24);
 
-      final List<String> withNext = <String>[...firstIds, 'id-500'];
-      bloc.add(PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, userIds: withNext, page: 25));
+      expect(bloc.state.followers.summaries.map((u) => u.id).toList(), equals(ids));
+      expect(bloc.state.followers.summaries.map((u) => u.id).toSet(), hasLength(75));
+      expect(bloc.state.followers.pages, 3);
+      expect(bloc.state.followers.hasMore, isFalse);
+      expect(bloc.state.followers.isFetching, isFalse);
+      verify(() => relationPage(any())).called(3);
+    });
+
+    test('refresh drops a page that was still loading', () async {
+      final Completer<Result<RelationPage>> held = Completer<Result<RelationPage>>();
+      var calls = 0;
+      when(() => relationPage(any())).thenAnswer((_) {
+        calls++;
+        return switch (calls) {
+          1 => Future.value(
+            Result.success<RelationPage>(
+              RelationPage(
+                users: <UserSummaryEntity>[for (int i = 0; i < 30; i++) _user('p$i@x.com', id: 'p$i')],
+                next: const RelationCursor(createdAt: 1, edgeId: 'p29'),
+              ),
+            ),
+          ),
+          2 => held.future,
+          _ => Future.value(
+            Result.success<RelationPage>(
+              RelationPage(
+                users: <UserSummaryEntity>[
+                  _user('fresh1@x.com', id: 'fresh1'),
+                  _user('fresh2@x.com', id: 'fresh2'),
+                ],
+                next: null,
+              ),
+            ),
+          ),
+        };
+      });
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      const page = PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, profileUid: 'p');
+      const refresh = PublicProfileEvent.relationRefreshRequested(kind: UserRelationKind.followers, profileUid: 'p');
+
+      bloc.add(page);
+      await pumpEventQueue();
+      bloc.add(page);
+      await pumpEventQueue();
+      expect(bloc.state.followers.isFetching, isTrue);
+      bloc.add(refresh);
+      await pumpEventQueue();
+      held.complete(
+        Result.success<RelationPage>(
+          RelationPage(
+            users: <UserSummaryEntity>[for (int i = 0; i < 30; i++) _user('old$i@x.com', id: 'old$i')],
+            next: const RelationCursor(createdAt: 1, edgeId: 'old29'),
+          ),
+        ),
+      );
       await pumpEventQueue();
 
-      expect(bloc.state.followers.summaries.last.id, 'id-500');
-      expect(bloc.state.followers.summaries, hasLength(501));
-      expect(bloc.state.followers.page, 25);
-      expect(bloc.state.followers.hasMore, isFalse);
-      await bloc.close();
+      expect(bloc.state.followers.summaries.map((u) => u.id).toList(), <String>['fresh1', 'fresh2']);
+      expect(bloc.state.followers.pages, 1);
+      expect(bloc.state.followers.isFetching, isFalse);
+    });
+
+    test('a failed next page shows failed and keeps the rows; a retry clears it', () async {
+      var calls = 0;
+      when(() => relationPage(any())).thenAnswer((_) async {
+        calls++;
+        return switch (calls) {
+          1 => Result.success<RelationPage>(
+            RelationPage(
+              users: <UserSummaryEntity>[for (int i = 0; i < 30; i++) _user('a$i@x.com', id: 'a$i')],
+              next: const RelationCursor(createdAt: 1, edgeId: 'a29'),
+            ),
+          ),
+          2 => Result.error<RelationPage>(const ServerFailure('x')),
+          _ => Result.success<RelationPage>(
+            RelationPage(
+              users: <UserSummaryEntity>[for (int i = 0; i < 30; i++) _user('b$i@x.com', id: 'b$i')],
+              next: null,
+            ),
+          ),
+        };
+      });
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      const page = PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, profileUid: 'p');
+
+      bloc.add(page);
+      await pumpEventQueue();
+      bloc.add(page);
+      await pumpEventQueue();
+      expect(bloc.state.followers.failed, isTrue);
+      expect(bloc.state.followers.summaries, hasLength(30));
+
+      bloc.add(page);
+      await pumpEventQueue();
+      expect(bloc.state.followers.failed, isFalse);
+      expect(bloc.state.followers.summaries, hasLength(60));
+    });
+
+    test('search loads the newest ids once and also searches loaded rows', () async {
+      when(() => relationPage(any())).thenAnswer(
+        (_) async => Result.success<RelationPage>(
+          RelationPage(users: <UserSummaryEntity>[_user('u1@x.com', id: 'u1')], next: null),
+        ),
+      );
+      when(() => relationIds(any())).thenAnswer((_) async => Result.success<List<String>>(<String>['a', 'b']));
+      SearchUsersByUsernameParams? captured;
+      when(() => search(any())).thenAnswer((invocation) async {
+        captured = invocation.positionalArguments.first as SearchUsersByUsernameParams;
+        return Result.success<List<UserSummaryEntity>>(<UserSummaryEntity>[]);
+      });
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+
+      bloc.add(const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, profileUid: 'p'));
+      await pumpEventQueue();
+      bloc.add(
+        const PublicProfileEvent.relationSearchRequested(
+          kind: UserRelationKind.followers,
+          query: 'ab',
+          profileUid: 'p',
+        ),
+      );
+      await pumpEventQueue();
+      bloc.add(
+        const PublicProfileEvent.relationSearchRequested(
+          kind: UserRelationKind.followers,
+          query: 'abc',
+          profileUid: 'p',
+        ),
+      );
+      await pumpEventQueue();
+
+      verify(() => relationIds(any())).called(1);
+      expect(captured!.query, 'abc');
+      expect(captured!.scopeUserIds, containsAll(<String>['a', 'b', 'u1']));
     });
 
     test('only the newest search writes its results', () async {
       final first = Completer<Result<List<UserSummaryEntity>>>();
       final second = Completer<Result<List<UserSummaryEntity>>>();
       final answers = <Completer<Result<List<UserSummaryEntity>>>>[first, second];
+      when(() => relationIds(any())).thenAnswer((_) async => Result.success<List<String>>(<String>['x']));
       when(() => search(any())).thenAnswer((_) => answers.removeAt(0).future);
       final bloc = buildBloc();
+      addTearDown(bloc.close);
 
-      bloc
-        ..add(
-          const PublicProfileEvent.relationSearchRequested(
-            kind: UserRelationKind.following,
-            query: 'ke',
-            userIds: ['x'],
-          ),
-        )
-        ..add(
-          const PublicProfileEvent.relationSearchRequested(
-            kind: UserRelationKind.following,
-            query: 'kev',
-            userIds: ['x'],
-          ),
-        );
-      await Future<void>.delayed(Duration.zero);
+      bloc.add(
+        const PublicProfileEvent.relationSearchRequested(
+          kind: UserRelationKind.following,
+          query: 'ke',
+          profileUid: 'p',
+        ),
+      );
+      await pumpEventQueue();
+      bloc.add(
+        const PublicProfileEvent.relationSearchRequested(
+          kind: UserRelationKind.following,
+          query: 'kev',
+          profileUid: 'p',
+        ),
+      );
+      await pumpEventQueue();
       second.complete(Result.success(<UserSummaryEntity>[_user('kevin@x.com')]));
-      await Future<void>.delayed(Duration.zero);
+      await pumpEventQueue();
       first.complete(Result.success(<UserSummaryEntity>[_user('kelly@x.com')]));
-      await Future<void>.delayed(Duration.zero);
+      await pumpEventQueue();
 
       expect(bloc.state.following.searchResults!.map((u) => u.email), <String>['kevin@x.com']);
       expect(bloc.state.following.isSearching, isFalse);
       expect(bloc.state.followers.searchResults, isNull);
-      await bloc.close();
     });
 
     blocTest<PublicProfileBloc, PublicProfileState>(
       'a failed search shows no results, and clearing returns to the list',
       build: () {
+        when(() => relationIds(any())).thenAnswer((_) async => Result.success<List<String>>(<String>['x']));
         when(
           () => search(any()),
         ).thenAnswer((_) async => Result.error<List<UserSummaryEntity>>(const ServerFailure('x')));
@@ -525,10 +623,10 @@ void main() {
           const PublicProfileEvent.relationSearchRequested(
             kind: UserRelationKind.followers,
             query: 'ke',
-            userIds: ['x'],
+            profileUid: 'p',
           ),
         );
-        await Future<void>.delayed(Duration.zero);
+        await pumpEventQueue();
         expect(bloc.state.followers.searchResults, isEmpty);
         bloc.add(const PublicProfileEvent.relationSearchCleared(kind: UserRelationKind.followers));
       },
@@ -563,14 +661,12 @@ void main() {
         final last = Completer<Result<void>>();
         when(() => follow(any())).thenAnswer((_) => first.future);
         when(() => unfollow(any())).thenAnswer((_) => last.future);
-        when(
-          () => summaries(any()),
-        ).thenAnswer((_) async => Result.success<_Summaries>((items: [_user('A@x.com', id: 'a-id')], hasMore: false)));
+        when(() => relationPage(any())).thenAnswer(
+          (_) async => Result.success<RelationPage>(RelationPage(users: [_user('A@x.com', id: 'a-id')], next: null)),
+        );
         final bloc = buildBloc();
         addTearDown(bloc.close);
-        bloc.add(
-          const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, userIds: ['a-id'], page: 0),
-        );
+        bloc.add(const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, profileUid: 'me'));
         await pumpEventQueue();
         bloc.add(followEvent);
         await pumpEventQueue();
@@ -630,15 +726,14 @@ void main() {
         final last = Completer<Result<void>>();
         when(() => unfollow(any())).thenAnswer((_) => first.future);
         when(() => follow(any())).thenAnswer((_) => last.future);
-        when(() => summaries(any())).thenAnswer(
-          (_) async =>
-              Result.success<_Summaries>((items: [_user('A@x.com', id: 'a-id', followed: true)], hasMore: false)),
+        when(() => relationPage(any())).thenAnswer(
+          (_) async => Result.success<RelationPage>(
+            RelationPage(users: [_user('A@x.com', id: 'a-id', followed: true)], next: null),
+          ),
         );
         final bloc = buildBloc();
         addTearDown(bloc.close);
-        bloc.add(
-          const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, userIds: ['a-id'], page: 0),
-        );
+        bloc.add(const PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, profileUid: 'me'));
         await pumpEventQueue();
         bloc.add(unfollowEvent);
         await pumpEventQueue();

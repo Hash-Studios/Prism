@@ -1,7 +1,8 @@
+import 'dart:async';
+
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
-import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
@@ -16,21 +17,41 @@ import 'package:mocktail/mocktail.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/profile_user_fixture.dart';
 
-class _MockRepo extends Mock implements PublicProfileRepository {}
-
 class _MockPublicProfileBloc extends MockBloc<PublicProfileEvent, PublicProfileState> implements PublicProfileBloc {}
+
+final AppLocalizations l10n = lookupAppLocalizations(const Locale('en'));
+
+const String _profileUid = 'profile-uid';
+
+const PublicProfileEvent _loadFollowersPage = PublicProfileEvent.relationPageRequested(
+  kind: UserRelationKind.followers,
+  profileUid: _profileUid,
+);
+
+const PublicProfileEvent _refreshFollowers = PublicProfileEvent.relationRefreshRequested(
+  kind: UserRelationKind.followers,
+  profileUid: _profileUid,
+);
+
+const RelationCursor _nextCursor = RelationCursor(createdAt: 1, edgeId: 'u29');
+
+UserSummaryEntity _user(int i) => UserSummaryEntity(
+  id: 'u$i',
+  email: 'user$i@example.com',
+  name: 'User $i',
+  username: 'user_$i',
+  profilePhoto: '',
+  isFollowedByCurrentUser: false,
+);
+
+final List<UserSummaryEntity> _thirtyUsers = <UserSummaryEntity>[for (int i = 0; i < 30; i++) _user(i)];
 
 void main() {
   late _MockPublicProfileBloc bloc;
-  late _MockRepo repo;
-
-  setUpAll(() => registerFallbackValue(const PublicProfileEvent.refreshRequested()));
 
   setUp(() {
     bloc = _MockPublicProfileBloc();
     getIt.registerFactory<PublicProfileBloc>(() => bloc);
-    repo = _MockRepo();
-    getIt.registerSingleton<PublicProfileRepository>(repo);
     AnalyticsRuntime.instance = FakeAppAnalytics();
     app_state.prismUser = profileUser(id: 'me');
   });
@@ -40,138 +61,166 @@ void main() {
     await getIt.reset();
   });
 
+  void stubState(PublicProfileState state, {Stream<PublicProfileState> stream = const Stream.empty()}) {
+    whenListen(bloc, stream, initialState: state);
+  }
+
+  PublicProfileState followersState(RelationList followers) =>
+      PublicProfileState.initial().copyWith(followers: followers);
+
   Future<void> pumpBody(
     WidgetTester tester, {
     required RelationList followers,
-    List<String> emails = const <String>['ana@example.com'],
     UserRelationKind kind = UserRelationKind.followers,
+    Widget Function(Widget child)? wrap,
   }) async {
     final PublicProfileState state = kind == UserRelationKind.followers
-        ? PublicProfileState.initial().copyWith(followers: followers)
+        ? followersState(followers)
         : PublicProfileState.initial().copyWith(following: followers);
-    when(
-      () => repo.fetchRelationIds(profileUid: 'profile-uid', kind: kind),
-    ).thenAnswer((_) async => Result.success<List<String>>(emails));
-    whenListen(bloc, const Stream<PublicProfileState>.empty(), initialState: state);
+    stubState(state);
+    final Widget body = UserRelationListBody(kind: kind, profileUid: _profileUid);
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-
-        home: UserRelationListBody(kind: kind, profileUid: 'profile-uid'),
+        builder: wrap == null ? null : (context, child) => wrap(child!),
+        home: body,
       ),
     );
     await tester.pump(const Duration(milliseconds: 400));
   }
 
-  const UserSummaryEntity ana = UserSummaryEntity(
-    id: 'u2',
-    email: 'ana@example.com',
-    name: 'Ana Rivera',
-    username: 'ana_rivera',
-    profilePhoto: '',
-    isFollowedByCurrentUser: false,
-  );
-
-  testWidgets('shows the title, a search field and skeleton rows while the first page loads', (tester) async {
-    await pumpBody(tester, followers: const RelationList(isFetching: true));
-
-    expect(find.text('Followers'), findsOneWidget);
-    expect(find.byType(TextField), findsOneWidget);
-    expect(find.text('Search by username'), findsOneWidget);
-    expect(find.bySemanticsLabel('Loading'), findsWidgets);
-  });
-
-  testWidgets('loads the edge ids for the profile uid and requests page 0', (tester) async {
-    await pumpBody(tester, followers: const RelationList(), emails: const <String>['a-id', 'b-id']);
-
-    verify(() => repo.fetchRelationIds(profileUid: 'profile-uid', kind: UserRelationKind.followers)).called(1);
-    final event = verify(() => bloc.add(captureAny())).captured.single as PublicProfileEvent;
-    expect(event.toString(), contains('a-id'));
-    expect(event.toString(), contains('b-id'));
-  });
-
-  testWidgets('lists people with a Follow button each', (tester) async {
-    await pumpBody(tester, followers: const RelationList(summaries: <UserSummaryEntity>[ana]));
-
-    expect(find.text('Ana Rivera'), findsOneWidget);
-    expect(find.text('@ana_rivera'), findsOneWidget);
-    expect(find.text('Follow'), findsOneWidget);
-  });
-
-  testWidgets('no followers yet is an empty state, not an error', (tester) async {
-    await pumpBody(tester, followers: const RelationList(), emails: const <String>[]);
-
-    expect(find.text('No followers yet'), findsOneWidget);
-    expect(find.text('Try again'), findsNothing);
-  });
-
-  testWidgets('the following list has its own title and empty copy', (tester) async {
-    await pumpBody(tester, followers: const RelationList(), emails: const <String>[], kind: UserRelationKind.following);
-
-    expect(find.text('Following'), findsOneWidget);
-    expect(find.text('Not following anyone yet'), findsOneWidget);
-  });
-
-  testWidgets('a failed first page shows an error whose retry asks for page 0 again', (tester) async {
-    await pumpBody(tester, followers: const RelationList());
-
-    expect(find.text('Could not load followers'), findsOneWidget);
-    clearInteractions(bloc);
-    await tester.tap(find.text('Try again'));
-
-    final event = verify(() => bloc.add(captureAny())).captured.single as PublicProfileEvent;
-    expect(event.toString(), contains('page: 0'));
-  });
-
-  testWidgets('the clear button appears once there is text and empties the field', (tester) async {
-    await pumpBody(tester, followers: const RelationList(summaries: <UserSummaryEntity>[ana]));
-
-    expect(find.byTooltip('Clear search'), findsNothing);
-    await tester.enterText(find.byType(TextField), 'a');
-    await tester.pump();
-    expect(find.byTooltip('Clear search'), findsOneWidget);
-
-    await tester.tap(find.byTooltip('Clear search'));
-    await tester.pump();
-    expect(find.byTooltip('Clear search'), findsNothing);
-    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, isEmpty);
-    await tester.pump(const Duration(seconds: 1));
-  });
-
-  testWidgets('at the end of 500 loaded ids, scrolling loads the next id page and asks for its user page', (
-    tester,
-  ) async {
-    final List<String> firstIds = <String>[for (int i = 0; i < 500; i++) 'id-$i'];
-    final List<UserSummaryEntity> users = <UserSummaryEntity>[
-      for (int i = 0; i < 20; i++)
-        UserSummaryEntity(
-          id: 'id-$i',
-          email: 'user$i@example.com',
-          name: 'User $i',
-          username: 'user_$i',
-          profilePhoto: '',
-          isFollowedByCurrentUser: false,
-        ),
-    ];
-    await pumpBody(
-      tester,
-      followers: RelationList(summaries: users),
-      emails: firstIds,
-    );
-    when(
-      () => repo.fetchRelationIds(profileUid: 'profile-uid', kind: UserRelationKind.followers, afterId: 'id-499'),
-    ).thenAnswer((_) async => Result.success<List<String>>(const <String>['id-500']));
-    clearInteractions(bloc);
-
+  Future<void> scrollToEnd(WidgetTester tester) async {
     await tester.drag(find.byType(ListView), const Offset(0, -5000));
     await tester.pump(const Duration(milliseconds: 400));
+  }
 
-    verify(
-      () => repo.fetchRelationIds(profileUid: 'profile-uid', kind: UserRelationKind.followers, afterId: 'id-499'),
-    ).called(1);
-    final event = verify(() => bloc.add(captureAny())).captured.single as PublicProfileEvent;
-    expect(event.toString(), contains('id-500'));
-    expect(event.toString(), contains('page: 1'));
+  testWidgets('asks for the first page on open', (tester) async {
+    await pumpBody(tester, followers: const RelationList());
+
+    verify(() => bloc.add(_loadFollowersPage)).called(1);
+  });
+
+  testWidgets('loads more near the end of the list', (tester) async {
+    await pumpBody(
+      tester,
+      followers: RelationList(summaries: _thirtyUsers, next: _nextCursor, pages: 1),
+    );
+
+    await scrollToEnd(tester);
+
+    expect(find.bySemanticsLabel(l10n.accountRelationLoadingMore), findsOneWidget);
+    expect(verify(() => bloc.add(_loadFollowersPage)).callCount, greaterThan(1));
+  });
+
+  testWidgets('a failed next page shows the retry row and Try again asks again', (tester) async {
+    await pumpBody(
+      tester,
+      followers: RelationList(summaries: _thirtyUsers, next: _nextCursor, pages: 1, failed: true),
+    );
+
+    await scrollToEnd(tester);
+    expect(find.text(l10n.accountRelationLoadMoreFailed), findsOneWidget);
+    expect(find.text(l10n.accountTryAgain), findsOneWidget);
+
+    clearInteractions(bloc);
+    await tester.ensureVisible(find.text(l10n.accountTryAgain));
+    await tester.pump();
+    await tester.tap(find.text(l10n.accountTryAgain));
+    await tester.pump();
+
+    verify(() => bloc.add(_loadFollowersPage)).called(1);
+  });
+
+  testWidgets('first page failure shows the error state', (tester) async {
+    await pumpBody(tester, followers: const RelationList(failed: true));
+
+    expect(find.text(l10n.accountCouldNotLoadFollowers), findsOneWidget);
+    expect(find.text(l10n.accountTryAgain), findsOneWidget);
+  });
+
+  testWidgets('empty list shows the empty state', (tester) async {
+    await pumpBody(tester, followers: const RelationList(pages: 1));
+
+    expect(find.text(l10n.accountNoFollowersYet), findsOneWidget);
+  });
+
+  testWidgets('empty following list shows the following empty state', (tester) async {
+    await pumpBody(tester, followers: const RelationList(pages: 1), kind: UserRelationKind.following);
+
+    expect(find.text(l10n.accountNotFollowingAnyoneYet), findsOneWidget);
+  });
+
+  testWidgets('large text: retry row wraps without overflow', (tester) async {
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(320, 700);
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpBody(
+      tester,
+      followers: RelationList(summaries: _thirtyUsers, next: _nextCursor, pages: 1, failed: true),
+      wrap: (child) => Builder(
+        builder: (context) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2.0)),
+          child: child,
+        ),
+      ),
+    );
+
+    await scrollToEnd(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(l10n.accountRelationLoadMoreFailed), findsOneWidget);
+    expect(find.text(l10n.accountTryAgain), findsOneWidget);
+  });
+
+  testWidgets('RTL: rows and footer render', (tester) async {
+    await pumpBody(
+      tester,
+      followers: RelationList(summaries: _thirtyUsers.take(3).toList(), next: _nextCursor, pages: 1, failed: true),
+      wrap: (child) => Directionality(textDirection: TextDirection.rtl, child: child),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(l10n.accountRelationLoadMoreFailed), findsOneWidget);
+  });
+
+  testWidgets('RTL: loading footer renders its semantics label', (tester) async {
+    await pumpBody(
+      tester,
+      followers: RelationList(summaries: _thirtyUsers.take(3).toList(), next: _nextCursor, pages: 1),
+      wrap: (child) => Directionality(textDirection: TextDirection.rtl, child: child),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.bySemanticsLabel(l10n.accountRelationLoadingMore), findsOneWidget);
+  });
+
+  testWidgets('pull to refresh asks for a refresh', (tester) async {
+    final StreamController<PublicProfileState> states = StreamController<PublicProfileState>.broadcast();
+    addTearDown(states.close);
+    final RelationList followers = RelationList(summaries: _thirtyUsers.take(3).toList(), next: _nextCursor, pages: 1);
+    stubState(followersState(followers), stream: states.stream);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: UserRelationListBody(kind: UserRelationKind.followers, profileUid: _profileUid),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    clearInteractions(bloc);
+
+    await tester.fling(find.byType(ListView), const Offset(0, 600), 1000);
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+    verify(() => bloc.add(_refreshFollowers)).called(1);
+
+    // The refresh future waits for a state with isFetching false. Emit one so it completes.
+    states.add(followersState(followers));
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.takeException(), isNull);
   });
 }

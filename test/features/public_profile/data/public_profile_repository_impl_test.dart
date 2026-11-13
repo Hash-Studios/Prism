@@ -126,6 +126,45 @@ Future<void> _firstProfile(List<PublicProfileEntity?> emitted) async {
   }
 }
 
+typedef _Edge = ({String id, int createdAt});
+
+/// 75 edges, u00 newest. u11 shares u10's createdAt and u30 shares u29's, so the id tie break decides their order.
+List<_Edge> _relationEdges() {
+  final List<_Edge> edges = <_Edge>[
+    for (int i = 0; i < 75; i++) (id: 'u${i.toString().padLeft(2, '0')}', createdAt: 1000 - i),
+  ];
+  edges[11] = (id: edges[11].id, createdAt: edges[10].createdAt);
+  edges[30] = (id: edges[30].id, createdAt: edges[29].createdAt);
+  return edges;
+}
+
+/// Same order as the repository query: createdAt desc, then document id desc.
+int _compareEdges(_Edge a, _Edge b) {
+  final int byCreatedAt = b.createdAt.compareTo(a.createdAt);
+  return byCreatedAt != 0 ? byCreatedAt : b.id.compareTo(a.id);
+}
+
+List<FakeDocRow> _profileRows(FirestoreQuerySpec spec) => <FakeDocRow>[
+  for (final Object? id in spec.filters.single.value! as List<Object?>)
+    (id: id! as String, data: <String, dynamic>{'name': 'N', 'username': id}),
+];
+
+/// Answers `profiles/P/followers` from [edges] and `profiles` lookups by id.
+List<FakeDocRow> Function(FirestoreQuerySpec) _relationQuery(List<_Edge> edges) => (spec) {
+  if (spec.collection == 'profiles') return _profileRows(spec);
+  if (spec.collection != 'profiles/P/followers') return const <FakeDocRow>[];
+  final List<_Edge> sorted = <_Edge>[...edges]..sort(_compareEdges);
+  final List<Object?>? after = spec.startAfterFieldValues;
+  if (after != null) {
+    final _Edge cursor = (id: after[1]! as String, createdAt: after[0]! as int);
+    sorted.retainWhere((edge) => _compareEdges(edge, cursor) > 0);
+  }
+  return <FakeDocRow>[
+    for (final _Edge edge in sorted.take(spec.limit ?? sorted.length))
+      (id: edge.id, data: <String, dynamic>{'createdAt': edge.createdAt}),
+  ];
+};
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late Directory storeDirectory;
@@ -225,25 +264,6 @@ void main() {
       final spec = client.querySpecs.single;
       expect(spec.collection, 'profiles/UserABC/followers');
       expect(spec.sourceTag, 'public_profile.relation_ids.followers');
-      expect(spec.limit, PublicProfileRepository.relationIdsLimit);
-      expect((spec.orderBy.single.field, spec.orderBy.single.descending), ('createdAt', true));
-    });
-
-    test('fetchRelationIds with afterId returns the next page after that id', () async {
-      client.onQuery = (_) => <FakeDocRow>[
-        (id: 'f501', data: <String, dynamic>{}),
-        (id: 'f502', data: <String, dynamic>{}),
-      ];
-      final result = await repo.fetchRelationIds(
-        profileUid: 'UserABC',
-        kind: UserRelationKind.followers,
-        afterId: 'f500',
-      );
-
-      expect(result.data, <String>['f501', 'f502']);
-      final spec = client.querySpecs.single;
-      expect(spec.collection, 'profiles/UserABC/followers');
-      expect(spec.startAfterDocId, 'f500');
       expect(spec.limit, PublicProfileRepository.relationIdsLimit);
       expect((spec.orderBy.single.field, spec.orderBy.single.descending), ('createdAt', true));
     });
@@ -411,6 +431,99 @@ void main() {
       await client.waitForWatchers(1).timeout(const Duration(seconds: 2));
       await sub.cancel().timeout(const Duration(seconds: 2));
       await client.waitForCancelledWatchers(1).timeout(const Duration(seconds: 2));
+    });
+  });
+
+  group('fetchRelationPage', () {
+    test('returns all 75 edges in 3 pages, no duplicates, then stops', () async {
+      blocks.completeInitial(<String>{});
+      final List<_Edge> edges = _relationEdges();
+      client.onQuery = _relationQuery(edges);
+      final List<_Edge> sorted = <_Edge>[...edges]..sort(_compareEdges);
+
+      final List<RelationPage> pages = <RelationPage>[];
+      final List<String> ids = <String>[];
+      RelationCursor? cursor;
+      do {
+        final RelationPage page = (await repo.fetchRelationPage(
+          profileUid: 'P',
+          kind: UserRelationKind.followers,
+          cursor: cursor,
+        )).data!;
+        pages.add(page);
+        ids.addAll(page.users.map((user) => user.id));
+        cursor = page.next;
+      } while (cursor != null);
+
+      expect(pages, hasLength(3));
+      expect(pages.last.next, isNull);
+      expect(ids, sorted.map((edge) => edge.id).toList());
+      expect(ids.toSet(), hasLength(75));
+
+      final List<FirestoreQuerySpec> edgeSpecs = client.querySpecs
+          .where((spec) => spec.collection == 'profiles/P/followers')
+          .toList();
+      expect(edgeSpecs, hasLength(3));
+      for (final FirestoreQuerySpec spec in edgeSpecs) {
+        expect(spec.orderBy.map((order) => order.field).toList(), <String>['createdAt', firestoreDocumentIdField]);
+        expect(spec.orderBy.every((order) => order.descending), isTrue);
+        expect(spec.limit, 30);
+        expect(spec.sourceTag, 'public_profile.relation_page.followers');
+      }
+      expect(edgeSpecs[0].startAfterFieldValues, isNull);
+      expect(edgeSpecs[1].startAfterFieldValues, <Object?>[sorted[29].createdAt, sorted[29].id]);
+    });
+
+    test('hides users the viewer blocked', () async {
+      blocks.completeInitial(<String>{'u01', 'u05'});
+      client.onQuery = _relationQuery(_relationEdges());
+
+      final RelationPage page = (await repo.fetchRelationPage(profileUid: 'P', kind: UserRelationKind.followers)).data!;
+
+      final List<String> ids = page.users.map((user) => user.id).toList();
+      expect(ids, isNot(contains('u01')));
+      expect(ids, isNot(contains('u05')));
+      expect(ids, hasLength(28));
+      expect(page.next, isNotNull);
+      final List<Object?> lookedUp = client.querySpecs
+          .where((spec) => spec.collection == 'profiles')
+          .expand((spec) => spec.filters.single.value! as List<Object?>)
+          .toList();
+      expect(lookedUp, isNot(contains('u01')));
+      expect(lookedUp, isNot(contains('u05')));
+    });
+
+    test('fails when the block list is unknown', () async {
+      blocks = FakeUserBlockRepository.pending();
+      repo = PublicProfileRepositoryImpl(client, blocks);
+      blocks.timeOutInitialLoad();
+      client.onQuery = _relationQuery(_relationEdges());
+
+      final result = await repo.fetchRelationPage(profileUid: 'P', kind: UserRelationKind.followers);
+
+      expect(result.isFailure, isTrue);
+      expect(client.querySpecs.where((spec) => spec.collection == 'profiles'), isEmpty);
+    });
+
+    test('following uses the following edges', () async {
+      blocks.completeInitial(<String>{});
+
+      await repo.fetchRelationPage(profileUid: 'P', kind: UserRelationKind.following);
+
+      final FirestoreQuerySpec spec = client.querySpecs.single;
+      expect(spec.collection, 'profiles/P/following');
+      expect(spec.sourceTag, 'public_profile.relation_page.following');
+    });
+  });
+
+  group('searchUsersByUsername', () {
+    test('hides blocked users', () async {
+      blocks.completeInitial(<String>{'b1'});
+      client.onQuery = (spec) => spec.collection == 'profiles' ? _profileRows(spec) : const <FakeDocRow>[];
+
+      final result = await repo.searchUsersByUsername(query: 'b', scopeUserIds: <String>['b1', 'b2']);
+
+      expect(result.data!.map((user) => user.id).toList(), <String>['b2']);
     });
   });
 

@@ -29,13 +29,15 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
     this._fetchPublicProfileWallsUseCase,
     this._followUserUseCase,
     this._unfollowUserUseCase,
-    this._fetchUserSummariesPageUseCase,
+    this._fetchRelationPageUseCase,
+    this._fetchRelationIdsUseCase,
     this._searchUsersByUsernameUseCase,
   ) : super(PublicProfileState.initial()) {
     on<_Started>(_onStarted);
     on<_RefreshRequested>(_onRefreshRequested);
     on<_FetchMoreWallsRequested>(_onFetchMoreWallsRequested);
     on<_RelationPageRequested>(_onRelationPageRequested);
+    on<_RelationRefreshRequested>(_onRelationRefreshRequested);
     on<_RelationSearchRequested>(_onRelationSearchRequested);
     on<_RelationSearchCleared>(_onRelationSearchCleared);
     on<_FollowChangeRequested>(_onFollowChangeRequested);
@@ -45,6 +47,9 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   bool _isClosing = false;
   // Only the newest search may write results; slower earlier ones are dropped.
   final Map<UserRelationKind, String> _latestQuery = <UserRelationKind, String>{};
+  // A refresh bumps the generation, so a page that started before it is dropped.
+  final Map<UserRelationKind, int> _relationGeneration = <UserRelationKind, int>{};
+  final Map<UserRelationKind, Future<List<String>>> _searchScope = <UserRelationKind, Future<List<String>>>{};
   final Map<String, Future<void>> _followTails = <String, Future<void>>{};
   final Map<String, Object> _followIntents = <String, Object>{};
   final Map<String, bool> _confirmedFollowing = <String, bool>{};
@@ -53,7 +58,8 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   final FetchPublicProfileWallsUseCase _fetchPublicProfileWallsUseCase;
   final FollowUserUseCase _followUserUseCase;
   final UnfollowUserUseCase _unfollowUserUseCase;
-  final FetchUserSummariesPageUseCase _fetchUserSummariesPageUseCase;
+  final FetchRelationPageUseCase _fetchRelationPageUseCase;
+  final FetchRelationIdsUseCase _fetchRelationIdsUseCase;
   final SearchUsersByUsernameUseCase _searchUsersByUsernameUseCase;
 
   @override
@@ -152,49 +158,78 @@ class PublicProfileBloc extends Bloc<PublicProfileEvent, PublicProfileState> {
   }
 
   Future<void> _onRelationPageRequested(_RelationPageRequested event, Emitter<PublicProfileState> emit) async {
-    final UserRelationKind kind = event.kind;
-    final RelationList current = state.relation(kind);
-    if (current.isFetching) return;
-    // A page whose start is inside the ids it carries is fetched even after hasMore went false, because the
-    // caller may have appended ids.
-    if (event.page > 0 &&
-        !current.hasMore &&
-        event.page * PublicProfileRepository.relationPageSize >= event.userIds.length) {
+    final RelationList current = state.relation(event.kind);
+    if (current.isFetching || !current.hasMore) return;
+    await _loadRelationPage(event.kind, event.profileUid, current.next, emit, refresh: false);
+  }
+
+  Future<void> _onRelationRefreshRequested(_RelationRefreshRequested event, Emitter<PublicProfileState> emit) {
+    _relationGeneration[event.kind] = (_relationGeneration[event.kind] ?? 0) + 1;
+    _searchScope.remove(event.kind);
+    return _loadRelationPage(event.kind, event.profileUid, null, emit, refresh: true);
+  }
+
+  Future<void> _loadRelationPage(
+    UserRelationKind kind,
+    String profileUid,
+    RelationCursor? cursor,
+    Emitter<PublicProfileState> emit, {
+    required bool refresh,
+  }) async {
+    final int generation = _relationGeneration[kind] ?? 0;
+    _emitRelation(kind, emit, (list) => list.copyWith(isFetching: true, failed: false));
+    final result = await _fetchRelationPageUseCase(
+      FetchRelationPageParams(profileUid: profileUid, kind: kind, cursor: cursor),
+    );
+    if (_isClosing || isClosed || emit.isDone || generation != (_relationGeneration[kind] ?? 0)) return;
+    final RelationPage? page = result.data;
+    if (page == null) {
+      // A failed refresh keeps the list it had. A failed next page shows the retry row.
+      _emitRelation(kind, emit, (list) => list.copyWith(isFetching: false, failed: !refresh));
       return;
     }
-
-    _emitRelation(kind, emit, (list) => list.copyWith(isFetching: true));
-
-    final result = await _fetchUserSummariesPageUseCase(
-      FetchUserSummariesPageParams(userIds: event.userIds, page: event.page),
+    final RelationList current = state.relation(kind);
+    final int pageIndex = refresh ? 0 : current.pages;
+    final List<UserSummaryEntity> merged = <UserSummaryEntity>[if (!refresh) ...current.summaries, ...page.users];
+    _emitRelation(
+      kind,
+      emit,
+      (list) => list.copyWith(
+        summaries: <String, UserSummaryEntity>{for (final s in merged) s.id: s}.values.toList(growable: false),
+        next: page.next,
+        pages: pageIndex + 1,
+        isFetching: false,
+        failed: false,
+      ),
     );
-
-    result.fold(
-      onSuccess: (page) {
-        final merged = event.page == 0
-            ? page.items
-            : <UserSummaryEntity>[...state.relation(kind).summaries, ...page.items];
-        final deduped = <String, UserSummaryEntity>{for (final s in merged) s.id: s}.values.toList(growable: false);
-        _emitRelation(
-          kind,
-          emit,
-          (list) => list.copyWith(summaries: deduped, page: event.page, hasMore: page.hasMore, isFetching: false),
-        );
-      },
-      onFailure: (_) => _emitRelation(kind, emit, (list) => list.copyWith(isFetching: false)),
-    );
+    unawaited(analytics.track(RelationListPageLoadedEvent(kind: kind, pageIndex: pageIndex)));
   }
 
   Future<void> _onRelationSearchRequested(_RelationSearchRequested event, Emitter<PublicProfileState> emit) async {
     final UserRelationKind kind = event.kind;
     _latestQuery[kind] = event.query;
     _emitRelation(kind, emit, (list) => list.copyWith(isSearching: true, searchResults: const <UserSummaryEntity>[]));
+    final Future<List<String>> scope = _searchScope[kind] ??= _loadSearchScope(kind, event.profileUid);
+    final List<String> newest = await scope;
+    if (event.query != _latestQuery[kind]) return;
+    final List<String> ids = <String>{...newest, ...state.relation(kind).summaries.map((s) => s.id)}.toList();
     final result = await _searchUsersByUsernameUseCase(
-      SearchUsersByUsernameParams(query: event.query, scopeUserIds: event.userIds),
+      SearchUsersByUsernameParams(query: event.query, scopeUserIds: ids),
     );
     if (event.query != _latestQuery[kind]) return;
     final List<UserSummaryEntity> summaries = result.data ?? const <UserSummaryEntity>[];
     _emitRelation(kind, emit, (list) => list.copyWith(isSearching: false, searchResults: summaries));
+  }
+
+  /// The newest edge ids, loaded once per list. A failure is not kept, so the next search tries again.
+  Future<List<String>> _loadSearchScope(UserRelationKind kind, String profileUid) async {
+    final result = await _fetchRelationIdsUseCase(FetchRelationIdsParams(profileUid: profileUid, kind: kind));
+    final List<String>? ids = result.data;
+    if (ids == null) {
+      _searchScope.remove(kind);
+      return const <String>[];
+    }
+    return ids;
   }
 
   void _onRelationSearchCleared(_RelationSearchCleared event, Emitter<PublicProfileState> emit) {

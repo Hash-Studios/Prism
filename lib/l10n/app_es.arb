@@ -345,6 +345,14 @@
   "accountCouldNotCreateLink": "No se pudo crear el enlace. Inténtalo de nuevo.",
   "accountCouldNotDeleteDownloads": "No se pudieron borrar las descargas. Inténtalo de nuevo.",
   "accountCouldNotFollowPerson": "No se pudo seguir a {name}. Inténtalo de nuevo.",
+  "accountRelationLoadMoreFailed": "No se pudieron cargar más. Comprueba tu conexión.",
+  "@accountRelationLoadMoreFailed": {
+    "description": "Row at the end of the followers or following list when the next page fails. A Try again button is next to it."
+  },
+  "accountRelationLoadingMore": "Cargando más personas",
+  "@accountRelationLoadingMore": {
+    "description": "Screen reader label for the row at the end of the followers or following list while the next page loads."
+  },
   "accountCouldNotLoadFollowers": "No se pudieron cargar los seguidores",
   "accountCouldNotLoadFollowing": "No se pudieron cargar las cuentas que sigue",
   "accountCouldNotLoadTeam": "No se pudo cargar el equipo",

@@ -559,6 +559,12 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get accountRelationLoadMoreFailed => 'Não foi possível carregar mais. Verifique sua conexão.';
+
+  @override
+  String get accountRelationLoadingMore => 'Carregando mais pessoas';
+
+  @override
   String get accountCouldNotLoadFollowers => 'Não foi possível carregar os seguidores';
 
   @override
@@ -16603,6 +16609,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String accountCouldNotFollowPerson(String name) {
     return 'Não foi possível seguir $name. Tente novamente.';
   }
+
+  @override
+  String get accountRelationLoadMoreFailed => 'Não foi possível carregar mais. Verifique sua conexão.';
+
+  @override
+  String get accountRelationLoadingMore => 'Carregando mais pessoas';
 
   @override
   String get accountCouldNotLoadFollowers => 'Não foi possível carregar os seguidores';

@@ -6,18 +6,21 @@ abstract class PublicProfileEvent with _$PublicProfileEvent {
   const factory PublicProfileEvent.refreshRequested() = _RefreshRequested;
   const factory PublicProfileEvent.fetchMoreWallsRequested() = _FetchMoreWallsRequested;
 
-  /// Load a page of the [kind] list. [page] is zero-indexed; pass 0 for the initial load.
-  const factory PublicProfileEvent.relationPageRequested({
-    required UserRelationKind kind,
-    required List<String> userIds,
-    required int page,
-  }) = _RelationPageRequested;
+  /// Load the next page of the [kind] list of [profileUid]. The first request loads the first page.
+  const factory PublicProfileEvent.relationPageRequested({required UserRelationKind kind, required String profileUid}) =
+      _RelationPageRequested;
 
-  /// Search the [kind] list by username prefix. Results are scoped to [userIds].
+  /// Reload the [kind] list of [profileUid] from the first page. A page that is still loading is dropped.
+  const factory PublicProfileEvent.relationRefreshRequested({
+    required UserRelationKind kind,
+    required String profileUid,
+  }) = _RelationRefreshRequested;
+
+  /// Search the [kind] list of [profileUid] by username prefix: the newest edges plus the loaded pages.
   const factory PublicProfileEvent.relationSearchRequested({
     required UserRelationKind kind,
     required String query,
-    required List<String> userIds,
+    required String profileUid,
   }) = _RelationSearchRequested;
 
   /// Clear active search results (return to the paginated list).

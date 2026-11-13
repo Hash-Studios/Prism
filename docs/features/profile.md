@@ -55,6 +55,21 @@ The app never shows an email address as a name. `creatorLabel` uses, in order: t
 
 The "Followed by" line and the More like offer are covered in [creator-directory.md](creator-directory.md).
 
+### Followers and Following lists
+
+The lists read the uid edges `profiles/{uid}/followers` and `profiles/{uid}/following`. Before #541, each list stopped at the newest 500 edges.
+
+- A page is 30 edges, newest first. The query orders by `createdAt`, then by the document id. The next page starts after the `createdAt` and id of the last edge. So a page boundary does not repeat or skip an edge, also when two edges have the same `createdAt`.
+- `fetchRelationPage` gives the users of one page and the cursor of the next page. The cursor is null on the last page.
+- When the last row comes near the screen, the list loads the next page. A small loading row shows at the end while it loads.
+- If a next page fails, the rows stay. An error row with **Try again** shows at the end. If the first page fails, the screen shows an error state with **Try again**.
+- Pull down to refresh. A refresh loads the first page again. A page that was loading when the refresh started is dropped.
+- The list does not show users that the viewer blocked. The cursor counts edges, not visible users. So a page can have fewer than 30 rows. If the block list cannot load, the page fails and shows **Try again**.
+- The **Followers** and **Following** counts on the profile come from `followerCount` and `followingCount` on `profiles/{uid}`. They do not come from the list length.
+- Search looks at the newest 500 edges (`fetchRelationIds`) and the pages that are loaded. It also hides blocked users.
+- Analytics: `relation_list_page_loaded` with `kind` (`followers` or `following`) and `page_index` (0 for the first page).
+- The query needs only the automatic single-field index on `createdAt`. No index or rule change.
+
 ### Share links
 
 - **Share your Profile** builds `https://prismwalls.com/user/<username>`. The link never holds an email address. The preview title is `<name> (@username)`, and a name that looks like an email is replaced by the username.
@@ -102,4 +117,5 @@ A Prism Pro member shows a Pro badge on the public profile. The badge sits above
 5. Clear your username in a test account, then tap **Share your Profile**. Check the message and the edit panel.
 6. Open Share Prism with no network. Check the retry state. Turn the network on and tap **Try again**.
 7. Set the text size to the largest value on a 360 point phone. Open another creator's profile. Check that each count and label shows full words.
-8. Run `fvm flutter test test/core/constants test/core/widgets/popup/edit_profile_panel_test.dart test/features/public_profile test/features/session/share_prism_screen_test.dart test/data/share`.
+8. Open the Followers list of a creator with more than 30 followers. Scroll to the end. Check that more rows load, that no row shows twice, and that the loading row goes away at the end.
+9. Run `fvm flutter test test/core/constants test/core/widgets/popup/edit_profile_panel_test.dart test/features/public_profile test/features/session/share_prism_screen_test.dart test/data/share`.

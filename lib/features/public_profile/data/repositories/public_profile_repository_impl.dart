@@ -13,6 +13,7 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
@@ -431,27 +432,77 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     }
   }
 
+  ({String collection, String sourceTag}) _relationSource(String uid, UserRelationKind kind, String use) =>
+      switch (kind) {
+        UserRelationKind.followers => (
+          collection: FirebaseCollections.profileFollowers(uid),
+          sourceTag: 'public_profile.relation_$use.followers',
+        ),
+        UserRelationKind.following => (
+          collection: FirebaseCollections.profileFollowing(uid),
+          sourceTag: 'public_profile.relation_$use.following',
+        ),
+      };
+
   @override
-  Future<Result<List<String>>> fetchRelationIds({
-    required String profileUid,
-    required UserRelationKind kind,
-    String? afterId,
-  }) async {
+  Future<Result<List<String>>> fetchRelationIds({required String profileUid, required UserRelationKind kind}) async {
     final String uid = profileUid.trim();
     if (uid.isEmpty) return Result.success(const <String>[]);
-    final bool followers = kind == UserRelationKind.followers;
+    final source = _relationSource(uid, kind, 'ids');
     try {
       final List<String> ids = await _firestoreClient.query<String>(
         FirestoreQuerySpec(
-          collection: followers ? FirebaseCollections.profileFollowers(uid) : FirebaseCollections.profileFollowing(uid),
-          sourceTag: followers ? 'public_profile.relation_ids.followers' : 'public_profile.relation_ids.following',
+          collection: source.collection,
+          sourceTag: source.sourceTag,
           orderBy: const <FirestoreOrderBy>[FirestoreOrderBy(field: 'createdAt', descending: true)],
           limit: PublicProfileRepository.relationIdsLimit,
-          startAfterDocId: afterId,
         ),
         (_, docId) => docId,
       );
       return Result.success(ids);
+    } catch (_) {
+      return Result.error(const ServerFailure('Unable to load relation list.'));
+    }
+  }
+
+  @override
+  Future<Result<RelationPage>> fetchRelationPage({
+    required String profileUid,
+    required UserRelationKind kind,
+    RelationCursor? cursor,
+  }) async {
+    final String uid = profileUid.trim();
+    if (uid.isEmpty) return Result.success(const RelationPage(users: <UserSummaryEntity>[], next: null));
+    final source = _relationSource(uid, kind, 'page');
+    try {
+      final blocked = await _userBlockRepository.loadBlockedCreators();
+      if (blocked is UnknownBlockedCreators) {
+        return Result.error(const ServerFailure('Unable to load blocked creators.'));
+      }
+      // The document id breaks createdAt ties, so a page boundary never repeats or skips an edge.
+      final List<RelationCursor> edges = await _firestoreClient.query<RelationCursor>(
+        FirestoreQuerySpec(
+          collection: source.collection,
+          sourceTag: source.sourceTag,
+          orderBy: const <FirestoreOrderBy>[
+            FirestoreOrderBy(field: 'createdAt', descending: true),
+            FirestoreOrderBy(field: firestoreDocumentIdField, descending: true),
+          ],
+          startAfterFieldValues: cursor == null ? null : <Object?>[cursor.createdAt, cursor.edgeId],
+          limit: PublicProfileRepository.relationPageSize,
+        ),
+        (data, docId) => RelationCursor(createdAt: data['createdAt'], edgeId: docId),
+      );
+      final List<String> ids = edges
+          .map((edge) => edge.edgeId)
+          .where((id) => !blocked.blocks(id))
+          .toList(growable: false);
+      return Result.success(
+        RelationPage(
+          users: await _summaries(ids),
+          next: edges.length < PublicProfileRepository.relationPageSize ? null : edges.last,
+        ),
+      );
     } catch (_) {
       return Result.error(const ServerFailure('Unable to load relation list.'));
     }
@@ -557,6 +608,44 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     isFollowedByCurrentUser: followingSet.contains(row.docId),
   );
 
+  /// Summaries for [ids] in the same order. Ids without a profile are left out.
+  Future<List<UserSummaryEntity>> _summaries(List<String> ids) async {
+    if (ids.isEmpty) return const <UserSummaryEntity>[];
+    final followingFuture = _followingIds(ids);
+    followingFuture.ignore();
+    final chunkedResults = await Future.wait(<Future<List<_UserRow>>>[
+      for (int i = 0; i < ids.length; i += 30)
+        _firestoreClient.query<_UserRow>(
+          FirestoreQuerySpec(
+            collection: FirebaseCollections.profiles,
+            sourceTag: 'public_profile.fetch_user_summaries',
+            filters: <FirestoreFilter>[
+              FirestoreFilter(
+                field: firestoreDocumentIdField,
+                op: FirestoreFilterOp.whereIn,
+                value: ids.sublist(i, math.min(i + 30, ids.length)),
+              ),
+            ],
+            limit: math.min(30, ids.length - i),
+            cachePolicy: FirestoreCachePolicy.memoryFirst,
+            dedupeWindowMs: _profileReadDedupeMs,
+          ),
+          (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
+        ),
+    ]);
+
+    final Set<String> followingSet = await followingFuture;
+    final Map<String, _UserRow> byId = <String, _UserRow>{
+      for (final row in chunkedResults.expand((rows) => rows)) row.docId: row,
+    };
+    // Preserve the original ordering of the input UID list.
+    return ids
+        .map((id) => byId[id])
+        .whereType<_UserRow>()
+        .map((row) => _toSummary(row, followingSet))
+        .toList(growable: false);
+  }
+
   @override
   Future<Result<({List<UserSummaryEntity> items, bool hasMore})>> fetchUserSummariesPage({
     required List<String> userIds,
@@ -565,48 +654,16 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     final String owner = _snapshotOwner;
     final List<String> unique = _uniqueUserIds(userIds);
     try {
-      final start = page * PublicProfileRepository.relationPageSize;
+      final start = page * PublicProfileRepository.summariesPageSize;
       if (start >= unique.length) {
         return Result.success((items: const <UserSummaryEntity>[], hasMore: false));
       }
-      final end = math.min(start + PublicProfileRepository.relationPageSize, unique.length);
+      final end = math.min(start + PublicProfileRepository.summariesPageSize, unique.length);
       final pageUserIds = unique.sublist(start, end);
       final String pageIdentity = sha256.convert(utf8.encode(pageUserIds.join(','))).toString();
       final String cacheKey = 'v3::$owner::summaries:$page:$pageIdentity';
 
-      final followingFuture = _followingIds(pageUserIds);
-      followingFuture.ignore();
-      final chunkedResults = await Future.wait(<Future<List<_UserRow>>>[
-        for (int i = 0; i < pageUserIds.length; i += 30)
-          _firestoreClient.query<_UserRow>(
-            FirestoreQuerySpec(
-              collection: FirebaseCollections.profiles,
-              sourceTag: 'public_profile.fetch_user_summaries',
-              filters: <FirestoreFilter>[
-                FirestoreFilter(
-                  field: firestoreDocumentIdField,
-                  op: FirestoreFilterOp.whereIn,
-                  value: pageUserIds.sublist(i, math.min(i + 30, pageUserIds.length)),
-                ),
-              ],
-              limit: math.min(30, pageUserIds.length - i),
-              cachePolicy: FirestoreCachePolicy.memoryFirst,
-              dedupeWindowMs: _profileReadDedupeMs,
-            ),
-            (data, docId) => _UserRow(docId: docId, doc: PublicUserDocDto.fromJson(data)),
-          ),
-      ]);
-
-      final Set<String> followingSet = await followingFuture;
-      final Map<String, _UserRow> byId = <String, _UserRow>{
-        for (final row in chunkedResults.expand((rows) => rows)) row.docId: row,
-      };
-      // Preserve the original ordering of the input UID list.
-      final ordered = pageUserIds
-          .map((id) => byId[id])
-          .whereType<_UserRow>()
-          .map((row) => _toSummary(row, followingSet))
-          .toList(growable: false);
+      final ordered = await _summaries(pageUserIds);
       if (_snapshotOwner == owner) {
         try {
           await _writeSnapshot(
@@ -620,8 +677,8 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     } catch (error) {
       if (_snapshotOwner == owner) {
         try {
-          final start = page * PublicProfileRepository.relationPageSize;
-          final end = math.min(start + PublicProfileRepository.relationPageSize, unique.length);
+          final start = page * PublicProfileRepository.summariesPageSize;
+          final end = math.min(start + PublicProfileRepository.summariesPageSize, unique.length);
           final pageIdentity = sha256.convert(utf8.encode(unique.sublist(start, end).join(','))).toString();
           final cacheKey = 'v3::$owner::summaries:$page:$pageIdentity';
           final cached = await _profileSnapshots.read(cacheKey);
@@ -648,7 +705,12 @@ class PublicProfileRepositoryImpl implements PublicProfileRepository {
     }
 
     try {
-      final List<String> ids = _uniqueUserIds(scopeUserIds);
+      final blocked = await _userBlockRepository.loadBlockedCreators();
+      if (blocked is UnknownBlockedCreators) {
+        return Result.error(const ServerFailure('Unable to load blocked creators.'));
+      }
+      final List<String> ids = _uniqueUserIds(scopeUserIds).where((id) => !blocked.blocks(id)).toList();
+      if (ids.isEmpty) return Result.success(const <UserSummaryEntity>[]);
       final followingFuture = _followingIds(ids);
       followingFuture.ignore();
       final List<List<_UserRow>> results = await Future.wait(<Future<List<_UserRow>>>[

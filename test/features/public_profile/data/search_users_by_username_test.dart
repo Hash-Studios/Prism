@@ -23,7 +23,7 @@ void main() {
         ];
       },
     );
-    final repo = PublicProfileRepositoryImpl(client, FakeUserBlockRepository.pending());
+    final repo = PublicProfileRepositoryImpl(client, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
 
     final result = await repo.searchUsersByUsername(
       query: 'kev',
@@ -46,7 +46,7 @@ void main() {
           _profile(id! as String, 'kev${int.parse((id as String).substring(4)).toString().padLeft(2, '0')}'),
       ],
     );
-    final repo = PublicProfileRepositoryImpl(client, FakeUserBlockRepository.pending());
+    final repo = PublicProfileRepositoryImpl(client, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
 
     final result = await repo.searchUsersByUsername(query: 'kev', scopeUserIds: ids);
 
@@ -58,7 +58,7 @@ void main() {
 
   test('a blank query or email-only scope does not query Firestore', () async {
     final client = FakeFirestoreClient();
-    final repo = PublicProfileRepositoryImpl(client, FakeUserBlockRepository.pending());
+    final repo = PublicProfileRepositoryImpl(client, FakeUserBlockRepository.pending()..completeInitial(<String>{}));
 
     expect((await repo.searchUsersByUsername(query: '  ', scopeUserIds: const <String>['uid-1'])).data, isEmpty);
     expect(

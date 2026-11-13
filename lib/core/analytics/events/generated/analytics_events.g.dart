@@ -10,6 +10,7 @@ import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart'
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
 import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
+import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/readability/domain/readability.dart';
 import 'package:Prism/features/taste_quiz/domain/entities/taste_quiz.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
@@ -22,6 +23,7 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'hint_dismiss_method': HintDismissMethod.values.map((value) => value.wireValue).toList(),
   'readability_zone': ReadabilityZone.values.map((value) => value.wireValue).toList(),
   'readability_fix_kind': ReadabilityFixKind.values.map((value) => value.wireValue).toList(),
+  'user_relation_kind': UserRelationKind.values.map((value) => value.wireValue).toList(),
   'daily_moment_step': DailyMomentStepValue.values.map((value) => value.wireValue).toList(),
   'challenge_entry_source': ChallengeEntrySource.values.map((value) => value.wireValue).toList(),
   'wallpaper_target': WallpaperTarget.values.map((value) => value.wireValue).toList(),
@@ -3111,6 +3113,21 @@ class WallApprovedMetadataEditedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'asset_id': assetId, 'fields': fields};
+  }
+}
+
+class RelationListPageLoadedEvent extends AnalyticsEvent {
+  const RelationListPageLoadedEvent({required this.kind, required this.pageIndex});
+
+  final UserRelationKind kind;
+  final int pageIndex;
+
+  @override
+  String get eventName => 'relation_list_page_loaded';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'kind': kind.wireValue, 'page_index': pageIndex};
   }
 }
 

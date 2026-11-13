@@ -545,6 +545,12 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String get accountRelationLoadMoreFailed => 'और लोड नहीं हो सके। कनेक्शन जाँचें।';
+
+  @override
+  String get accountRelationLoadingMore => 'और लोग लोड हो रहे हैं';
+
+  @override
   String get accountCouldNotLoadFollowers => 'फ़ॉलोअर्स लोड नहीं हो सके';
 
   @override
