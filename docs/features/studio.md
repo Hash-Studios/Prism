@@ -74,7 +74,7 @@ A 64-bit dHash was tried first. It called different After Dark walls the same, b
 - The first Studio wall that passes the checks each UTC day gets `dropReserved: true`. `planWeeklyDrop` puts reserved walls in the next Monday Drop, so about 7 walls a week go to the Drop with no admin step.
 - A series with 3 walls that wait for a Drop (`dropReserved: true`, `review: false`) gets no reserve (`STUDIO_DROP_SERIES_CAP`). The next wall from a different series that day gets the reserve. If no wall can get the reserve, that day has no reserve. This rule is necessary because all candidates start at the same time and After Dark always publishes first.
 - `studioConfig/current.dailyDropReserves` (1) sets how many walls a day are reserved. 0 turns it off. `studioDropReserves/{yyyy-mm-dd}` counts them.
-- A reserved wall stays in the review queue with a "Reserved for the next Drop" line. Unreserve sends it back to normal review. Do not approve a reserved wall: approval makes it public, and the planner skips it.
+- A reserved wall stays in the review queue with a "Reserved for the next Drop" line. Unreserve sends it back to normal review. Approval makes the wall public and removes the reserve, so the wall does not go to a Drop.
 
 ### Telegram post
 

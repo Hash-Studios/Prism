@@ -121,7 +121,8 @@ class AdminModerationRepository {
   /// A wall with a future `releaseAt` stays hidden: approval writes `releaseApprovedAt`, and the server release job
   /// makes it public at that time. The rules refuse `review: true` before `releaseAt`. Returns true for that case.
   /// A creator can write any `collections` or streak value on a pending wall. Approval therefore files the wall under
-  /// `community` and removes the streak fields, unless the admin passes values.
+  /// `community` and removes the streak fields, unless the admin passes values. Approval also removes a Drop reserve,
+  /// because the planner never takes an approved wall and the feeds hide a reserved one.
   Future<bool> approveWall(
     FirestoreDocument wall, {
     List<String>? collections,
@@ -135,6 +136,7 @@ class AdminModerationRepository {
       'collections': collections == null || collections.isEmpty ? <String>['community'] : collections,
       'is_streak_exclusive': streakExclusive ?? FirestoreSentinels.delete(),
       'streak_shop_coin_cost': streakShopCoinCost ?? FirestoreSentinels.delete(),
+      'dropReserved': FirestoreSentinels.delete(),
       'reviewedAt': DateTime.now().toUtc(),
       if (!scheduled) 'createdAt': DateTime.now().toUtc(),
     }, sourceTag: 'admin_review.approve_wall');
