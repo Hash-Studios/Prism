@@ -179,7 +179,7 @@ export const planWeeklyDrop = onSchedule(
       .where("review", "==", false)
       .orderBy("createdAt", "asc")
       .limit(MAX_DROP_WALLS);
-    // ponytail: reads every reserve; Studio keeps at most STUDIO_DROP_SERIES_CAP per series waiting, so the pool is small.
+    // Walk all pages so scheduled and otherwise ineligible reserves cannot hide ready walls.
     for (;;) {
       const reserved = await query.get();
       ready.push(...reserved.docs.filter((doc) => doc.data().origin === "studio" && releaseTimeReached(doc.data(), nowMs) &&
@@ -226,7 +226,8 @@ export const planWeeklyDrop = onSchedule(
       const currentWalls = await Promise.all(docs.map((doc) => tx.get(doc.ref)));
       if (currentWalls.some((snapshot) => {
         const wall = snapshot.data();
-        return !wall || wall.review !== false || wall.dropReserved !== true || !releaseTimeReached(wall, nowMs) ||
+        return !wall || wall.origin !== "studio" || wall.review !== false || wall.dropReserved !== true ||
+          !releaseTimeReached(wall, nowMs) ||
           wall.kind === "live" && wall.live?.verified !== true;
       })) return false;
       const titles = currentConfig.data()?.dropTitles;

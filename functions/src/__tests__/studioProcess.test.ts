@@ -50,12 +50,13 @@ function setup(t: TestContext, opts: {
   putAsset?: (key: string) => Response;
   beforePut?: (store: Map<string, Doc>, key: string) => void;
   depth?: WallDepth;
+  observed?: {reads: number; writes: number};
 } = {}) {
   const store = installFakeDb(t, {
     "studioConfig/current": {generationEnabled: true, identity: IDENTITY},
     [CAND_PATH]: candidate(),
     ...opts.seed,
-  });
+  }, opts.observed);
   const calls: Call[] = [];
   t.mock.method(globalThis, "fetch", async (rawUrl: string | URL | Request, init: RequestInit = {}) => {
     const url = String(rawUrl);
@@ -101,10 +102,11 @@ const workerError = (status: number, error: string) => () => Response.json({erro
 
 test("Duo publishes exact wide original to normal review with no automatic Drop reserve", async (t) => {
   const wide = await flatPng(2688, 1888);
+  const observed = {reads: 0, writes: 0};
   const {store, run, cand, calls} = setup(t, {
     seed: {[CAND_PATH]: candidate({seriesId: "duo-reveal", duoPresetId: "prism-right-v1", width: 2688, height: 1888,
       tags: ["duo", "duo-reveal"]})},
-    image: async () => wide,
+    image: async () => wide, observed,
   });
   await run();
   assert.equal(cand().status, "pending_review");
@@ -115,6 +117,11 @@ test("Duo publishes exact wide original to normal review with no automatic Drop 
   assert.equal(wall.duoPresetId, "prism-right-v1");
   const body = calls.find((c) => c.method === "POST")?.body as Doc;
   assert.equal(body.duoPresetId, "prism-right-v1");
+  const standardObserved = {reads: 0, writes: 0};
+  const standard = setup(t, {observed: standardObserved});
+  await standard.run();
+  // The reserve-counter read is shared with other Studio walls; Duo skips the extra walls query.
+  assert.equal(standardObserved.reads - observed.reads, 1);
 });
 
 test("a clean candidate becomes a pending wall with the app's fields, a signature doc and two uploads", async (t) => {
@@ -265,6 +272,35 @@ test("a series with three walls waiting for a Drop leaves the day's reserve to a
     ...waiting("R4", {dropReserved: false, dropWeek: "2026-W43"})}});
   await notWaiting.run();
   assert.equal(newWall(notWaiting.store).dropReserved, true);
+});
+
+test("walls for separate requests in the same series share the waiting cap", async (t) => {
+  const nowMs = () => Date.parse("2026-10-19T21:00:00Z");
+  const requestWall = (id: string): Record<string, Doc> => ({[`walls/${id}`]: {
+    origin: "studio", review: false, dropReserved: true, seriesId: "request", requestId: `request-${id}`,
+  }});
+  const {store, run} = setup(t, {nowMs, seed: {
+    ...requestWall("R1"), ...requestWall("R2"), ...requestWall("R3"),
+    "wallRequests/request-new": {status: "open"},
+    [CAND_PATH]: candidate({seriesId: "request", requestId: "request-new"}),
+  }});
+  await run();
+  const published = walls(store).find(([path]) => path !== "walls/R1" && path !== "walls/R2" && path !== "walls/R3")?.[1];
+  assert.equal(published?.requestId, "request-new");
+  assert.equal(published?.dropReserved, undefined);
+  assert.equal(store.has("studioDropReserves/2026-10-19"), false);
+});
+
+test("concurrent duplicate processing publishes a candidate only once", async (t) => {
+  const {store, run, cand} = setup(t);
+  const outcomes = await Promise.allSettled([run(), run()]);
+  assert.equal(outcomes.filter(({status}) => status === "fulfilled").length, 1);
+  const rejected = outcomes.find(({status}) => status === "rejected");
+  assert.ok(rejected && rejected.status === "rejected");
+  assert.match(String(rejected.reason), /another attempt is processing this candidate/);
+  await run();
+  assert.equal(cand().status, "pending_review");
+  assert.equal(walls(store).length, 1);
 });
 
 test("a wall id that exists already is not overwritten; the next id is used", async (t) => {

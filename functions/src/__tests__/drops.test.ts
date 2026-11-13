@@ -158,6 +158,10 @@ test("the planner writes snapshots, prices and flips the wall flags", async (t) 
     walls.map((w) => w.id),
     Array.from({length: 10}, (_, i) => `W${i + 1}`),
   );
+  assert.deepEqual(
+    Array.from({length: 12}, (_, i) => `W${i + 1}`).filter((id) => store.get(`walls/${id}`)?.dropWeek === KEY).sort(),
+    walls.map((w) => w.id).sort(),
+  );
   assert.equal("url" in walls[0], false);
   assert.equal(walls[0].thumb, "https://img/t1.jpg");
   assert.equal(walls[0].creatorUid, "prism-studio");
@@ -182,6 +186,11 @@ test("the planner takes reserves round-robin by series when the oldest are all o
   });
   await plan(t);
   assert.deepEqual(dropIds(store), ["W1", "W9", "W11", "W2", "W10", "W12", "W3", "W4", "W5", "W6"]);
+  assert.deepEqual(
+    [...store.entries()].filter(([path, data]) => path.startsWith("walls/") && data.dropWeek === KEY)
+      .map(([path]) => path.slice("walls/".length)).sort(),
+    dropIds(store).sort(),
+  );
 });
 
 test("the planner still plans a one-series week with every ready reserve", async (t) => {
@@ -215,6 +224,21 @@ test("the planner falls back to a mood name when no title is set", async (t) => 
   const store = installFakeDb(t, reservedWalls(4));
   await plan(t);
   assert.equal(store.get(`drops/${KEY}`)?.title, "Daydream");
+});
+
+test("the fallback mood uses the mixed, selected walls rather than every ready wall", async (t) => {
+  const store = installFakeDb(t, {
+    ...Object.fromEntries(Array.from({length: 10}, (_, i) => [
+      `walls/W${i + 1}`, wall(i + 1, {seriesId: "dusk", colors: ["red"]}),
+    ])),
+    ...Object.fromEntries(Array.from({length: 10}, (_, i) => {
+      const n = i + 11;
+      return [`walls/W${n}`, wall(n, {seriesId: `series-${n}`, colors: ["blue"]})];
+    })),
+  });
+  await plan(t);
+  assert.deepEqual(dropIds(store), ["W1", "W11", "W12", "W13", "W14", "W15", "W16", "W17", "W18", "W19"]);
+  assert.equal(store.get(`drops/${KEY}`)?.title, "Open Air");
 });
 
 test("the planner ignores malformed titles in recent drops", async (t) => {
@@ -993,4 +1017,64 @@ test("the planner rechecks a release time changed after its query", async (t) =>
   });
   await plan(t);
   assert.equal(store.has(`drops/${KEY}`), false);
+});
+
+test("the planner does not claim a reserve that stopped being a Studio wall", async (t) => {
+  const store = installFakeDb(t, reservedWalls(4));
+  const runTransaction = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", async (callback: Parameters<typeof db.runTransaction>[0]) => {
+    store.set("walls/W1", wall(1, {origin: "user"}));
+    return runTransaction(callback);
+  });
+  await plan(t);
+  assert.equal(store.has(`drops/${KEY}`), false);
+  assert.equal(store.get("walls/W1")?.dropReserved, true);
+});
+
+for (const [label, extra] of [
+  ["review", {review: true}],
+  ["reservation", {dropReserved: false}],
+  ["live verification", {kind: "live", live: {verified: false}}],
+] as Array<[string, Doc]>) {
+  test(`the planner leaves all reserves untouched if a selected wall's ${label} changes`, async (t) => {
+    t.mock.timers.enable({apis: ["Date"], now: MONDAY});
+    const store = installFakeDb(t, reservedWalls(4, {kind: "live", live: {verified: true}}));
+    const runTransaction = db.runTransaction.bind(db);
+    let changed = false;
+    t.mock.method(db, "runTransaction", (callback: Parameters<typeof db.runTransaction>[0]) => {
+      if (!changed) {
+        changed = true;
+        store.set("walls/W1", wall(1, extra));
+      }
+      return runTransaction(callback);
+    });
+    const invoke = () => planWeeklyDrop.run({jobName: "t", scheduleTime: new Date(MONDAY).toISOString()});
+    await invoke();
+    assert.equal(store.has(`drops/${KEY}`), false);
+    for (let i = 1; i <= 4; i++) assert.equal(store.get(`walls/W${i}`)?.dropWeek, undefined);
+    store.set("walls/W1", wall(1, {kind: "live", live: {verified: true}}));
+    await invoke();
+    assert.equal(store.has(`drops/${KEY}`), true);
+  });
+}
+
+test("the planner leaves other reserves untouched if a selected wall is missing", async (t) => {
+  t.mock.timers.enable({apis: ["Date"], now: MONDAY});
+  const store = installFakeDb(t, reservedWalls(4));
+  const runTransaction = db.runTransaction.bind(db);
+  let removed = false;
+  t.mock.method(db, "runTransaction", (callback: Parameters<typeof db.runTransaction>[0]) => {
+    if (!removed) {
+      removed = true;
+      store.delete("walls/W1");
+    }
+    return runTransaction(callback);
+  });
+  const invoke = () => planWeeklyDrop.run({jobName: "t", scheduleTime: new Date(MONDAY).toISOString()});
+  await invoke();
+  assert.equal(store.has(`drops/${KEY}`), false);
+  for (let i = 2; i <= 4; i++) assert.equal(store.get(`walls/W${i}`)?.dropWeek, undefined);
+  store.set("walls/W1", wall(1));
+  await invoke();
+  assert.equal(store.has(`drops/${KEY}`), true);
 });
