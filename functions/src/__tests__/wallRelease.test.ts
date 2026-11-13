@@ -5,7 +5,7 @@ import sharp from "sharp";
 import {db} from "../common";
 import {drainReleaseNotices, onWallApproved} from "../onWallApproved";
 import {submitDesktopVersion} from "../desktopSubmissions";
-import {isScheduledWall, releaseDueWalls, validReleaseAt} from "../wallRelease";
+import {isScheduledWall, publishCreatorWalls, releaseDueWalls, validReleaseAt} from "../wallRelease";
 import {type Doc, installFakeDb} from "./fakeDb";
 
 const NOW = Date.parse("2026-11-14T12:30:00Z");
@@ -84,6 +84,28 @@ test("a scheduled wall past its release time is published with a pending notice"
   assert.equal(wall?.review, true);
   assert.equal(wall?.releaseNotice, "pending");
   assert.ok(wall?.publishedAt instanceof admin.firestore.Timestamp);
+});
+
+test("a scheduled wall assigned to a Drop stays hidden after its release time", async (t) => {
+  const {store} = harness(t, {"walls/w1": scheduled(A, NOW - MIN, {dropReserved: false, dropWeek: "2026-W46"})});
+  assert.deepEqual(await releaseDueWalls(NOW), {released: 0, creators: 1});
+  assert.equal(store.get("walls/w1")?.review, false);
+  assert.equal(store.get("walls/w1")?.dropReserved, false);
+});
+
+test("a reserved Drop candidate without a week is not released", async (t) => {
+  const {store} = harness(t, {"walls/w1": scheduled(A, NOW - MIN, {dropReserved: true})});
+  assert.deepEqual(await releaseDueWalls(NOW), {released: 0, creators: 1});
+  assert.equal(store.get("walls/w1")?.review, false);
+});
+
+test("the release transaction rechecks Drop reservation after the scan", async (t) => {
+  const {store} = harness(t, {"walls/w1": scheduled(A, NOW - MIN)});
+  const ref = db.doc("walls/w1");
+  await ref.update({dropWeek: "2026-W46", dropReserved: false});
+  assert.equal(await publishCreatorWalls(A, [ref], NOW), 0);
+  assert.equal(store.get("walls/w1")?.review, false);
+  assert.equal(store.get("walls/w1")?.dropReserved, false);
 });
 
 test("a wall past its release time that was never approved for release stays hidden", async (t) => {

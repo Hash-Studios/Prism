@@ -147,6 +147,23 @@ export async function releaseOldDrops(nowMs: number): Promise<number> {
   return released;
 }
 
+/**
+ * Orders walls round-robin by series, oldest first in each series: every series gives its oldest wall before any series
+ * gives a second one. `oldestFirst` must be sorted by age.
+ */
+export function mixBySeries<T extends {data(): admin.firestore.DocumentData}>(oldestFirst: T[]): T[] {
+  const taken = new Map<string, number>();
+  return oldestFirst
+    .map((doc, age) => {
+      const series = str(doc.data().seriesId);
+      const round = taken.get(series) ?? 0;
+      taken.set(series, round + 1);
+      return {doc, round, age};
+    })
+    .sort((a, b) => a.round - b.round || a.age - b.age)
+    .map(({doc}) => doc);
+}
+
 export const planWeeklyDrop = onSchedule(
   {schedule: "30 0 * * 1", region: REGION, timeZone: "UTC", retryCount: 1, timeoutSeconds: 180, cpu: "gcf_gen1"},
   async () => {
@@ -156,20 +173,21 @@ export const planWeeklyDrop = onSchedule(
     const dropRef = db.collection("drops").doc(key);
     if ((await dropRef.get()).exists) return;
 
-    const docs: admin.firestore.QueryDocumentSnapshot[] = [];
+    const ready: admin.firestore.QueryDocumentSnapshot[] = [];
     let query = db.collection("walls")
       .where("dropReserved", "==", true)
       .where("review", "==", false)
       .orderBy("createdAt", "asc")
       .limit(MAX_DROP_WALLS);
-    while (docs.length < MAX_DROP_WALLS) {
+    // Walk all pages so scheduled and otherwise ineligible reserves cannot hide ready walls.
+    for (;;) {
       const reserved = await query.get();
-      docs.push(...reserved.docs.filter((doc) => doc.data().origin === "studio" && releaseTimeReached(doc.data(), nowMs) &&
-        (doc.data().kind !== "live" || doc.data().live?.verified === true))
-        .slice(0, MAX_DROP_WALLS - docs.length));
+      ready.push(...reserved.docs.filter((doc) => doc.data().origin === "studio" && releaseTimeReached(doc.data(), nowMs) &&
+        (doc.data().kind !== "live" || doc.data().live?.verified === true)));
       if (reserved.size < MAX_DROP_WALLS) break;
       query = query.startAfter(reserved.docs[reserved.docs.length - 1]);
     }
+    const docs = mixBySeries(ready).slice(0, MAX_DROP_WALLS);
     if (docs.length < MIN_DROP_WALLS) {
       logger.info("drops: not enough reserved walls", {
         weekKey: key,
@@ -208,7 +226,8 @@ export const planWeeklyDrop = onSchedule(
       const currentWalls = await Promise.all(docs.map((doc) => tx.get(doc.ref)));
       if (currentWalls.some((snapshot) => {
         const wall = snapshot.data();
-        return !wall || wall.review !== false || wall.dropReserved !== true || !releaseTimeReached(wall, nowMs) ||
+        return !wall || wall.origin !== "studio" || wall.review !== false || wall.dropReserved !== true ||
+          !releaseTimeReached(wall, nowMs) ||
           wall.kind === "live" && wall.live?.verified !== true;
       })) return false;
       const titles = currentConfig.data()?.dropTitles;

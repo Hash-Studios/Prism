@@ -58,6 +58,7 @@ class _RecordingTransaction implements FirestoreTransaction {
   @override
   void updateDoc(String collection, String id, Map<String, dynamic> data) {
     writes.add((op: 'update', collection: collection, id: id, data: Map<String, dynamic>.of(data)));
+    client.writes.add((op: 'update', collection: collection, id: id, data: Map<String, dynamic>.of(data)));
   }
 
   @override
@@ -222,6 +223,7 @@ void main() {
 
   test('approval updates the wall and leaves the inbox entry to onWallApproved', () async {
     const wall = FirestoreDocument('wall-1', <String, dynamic>{'email': 'creator@example.com', 'review': false});
+    client.docs[FirebaseCollections.walls] = {'wall-1': wall.payload};
 
     await repository.approveWall(wall);
 
@@ -229,6 +231,55 @@ void main() {
     expect((write.op, write.collection, write.id), ('update', FirebaseCollections.walls, 'wall-1'));
     expect(write.data!['review'], isTrue);
     expect(write.data!['collections'], <String>['community']);
+  });
+
+  test('approval of a wall reserved for the Drop removes the reserve, so the feeds show it', () async {
+    const wall = FirestoreDocument('wall-3', <String, dynamic>{
+      'origin': 'studio',
+      'review': false,
+      'dropReserved': true,
+    });
+    client.docs[FirebaseCollections.walls] = {'wall-3': wall.payload};
+
+    await repository.approveWall(wall);
+
+    expect(client.writes.single.data!['dropReserved'], isA<FieldValue>());
+  });
+
+  test('approval refuses a wall the planner has already claimed for a Drop', () async {
+    const FirestoreDocument staleWall = FirestoreDocument('wall-drop', <String, dynamic>{'review': false});
+    client.docs[FirebaseCollections.walls] = {
+      'wall-drop': <String, dynamic>{'review': false, 'dropWeek': '2026-W46'},
+    };
+
+    await expectLater(repository.approveWall(staleWall), throwsA(isA<StateError>()));
+
+    expect(client.writes, isEmpty);
+  });
+
+  test('retrying approval of an already approved wall does not reset its timestamps', () async {
+    const FirestoreDocument staleWall = FirestoreDocument('wall-approved', <String, dynamic>{'review': false});
+    client.docs[FirebaseCollections.walls] = {
+      'wall-approved': <String, dynamic>{'review': true, 'createdAt': 'existing'},
+    };
+
+    await repository.approveWall(staleWall);
+
+    expect(client.writes, isEmpty);
+  });
+
+  test('a stale reserve action cannot reserve a wall that has already been approved', () async {
+    const FirestoreDocument staleWall = FirestoreDocument('wall-reserve', <String, dynamic>{
+      'review': false,
+      'origin': 'studio',
+    });
+    client.docs[FirebaseCollections.walls] = {
+      'wall-reserve': <String, dynamic>{'review': true, 'origin': 'studio'},
+    };
+
+    await expectLater(repository.reserveWallForDrop(staleWall), throwsA(isA<StateError>()));
+
+    expect(client.writes, isEmpty);
   });
 
   test('approval replaces creator-written collections and removes the streak fields', () async {
@@ -239,6 +290,7 @@ void main() {
       'is_streak_exclusive': true,
       'streak_shop_coin_cost': 1,
     });
+    client.docs[FirebaseCollections.walls] = {'wall-2': wall.payload};
 
     await repository.approveWall(wall);
 
@@ -250,6 +302,7 @@ void main() {
 
   test('approval keeps values the admin sets on purpose', () async {
     const wall = FirestoreDocument('wall-3', <String, dynamic>{'email': 'creator@example.com', 'review': false});
+    client.docs[FirebaseCollections.walls] = {'wall-3': wall.payload};
 
     await repository.approveWall(
       wall,
@@ -267,6 +320,7 @@ void main() {
   test('undoing an approval puts the original streak values back', () async {
     const wall = FirestoreDocument('wall-4', <String, dynamic>{
       'review': false,
+      'dropReserved': true,
       'collections': <String>['community'],
       'is_streak_exclusive': true,
       'streak_shop_coin_cost': 20,
@@ -276,6 +330,7 @@ void main() {
 
     final data = client.writes.single.data!;
     expect(data['review'], isFalse);
+    expect(data['dropReserved'], isTrue);
     expect(data['is_streak_exclusive'], isTrue);
     expect(data['streak_shop_coin_cost'], 20);
   });

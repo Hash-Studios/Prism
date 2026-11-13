@@ -121,23 +121,44 @@ class AdminModerationRepository {
   /// A wall with a future `releaseAt` stays hidden: approval writes `releaseApprovedAt`, and the server release job
   /// makes it public at that time. The rules refuse `review: true` before `releaseAt`. Returns true for that case.
   /// A creator can write any `collections` or streak value on a pending wall. Approval therefore files the wall under
-  /// `community` and removes the streak fields, unless the admin passes values.
+  /// `community` and removes the streak fields, unless the admin passes values. Approval also removes a Drop reserve,
+  /// because the planner never takes an approved wall and the feeds hide a reserved one.
   Future<bool> approveWall(
     FirestoreDocument wall, {
     List<String>? collections,
     bool? streakExclusive,
     int? streakShopCoinCost,
   }) async {
-    final DateTime? releaseAt = WallRelease.of(wall).releaseAt;
-    final bool scheduled = releaseAt != null && releaseAt.isAfter(DateTime.now());
-    await _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
-      if (scheduled) 'releaseApprovedAt': FirestoreSentinels.serverTimestamp() else 'review': true,
-      'collections': collections == null || collections.isEmpty ? <String>['community'] : collections,
-      'is_streak_exclusive': streakExclusive ?? FirestoreSentinels.delete(),
-      'streak_shop_coin_cost': streakShopCoinCost ?? FirestoreSentinels.delete(),
-      'reviewedAt': DateTime.now().toUtc(),
-      if (!scheduled) 'createdAt': DateTime.now().toUtc(),
-    }, sourceTag: 'admin_review.approve_wall');
+    final bool scheduled = await _client.runTransaction<bool>(
+      (FirestoreTransaction transaction) async {
+        final Map<String, dynamic>? current = await transaction.getDoc(FirebaseCollections.walls, wall.id);
+        if (current == null) throw StateError('wall-review-conflict');
+        if (current['dropWeek'] != null) throw StateError('wall-in-drop');
+        if (current['review'] != false) {
+          if (current['dropReserved'] == true) {
+            transaction.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
+              'dropReserved': FirestoreSentinels.delete(),
+            });
+          }
+          return WallRelease.of(FirestoreDocument(wall.id, current)).state == WallReleaseState.scheduled;
+        }
+        final DateTime? releaseAt = WallRelease.of(FirestoreDocument(wall.id, current)).releaseAt;
+        final bool scheduled = releaseAt != null && releaseAt.isAfter(DateTime.now());
+        transaction.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
+          if (scheduled) 'releaseApprovedAt': FirestoreSentinels.serverTimestamp() else 'review': true,
+          'collections': collections == null || collections.isEmpty ? <String>['community'] : collections,
+          'is_streak_exclusive': streakExclusive ?? FirestoreSentinels.delete(),
+          'streak_shop_coin_cost': streakShopCoinCost ?? FirestoreSentinels.delete(),
+          'dropReserved': FirestoreSentinels.delete(),
+          'reviewedAt': DateTime.now().toUtc(),
+          if (!scheduled) 'createdAt': DateTime.now().toUtc(),
+        });
+        return scheduled;
+      },
+      sourceTag: 'admin_review.approve_wall',
+      collection: FirebaseCollections.walls,
+      docId: wall.id,
+    );
     final Object? requestId = wall.data()['requestId'];
     if (requestId is String && requestId.isNotEmpty) {
       analytics.track(
@@ -223,10 +244,24 @@ class AdminModerationRepository {
   }
 
   /// Sets a Studio wall aside for the next weekly Drop. The planner picks it up on Monday.
-  Future<void> reserveWallForDrop(FirestoreDocument wall) {
-    return _client.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{
-      'dropReserved': true,
-    }, sourceTag: 'admin_review.reserve_wall_for_drop');
+  Future<void> reserveWallForDrop(FirestoreDocument wall) async {
+    await _client.runTransaction<void>(
+      (FirestoreTransaction transaction) async {
+        final Map<String, dynamic>? current = await transaction.getDoc(FirebaseCollections.walls, wall.id);
+        if (current == null ||
+            current['review'] != false ||
+            current['origin'] != 'studio' ||
+            current['dropWeek'] != null) {
+          throw StateError('wall-drop-reservation-conflict');
+        }
+        if (current['dropReserved'] != true) {
+          transaction.updateDoc(FirebaseCollections.walls, wall.id, <String, dynamic>{'dropReserved': true});
+        }
+      },
+      sourceTag: 'admin_review.reserve_wall_for_drop',
+      collection: FirebaseCollections.walls,
+      docId: wall.id,
+    );
   }
 
   Future<void> undoReserveWallForDrop(FirestoreDocument wall) {
@@ -256,6 +291,7 @@ class AdminModerationRepository {
       'review': false,
       'releaseApprovedAt': FirestoreSentinels.delete(),
       'collections': wall.collections,
+      if (wall.payload.containsKey('dropReserved')) 'dropReserved': wall.payload['dropReserved'],
       if (wall.payload.containsKey('is_streak_exclusive')) 'is_streak_exclusive': wall.payload['is_streak_exclusive'],
       if (wall.payload.containsKey('streak_shop_coin_cost'))
         'streak_shop_coin_cost': wall.payload['streak_shop_coin_cost'],
