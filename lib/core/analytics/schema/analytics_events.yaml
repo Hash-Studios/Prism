@@ -32,6 +32,12 @@ enums:
     values:
       - dim
       - blur
+  - name: user_relation_kind
+    dart_type: UserRelationKind
+    import: package:Prism/features/public_profile/domain/entities/user_relation_kind.dart
+    values:
+      - followers
+      - following
   - name: daily_moment_step
     dart_type: DailyMomentStepValue
     values:
@@ -2461,6 +2467,15 @@ events:
       - name: fields
         key: fields
         type: string_list
+  - id: relation_list_page_loaded
+    fields:
+      - name: kind
+        key: kind
+        type: enum
+        enum: UserRelationKind
+      - name: page_index
+        key: page_index
+        type: int
   - id: follow_result
     fields:
       - name: action

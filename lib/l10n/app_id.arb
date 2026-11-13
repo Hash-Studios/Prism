@@ -757,6 +757,14 @@
       }
     }
   },
+  "accountRelationLoadMoreFailed": "Tidak dapat memuat lebih banyak. Periksa koneksi Anda.",
+  "@accountRelationLoadMoreFailed": {
+    "description": "Row at the end of the followers or following list when the next page fails. A Try again button is next to it."
+  },
+  "accountRelationLoadingMore": "Memuat lebih banyak orang",
+  "@accountRelationLoadingMore": {
+    "description": "Screen reader label for the row at the end of the followers or following list while the next page loads."
+  },
   "accountCouldNotLoadFollowers": "Pengikut tidak dapat dimuat",
   "@accountCouldNotLoadFollowers": {
     "description": "Error title when the followers list cannot load."

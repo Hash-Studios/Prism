@@ -3,6 +3,7 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
+import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/readability/domain/readability.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/crop_spec.dart';
@@ -17,6 +18,10 @@ extension HintIdWire on HintId {
 }
 
 extension HintDismissMethodWire on HintDismissMethod {
+  String get wireValue => _snakeCase(name);
+}
+
+extension UserRelationKindWire on UserRelationKind {
   String get wireValue => _snakeCase(name);
 }
 

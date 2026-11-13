@@ -39,9 +39,16 @@ abstract class PublicProfileState with _$PublicProfileState {
 abstract class RelationList with _$RelationList {
   const factory RelationList({
     @Default(<UserSummaryEntity>[]) List<UserSummaryEntity> summaries,
+
+    /// Where the next page starts. Null before the first page and after the last one.
+    RelationCursor? next,
+
+    /// Pages loaded since the list opened or last refreshed.
+    @Default(0) int pages,
     @Default(false) bool isFetching,
-    @Default(0) int page,
-    @Default(false) bool hasMore,
+
+    /// The last page request failed. The list shows a retry row.
+    @Default(false) bool failed,
 
     /// Active search results. `null` means no search is active.
     List<UserSummaryEntity>? searchResults,
@@ -49,6 +56,8 @@ abstract class RelationList with _$RelationList {
   }) = _RelationList;
 
   const RelationList._();
+
+  bool get hasMore => pages == 0 || next != null;
 
   RelationList withFollowState(String userId, {required bool isFollowed}) {
     List<UserSummaryEntity> update(List<UserSummaryEntity> users) =>

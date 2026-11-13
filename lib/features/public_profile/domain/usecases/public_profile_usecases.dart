@@ -1,6 +1,7 @@
 import 'package:Prism/core/usecase/usecase.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
+import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
 import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:injectable/injectable.dart';
@@ -87,23 +88,42 @@ class UnfollowUserUseCase implements UseCase<void, UnfollowUserParams> {
   }
 }
 
-class FetchUserSummariesPageParams {
-  const FetchUserSummariesPageParams({required this.userIds, required this.page});
+class FetchRelationPageParams {
+  const FetchRelationPageParams({required this.profileUid, required this.kind, this.cursor});
 
-  final List<String> userIds;
-  final int page;
+  final String profileUid;
+  final UserRelationKind kind;
+  final RelationCursor? cursor;
 }
 
 @lazySingleton
-class FetchUserSummariesPageUseCase
-    implements UseCase<({List<UserSummaryEntity> items, bool hasMore}), FetchUserSummariesPageParams> {
-  FetchUserSummariesPageUseCase(this._repository);
+class FetchRelationPageUseCase implements UseCase<RelationPage, FetchRelationPageParams> {
+  FetchRelationPageUseCase(this._repository);
 
   final PublicProfileRepository _repository;
 
   @override
-  Future<Result<({List<UserSummaryEntity> items, bool hasMore})>> call(FetchUserSummariesPageParams params) {
-    return _repository.fetchUserSummariesPage(userIds: params.userIds, page: params.page);
+  Future<Result<RelationPage>> call(FetchRelationPageParams params) {
+    return _repository.fetchRelationPage(profileUid: params.profileUid, kind: params.kind, cursor: params.cursor);
+  }
+}
+
+class FetchRelationIdsParams {
+  const FetchRelationIdsParams({required this.profileUid, required this.kind});
+
+  final String profileUid;
+  final UserRelationKind kind;
+}
+
+@lazySingleton
+class FetchRelationIdsUseCase implements UseCase<List<String>, FetchRelationIdsParams> {
+  FetchRelationIdsUseCase(this._repository);
+
+  final PublicProfileRepository _repository;
+
+  @override
+  Future<Result<List<String>>> call(FetchRelationIdsParams params) {
+    return _repository.fetchRelationIds(profileUid: params.profileUid, kind: params.kind);
   }
 }
 

@@ -655,6 +655,14 @@
       }
     }
   },
+  "accountRelationLoadMoreFailed": "और लोड नहीं हो सके। कनेक्शन जाँचें।",
+  "@accountRelationLoadMoreFailed": {
+    "description": "Row at the end of the followers or following list when the next page fails. A Try again button is next to it."
+  },
+  "accountRelationLoadingMore": "और लोग लोड हो रहे हैं",
+  "@accountRelationLoadingMore": {
+    "description": "Screen reader label for the row at the end of the followers or following list while the next page loads."
+  },
   "accountCouldNotLoadFollowers": "फ़ॉलोअर्स लोड नहीं हो सके",
   "@accountCouldNotLoadFollowers": {
     "description": "Error title when the followers list cannot load."

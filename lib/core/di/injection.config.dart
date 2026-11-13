@@ -875,10 +875,11 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i446.UnfollowUserUseCase>(
     () => _i446.UnfollowUserUseCase(gh<_i817.PublicProfileRepository>()),
   );
-  gh.lazySingleton<_i446.FetchUserSummariesPageUseCase>(
-    () => _i446.FetchUserSummariesPageUseCase(
-      gh<_i817.PublicProfileRepository>(),
-    ),
+  gh.lazySingleton<_i446.FetchRelationPageUseCase>(
+    () => _i446.FetchRelationPageUseCase(gh<_i817.PublicProfileRepository>()),
+  );
+  gh.lazySingleton<_i446.FetchRelationIdsUseCase>(
+    () => _i446.FetchRelationIdsUseCase(gh<_i817.PublicProfileRepository>()),
   );
   gh.lazySingleton<_i446.SearchUsersByUsernameUseCase>(
     () =>
@@ -898,15 +899,6 @@ _i174.GetIt initGetIt(
       gh<_i937.UpdateThemeUseCase>(),
       gh<_i428.ThemeRepository>(),
       gh<_i565.SystemColorSchemesSource>(),
-    ),
-  );
-  gh.factory<_i717.PublicProfileBloc>(
-    () => _i717.PublicProfileBloc(
-      gh<_i446.FetchPublicProfileWallsUseCase>(),
-      gh<_i446.FollowUserUseCase>(),
-      gh<_i446.UnfollowUserUseCase>(),
-      gh<_i446.FetchUserSummariesPageUseCase>(),
-      gh<_i446.SearchUsersByUsernameUseCase>(),
     ),
   );
   gh.lazySingleton<_i360.ConfirmChallengeSubmission>(
@@ -984,6 +976,16 @@ _i174.GetIt initGetIt(
       gh<_i301.LoadCategoriesUseCase>(),
       gh<_i301.FetchCategoryFeedUseCase>(),
       gh<_i112.UserBlockRepository>(),
+    ),
+  );
+  gh.factory<_i717.PublicProfileBloc>(
+    () => _i717.PublicProfileBloc(
+      gh<_i446.FetchPublicProfileWallsUseCase>(),
+      gh<_i446.FollowUserUseCase>(),
+      gh<_i446.UnfollowUserUseCase>(),
+      gh<_i446.FetchRelationPageUseCase>(),
+      gh<_i446.FetchRelationIdsUseCase>(),
+      gh<_i446.SearchUsersByUsernameUseCase>(),
     ),
   );
   gh.factory<_i361.CreatorDirectoryCubit>(

@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/core/widgets/prism_loader.dart';
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
-import 'package:Prism/features/public_profile/domain/repositories/public_profile_repository.dart';
 import 'package:Prism/features/public_profile/views/widgets/follow_outcome_toast.dart';
 import 'package:Prism/features/public_profile/views/widgets/user_summary_tile.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -39,22 +40,40 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
   // relation list (and back) never clobbers this screen's state.
   late final PublicProfileBloc _bloc;
 
-  // Edge ids, loaded once from the subcollection. Null while loading.
-  List<String>? _userIds;
-  bool _idsFailed = false;
-  // True when the last id page returned the full limit, so more ids may exist.
-  bool _lastIdPageFull = false;
-  bool _loadingMoreIds = false;
-
-  final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
+  StreamSubscription<PublicProfileState>? _refreshSubscription;
+  Completer<void>? _refreshCompletion;
   bool _isSearchActive = false;
 
   RelationList _list(PublicProfileState state) => state.relation(widget.kind);
 
-  PublicProfileEvent _fetchPageEvent(int page) =>
-      PublicProfileEvent.relationPageRequested(kind: widget.kind, userIds: _userIds ?? const <String>[], page: page);
+  void _loadNextPage() =>
+      _bloc.add(PublicProfileEvent.relationPageRequested(kind: widget.kind, profileUid: widget.profileUid));
+
+  Future<void> _refresh() {
+    final Completer<void>? pending = _refreshCompletion;
+    if (pending != null) return pending.future;
+    final completion = Completer<void>();
+    _refreshCompletion = completion;
+    bool started = _list(_bloc.state).isFetching;
+    _refreshSubscription = _bloc.stream.listen((state) {
+      if (_list(state).isFetching) {
+        started = true;
+      } else if (started) {
+        _finishRefresh();
+      }
+    }, onDone: _finishRefresh);
+    _bloc.add(PublicProfileEvent.relationRefreshRequested(kind: widget.kind, profileUid: widget.profileUid));
+    return completion.future;
+  }
+
+  void _finishRefresh() {
+    _refreshSubscription?.cancel();
+    _refreshSubscription = null;
+    _refreshCompletion?.complete();
+    _refreshCompletion = null;
+  }
 
   String _title(AppLocalizations l10n) => _isFollowers ? l10n.accountFollowers : l10n.accountFollowing;
 
@@ -67,105 +86,21 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
   String _loadFailedTitle(AppLocalizations l10n) =>
       _isFollowers ? l10n.accountCouldNotLoadFollowers : l10n.accountCouldNotLoadFollowing;
 
-  void _maybeAutoLoadMore(PublicProfileState state) {
-    final RelationList list = _list(state);
-    if (_isSearchActive || list.isFetching) {
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (!_scrollController.hasClients) return;
-      final current = _list(_bloc.state);
-      if (_isSearchActive || current.isFetching) {
-        return;
-      }
-      // If the list still cannot scroll, auto-fetch the next page so users are
-      // not stuck on a tiny first page when many emails no longer map to docs.
-      if (_scrollController.position.maxScrollExtent <= 0) {
-        if (current.hasMore) {
-          _bloc.add(_fetchPageEvent(current.page + 1));
-        } else {
-          unawaited(_loadMoreIds());
-        }
-      }
-    });
-  }
-
   @override
   void initState() {
     super.initState();
     _bloc = getIt<PublicProfileBloc>();
-    _scrollController.addListener(_onScroll);
     _searchController.addListener(_onSearchChanged);
-    unawaited(_loadIds());
-  }
-
-  Future<void> _loadIds() async {
-    if (mounted && _idsFailed) setState(() => _idsFailed = false);
-    final result = await getIt<PublicProfileRepository>().fetchRelationIds(
-      profileUid: widget.profileUid,
-      kind: widget.kind,
-    );
-    if (!mounted) return;
-    final ids = result.data;
-    if (result.isFailure || ids == null) {
-      setState(() => _idsFailed = true);
-      return;
-    }
-    setState(() {
-      _userIds = ids;
-      _lastIdPageFull = ids.length == PublicProfileRepository.relationIdsLimit;
-    });
-    if (ids.isNotEmpty) {
-      _bloc.add(_fetchPageEvent(0));
-    }
-  }
-
-  /// Loads the next id page after the last loaded id, then asks for the next user page.
-  /// On failure it does nothing, so a later scroll retries.
-  Future<void> _loadMoreIds() async {
-    final List<String>? loaded = _userIds;
-    if (loaded == null || !_lastIdPageFull || _loadingMoreIds || _isSearchActive) return;
-    _loadingMoreIds = true;
-    final result = await getIt<PublicProfileRepository>().fetchRelationIds(
-      profileUid: widget.profileUid,
-      kind: widget.kind,
-      afterId: loaded.last,
-    );
-    _loadingMoreIds = false;
-    if (!mounted) return;
-    final ids = result.data;
-    if (result.isFailure || ids == null) return;
-    final Set<String> known = loaded.toSet();
-    setState(() {
-      _userIds = <String>[...loaded, ...ids.where((id) => !known.contains(id))];
-      _lastIdPageFull = ids.length == PublicProfileRepository.relationIdsLimit;
-    });
-    _bloc.add(_fetchPageEvent(_list(_bloc.state).page + 1));
+    _loadNextPage();
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
-    _scrollController.dispose();
+    _finishRefresh();
     _searchController.dispose();
     _bloc.close();
     super.dispose();
-  }
-
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    final threshold = _scrollController.position.maxScrollExtent - 200;
-    if (_scrollController.offset < threshold) return;
-
-    final list = _list(_bloc.state);
-    if (list.isFetching || _isSearchActive) return;
-    if (!list.hasMore) {
-      unawaited(_loadMoreIds());
-      return;
-    }
-
-    _bloc.add(_fetchPageEvent(list.page + 1));
   }
 
   void _onSearchChanged() {
@@ -184,11 +119,7 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
       if (!mounted) return;
       setState(() => _isSearchActive = true);
       _bloc.add(
-        PublicProfileEvent.relationSearchRequested(
-          kind: widget.kind,
-          query: query,
-          userIds: _userIds ?? const <String>[],
-        ),
+        PublicProfileEvent.relationSearchRequested(kind: widget.kind, query: query, profileUid: widget.profileUid),
       );
     });
   }
@@ -207,19 +138,6 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
             buildWhen: (prev, curr) => _list(prev) != _list(curr),
             builder: (context, state) {
               final list = _list(state);
-              if (_idsFailed) {
-                return GlintState(
-                  kind: GlintStateKind.error,
-                  title: _loadFailedTitle(context.l10n),
-                  body: context.l10n.accountConnectionTryAgain,
-                  actionLabel: context.l10n.accountTryAgain,
-                  onAction: _loadIds,
-                );
-              }
-              if (_userIds == null) {
-                return PrismSkeleton.rows();
-              }
-              // Search mode.
               if (_isSearchActive) {
                 if (list.isSearching) {
                   return PrismSkeleton.rows(rows: 5);
@@ -232,36 +150,51 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
                     body: context.l10n.accountNobodyMatchesUsername(_searchController.text.trim()),
                   );
                 }
-                return _UserList(users: results, scrollController: null, hasMore: false, isLoading: false);
+                return _UserList(users: results);
               }
 
-              // Paginated mode.
-              final summaries = list.summaries;
-              if (list.isFetching && summaries.isEmpty) {
-                return PrismSkeleton.rows();
-              }
-              if (summaries.isEmpty) {
-                if (_userIds!.isEmpty) {
+              if (list.summaries.isEmpty) {
+                if (list.failed) {
                   return GlintState(
-                    kind: GlintStateKind.empty,
-                    title: _emptyTitle(context.l10n),
-                    body: _emptyBody(context.l10n),
+                    kind: GlintStateKind.error,
+                    title: _loadFailedTitle(context.l10n),
+                    body: context.l10n.accountConnectionTryAgain,
+                    actionLabel: context.l10n.accountTryAgain,
+                    onAction: _loadNextPage,
                   );
                 }
-                return GlintState(
-                  kind: GlintStateKind.error,
-                  title: _loadFailedTitle(context.l10n),
-                  body: context.l10n.accountConnectionTryAgain,
-                  actionLabel: context.l10n.accountTryAgain,
-                  onAction: () => _bloc.add(_fetchPageEvent(0)),
-                );
+                if (list.pages == 0) {
+                  return PrismSkeleton.rows();
+                }
+                if (!list.hasMore) {
+                  return PrismRefresh(
+                    onRefresh: _refresh,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                          child: GlintState(
+                            kind: GlintStateKind.empty,
+                            title: _emptyTitle(context.l10n),
+                            body: _emptyBody(context.l10n),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }
               }
-              _maybeAutoLoadMore(state);
-              return _UserList(
-                users: summaries,
-                scrollController: _scrollController,
-                hasMore: list.hasMore,
-                isLoading: list.isFetching,
+              return PrismRefresh(
+                onRefresh: _refresh,
+                child: _UserList(
+                  users: list.summaries,
+                  footer: list.failed
+                      ? _LoadMoreErrorRow(onRetry: _loadNextPage)
+                      : list.hasMore
+                      ? _LoadingRow(key: ObjectKey(list.next), onShown: list.isFetching ? null : _loadNextPage)
+                      : null,
+                ),
               );
             },
           ),
@@ -271,49 +204,113 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
   }
 }
 
-/// Reusable list with optional load-more footer.
+/// The user rows, then an optional [footer] row.
 class _UserList extends StatelessWidget {
-  const _UserList({
-    required this.users,
-    required this.scrollController,
-    required this.hasMore,
-    required this.isLoading,
-  });
+  const _UserList({required this.users, this.footer});
 
   final List<UserSummaryEntity> users;
-  final ScrollController? scrollController;
-  final bool hasMore;
-  final bool isLoading;
+  final Widget? footer;
 
   @override
   Widget build(BuildContext context) {
-    final itemCount = users.length + (hasMore || isLoading ? 1 : 0);
+    final Widget? footer = this.footer;
     return ListView.separated(
-      controller: scrollController,
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.only(top: PrismSpace.xs, bottom: PrismSpace.xxl + MediaQuery.paddingOf(context).bottom),
-      itemCount: itemCount,
+      itemCount: users.length + (footer == null ? 0 : 1),
       separatorBuilder: (_, _) => const SizedBox(height: PrismSpace.xxs),
       itemBuilder: (context, index) {
-        if (index >= users.length) {
-          return const PrismSkeleton(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.xs),
-              child: Row(
-                children: <Widget>[
-                  PrismBone.circle(size: 44),
-                  SizedBox(width: PrismSpace.sm),
-                  PrismBone(width: 140),
-                ],
-              ),
-            ),
-          );
-        }
+        if (index >= users.length) return footer!;
         final user = users[index];
         return UserSummaryTile(
           user: user,
           onTap: () => context.router.push(ProfileRoute(profileIdentifier: user.id)),
         );
       },
+    );
+  }
+}
+
+/// The last row while more pages exist. The list builds it when it comes near the viewport, and then it asks for
+/// the next page once.
+class _LoadingRow extends StatefulWidget {
+  const _LoadingRow({super.key, required this.onShown});
+
+  /// Null while a page loads.
+  final VoidCallback? onShown;
+
+  @override
+  State<_LoadingRow> createState() => _LoadingRowState();
+}
+
+class _LoadingRowState extends State<_LoadingRow> {
+  bool _requested = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _requestAfterFrame();
+  }
+
+  @override
+  void didUpdateWidget(_LoadingRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _requestAfterFrame();
+  }
+
+  void _requestAfterFrame() {
+    final VoidCallback? onShown = widget.onShown;
+    if (onShown == null || _requested) return;
+    _requested = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.onShown?.call();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: context.l10n.accountRelationLoadingMore,
+      liveRegion: true,
+      child: const ExcludeSemantics(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: PrismSpace.md),
+          child: Center(child: PrismLoader(size: 24)),
+        ),
+      ),
+    );
+  }
+}
+
+/// The last row after a next page failed. The rows above it stay.
+class _LoadMoreErrorRow extends StatelessWidget {
+  const _LoadMoreErrorRow({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.sm),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: PrismSpace.sm,
+        runSpacing: PrismSpace.xs,
+        children: <Widget>[
+          Text(
+            context.l10n.accountRelationLoadMoreFailed,
+            textAlign: TextAlign.center,
+            style: PrismTextStyles.body(context).copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
+          PrismButton(
+            label: context.l10n.accountTryAgain,
+            onPressed: onRetry,
+            variant: PrismButtonVariant.tonal,
+            size: PrismButtonSize.compact,
+          ),
+        ],
+      ),
     );
   }
 }

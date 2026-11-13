@@ -55,14 +55,15 @@ extension PublicProfileEventPatterns on PublicProfileEvent {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _FetchMoreWallsRequested value)?  fetchMoreWallsRequested,TResult Function( _RelationPageRequested value)?  relationPageRequested,TResult Function( _RelationSearchRequested value)?  relationSearchRequested,TResult Function( _RelationSearchCleared value)?  relationSearchCleared,TResult Function( _FollowChangeRequested value)?  followChangeRequested,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( _Started value)?  started,TResult Function( _RefreshRequested value)?  refreshRequested,TResult Function( _FetchMoreWallsRequested value)?  fetchMoreWallsRequested,TResult Function( _RelationPageRequested value)?  relationPageRequested,TResult Function( _RelationRefreshRequested value)?  relationRefreshRequested,TResult Function( _RelationSearchRequested value)?  relationSearchRequested,TResult Function( _RelationSearchCleared value)?  relationSearchCleared,TResult Function( _FollowChangeRequested value)?  followChangeRequested,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _FetchMoreWallsRequested() when fetchMoreWallsRequested != null:
 return fetchMoreWallsRequested(_that);case _RelationPageRequested() when relationPageRequested != null:
-return relationPageRequested(_that);case _RelationSearchRequested() when relationSearchRequested != null:
+return relationPageRequested(_that);case _RelationRefreshRequested() when relationRefreshRequested != null:
+return relationRefreshRequested(_that);case _RelationSearchRequested() when relationSearchRequested != null:
 return relationSearchRequested(_that);case _RelationSearchCleared() when relationSearchCleared != null:
 return relationSearchCleared(_that);case _FollowChangeRequested() when followChangeRequested != null:
 return followChangeRequested(_that);case _:
@@ -83,14 +84,15 @@ return followChangeRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _FetchMoreWallsRequested value)  fetchMoreWallsRequested,required TResult Function( _RelationPageRequested value)  relationPageRequested,required TResult Function( _RelationSearchRequested value)  relationSearchRequested,required TResult Function( _RelationSearchCleared value)  relationSearchCleared,required TResult Function( _FollowChangeRequested value)  followChangeRequested,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( _Started value)  started,required TResult Function( _RefreshRequested value)  refreshRequested,required TResult Function( _FetchMoreWallsRequested value)  fetchMoreWallsRequested,required TResult Function( _RelationPageRequested value)  relationPageRequested,required TResult Function( _RelationRefreshRequested value)  relationRefreshRequested,required TResult Function( _RelationSearchRequested value)  relationSearchRequested,required TResult Function( _RelationSearchCleared value)  relationSearchCleared,required TResult Function( _FollowChangeRequested value)  followChangeRequested,}){
 final _that = this;
 switch (_that) {
 case _Started():
 return started(_that);case _RefreshRequested():
 return refreshRequested(_that);case _FetchMoreWallsRequested():
 return fetchMoreWallsRequested(_that);case _RelationPageRequested():
-return relationPageRequested(_that);case _RelationSearchRequested():
+return relationPageRequested(_that);case _RelationRefreshRequested():
+return relationRefreshRequested(_that);case _RelationSearchRequested():
 return relationSearchRequested(_that);case _RelationSearchCleared():
 return relationSearchCleared(_that);case _FollowChangeRequested():
 return followChangeRequested(_that);case _:
@@ -110,14 +112,15 @@ return followChangeRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _FetchMoreWallsRequested value)?  fetchMoreWallsRequested,TResult? Function( _RelationPageRequested value)?  relationPageRequested,TResult? Function( _RelationSearchRequested value)?  relationSearchRequested,TResult? Function( _RelationSearchCleared value)?  relationSearchCleared,TResult? Function( _FollowChangeRequested value)?  followChangeRequested,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( _Started value)?  started,TResult? Function( _RefreshRequested value)?  refreshRequested,TResult? Function( _FetchMoreWallsRequested value)?  fetchMoreWallsRequested,TResult? Function( _RelationPageRequested value)?  relationPageRequested,TResult? Function( _RelationRefreshRequested value)?  relationRefreshRequested,TResult? Function( _RelationSearchRequested value)?  relationSearchRequested,TResult? Function( _RelationSearchCleared value)?  relationSearchCleared,TResult? Function( _FollowChangeRequested value)?  followChangeRequested,}){
 final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested(_that);case _FetchMoreWallsRequested() when fetchMoreWallsRequested != null:
 return fetchMoreWallsRequested(_that);case _RelationPageRequested() when relationPageRequested != null:
-return relationPageRequested(_that);case _RelationSearchRequested() when relationSearchRequested != null:
+return relationPageRequested(_that);case _RelationRefreshRequested() when relationRefreshRequested != null:
+return relationRefreshRequested(_that);case _RelationSearchRequested() when relationSearchRequested != null:
 return relationSearchRequested(_that);case _RelationSearchCleared() when relationSearchCleared != null:
 return relationSearchCleared(_that);case _FollowChangeRequested() when followChangeRequested != null:
 return followChangeRequested(_that);case _:
@@ -137,14 +140,15 @@ return followChangeRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String identifier)?  started,TResult Function()?  refreshRequested,TResult Function()?  fetchMoreWallsRequested,TResult Function( UserRelationKind kind,  List<String> userIds,  int page)?  relationPageRequested,TResult Function( UserRelationKind kind,  String query,  List<String> userIds)?  relationSearchRequested,TResult Function( UserRelationKind kind)?  relationSearchCleared,TResult Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail,  String targetName)?  followChangeRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String identifier)?  started,TResult Function()?  refreshRequested,TResult Function()?  fetchMoreWallsRequested,TResult Function( UserRelationKind kind,  String profileUid)?  relationPageRequested,TResult Function( UserRelationKind kind,  String profileUid)?  relationRefreshRequested,TResult Function( UserRelationKind kind,  String query,  String profileUid)?  relationSearchRequested,TResult Function( UserRelationKind kind)?  relationSearchCleared,TResult Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail,  String targetName)?  followChangeRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.identifier);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _FetchMoreWallsRequested() when fetchMoreWallsRequested != null:
 return fetchMoreWallsRequested();case _RelationPageRequested() when relationPageRequested != null:
-return relationPageRequested(_that.kind,_that.userIds,_that.page);case _RelationSearchRequested() when relationSearchRequested != null:
-return relationSearchRequested(_that.kind,_that.query,_that.userIds);case _RelationSearchCleared() when relationSearchCleared != null:
+return relationPageRequested(_that.kind,_that.profileUid);case _RelationRefreshRequested() when relationRefreshRequested != null:
+return relationRefreshRequested(_that.kind,_that.profileUid);case _RelationSearchRequested() when relationSearchRequested != null:
+return relationSearchRequested(_that.kind,_that.query,_that.profileUid);case _RelationSearchCleared() when relationSearchCleared != null:
 return relationSearchCleared(_that.kind);case _FollowChangeRequested() when followChangeRequested != null:
 return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserEmail,_that.targetUserId,_that.targetUserEmail,_that.targetName);case _:
   return orElse();
@@ -164,14 +168,15 @@ return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserE
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String identifier)  started,required TResult Function()  refreshRequested,required TResult Function()  fetchMoreWallsRequested,required TResult Function( UserRelationKind kind,  List<String> userIds,  int page)  relationPageRequested,required TResult Function( UserRelationKind kind,  String query,  List<String> userIds)  relationSearchRequested,required TResult Function( UserRelationKind kind)  relationSearchCleared,required TResult Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail,  String targetName)  followChangeRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String identifier)  started,required TResult Function()  refreshRequested,required TResult Function()  fetchMoreWallsRequested,required TResult Function( UserRelationKind kind,  String profileUid)  relationPageRequested,required TResult Function( UserRelationKind kind,  String profileUid)  relationRefreshRequested,required TResult Function( UserRelationKind kind,  String query,  String profileUid)  relationSearchRequested,required TResult Function( UserRelationKind kind)  relationSearchCleared,required TResult Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail,  String targetName)  followChangeRequested,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started(_that.identifier);case _RefreshRequested():
 return refreshRequested();case _FetchMoreWallsRequested():
 return fetchMoreWallsRequested();case _RelationPageRequested():
-return relationPageRequested(_that.kind,_that.userIds,_that.page);case _RelationSearchRequested():
-return relationSearchRequested(_that.kind,_that.query,_that.userIds);case _RelationSearchCleared():
+return relationPageRequested(_that.kind,_that.profileUid);case _RelationRefreshRequested():
+return relationRefreshRequested(_that.kind,_that.profileUid);case _RelationSearchRequested():
+return relationSearchRequested(_that.kind,_that.query,_that.profileUid);case _RelationSearchCleared():
 return relationSearchCleared(_that.kind);case _FollowChangeRequested():
 return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserEmail,_that.targetUserId,_that.targetUserEmail,_that.targetName);case _:
   throw StateError('Unexpected subclass');
@@ -190,14 +195,15 @@ return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserE
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String identifier)?  started,TResult? Function()?  refreshRequested,TResult? Function()?  fetchMoreWallsRequested,TResult? Function( UserRelationKind kind,  List<String> userIds,  int page)?  relationPageRequested,TResult? Function( UserRelationKind kind,  String query,  List<String> userIds)?  relationSearchRequested,TResult? Function( UserRelationKind kind)?  relationSearchCleared,TResult? Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail,  String targetName)?  followChangeRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String identifier)?  started,TResult? Function()?  refreshRequested,TResult? Function()?  fetchMoreWallsRequested,TResult? Function( UserRelationKind kind,  String profileUid)?  relationPageRequested,TResult? Function( UserRelationKind kind,  String profileUid)?  relationRefreshRequested,TResult? Function( UserRelationKind kind,  String query,  String profileUid)?  relationSearchRequested,TResult? Function( UserRelationKind kind)?  relationSearchCleared,TResult? Function( bool follow,  String currentUserId,  String currentUserEmail,  String targetUserId,  String targetUserEmail,  String targetName)?  followChangeRequested,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.identifier);case _RefreshRequested() when refreshRequested != null:
 return refreshRequested();case _FetchMoreWallsRequested() when fetchMoreWallsRequested != null:
 return fetchMoreWallsRequested();case _RelationPageRequested() when relationPageRequested != null:
-return relationPageRequested(_that.kind,_that.userIds,_that.page);case _RelationSearchRequested() when relationSearchRequested != null:
-return relationSearchRequested(_that.kind,_that.query,_that.userIds);case _RelationSearchCleared() when relationSearchCleared != null:
+return relationPageRequested(_that.kind,_that.profileUid);case _RelationRefreshRequested() when relationRefreshRequested != null:
+return relationRefreshRequested(_that.kind,_that.profileUid);case _RelationSearchRequested() when relationSearchRequested != null:
+return relationSearchRequested(_that.kind,_that.query,_that.profileUid);case _RelationSearchCleared() when relationSearchCleared != null:
 return relationSearchCleared(_that.kind);case _FollowChangeRequested() when followChangeRequested != null:
 return followChangeRequested(_that.follow,_that.currentUserId,_that.currentUserEmail,_that.targetUserId,_that.targetUserEmail,_that.targetName);case _:
   return null;
@@ -341,18 +347,11 @@ String toString() {
 
 
 class _RelationPageRequested implements PublicProfileEvent {
-  const _RelationPageRequested({required this.kind, required final  List<String> userIds, required this.page}): _userIds = userIds;
+  const _RelationPageRequested({required this.kind, required this.profileUid});
   
 
  final  UserRelationKind kind;
- final  List<String> _userIds;
- List<String> get userIds {
-  if (_userIds is EqualUnmodifiableListView) return _userIds;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_userIds);
-}
-
- final  int page;
+ final  String profileUid;
 
 /// Create a copy of PublicProfileEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -364,16 +363,16 @@ _$RelationPageRequestedCopyWith<_RelationPageRequested> get copyWith => __$Relat
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RelationPageRequested&&(identical(other.kind, kind) || other.kind == kind)&&const DeepCollectionEquality().equals(other._userIds, _userIds)&&(identical(other.page, page) || other.page == page));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RelationPageRequested&&(identical(other.kind, kind) || other.kind == kind)&&(identical(other.profileUid, profileUid) || other.profileUid == profileUid));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,kind,const DeepCollectionEquality().hash(_userIds),page);
+int get hashCode => Object.hash(runtimeType,kind,profileUid);
 
 @override
 String toString() {
-  return 'PublicProfileEvent.relationPageRequested(kind: $kind, userIds: $userIds, page: $page)';
+  return 'PublicProfileEvent.relationPageRequested(kind: $kind, profileUid: $profileUid)';
 }
 
 
@@ -384,7 +383,7 @@ abstract mixin class _$RelationPageRequestedCopyWith<$Res> implements $PublicPro
   factory _$RelationPageRequestedCopyWith(_RelationPageRequested value, $Res Function(_RelationPageRequested) _then) = __$RelationPageRequestedCopyWithImpl;
 @useResult
 $Res call({
- UserRelationKind kind, List<String> userIds, int page
+ UserRelationKind kind, String profileUid
 });
 
 
@@ -401,12 +400,79 @@ class __$RelationPageRequestedCopyWithImpl<$Res>
 
 /// Create a copy of PublicProfileEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? kind = null,Object? userIds = null,Object? page = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? kind = null,Object? profileUid = null,}) {
   return _then(_RelationPageRequested(
 kind: null == kind ? _self.kind : kind // ignore: cast_nullable_to_non_nullable
-as UserRelationKind,userIds: null == userIds ? _self._userIds : userIds // ignore: cast_nullable_to_non_nullable
-as List<String>,page: null == page ? _self.page : page // ignore: cast_nullable_to_non_nullable
-as int,
+as UserRelationKind,profileUid: null == profileUid ? _self.profileUid : profileUid // ignore: cast_nullable_to_non_nullable
+as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class _RelationRefreshRequested implements PublicProfileEvent {
+  const _RelationRefreshRequested({required this.kind, required this.profileUid});
+  
+
+ final  UserRelationKind kind;
+ final  String profileUid;
+
+/// Create a copy of PublicProfileEvent
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$RelationRefreshRequestedCopyWith<_RelationRefreshRequested> get copyWith => __$RelationRefreshRequestedCopyWithImpl<_RelationRefreshRequested>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RelationRefreshRequested&&(identical(other.kind, kind) || other.kind == kind)&&(identical(other.profileUid, profileUid) || other.profileUid == profileUid));
+}
+
+
+@override
+int get hashCode => Object.hash(runtimeType,kind,profileUid);
+
+@override
+String toString() {
+  return 'PublicProfileEvent.relationRefreshRequested(kind: $kind, profileUid: $profileUid)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$RelationRefreshRequestedCopyWith<$Res> implements $PublicProfileEventCopyWith<$Res> {
+  factory _$RelationRefreshRequestedCopyWith(_RelationRefreshRequested value, $Res Function(_RelationRefreshRequested) _then) = __$RelationRefreshRequestedCopyWithImpl;
+@useResult
+$Res call({
+ UserRelationKind kind, String profileUid
+});
+
+
+
+
+}
+/// @nodoc
+class __$RelationRefreshRequestedCopyWithImpl<$Res>
+    implements _$RelationRefreshRequestedCopyWith<$Res> {
+  __$RelationRefreshRequestedCopyWithImpl(this._self, this._then);
+
+  final _RelationRefreshRequested _self;
+  final $Res Function(_RelationRefreshRequested) _then;
+
+/// Create a copy of PublicProfileEvent
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? kind = null,Object? profileUid = null,}) {
+  return _then(_RelationRefreshRequested(
+kind: null == kind ? _self.kind : kind // ignore: cast_nullable_to_non_nullable
+as UserRelationKind,profileUid: null == profileUid ? _self.profileUid : profileUid // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 
@@ -417,18 +483,12 @@ as int,
 
 
 class _RelationSearchRequested implements PublicProfileEvent {
-  const _RelationSearchRequested({required this.kind, required this.query, required final  List<String> userIds}): _userIds = userIds;
+  const _RelationSearchRequested({required this.kind, required this.query, required this.profileUid});
   
 
  final  UserRelationKind kind;
  final  String query;
- final  List<String> _userIds;
- List<String> get userIds {
-  if (_userIds is EqualUnmodifiableListView) return _userIds;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_userIds);
-}
-
+ final  String profileUid;
 
 /// Create a copy of PublicProfileEvent
 /// with the given fields replaced by the non-null parameter values.
@@ -440,16 +500,16 @@ _$RelationSearchRequestedCopyWith<_RelationSearchRequested> get copyWith => __$R
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RelationSearchRequested&&(identical(other.kind, kind) || other.kind == kind)&&(identical(other.query, query) || other.query == query)&&const DeepCollectionEquality().equals(other._userIds, _userIds));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RelationSearchRequested&&(identical(other.kind, kind) || other.kind == kind)&&(identical(other.query, query) || other.query == query)&&(identical(other.profileUid, profileUid) || other.profileUid == profileUid));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,kind,query,const DeepCollectionEquality().hash(_userIds));
+int get hashCode => Object.hash(runtimeType,kind,query,profileUid);
 
 @override
 String toString() {
-  return 'PublicProfileEvent.relationSearchRequested(kind: $kind, query: $query, userIds: $userIds)';
+  return 'PublicProfileEvent.relationSearchRequested(kind: $kind, query: $query, profileUid: $profileUid)';
 }
 
 
@@ -460,7 +520,7 @@ abstract mixin class _$RelationSearchRequestedCopyWith<$Res> implements $PublicP
   factory _$RelationSearchRequestedCopyWith(_RelationSearchRequested value, $Res Function(_RelationSearchRequested) _then) = __$RelationSearchRequestedCopyWithImpl;
 @useResult
 $Res call({
- UserRelationKind kind, String query, List<String> userIds
+ UserRelationKind kind, String query, String profileUid
 });
 
 
@@ -477,12 +537,12 @@ class __$RelationSearchRequestedCopyWithImpl<$Res>
 
 /// Create a copy of PublicProfileEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? kind = null,Object? query = null,Object? userIds = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? kind = null,Object? query = null,Object? profileUid = null,}) {
   return _then(_RelationSearchRequested(
 kind: null == kind ? _self.kind : kind // ignore: cast_nullable_to_non_nullable
 as UserRelationKind,query: null == query ? _self.query : query // ignore: cast_nullable_to_non_nullable
-as String,userIds: null == userIds ? _self._userIds : userIds // ignore: cast_nullable_to_non_nullable
-as List<String>,
+as String,profileUid: null == profileUid ? _self.profileUid : profileUid // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 
@@ -995,7 +1055,10 @@ $FollowOutcomeCopyWith<$Res>? get followOutcome {
 /// @nodoc
 mixin _$RelationList {
 
- List<UserSummaryEntity> get summaries; bool get isFetching; int get page; bool get hasMore;/// Active search results. `null` means no search is active.
+ List<UserSummaryEntity> get summaries;/// Where the next page starts. Null before the first page and after the last one.
+ RelationCursor? get next;/// Pages loaded since the list opened or last refreshed.
+ int get pages; bool get isFetching;/// The last page request failed. The list shows a retry row.
+ bool get failed;/// Active search results. `null` means no search is active.
  List<UserSummaryEntity>? get searchResults; bool get isSearching;
 /// Create a copy of RelationList
 /// with the given fields replaced by the non-null parameter values.
@@ -1007,16 +1070,16 @@ $RelationListCopyWith<RelationList> get copyWith => _$RelationListCopyWithImpl<R
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RelationList&&const DeepCollectionEquality().equals(other.summaries, summaries)&&(identical(other.isFetching, isFetching) || other.isFetching == isFetching)&&(identical(other.page, page) || other.page == page)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&const DeepCollectionEquality().equals(other.searchResults, searchResults)&&(identical(other.isSearching, isSearching) || other.isSearching == isSearching));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RelationList&&const DeepCollectionEquality().equals(other.summaries, summaries)&&(identical(other.next, next) || other.next == next)&&(identical(other.pages, pages) || other.pages == pages)&&(identical(other.isFetching, isFetching) || other.isFetching == isFetching)&&(identical(other.failed, failed) || other.failed == failed)&&const DeepCollectionEquality().equals(other.searchResults, searchResults)&&(identical(other.isSearching, isSearching) || other.isSearching == isSearching));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(summaries),isFetching,page,hasMore,const DeepCollectionEquality().hash(searchResults),isSearching);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(summaries),next,pages,isFetching,failed,const DeepCollectionEquality().hash(searchResults),isSearching);
 
 @override
 String toString() {
-  return 'RelationList(summaries: $summaries, isFetching: $isFetching, page: $page, hasMore: $hasMore, searchResults: $searchResults, isSearching: $isSearching)';
+  return 'RelationList(summaries: $summaries, next: $next, pages: $pages, isFetching: $isFetching, failed: $failed, searchResults: $searchResults, isSearching: $isSearching)';
 }
 
 
@@ -1027,7 +1090,7 @@ abstract mixin class $RelationListCopyWith<$Res>  {
   factory $RelationListCopyWith(RelationList value, $Res Function(RelationList) _then) = _$RelationListCopyWithImpl;
 @useResult
 $Res call({
- List<UserSummaryEntity> summaries, bool isFetching, int page, bool hasMore, List<UserSummaryEntity>? searchResults, bool isSearching
+ List<UserSummaryEntity> summaries, RelationCursor? next, int pages, bool isFetching, bool failed, List<UserSummaryEntity>? searchResults, bool isSearching
 });
 
 
@@ -1044,12 +1107,13 @@ class _$RelationListCopyWithImpl<$Res>
 
 /// Create a copy of RelationList
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? summaries = null,Object? isFetching = null,Object? page = null,Object? hasMore = null,Object? searchResults = freezed,Object? isSearching = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? summaries = null,Object? next = freezed,Object? pages = null,Object? isFetching = null,Object? failed = null,Object? searchResults = freezed,Object? isSearching = null,}) {
   return _then(_self.copyWith(
 summaries: null == summaries ? _self.summaries : summaries // ignore: cast_nullable_to_non_nullable
-as List<UserSummaryEntity>,isFetching: null == isFetching ? _self.isFetching : isFetching // ignore: cast_nullable_to_non_nullable
-as bool,page: null == page ? _self.page : page // ignore: cast_nullable_to_non_nullable
-as int,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nullable_to_non_nullable
+as List<UserSummaryEntity>,next: freezed == next ? _self.next : next // ignore: cast_nullable_to_non_nullable
+as RelationCursor?,pages: null == pages ? _self.pages : pages // ignore: cast_nullable_to_non_nullable
+as int,isFetching: null == isFetching ? _self.isFetching : isFetching // ignore: cast_nullable_to_non_nullable
+as bool,failed: null == failed ? _self.failed : failed // ignore: cast_nullable_to_non_nullable
 as bool,searchResults: freezed == searchResults ? _self.searchResults : searchResults // ignore: cast_nullable_to_non_nullable
 as List<UserSummaryEntity>?,isSearching: null == isSearching ? _self.isSearching : isSearching // ignore: cast_nullable_to_non_nullable
 as bool,
@@ -1137,10 +1201,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<UserSummaryEntity> summaries,  bool isFetching,  int page,  bool hasMore,  List<UserSummaryEntity>? searchResults,  bool isSearching)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<UserSummaryEntity> summaries,  RelationCursor? next,  int pages,  bool isFetching,  bool failed,  List<UserSummaryEntity>? searchResults,  bool isSearching)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RelationList() when $default != null:
-return $default(_that.summaries,_that.isFetching,_that.page,_that.hasMore,_that.searchResults,_that.isSearching);case _:
+return $default(_that.summaries,_that.next,_that.pages,_that.isFetching,_that.failed,_that.searchResults,_that.isSearching);case _:
   return orElse();
 
 }
@@ -1158,10 +1222,10 @@ return $default(_that.summaries,_that.isFetching,_that.page,_that.hasMore,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<UserSummaryEntity> summaries,  bool isFetching,  int page,  bool hasMore,  List<UserSummaryEntity>? searchResults,  bool isSearching)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<UserSummaryEntity> summaries,  RelationCursor? next,  int pages,  bool isFetching,  bool failed,  List<UserSummaryEntity>? searchResults,  bool isSearching)  $default,) {final _that = this;
 switch (_that) {
 case _RelationList():
-return $default(_that.summaries,_that.isFetching,_that.page,_that.hasMore,_that.searchResults,_that.isSearching);case _:
+return $default(_that.summaries,_that.next,_that.pages,_that.isFetching,_that.failed,_that.searchResults,_that.isSearching);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -1178,10 +1242,10 @@ return $default(_that.summaries,_that.isFetching,_that.page,_that.hasMore,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<UserSummaryEntity> summaries,  bool isFetching,  int page,  bool hasMore,  List<UserSummaryEntity>? searchResults,  bool isSearching)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<UserSummaryEntity> summaries,  RelationCursor? next,  int pages,  bool isFetching,  bool failed,  List<UserSummaryEntity>? searchResults,  bool isSearching)?  $default,) {final _that = this;
 switch (_that) {
 case _RelationList() when $default != null:
-return $default(_that.summaries,_that.isFetching,_that.page,_that.hasMore,_that.searchResults,_that.isSearching);case _:
+return $default(_that.summaries,_that.next,_that.pages,_that.isFetching,_that.failed,_that.searchResults,_that.isSearching);case _:
   return null;
 
 }
@@ -1193,7 +1257,7 @@ return $default(_that.summaries,_that.isFetching,_that.page,_that.hasMore,_that.
 
 
 class _RelationList extends RelationList {
-  const _RelationList({final  List<UserSummaryEntity> summaries = const <UserSummaryEntity>[], this.isFetching = false, this.page = 0, this.hasMore = false, final  List<UserSummaryEntity>? searchResults, this.isSearching = false}): _summaries = summaries,_searchResults = searchResults,super._();
+  const _RelationList({final  List<UserSummaryEntity> summaries = const <UserSummaryEntity>[], this.next, this.pages = 0, this.isFetching = false, this.failed = false, final  List<UserSummaryEntity>? searchResults, this.isSearching = false}): _summaries = summaries,_searchResults = searchResults,super._();
   
 
  final  List<UserSummaryEntity> _summaries;
@@ -1203,9 +1267,13 @@ class _RelationList extends RelationList {
   return EqualUnmodifiableListView(_summaries);
 }
 
+/// Where the next page starts. Null before the first page and after the last one.
+@override final  RelationCursor? next;
+/// Pages loaded since the list opened or last refreshed.
+@override@JsonKey() final  int pages;
 @override@JsonKey() final  bool isFetching;
-@override@JsonKey() final  int page;
-@override@JsonKey() final  bool hasMore;
+/// The last page request failed. The list shows a retry row.
+@override@JsonKey() final  bool failed;
 /// Active search results. `null` means no search is active.
  final  List<UserSummaryEntity>? _searchResults;
 /// Active search results. `null` means no search is active.
@@ -1229,16 +1297,16 @@ _$RelationListCopyWith<_RelationList> get copyWith => __$RelationListCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RelationList&&const DeepCollectionEquality().equals(other._summaries, _summaries)&&(identical(other.isFetching, isFetching) || other.isFetching == isFetching)&&(identical(other.page, page) || other.page == page)&&(identical(other.hasMore, hasMore) || other.hasMore == hasMore)&&const DeepCollectionEquality().equals(other._searchResults, _searchResults)&&(identical(other.isSearching, isSearching) || other.isSearching == isSearching));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RelationList&&const DeepCollectionEquality().equals(other._summaries, _summaries)&&(identical(other.next, next) || other.next == next)&&(identical(other.pages, pages) || other.pages == pages)&&(identical(other.isFetching, isFetching) || other.isFetching == isFetching)&&(identical(other.failed, failed) || other.failed == failed)&&const DeepCollectionEquality().equals(other._searchResults, _searchResults)&&(identical(other.isSearching, isSearching) || other.isSearching == isSearching));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_summaries),isFetching,page,hasMore,const DeepCollectionEquality().hash(_searchResults),isSearching);
+int get hashCode => Object.hash(runtimeType,const DeepCollectionEquality().hash(_summaries),next,pages,isFetching,failed,const DeepCollectionEquality().hash(_searchResults),isSearching);
 
 @override
 String toString() {
-  return 'RelationList(summaries: $summaries, isFetching: $isFetching, page: $page, hasMore: $hasMore, searchResults: $searchResults, isSearching: $isSearching)';
+  return 'RelationList(summaries: $summaries, next: $next, pages: $pages, isFetching: $isFetching, failed: $failed, searchResults: $searchResults, isSearching: $isSearching)';
 }
 
 
@@ -1249,7 +1317,7 @@ abstract mixin class _$RelationListCopyWith<$Res> implements $RelationListCopyWi
   factory _$RelationListCopyWith(_RelationList value, $Res Function(_RelationList) _then) = __$RelationListCopyWithImpl;
 @override @useResult
 $Res call({
- List<UserSummaryEntity> summaries, bool isFetching, int page, bool hasMore, List<UserSummaryEntity>? searchResults, bool isSearching
+ List<UserSummaryEntity> summaries, RelationCursor? next, int pages, bool isFetching, bool failed, List<UserSummaryEntity>? searchResults, bool isSearching
 });
 
 
@@ -1266,12 +1334,13 @@ class __$RelationListCopyWithImpl<$Res>
 
 /// Create a copy of RelationList
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? summaries = null,Object? isFetching = null,Object? page = null,Object? hasMore = null,Object? searchResults = freezed,Object? isSearching = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? summaries = null,Object? next = freezed,Object? pages = null,Object? isFetching = null,Object? failed = null,Object? searchResults = freezed,Object? isSearching = null,}) {
   return _then(_RelationList(
 summaries: null == summaries ? _self._summaries : summaries // ignore: cast_nullable_to_non_nullable
-as List<UserSummaryEntity>,isFetching: null == isFetching ? _self.isFetching : isFetching // ignore: cast_nullable_to_non_nullable
-as bool,page: null == page ? _self.page : page // ignore: cast_nullable_to_non_nullable
-as int,hasMore: null == hasMore ? _self.hasMore : hasMore // ignore: cast_nullable_to_non_nullable
+as List<UserSummaryEntity>,next: freezed == next ? _self.next : next // ignore: cast_nullable_to_non_nullable
+as RelationCursor?,pages: null == pages ? _self.pages : pages // ignore: cast_nullable_to_non_nullable
+as int,isFetching: null == isFetching ? _self.isFetching : isFetching // ignore: cast_nullable_to_non_nullable
+as bool,failed: null == failed ? _self.failed : failed // ignore: cast_nullable_to_non_nullable
 as bool,searchResults: freezed == searchResults ? _self._searchResults : searchResults // ignore: cast_nullable_to_non_nullable
 as List<UserSummaryEntity>?,isSearching: null == isSearching ? _self.isSearching : isSearching // ignore: cast_nullable_to_non_nullable
 as bool,

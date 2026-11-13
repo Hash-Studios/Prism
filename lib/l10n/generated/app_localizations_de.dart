@@ -560,6 +560,12 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
+  String get accountRelationLoadMoreFailed => 'Weitere konnten nicht geladen werden. Überprüfe deine Verbindung.';
+
+  @override
+  String get accountRelationLoadingMore => 'Weitere Personen werden geladen';
+
+  @override
   String get accountCouldNotLoadFollowers => 'Follower konnten nicht geladen werden.';
 
   @override

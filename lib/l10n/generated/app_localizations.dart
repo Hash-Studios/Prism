@@ -969,6 +969,18 @@ abstract class AppLocalizations {
   /// **'Couldn\'t follow {name}. Try again.'**
   String accountCouldNotFollowPerson(String name);
 
+  /// Row at the end of the followers or following list when the next page fails. A Try again button is next to it.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load more. Check your connection.'**
+  String get accountRelationLoadMoreFailed;
+
+  /// Screen reader label for the row at the end of the followers or following list while the next page loads.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading more people'**
+  String get accountRelationLoadingMore;
+
   /// Error title when the followers list cannot load.
   ///
   /// In en, this message translates to:
