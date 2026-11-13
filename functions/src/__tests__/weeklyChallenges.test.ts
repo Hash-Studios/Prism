@@ -27,6 +27,7 @@ const path = (entry: string) => `weeklyChallenges/${CH}/entries/${entry}`;
 const user = {email: "maker@example.com"};
 function setup(t: TestContext, extra: Record<string, Doc> = {}) {
   t.mock.method(challengeIo, "owner", async (uid: string) => ({uid, email: `${uid}@example.com`}));
+  t.mock.method(challengeIo, "voter", async () => ({createdMs: NOW - 2 * 86_400_000, member: true}));
   t.mock.method(challengeIo, "premium", async () => ["space"]);
   t.mock.method(challengeIo, "ready", async (id: string) => {
     const wall = (await db.doc(`walls/${id}`).get()).data();
@@ -140,6 +141,17 @@ test("votes are deterministic, no-op retries do not change counts or rate, and s
   await assert.rejects(voteChallenge("maker", CH, key, true, () => NOW), /own-entry/);
   assert.deepEqual(await voteChallenge("voter", CH, key, false, () => NOW), {voted: false, voteCount: 0});
   assert.equal(store.get(`challengeVoteRateDaily/voter_${CH}`)?.count, 2);
+});
+
+test("unverified and too-new accounts cannot vote", async (t) => {
+  setup(t, {"walls/w1": wall()});
+  const key = await approved();
+  t.mock.method(challengeIo, "voter", async () => ({createdMs: NOW - 2 * 86_400_000, member: false}));
+  await assert.rejects(voteChallenge("voter", CH, key, true, () => NOW), {code: "failed-precondition", message: "unverified-account"});
+  t.mock.method(challengeIo, "voter", async () => ({createdMs: NOW - 86_400_000 + 1, member: true}));
+  await assert.rejects(voteChallenge("voter", CH, key, true, () => NOW), {code: "failed-precondition", message: "account-too-new"});
+  t.mock.method(challengeIo, "voter", async () => ({createdMs: NOW - 86_400_000, member: true}));
+  assert.deepEqual(await voteChallenge("voter", CH, key, true, () => NOW), {voted: true, voteCount: 1});
 });
 
 test("votes enforce bool input, closure at exact UTC cutoff, account barrier and daily 200", async (t) => {

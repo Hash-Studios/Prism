@@ -31,7 +31,9 @@ concurrency:
 
 jobs:
   patch:
+    if: github.ref == 'refs/heads/master'
     runs-on: ${{ github.event.inputs.platform == 'ios' && 'macos-latest' || 'ubuntu-latest' }}
+    environment: production
     # Reads the repo and its release tags. It pushes nothing.
     permissions:
       contents: read
@@ -48,6 +50,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
           fetch-depth: 0
           fetch-tags: true
 

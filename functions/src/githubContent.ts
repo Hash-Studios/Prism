@@ -278,9 +278,43 @@ async function completeUploadIntent(
   }
   const intentRef = db.collection(UPLOAD_INTENTS).doc(uploadIntentId(repo, filePath, intent.sourceKind));
   const uploadRef = db.collection(UPLOADS).doc(uploadRecordId(repo, filePath, sha, intent.sourceKind));
-  await db.runTransaction(async (tx) => {
-    const currentSnap = await tx.get(intentRef);
+  const {rawPosterReferenced} = await import("./wallLive.js");
+  const outcome = await db.runTransaction(async (tx) => {
+    const registryRef = retainedAsset && stored(retainedAsset) ?
+      db.collection("r2ObjectRegistry").doc(retainedAsset.objectId) : undefined;
+    const [currentSnap, userSnap, barrierSnap, registrySnap] = await Promise.all([
+      tx.get(intentRef),
+      tx.get(db.collection("usersv2").doc(callerUid)),
+      tx.get(db.collection("creatorDeletionState").doc(callerUid)),
+      registryRef ? tx.get(registryRef) : Promise.resolve(undefined),
+    ]);
     const current = currentSnap.data() as UploadIntent | undefined;
+    const closed = userSnap.data()?.deleted === true || barrierSnap.data()?.closed === true;
+    const completeIntent = current?.status === "complete" && current.uid === callerUid &&
+      current.blobSha === intent.blobSha;
+    const row = registrySnap?.data();
+    const sameOwnedObject = !!(registryRef && retainedAsset && stored(retainedAsset) &&
+      retainedAsset.uid === callerUid && retainedAsset.sourceKind === "owned" &&
+      row && row.status !== "tombstoned" && row.uid === callerUid &&
+      row.objectId === retainedAsset.objectId && row.object === retainedAsset.object &&
+      row.path === retainedAsset.path && row.sha === retainedAsset.sha &&
+      row.repo === retainedAsset.repo && row.sha256 === retainedAsset.sha256);
+    const proven = closed && sameOwnedObject && !completeIntent && retainedAsset ?
+      await rawPosterReferenced(tx, retainedAsset, {ignoreUnpublished: true}) : false;
+    if (closed) {
+      if (completeIntent) {
+        if (retainedAsset) {
+          tx.update(uploadRef, {retainedAsset});
+          tx.update(intentRef, {retainedAsset});
+        }
+        return "ok";
+      }
+      if (sameOwnedObject && !proven && registryRef) {
+        tx.update(registryRef, {status: "tombstoned", cleanupNotBeforeMs: Date.now() + 5 * 60_000,
+          deletedAt: admin.firestore.FieldValue.serverTimestamp()});
+      }
+      return "closed";
+    }
     if (!current || current.uid !== callerUid || current.blobSha !== intent.blobSha) {
       throw new HttpsError("failed-precondition", "Upload reservation changed.");
     }
@@ -289,7 +323,7 @@ async function completeUploadIntent(
         tx.update(uploadRef, {retainedAsset});
         tx.update(intentRef, {retainedAsset});
       }
-      return;
+      return "ok";
     }
     if (current.status !== "pending") throw new HttpsError("failed-precondition", "Upload state changed.");
     if (current.attemptId !== attemptId) throw new HttpsError("failed-precondition", "Upload attempt expired.");
@@ -310,7 +344,9 @@ async function completeUploadIntent(
     });
     tx.update(intentRef, {status: "complete", sha, generation, response: savedResponse, attemptId: "", attemptExpiresAt: 0,
       ...(retainedAsset ? {retainedAsset} : {})});
+    return "ok";
   });
+  if (outcome === "closed") throw new HttpsError("failed-precondition", "account-closed");
 }
 
 async function claimDeleteIntent(

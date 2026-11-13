@@ -64,29 +64,90 @@ export async function proveCompletedWallUpload(tx: admin.firestore.Transaction, 
       if (error instanceof PermanentOwnedAssetError) throw new HttpsError("failed-precondition", "Retained upload is unavailable or changed.");
       throw error;
     }
-    if (role === "thumbnail") {
-      const client = new R2Storage();
-      const preview = await client.head("preview", `previews/${retained.objectId}.img`);
-      if (!preview || preview.objectId !== retained.objectId || preview.sha256 !== retained.sha256 ||
-        digest(await client.get("preview", `previews/${retained.objectId}.img`)) !== retained.sha256) {
-        throw new HttpsError("failed-precondition", "Preview is unavailable.");
-      }
-    }
+    if (role === "thumbnail") await proveOwnedPreview(retained);
     if (file.sourceKind === "owned" && url !== (role === "original" ? "" : ownedThumbnailUrl(retained))) {
       throw new HttpsError("failed-precondition", "Owned upload URL does not match its role.");
     }
   }
   if (file.sourceKind === "github") {
-    let parsed: URL;
-    try {
-      parsed = new URL(url);
-    } catch {
-      throw new HttpsError("failed-precondition", "Invalid stored upload URL.");
+    assertGithubRawUrl(url, owner, repo, file.path);
+    await verifyGithubUpload(repo, file.path, file.sha);
+  }
+  return {url, fileKey, generation: record.generation as string};
+}
+
+function assertGithubRawUrl(url: string, owner: string, repo: string, path: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new HttpsError("failed-precondition", "Invalid stored upload URL.");
+  }
+  const parts = parsed.pathname.split("/").slice(1).map(decodeURIComponent);
+  if (parsed.protocol !== "https:" || parsed.hostname !== "raw.githubusercontent.com" || parsed.username || parsed.password ||
+    parsed.port || parsed.search || parsed.hash || parts.length !== 4 || parts[0].toLowerCase() !== owner.toLowerCase() ||
+    parts[1] !== repo || parts[3] !== path) throw new HttpsError("failed-precondition", "Invalid stored upload URL.");
+}
+
+async function proveOwnedPreview(retained: {objectId: string; sha256: string}): Promise<void> {
+  const client = new R2Storage();
+  const preview = await client.head("preview", `previews/${retained.objectId}.img`);
+  if (!preview || preview.objectId !== retained.objectId || preview.sha256 !== retained.sha256 ||
+    digest(await client.get("preview", `previews/${retained.objectId}.img`)) !== retained.sha256) {
+    throw new HttpsError("failed-precondition", "Preview is unavailable.");
+  }
+}
+
+/**
+ * Binds a new still wall to a caller-owned completed upload. Unlike resubmission proof, the upload may finish
+ * before the wall document exists, so this does not fence on wall.createTime.
+ */
+export async function proveStillWallUpload(tx: admin.firestore.Transaction, uid: string, file: FileReference,
+  role: "original" | "thumbnail") {
+  const repo = process.env.GH_REPO_WALLS?.trim();
+  const owner = process.env.GH_USERNAME?.trim();
+  if (!repo || !owner) throw new HttpsError("failed-precondition", "Upload storage is not configured.");
+  const fileKey = uploadFileKey(repo, file);
+  const [receipt, intentSnap, tombstone] = await Promise.all([
+    tx.get(db.collection("githubUploads").doc(fileKey)),
+    tx.get(db.collection("githubUploadIntents").doc(uploadPathKey(repo, file))),
+    tx.get(db.collection("ownedUploadDeletions").doc(fileKey)),
+  ]);
+  const record = receipt.data();
+  const intent = intentSnap.data();
+  if (!record || record.uid !== uid || record.repo !== repo || record.path !== file.path || record.sha !== file.sha ||
+    record.sourceKind !== file.sourceKind || typeof record.generation !== "string" || !record.generation ||
+    !intent || intent.uid !== uid || intent.repo !== repo || intent.path !== file.path || intent.sha !== file.sha ||
+    intent.blobSha !== file.sha || intent.sourceKind !== file.sourceKind || intent.status !== "complete" ||
+    intent.generation !== undefined && intent.generation !== record.generation || typeof intent.uploadId !== "string" ||
+    record.weeklyQuotaCharged !== intent.weeklyQuotaCharged || record.uploadWeek !== intent.uploadWeek ||
+    intent.response?.sourceKind !== file.sourceKind || intent.response?.content?.path !== file.path ||
+    intent.response?.content?.sha !== file.sha || typeof intent.response?.content?.download_url !== "string" ||
+    tombstone.exists || !(record.createdAt instanceof admin.firestore.Timestamp)) {
+    throw new HttpsError("failed-precondition", "Completed upload proof is unavailable.");
+  }
+  const url: string = intent.response.content.download_url;
+  const retained = record.retainedAsset;
+  if (file.sourceKind === "owned" || retained !== undefined) {
+    if (!stored(retained) || !isDeepStrictEqual(retained, intent.retainedAsset) || retained.uid !== uid ||
+      retained.repo !== repo || retained.path !== file.path || retained.sha !== file.sha || retained.uploadId !== intent.uploadId ||
+      (retained.sourceKind === "owned") !== (file.sourceKind === "owned") ||
+      (role === "thumbnail" ? retained.previewObjectId !== retained.objectId : retained.previewObjectId !== undefined)) {
+      throw new HttpsError("failed-precondition", "Retained upload identity or role is invalid.");
     }
-    const parts = parsed.pathname.split("/").slice(1).map(decodeURIComponent);
-    if (parsed.protocol !== "https:" || parsed.hostname !== "raw.githubusercontent.com" || parsed.username || parsed.password ||
-      parsed.port || parsed.search || parsed.hash || parts.length !== 4 || parts[0].toLowerCase() !== owner.toLowerCase() ||
-      parts[1] !== repo || parts[3] !== file.path) throw new HttpsError("failed-precondition", "Invalid stored upload URL.");
+    try {
+      await verifyStoredUpload(retained, undefined, true, tx);
+    } catch (error) {
+      if (error instanceof PermanentOwnedAssetError) throw new HttpsError("failed-precondition", "Retained upload is unavailable or changed.");
+      throw error;
+    }
+    if (role === "thumbnail") await proveOwnedPreview(retained);
+    if (file.sourceKind === "owned" && url !== (role === "original" ? "" : ownedThumbnailUrl(retained))) {
+      throw new HttpsError("failed-precondition", "Owned upload URL does not match its role.");
+    }
+  }
+  if (file.sourceKind === "github") {
+    assertGithubRawUrl(url, owner, repo, file.path);
     await verifyGithubUpload(repo, file.path, file.sha);
   }
   return {url, fileKey, generation: record.generation as string};

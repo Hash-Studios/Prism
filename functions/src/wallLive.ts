@@ -280,13 +280,23 @@ async function ownsReference(tx: admin.firestore.Transaction, wall: admin.firest
   return !!email && !email.includes("/") && await verifiedUidForEmail(email, tx) === uid;
 }
 
-async function rawPosterReferenced(tx: admin.firestore.Transaction, asset: StoredUpload): Promise<boolean> {
+const anonymizedWall = (wall: admin.firestore.DocumentData): boolean =>
+  wall.creatorUid === undefined && (typeof wall.email !== "string" || wall.email.trim() === "");
+
+export async function rawPosterReferenced(tx: admin.firestore.Transaction, asset: StoredUpload,
+  options: {ignoreUnpublished?: boolean} = {}): Promise<boolean> {
   const role = asset.previewObjectId ? "thumb" : "wallpaper";
-  const queries = await Promise.all(["walls", "rejectedWalls"].map((collection) =>
+  const collections = options.ignoreUnpublished ? ["walls"] : ["walls", "rejectedWalls"];
+  const queries = await Promise.all(collections.map((collection) =>
     tx.get(db.collection(collection).where(`${role}_path`, "==", asset.path))));
   for (const rows of queries) {
     for (const row of rows.docs) {
-      if (row.data()[`${role}_sha`] === asset.sha && await ownsReference(tx, row.data(), asset.uid)) return true;
+      if (options.ignoreUnpublished && row.data().review !== true) continue;
+      if (row.data()[`${role}_sha`] !== asset.sha) continue;
+      // A deleteAccount retry runs after the first attempt scrubbed the email on the closing user's walls.
+      // An approved wall with no owner left is that user's own and must keep its image.
+      if (options.ignoreUnpublished && anonymizedWall(row.data())) return true;
+      if (await ownsReference(tx, row.data(), asset.uid)) return true;
     }
   }
   const manifests = await Promise.all(["original", "thumb"].map((role) =>
@@ -394,8 +404,11 @@ export const onRejectedLiveWallDeleted = onDocumentDeleted({document: "rejectedW
     incarnationNanos: data.sourceWallCreateTime.nanoseconds});
 });
 
+export type TombstoneUploadsOptions = {accountClosing?: boolean};
+
 /** Account closure also owns uploads that never reached a wall document. Retained walls and archives keep theirs. */
-export async function tombstoneUnreferencedLiveUploads(uid: string, nowMs = Date.now()): Promise<number> {
+export async function tombstoneUnreferencedLiveUploads(uid: string, nowMs = Date.now(),
+  options: TombstoneUploadsOptions = {}): Promise<number> {
   if (!ownedAssetStorageEnabled()) return 0;
   let cursor: admin.firestore.QueryDocumentSnapshot | undefined;
   let marked = 0;
@@ -406,8 +419,7 @@ export async function tombstoneUnreferencedLiveUploads(uid: string, nowMs = Date
     const rows = await query.get();
     for (const row of rows.docs) {
       const asset = row.data();
-      if (!stored(asset) || asset.sourceKind !== "owned" ||
-        !(isLiveVideoPath(asset.path) || isLiveFramePath(asset.path))) continue;
+      if (!stored(asset) || asset.sourceKind !== "owned") continue;
       marked += await db.runTransaction(async (tx) => {
         const current = (await tx.get(row.ref)).data();
         if (!current || current.status !== "active" || current.uid !== uid || !stored(current) ||
@@ -418,7 +430,9 @@ export async function tombstoneUnreferencedLiveUploads(uid: string, nowMs = Date
           if (error instanceof PermanentOwnedAssetError) return 0;
           throw error;
         }
-        if (await liveAssetReferenced(tx, current)) return 0;
+        const liveFile = isLiveVideoPath(current.path) || isLiveFramePath(current.path);
+        if (liveFile ? await liveAssetReferenced(tx, current) :
+          await rawPosterReferenced(tx, current, {ignoreUnpublished: options.accountClosing === true})) return 0;
         tx.update(row.ref, {status: "tombstoned", cleanupNotBeforeMs: nowMs + 5 * 60_000,
           deletedAt: admin.firestore.FieldValue.serverTimestamp()});
         return 1;

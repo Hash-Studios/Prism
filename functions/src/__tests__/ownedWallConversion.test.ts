@@ -61,7 +61,22 @@ function installNetwork(t: TestContext, sources: Record<string, Buffer>, sourceH
       if (method === "HEAD") return new Response(null, {status: 200, headers: {...lengthHeaders, ...object.meta}});
       return new Response(new Uint8Array(object.bytes), {status: 200, headers: lengthHeaders});
     }
+    const secret = new Headers(init?.headers).get("x-studio-secret");
     fetched.push(url.href);
+    const studioOriginalKey = url.pathname.startsWith("/api/ai/studio/assets/ai/original/") ?
+      url.pathname.slice("/api/ai/studio/assets/".length) : null;
+    if (studioOriginalKey) {
+      if (!secret || secret !== (process.env.STUDIO_SECRET ?? "")) {
+        return new Response(JSON.stringify({error: "unauthorized"}), {status: 401});
+      }
+      const bytes = sources[url.href] ?? sources[`${WORKER}/${studioOriginalKey}`];
+      if (!bytes) return new Response(null, {status: 404});
+      return new Response(new Uint8Array(bytes), {status: 200,
+        headers: {"content-length": String(bytes.length), ...sourceHeaders[url.href]}});
+    }
+    if (url.pathname.startsWith("/api/ai/assets/ai/original/")) {
+      return new Response(JSON.stringify({error: "unauthorized"}), {status: 401});
+    }
     const bytes = sources[url.href];
     if (!bytes) {
       if (url.href.startsWith(`${RECORDS}/`)) {
@@ -617,6 +632,15 @@ for (const shape of ["unwatermarked original", "public image for both roles"]) {
     const network = installNetwork(t, await aiSources(NEW_GEN, aiRecord(NEW_GEN)));
     mockAuth(t);
     assert.equal(await convertApprovedWall(id), "converted");
+    const publicOriginal = `${WORKER}/ai/original/${NEW_GEN}.png`;
+    const studioOriginal = `https://prismwalls.com/api/ai/studio/assets/ai/original/${NEW_GEN}.png`;
+    if (same) {
+      assert.ok(!network.fetched.includes(studioOriginal));
+      assert.ok(!network.fetched.includes(publicOriginal));
+    } else {
+      assert.ok(network.fetched.includes(studioOriginal));
+      assert.ok(!network.fetched.includes(publicOriginal));
+    }
     const manifest = store.get(`ownedAssets/${id}`) as {original: Doc; thumb: Doc; provenance: Doc; originalUrl: string};
     assert.deepEqual(manifest.provenance, {kind: "ai", generationId: NEW_GEN, uid: "creator-1"});
     assert.equal(manifest.originalUrl, wall.wallpaper_url);
@@ -679,6 +703,35 @@ for (const [name, wall, record, users, reason] of [
     assert.equal(store.get(`walls/${id}`)?.originalProtected, undefined);
   });
 }
+
+test("an AI original redirect is not followed with the studio secret", async (t) => {
+  configure(t);
+  process.env.STUDIO_SECRET = "studio-secret";
+  const wall = aiWall(NEW_GEN);
+  const id = String(wall.id);
+  const store = installFakeDb(t, {[`walls/${id}`]: wall});
+  installNetwork(t, await aiSources(NEW_GEN, aiRecord(NEW_GEN)));
+  mockAuth(t);
+  const attacker = "https://evil.example/steal.png";
+  const inner = globalThis.fetch;
+  const stolen: string[] = [];
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.includes("/api/ai/studio/assets/ai/original/")) {
+      assert.equal(new Headers(init?.headers).get("x-studio-secret"), "studio-secret");
+      assert.equal(init?.redirect, "manual");
+      return new Response(null, {status: 302, headers: {location: attacker}});
+    }
+    if (url.startsWith(attacker)) {
+      stolen.push(new Headers(init?.headers).get("x-studio-secret") ?? "");
+      return new Response("stolen", {status: 200});
+    }
+    return inner(input, init);
+  });
+  assert.equal(await convertApprovedWall(id), "blocked");
+  assert.deepEqual(stolen, []);
+  assert.equal(store.has(`ownedAssets/${id}`), false);
+});
 
 test("an AI wall is blocked without the Worker secret instead of retrying", async (t) => {
   configure(t);

@@ -153,7 +153,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
     await batch.commit();
   }
   const folders = await db.collection(FOLDERS).where("ownerId", "==", callerUid).get();
-  await tombstoneUnreferencedLiveUploads(callerUid);
+  await tombstoneUnreferencedLiveUploads(callerUid, Date.now(), {accountClosing: true});
 
   // 2-4. Owned records elsewhere in Firestore.
   const writer = db.bulkWriter();
@@ -173,6 +173,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
     await queueDeleteWhereEqual("tipRateDaily", "creatorUid", callerUid, queue);
     await queueDeleteWhereEqual("rewardedAdSessions", "uid", callerUid, queue);
     await queueDeleteWhereEqual(AI_GENERATIONS, "userId", callerUid, queue);
+    await queueDeleteWhereEqual("githubUploadIntents", "uid", callerUid, queue);
     await queueDeleteWhereEqual(GITHUB_UPLOADS, "uid", callerUid, queue);
     for (const collection of ["wallMetadataEdits", "wallMetadataOperations", "wallResubmissionRoots", "wallResubmissions",
       "wallResubmissionOperations", "wallResubmissionConsumptions"]) {

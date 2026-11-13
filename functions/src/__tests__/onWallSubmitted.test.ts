@@ -3,8 +3,11 @@ import test, {type TestContext} from "node:test";
 import * as admin from "firebase-admin";
 import {db} from "../common";
 import {aiCommunityId} from "../aiWallSource";
+import {uploadFileKey, uploadPathKey} from "../completedWallUpload";
+import {HttpsError} from "firebase-functions/v2/https";
 import {isGithubRawUrl, onWallSubmitted} from "../onWallSubmitted";
 import {removeRemixOfIfUnchanged} from "../wallRemix";
+import * as wallRemix from "../wallRemix";
 import {type Doc, installFakeDb} from "./fakeDb";
 
 const RAW = "https://raw.githubusercontent.com/owner/walls/main";
@@ -41,9 +44,9 @@ const wall = (extra: Doc = {}): Doc => ({
   wallpaper_url: `${RAW}/a.jpg`, wallpaper_thumb: `${RAW}/thumb_a.jpg`, ...extra,
 });
 
-test("the submission trigger binds STUDIO_SECRET and the R2 secrets", () => {
+test("the submission trigger binds STUDIO_SECRET, GH_TOKEN and the R2 secrets", () => {
   assert.deepEqual(onWallSubmitted.__endpoint.secretEnvironmentVariables?.map(({key}) => key),
-    ["STUDIO_SECRET", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"]);
+    ["STUDIO_SECRET", "GH_TOKEN", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"]);
   assert.equal(onWallSubmitted.__endpoint.availableMemoryMb, 512);
   assert.equal(onWallSubmitted.__endpoint.concurrency, 1);
   assert.equal(onWallSubmitted.__endpoint.eventTrigger?.retry, true);
@@ -61,17 +64,45 @@ test("the username fills in when the profile has no name, and nothing is written
   await fire(first.store);
   assert.equal(first.store.get("walls/w1")?.by, "RealMaker");
 
-  const updates: Doc[] = [];
-  const matching = installFakeDb(t, {
-    "usersv2/maker": {email: "maker@example.com", name: "Real Maker", profilePhoto: "https://p/real.png"},
+  withGithubRepo(t);
+  const sha = "a".repeat(40);
+  const thumbSha = "b".repeat(40);
+  const originalUrl = `${RAW}/a.jpg`;
+  const thumbUrl = `${RAW}/thumb_a.jpg`;
+  const sameWall = wall({
+    by: "Real Maker", userPhoto: "https://p/real.png",
+    wallpaper_url: originalUrl, wallpaper_path: "a.jpg", wallpaper_sha: sha, wallpaper_source_kind: "github",
+    wallpaper_thumb: thumbUrl, thumb_path: "thumb_a.jpg", thumb_sha: thumbSha, thumb_source_kind: "github",
   });
-  const sameWall = wall({by: "Real Maker", userPhoto: "https://p/real.png"});
-  matching.set("walls/w1", sameWall);
+  const matching = setup(t, {name: "Real Maker", profilePhoto: "https://p/real.png"}, sameWall);
+  for (const [key, value] of Object.entries({
+    ...stillProof("a.jpg", sha, originalUrl),
+    ...stillProof("thumb_a.jpg", thumbSha, thumbUrl),
+  })) matching.store.set(key, value);
+  mockGithubContents(t, {"a.jpg": sha, "thumb_a.jpg": thumbSha});
+  const updates: Doc[] = [];
+  const snapshot = await db.doc("walls/w1").get();
+  const originalUpdate = snapshot.ref.update.bind(snapshot.ref);
+  t.mock.method(snapshot.ref, "update", async (update: Doc) => {
+    updates.push(update);
+    return originalUpdate(update);
+  });
   await onWallSubmitted.run({
     params: {wallId: "w1"},
-    data: {data: () => sameWall, ref: {update: async (update: Doc) => updates.push(update)}},
+    data: {...snapshot, data: () => matching.store.get("walls/w1")},
   } as unknown as Parameters<typeof onWallSubmitted.run>[0]);
   assert.deepEqual(updates, []);
+  const current = matching.store.get("walls/w1")!;
+  assert.equal(current.by, "Real Maker");
+  assert.equal(current.userPhoto, "https://p/real.png");
+  assert.equal(current.wallpaper_url, originalUrl);
+  assert.equal(current.wallpaper_path, "a.jpg");
+  assert.equal(current.wallpaper_sha, sha);
+  assert.equal(current.wallpaper_source_kind, "github");
+  assert.equal(current.wallpaper_thumb, thumbUrl);
+  assert.equal(current.thumb_path, "thumb_a.jpg");
+  assert.equal(current.thumb_sha, thumbSha);
+  assert.equal(current.thumb_source_kind, "github");
 });
 
 test("a wall of an unknown owner keeps its fields", async (t) => {
@@ -87,16 +118,273 @@ test("a premium submission notifies the admins and a free one does not", async (
   assert.deepEqual(premium.pushes[0].data, {route: "content_report", channel_id: "posts", push_kind: "moderation"});
   assert.deepEqual(premium.pushes[0].notification, {title: "Moderation update", body: "Open Prism to review."});
   assert.equal(premium.pushes[0].android?.notification?.imageUrl, undefined);
+  assert.equal((premium.store.get("notifications/wall_submitted_w1") as {data?: {imageUrl?: string}})?.data?.imageUrl, "");
 
   const free = setup(t, {name: "Maker", premium: false}, wall());
   await fire(free.store);
   assert.deepEqual(free.pushes, []);
 });
 
-test("an image link outside the GitHub raw host is logged and the wall is kept", async (t) => {
+test("an image link outside the GitHub raw host is stripped", async (t) => {
   const {store} = setup(t, {name: "Maker", premium: true}, wall({wallpaper_url: "https://evil.example/a.jpg"}));
   await fire(store);
-  assert.equal(store.get("walls/w1")?.wallpaper_url, "https://evil.example/a.jpg");
+  assert.equal(store.get("walls/w1")?.wallpaper_url, "");
+});
+
+function withGithubRepo(t: TestContext, values: {GH_REPO_WALLS?: string | null; GH_USERNAME?: string | null} = {}) {
+  const previous = {
+    GH_REPO_WALLS: process.env.GH_REPO_WALLS, GH_USERNAME: process.env.GH_USERNAME, GH_TOKEN: process.env.GH_TOKEN,
+  };
+  if (values.GH_REPO_WALLS === null) delete process.env.GH_REPO_WALLS;
+  else process.env.GH_REPO_WALLS = values.GH_REPO_WALLS ?? "walls";
+  if (values.GH_USERNAME === null) delete process.env.GH_USERNAME;
+  else process.env.GH_USERNAME = values.GH_USERNAME ?? "owner";
+  process.env.GH_TOKEN = "test-token";
+  t.after(() => {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+}
+
+function mockGithubContents(t: TestContext, files: Record<string, string | "missing" | "changed" | "outage">) {
+  t.mock.method(globalThis, "fetch", async (input: RequestInfo | URL) => {
+    const url = String(input);
+    const path = decodeURIComponent(url.split("/contents/")[1] ?? "");
+    const spec = files[path];
+    if (spec === "outage") throw new Error("GitHub unavailable");
+    if (!spec || spec === "missing") return {ok: false, status: 404, json: async () => ({})};
+    const sha = spec === "changed" ? "c".repeat(40) : spec;
+    return {ok: true, status: 200, json: async () => ({path, sha, type: "file"})};
+  });
+}
+
+function stillProof(path: string, sha: string, url: string, uid = "maker"): Record<string, Doc> {
+  const file = {path, sha, sourceKind: "github" as const};
+  const record = {
+    uid, repo: "walls", path, sha, sourceKind: "github", generation: "generation-1",
+    weeklyQuotaCharged: true, uploadWeek: "2026-W01",
+    createdAt: admin.firestore.Timestamp.fromMillis(1),
+  };
+  return {
+    [`githubUploads/${uploadFileKey("walls", file)}`]: record,
+    [`githubUploadIntents/${uploadPathKey("walls", file)}`]: {
+      ...record, status: "complete", blobSha: sha, uploadId: `upload-${path}`,
+      response: {sourceKind: "github", content: {path, sha, download_url: url}},
+    },
+  };
+}
+
+test("a still wall keeps GitHub raw images that match the caller's completed upload intents", async (t) => {
+  withGithubRepo(t);
+  const sha = "a".repeat(40);
+  const thumbSha = "b".repeat(40);
+  const originalUrl = `${RAW}/a.jpg`;
+  const thumbUrl = `${RAW}/thumb_a.jpg`;
+  const {store} = setup(t, {name: "Maker"}, wall({
+    wallpaper_url: originalUrl, wallpaper_path: "a.jpg", wallpaper_sha: sha, wallpaper_source_kind: "github",
+    wallpaper_thumb: thumbUrl, thumb_path: "thumb_a.jpg", thumb_sha: thumbSha, thumb_source_kind: "github",
+  }));
+  for (const [key, value] of Object.entries({
+    ...stillProof("a.jpg", sha, originalUrl),
+    ...stillProof("thumb_a.jpg", thumbSha, thumbUrl),
+  })) store.set(key, value);
+  mockGithubContents(t, {"a.jpg": sha, "thumb_a.jpg": thumbSha});
+  await fire(store);
+  assert.equal(store.get("walls/w1")?.wallpaper_url, originalUrl);
+  assert.equal(store.get("walls/w1")?.wallpaper_thumb, thumbUrl);
+  assert.equal(store.get("walls/w1")?.wallpaper_path, "a.jpg");
+  assert.equal(store.get("walls/w1")?.thumb_path, "thumb_a.jpg");
+});
+
+test("an AI flag with a non-Worker generation id does not skip still-upload proof", async (t) => {
+  withGithubRepo(t);
+  const {store} = setup(t, {name: "Maker"}, wall({isAiGenerated: true, aiGenerationId: "gen_notasource"}));
+  await fire(store);
+  const current = store.get("walls/w1")!;
+  assert.equal(current.wallpaper_url, "");
+  assert.equal(current.wallpaper_path, "");
+  assert.equal(current.wallpaper_sha, "");
+  assert.equal(current.wallpaper_thumb, "");
+  assert.equal(current.thumb_path, "");
+  assert.equal(current.thumb_sha, "");
+});
+
+test("a still wall strips GitHub raw images when the walls repo is not configured", async (t) => {
+  withGithubRepo(t, {GH_REPO_WALLS: null});
+  const sha = "a".repeat(40);
+  const {store} = setup(t, {name: "Maker"}, wall({
+    wallpaper_url: `${RAW}/a.jpg`, wallpaper_path: "a.jpg", wallpaper_sha: sha, wallpaper_source_kind: "github",
+    wallpaper_thumb: `${RAW}/thumb_a.jpg`, thumb_path: "thumb_a.jpg", thumb_sha: "b".repeat(40),
+    thumb_source_kind: "github",
+  }));
+  for (const [key, value] of Object.entries({
+    ...stillProof("a.jpg", sha, `${RAW}/a.jpg`),
+    ...stillProof("thumb_a.jpg", "b".repeat(40), `${RAW}/thumb_a.jpg`),
+  })) store.set(key, value);
+  await fire(store);
+  const current = store.get("walls/w1")!;
+  assert.equal(current.wallpaper_url, "");
+  assert.equal(current.wallpaper_path, "");
+  assert.equal(current.wallpaper_sha, "");
+  assert.equal(current.wallpaper_thumb, "");
+});
+
+test("a still wall strips GitHub raw images when the GitHub username is not configured", async (t) => {
+  withGithubRepo(t, {GH_USERNAME: null});
+  const sha = "a".repeat(40);
+  const {store} = setup(t, {name: "Maker"}, wall({
+    wallpaper_url: `${RAW}/a.jpg`, wallpaper_path: "a.jpg", wallpaper_sha: sha, wallpaper_source_kind: "github",
+    wallpaper_thumb: `${RAW}/thumb_a.jpg`, thumb_path: "thumb_a.jpg", thumb_sha: "b".repeat(40),
+    thumb_source_kind: "github",
+  }));
+  for (const [key, value] of Object.entries({
+    ...stillProof("a.jpg", sha, `${RAW}/a.jpg`),
+    ...stillProof("thumb_a.jpg", "b".repeat(40), `${RAW}/thumb_a.jpg`),
+  })) store.set(key, value);
+  await fire(store);
+  assert.equal(store.get("walls/w1")?.wallpaper_url, "");
+  assert.equal(store.get("walls/w1")?.wallpaper_thumb, "");
+});
+
+test("a still wall strips a GitHub raw URL whose owner is not the configured walls owner", async (t) => {
+  withGithubRepo(t);
+  const sha = "a".repeat(40);
+  const foreign = "https://raw.githubusercontent.com/evil/walls/main/a.jpg";
+  const {store} = setup(t, {name: "Maker"}, wall({
+    wallpaper_url: foreign, wallpaper_path: "a.jpg", wallpaper_sha: sha, wallpaper_source_kind: "github",
+    wallpaper_thumb: `${RAW}/thumb_a.jpg`, thumb_path: "thumb_a.jpg", thumb_sha: "b".repeat(40),
+    thumb_source_kind: "github",
+  }));
+  for (const [key, value] of Object.entries({
+    ...stillProof("a.jpg", sha, `${RAW}/a.jpg`),
+    ...stillProof("thumb_a.jpg", "b".repeat(40), `${RAW}/thumb_a.jpg`),
+  })) store.set(key, value);
+  mockGithubContents(t, {"a.jpg": sha, "thumb_a.jpg": "b".repeat(40)});
+  await fire(store);
+  assert.equal(store.get("walls/w1")?.wallpaper_url, "");
+  assert.equal(store.get("walls/w1")?.wallpaper_path, "");
+  assert.equal(store.get("walls/w1")?.wallpaper_thumb, `${RAW}/thumb_a.jpg`);
+});
+
+test("a still wall strips GitHub raw images that have no path or sha", async (t) => {
+  withGithubRepo(t);
+  const {store} = setup(t, {name: "Maker"}, wall());
+  await fire(store);
+  const current = store.get("walls/w1")!;
+  assert.equal(current.wallpaper_url, "");
+  assert.equal(current.wallpaper_path, "");
+  assert.equal(current.wallpaper_sha, "");
+  assert.equal(current.wallpaper_thumb, "");
+  assert.equal(current.thumb_path, "");
+  assert.equal(current.thumb_sha, "");
+});
+
+test("a still wall strips GitHub raw images that have no caller-owned completed intent", async (t) => {
+  withGithubRepo(t);
+  const sha = "a".repeat(40);
+  const {store} = setup(t, {name: "Maker"}, wall({
+    wallpaper_url: `${RAW}/a.jpg`, wallpaper_path: "a.jpg", wallpaper_sha: sha, wallpaper_source_kind: "github",
+    wallpaper_thumb: `${RAW}/thumb_a.jpg`, thumb_path: "thumb_a.jpg", thumb_sha: "b".repeat(40),
+    thumb_source_kind: "github",
+  }));
+  for (const [key, value] of Object.entries(stillProof("a.jpg", sha, `${RAW}/a.jpg`, "attacker"))) {
+    store.set(key, value);
+  }
+  await fire(store);
+  const current = store.get("walls/w1")!;
+  assert.equal(current.wallpaper_url, "");
+  assert.equal(current.wallpaper_path, "");
+  assert.equal(current.wallpaper_sha, "");
+  assert.equal(current.wallpaper_thumb, "");
+  assert.equal(current.thumb_path, "");
+  assert.equal(current.thumb_sha, "");
+});
+
+test("a still wall strips GitHub images whose live files are missing", async (t) => {
+  withGithubRepo(t);
+  const sha = "a".repeat(40);
+  const thumbSha = "b".repeat(40);
+  const {store} = setup(t, {name: "Maker"}, wall({
+    wallpaper_url: `${RAW}/a.jpg`, wallpaper_path: "a.jpg", wallpaper_sha: sha, wallpaper_source_kind: "github",
+    wallpaper_thumb: `${RAW}/thumb_a.jpg`, thumb_path: "thumb_a.jpg", thumb_sha: thumbSha, thumb_source_kind: "github",
+  }));
+  for (const [key, value] of Object.entries({
+    ...stillProof("a.jpg", sha, `${RAW}/a.jpg`),
+    ...stillProof("thumb_a.jpg", thumbSha, `${RAW}/thumb_a.jpg`),
+  })) store.set(key, value);
+  mockGithubContents(t, {"a.jpg": "missing", "thumb_a.jpg": "missing"});
+  await fire(store);
+  const current = store.get("walls/w1")!;
+  assert.equal(current.wallpaper_url, "");
+  assert.equal(current.wallpaper_thumb, "");
+});
+
+test("a still wall strips GitHub images whose live SHA changed", async (t) => {
+  withGithubRepo(t);
+  const sha = "a".repeat(40);
+  const thumbSha = "b".repeat(40);
+  const {store} = setup(t, {name: "Maker"}, wall({
+    wallpaper_url: `${RAW}/a.jpg`, wallpaper_path: "a.jpg", wallpaper_sha: sha, wallpaper_source_kind: "github",
+    wallpaper_thumb: `${RAW}/thumb_a.jpg`, thumb_path: "thumb_a.jpg", thumb_sha: thumbSha, thumb_source_kind: "github",
+  }));
+  for (const [key, value] of Object.entries({
+    ...stillProof("a.jpg", sha, `${RAW}/a.jpg`),
+    ...stillProof("thumb_a.jpg", thumbSha, `${RAW}/thumb_a.jpg`),
+  })) store.set(key, value);
+  mockGithubContents(t, {"a.jpg": "changed", "thumb_a.jpg": "changed"});
+  await fire(store);
+  const current = store.get("walls/w1")!;
+  assert.equal(current.wallpaper_url, "");
+  assert.equal(current.wallpaper_thumb, "");
+});
+
+test("a still wall retries a GitHub outage instead of stripping proven images", async (t) => {
+  withGithubRepo(t);
+  const sha = "a".repeat(40);
+  const thumbSha = "b".repeat(40);
+  const originalUrl = `${RAW}/a.jpg`;
+  const thumbUrl = `${RAW}/thumb_a.jpg`;
+  const {store} = setup(t, {name: "Maker"}, wall({
+    wallpaper_url: originalUrl, wallpaper_path: "a.jpg", wallpaper_sha: sha, wallpaper_source_kind: "github",
+    wallpaper_thumb: thumbUrl, thumb_path: "thumb_a.jpg", thumb_sha: thumbSha, thumb_source_kind: "github",
+  }));
+  for (const [key, value] of Object.entries({
+    ...stillProof("a.jpg", sha, originalUrl),
+    ...stillProof("thumb_a.jpg", thumbSha, thumbUrl),
+  })) store.set(key, value);
+  mockGithubContents(t, {"a.jpg": "outage", "thumb_a.jpg": "outage"});
+  await assert.rejects(() => fire(store),
+    (error: unknown) => error instanceof HttpsError && error.code === "internal");
+  assert.equal(store.get("walls/w1")?.wallpaper_url, originalUrl);
+  assert.equal(store.get("walls/w1")?.wallpaper_thumb, thumbUrl);
+});
+
+test("admin inbox keeps a proven still thumbnail and omits an unproven one", async (t) => {
+  withGithubRepo(t);
+  const sha = "a".repeat(40);
+  const thumbSha = "b".repeat(40);
+  const originalUrl = `${RAW}/a.jpg`;
+  const thumbUrl = `${RAW}/thumb_a.jpg`;
+  const proven = setup(t, {name: "Maker", premium: true}, wall({
+    wallpaper_url: originalUrl, wallpaper_path: "a.jpg", wallpaper_sha: sha, wallpaper_source_kind: "github",
+    wallpaper_thumb: thumbUrl, thumb_path: "thumb_a.jpg", thumb_sha: thumbSha, thumb_source_kind: "github",
+  }));
+  for (const [key, value] of Object.entries({
+    ...stillProof("a.jpg", sha, originalUrl),
+    ...stillProof("thumb_a.jpg", thumbSha, thumbUrl),
+  })) proven.store.set(key, value);
+  mockGithubContents(t, {"a.jpg": sha, "thumb_a.jpg": thumbSha});
+  await fire(proven.store);
+  assert.equal(proven.store.get("walls/w1")?.wallpaper_thumb, thumbUrl);
+  assert.equal((proven.store.get("notifications/wall_submitted_w1") as {data?: {imageUrl?: string}})?.data?.imageUrl,
+    thumbUrl);
+
+  const stripped = setup(t, {name: "Maker", premium: true}, wall());
+  await fire(stripped.store);
+  assert.equal(stripped.store.get("walls/w1")?.wallpaper_thumb, "");
+  assert.equal((stripped.store.get("notifications/wall_submitted_w1") as {data?: {imageUrl?: string}})?.data?.imageUrl, "");
 });
 
 test("only https links on raw.githubusercontent.com pass the host check", () => {
@@ -280,7 +568,7 @@ test("submission keeps a link if its original is approved before sanitization co
 
 test("a failed remixOf check still notifies the admins", async (t) => {
   const {store, pushes} = setup(t, {name: "Maker", premium: true}, wall({isAiGenerated: true, remixOf: "a/b"}));
-  t.mock.method(db, "runTransaction", async () => {
+  t.mock.method(wallRemix, "keepRemixOf", async () => {
     throw new Error("unavailable");
   });
   await fire(store);
@@ -288,15 +576,28 @@ test("a failed remixOf check still notifies the admins", async (t) => {
 });
 
 test("submission removes forged lineage and clears rejected text while preserving the upload", async (t) => {
-  const {store} = setup(t, {name: "Maker", premium: false}, wall({resubmitOf: "claimed-parent",
-    title: "p0rn", desc: "Hidden\u202e", tags: ["nudes"], category: "Nature"}));
+  withGithubRepo(t);
+  const sha = "a".repeat(40);
+  const thumbSha = "b".repeat(40);
+  const originalUrl = `${RAW}/a.jpg`;
+  const thumbUrl = `${RAW}/thumb_a.jpg`;
+  const {store} = setup(t, {name: "Maker", premium: false}, wall({
+    resubmitOf: "claimed-parent", title: "p0rn", desc: "Hidden\u202e", tags: ["nudes"], category: "Nature",
+    wallpaper_url: originalUrl, wallpaper_path: "a.jpg", wallpaper_sha: sha, wallpaper_source_kind: "github",
+    wallpaper_thumb: thumbUrl, thumb_path: "thumb_a.jpg", thumb_sha: thumbSha, thumb_source_kind: "github",
+  }));
+  for (const [key, value] of Object.entries({
+    ...stillProof("a.jpg", sha, originalUrl),
+    ...stillProof("thumb_a.jpg", thumbSha, thumbUrl),
+  })) store.set(key, value);
+  mockGithubContents(t, {"a.jpg": sha, "thumb_a.jpg": thumbSha});
   await fire(store);
   const current = store.get("walls/w1")!;
   assert.equal(current.resubmitOf, undefined);
   assert.equal(current.title, "");
   assert.equal(current.desc, "");
   assert.deepEqual(current.tags, []);
-  assert.equal(current.wallpaper_url, `${RAW}/a.jpg`);
+  assert.equal(current.wallpaper_url, originalUrl);
   assert.equal(current.review, false);
   assert.equal(current.category, "Nature");
 });
@@ -354,3 +655,30 @@ test("a retried submission keeps one admin inbox entry per wall", async (t) => {
   const inbox = [...store.keys()].filter((key) => key.startsWith("notifications/"));
   assert.deepEqual(inbox, ["notifications/wall_submitted_w1"]);
 });
+
+for (const configured of [true, false]) {
+  test(`a delayed still submission preserves server-bound images (configured: ${configured})`, async (t) => {
+    withGithubRepo(t);
+    if (!configured) delete process.env.GH_REPO_WALLS;
+    const {store} = setup(t, {premium: false}, wall());
+    const submitted = await db.doc("walls/w1").get();
+    const bound = wall({originalProtected: true, originalObjectId: "original-id", wallpaper_url: "",
+      wallpaper_thumb: "https://images.example.com/bound.jpg", wallpaper_path: "", wallpaper_sha: "",
+      thumb_path: "", thumb_sha: ""});
+    await submitted.ref.update(bound);
+    await onWallSubmitted.run({params: {wallId: "w1"}, data: submitted} as never);
+    assert.equal(store.get("walls/w1")?.wallpaper_thumb, bound.wallpaper_thumb);
+  });
+
+  test(`a stale still submission does not strip a recreated wall (configured: ${configured})`, async (t) => {
+    withGithubRepo(t);
+    if (!configured) delete process.env.GH_REPO_WALLS;
+    const {store} = setup(t, {premium: false}, wall());
+    const submitted = await db.doc("walls/w1").get();
+    await submitted.ref.delete();
+    const replacement = wall({wallpaper_thumb: "https://images.example.com/replacement.jpg"});
+    await submitted.ref.set(replacement);
+    await onWallSubmitted.run({params: {wallId: "w1"}, data: submitted} as never);
+    assert.equal(store.get("walls/w1")?.wallpaper_thumb, replacement.wallpaper_thumb);
+  });
+}

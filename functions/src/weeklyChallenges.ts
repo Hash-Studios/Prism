@@ -28,11 +28,22 @@ export type EntryView = {id: string; wallId: string; wallLogicalId: string; crea
 export type ChallengeView = {id: string; theme: string; state: ChallengeState; opensAtMs: number; closesAtMs: number;
   winner: EntryView | null; reservedDate: string | null; noWinner: boolean};
 
+const MIN_ACCOUNT_AGE_MS = DAY;
+
 export const challengeIo = {
   owner: async (uid: string) => admin.auth().getUser(uid),
   ready: readyWall,
   premium: premiumCollections,
   send: sendToUser,
+  /** Account age, and whether it is a signed-in, verified, non-guest account. */
+  async voter(uid: string): Promise<{createdMs: number; member: boolean}> {
+    const user = await admin.auth().getUser(uid);
+    return {
+      createdMs: Date.parse(user.metadata.creationTime),
+      member: user.emailVerified === true && !user.disabled &&
+        user.providerData.some((provider) => !!provider.providerId && provider.providerId !== "anonymous"),
+    };
+  },
 };
 
 function id(raw: unknown): string {
@@ -214,6 +225,11 @@ async function visible(tx: Tx, entry: Data, viewer = ""): Promise<Snap | null> {
 export async function voteChallenge(uid: string, challengeId: string, entryId: string, vote: boolean, clock: () => number = Date.now) {
   id(challengeId); id(entryId);
   if (typeof vote !== "boolean") throw new HttpsError("invalid-argument", "vote must be true or false.");
+  const voter = await challengeIo.voter(uid);
+  if (!voter.member) throw new HttpsError("failed-precondition", "unverified-account");
+  if (!Number.isFinite(voter.createdMs) || clock() - voter.createdMs < MIN_ACCOUNT_AGE_MS) {
+    throw new HttpsError("failed-precondition", "account-too-new");
+  }
   const ref = entryRef(challengeId, entryId);
   const voteRef = ref.collection("challengeVotes").doc(uid);
   return db.runTransaction(async (tx) => {

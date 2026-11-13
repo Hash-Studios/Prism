@@ -14,11 +14,14 @@ import {sanitizeResubmitOf} from "./wallResubmissions";
 import {sanitizeSubmissionText} from "./wallSubmissionSafety";
 import {checkSubmittedVariantOf} from "./wallVariants";
 import {isLiveWall, verifyLiveWall} from "./wallLive";
+import {parseFileReference, proveStillWallUpload, type FileReference} from "./completedWallUpload";
 import {r2Secrets} from "./r2Storage";
 import {verifiedUidForEmail} from "./authoredContentUid";
+import {HttpsError} from "firebase-functions/v2/https";
 
 const GITHUB_RAW_HOST = "raw.githubusercontent.com";
 const studioSecret = defineSecret("STUDIO_SECRET");
+const githubToken = defineSecret("GH_TOKEN");
 
 /** True when `url` is a https link on the GitHub raw host, where every upload of the app is served. */
 export function isGithubRawUrl(url: unknown): boolean {
@@ -42,7 +45,7 @@ export const onWallSubmitted = onDocumentCreated(
   {
     document: "walls/{wallId}",
     region: REGION,
-    secrets: [studioSecret, ...r2Secrets],
+    secrets: [studioSecret, githubToken, ...r2Secrets],
     timeoutSeconds: 120,
     memory: "512MiB",
     concurrency: 1,
@@ -96,7 +99,6 @@ export const onWallSubmitted = onDocumentCreated(
       }
     }
     const wallTitle = str(data.title) || "Untitled";
-    const wallThumb = str(data.wallpaper_thumb);
 
     const aiSource = parseAiSource(data);
     if (aiSource) {
@@ -109,16 +111,16 @@ export const onWallSubmitted = onDocumentCreated(
       }
     }
 
-    if (data.isAiGenerated !== true) {
-      for (const field of ["wallpaper_url", "wallpaper_thumb"]) {
-        if (str(data[field]) !== "" && !isGithubRawUrl(data[field])) {
-          logger.warn(
-            "onWallSubmitted: image link is not on the GitHub raw host.",
-            {wallId, field},
-          );
-        }
+    if (!isLiveWall(data) && !aiSource && event.data) {
+      try {
+        await bindStillWallImages(event.data, artistEmail);
+      } catch (err) {
+        logger.warn("onWallSubmitted: still wall proof failed.", {wallId, err});
+        throw err;
       }
     }
+
+    const wallThumb = str((await event.data?.ref.get())?.data()?.wallpaper_thumb);
 
     let artistName = str(data.by) || "A user";
     let isPremium = true;
@@ -180,6 +182,68 @@ export const onWallSubmitted = onDocumentCreated(
     });
   },
 );
+
+function stillFile(data: admin.firestore.DocumentData, role: "original" | "thumbnail"):
+  {file: FileReference; url: string} | null {
+  const original = role === "original";
+  const path = str(data[original ? "wallpaper_path" : "thumb_path"]);
+  const sha = str(data[original ? "wallpaper_sha" : "thumb_sha"]);
+  const url = str(data[original ? "wallpaper_url" : "wallpaper_thumb"]);
+  const rawKind = data[original ? "wallpaper_source_kind" : "thumb_source_kind"];
+  const sourceKind = rawKind === "owned" || rawKind === "github" ? rawKind : url === "" ? "owned" : "github";
+  if (!path || !sha) return null;
+  try {
+    return {file: parseFileReference({path, sha, sourceKind}), url};
+  } catch {
+    return null;
+  }
+}
+
+function clearStillRole(role: "original" | "thumbnail"): Record<string, unknown> {
+  return role === "original" ?
+    {wallpaper_url: "", wallpaper_path: "", wallpaper_sha: "",
+      wallpaper_source_kind: admin.firestore.FieldValue.delete()} :
+    {wallpaper_thumb: "", thumb_path: "", thumb_sha: "",
+      thumb_source_kind: admin.firestore.FieldValue.delete()};
+}
+
+/** Strips still-wall image fields that are not a caller-owned completed upload. */
+async function bindStillWallImages(snapshot: admin.firestore.QueryDocumentSnapshot, artistEmail: string): Promise<void> {
+  const repo = process.env.GH_REPO_WALLS?.trim();
+  const owner = process.env.GH_USERNAME?.trim();
+  const ownerUid = repo && owner && artistEmail ? await verifiedUidForEmail(artistEmail) : null;
+  await db.runTransaction(async (tx) => {
+    const currentSnapshot = await tx.get(snapshot.ref);
+    const current = currentSnapshot.data();
+    if (!current || !currentSnapshot.createTime?.isEqual(snapshot.createTime) || current.originalProtected === true) return;
+    if (!repo || !owner) {
+      logger.warn("onWallSubmitted: still upload proof is not configured; unproven images stripped.",
+        {wallId: snapshot.id});
+      tx.update(snapshot.ref, {...clearStillRole("original"), ...clearStillRole("thumbnail")});
+      return;
+    }
+    const updates: Record<string, unknown> = {};
+    for (const role of ["original", "thumbnail"] as const) {
+      const parsed = stillFile(current, role);
+      const urlField = role === "original" ? "wallpaper_url" : "wallpaper_thumb";
+      try {
+        if (!ownerUid || !parsed) throw new HttpsError("failed-precondition", "Completed upload proof is unavailable.");
+        const proven = await proveStillWallUpload(tx, ownerUid, parsed.file, role);
+        if (proven.url !== parsed.url) {
+          throw new HttpsError("failed-precondition", "Completed upload proof is unavailable.");
+        }
+      } catch (error) {
+        if (error instanceof HttpsError && error.code === "failed-precondition") {
+          logger.warn("onWallSubmitted: unproven still image stripped.", {wallId: snapshot.id, field: urlField});
+          Object.assign(updates, clearStillRole(role));
+          continue;
+        }
+        throw error;
+      }
+    }
+    if (Object.keys(updates).length > 0) tx.update(snapshot.ref, updates);
+  });
+}
 
 /** Writes the owner's name and photo to the wall. Returns the name to show. */
 async function syncOwnerFields(

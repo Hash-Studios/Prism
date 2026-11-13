@@ -95,6 +95,7 @@ const FRESH_SECONDS = 600;
 const STALE_SECONDS = 86400;
 const MISS_SECONDS = 300;
 const STORED_AT = 'x-catalog-stored-at';
+const EPHEMERAL = 'x-catalog-ephemeral';
 const LOGO_URL = '/assets/prism-logo.png';
 const OG_HOME = `${SITE}/assets/og/home.jpg`;
 const THUMB_WIDTH = 540;
@@ -133,6 +134,7 @@ class FirestoreUnavailable extends Error {}
 class NoDiscoverList extends Error {}
 
 const activeRefreshes = new WeakMap<Cache, Map<string, Promise<void>>>();
+const activeOgRenders = new Map<string, Promise<Response>>();
 
 /**
  * The catalogue's response, or null when the path is not a catalogue page. `landing` is the old generic app landing:
@@ -141,6 +143,7 @@ const activeRefreshes = new WeakMap<Cache, Map<string, Promise<void>>>();
 export async function handleCatalogRequest(
   request: Request, url: URL, env: CatalogEnv, ctx: ExecutionContext, landing: () => Response,
   limitDownload: DownloadLimiter = async () => false,
+  limitOgRender: DownloadLimiter = async () => false,
 ): Promise<Response | null> {
   if (request.method !== 'GET' && request.method !== 'HEAD') return null;
   const route = matchRoute(url);
@@ -156,7 +159,7 @@ export async function handleCatalogRequest(
     if (route.kind === 'desktop-image') return await renderDesktopImage(route.id, route.version, env);
     const response = await cached(key, ctx, () => route.kind === 'not-found'
       ? renderMissing(404, 'page', env)
-      : render(route, env));
+      : render(route, request, env, limitOgRender));
     return withMethod(request, response);
   } catch (error) {
     if (error instanceof NoDiscoverList) return withMethod(request, landing());
@@ -249,6 +252,7 @@ async function cached(key: string, ctx: ExecutionContext, render: () => Promise<
   const hit = cache ? await cache.match(cacheKey) : undefined;
   const age = hit ? (Date.now() - Number(hit.headers.get(STORED_AT) ?? 0)) / 1000 : -1;
   const store = async (response: Response) => {
+    if (response.headers.get(EPHEMERAL) === '1') return;
     if (cache && [200, 301, 302, 404, 410].includes(response.status)) {
       await cache.put(cacheKey, storable(response.clone()));
     }
@@ -284,6 +288,19 @@ async function cached(key: string, ctx: ExecutionContext, render: () => Promise<
     }
   }
   try {
+    if (key.startsWith('og/')) {
+      let inflight = activeOgRenders.get(key);
+      if (!inflight) {
+        inflight = render().then((response) => {
+          ctx.waitUntil(store(response.clone()));
+          return response;
+        }, dropIfEmpty).finally(() => {
+          activeOgRenders.delete(key);
+        });
+        activeOgRenders.set(key, inflight);
+      }
+      return forClient((await inflight).clone());
+    }
     const response = await render();
     ctx.waitUntil(store(response));
     return forClient(response);
@@ -302,6 +319,12 @@ function storable(response: Response): Response {
 
 function forClient(response: Response): Response {
   const headers = new Headers(response.headers);
+  if (headers.get(EPHEMERAL) === '1') {
+    headers.delete(EPHEMERAL);
+    headers.delete(STORED_AT);
+    headers.set('cache-control', 'no-store');
+    return new Response(response.body, { status: response.status, headers });
+  }
   const storedAt = Number(headers.get(STORED_AT));
   const age = Number.isFinite(storedAt) && storedAt > 0 ? Math.max(0, Math.floor((Date.now() - storedAt) / 1000)) : 0;
   headers.delete(STORED_AT);
@@ -319,7 +342,7 @@ function withMethod(request: Request, response: Response): Response {
   return request.method === 'HEAD' ? new Response(null, { status: response.status, headers: response.headers }) : response;
 }
 
-async function render(route: Route, env: CatalogEnv): Promise<Response> {
+async function render(route: Route, request: Request, env: CatalogEnv, limitOgRender: DownloadLimiter): Promise<Response> {
   switch (route.kind) {
     case 'wall': return renderWall(route.id, route.desktop, env);
     case 'folder': return renderFolder(route.id, env);
@@ -329,7 +352,7 @@ async function render(route: Route, env: CatalogEnv): Promise<Response> {
     case 'creator': return renderCreator(route.username, route.page, env);
     case 'sitemap-index': return renderSitemapIndex(env);
     case 'sitemap': return renderSitemap(route.name, env);
-    case 'og': return renderOgImage(route.id, env);
+    case 'og': return renderOgImage(route.id, request, env, limitOgRender);
     case 'preview': return renderPreview(route.id, env);
     case 'desktop-image': return renderDesktopImage(route.id, route.version, env);
     default: return renderMissing(404, 'page', env);
@@ -1038,7 +1061,15 @@ ${urls.join('\n')}
 </urlset>`);
 }
 
-async function renderOgImage(id: string, env: CatalogEnv): Promise<Response> {
+const catalogOgRenders = new Map<string, Promise<Response>>();
+
+function ephemeralRedirect(location: string): Response {
+  return new Response(null, { status: 302, headers: { location, 'cache-control': 'no-store', [EPHEMERAL]: '1' } });
+}
+
+async function renderOgImage(
+  id: string, request: Request, env: CatalogEnv, limitOgRender: DownloadLimiter,
+): Promise<Response> {
   const wallDoc = await readDoc<unknown>(env, `webWalls/${id}`);
   const wall = wallDoc == null ? null : parseWall(wallDoc, env);
   if (wall?.state !== 'live' || !wall.thumb) return redirect(env.OG_FALLBACK_IMAGE || OG_HOME, 302);
@@ -1047,17 +1078,45 @@ async function renderOgImage(id: string, env: CatalogEnv): Promise<Response> {
   const objectKey = `catalog/wall/${id}-${shortHash(`${wall.thumb}|${heading}|${creatorName}`)}.jpg`;
   const stored = await env.OG_IMAGES?.get(objectKey);
   if (stored) return jpeg(stored.body);
-  const bytes = await screenshotCard(renderOgCardHtml({
-    kind: 'wallpaper',
-    label: 'Wallpaper',
-    title: heading,
-    image: wall.thumb,
-    stats: wall.width && wall.height ? [{ icon: 'phone', value: `${wall.width}×${wall.height}`, label: 'Resolution' }] : [],
-    chip: creatorName ? { photo: '', prefix: 'by', name: creatorName, detail: wall.category || '' } : null,
-  }), env);
-  if (bytes == null) return redirect(wall.thumb, 302);
-  await env.OG_IMAGES?.put(objectKey, bytes, { httpMetadata: { contentType: 'image/jpeg' } });
-  return jpeg(bytes);
+  const thumb = wall.thumb;
+  const stats = wall.width && wall.height ? [{ icon: 'phone', value: `${wall.width}×${wall.height}`, label: 'Resolution' }] : [];
+  let inflight = catalogOgRenders.get(objectKey);
+  if (!inflight) {
+    inflight = (async () => {
+      if (env.BROWSER_RENDERING_ACCOUNT_ID && env.BROWSER_RENDERING_API_TOKEN) {
+        const ip = request.headers.get('cf-connecting-ip')?.trim();
+        if (!ip) return ephemeralRedirect(thumb);
+        let allowed = false;
+        try {
+          allowed = await limitOgRender(ip);
+        } catch (error) {
+          console.warn('[catalog] og_limit_failed', `${error}`);
+          return ephemeralRedirect(thumb);
+        }
+        if (!allowed) return ephemeralRedirect(thumb);
+      }
+      let bytes: Uint8Array | null = null;
+      try {
+        bytes = await screenshotCard(renderOgCardHtml({
+          kind: 'wallpaper',
+          label: 'Wallpaper',
+          title: heading,
+          image: thumb,
+          stats,
+          chip: creatorName ? { photo: '', prefix: 'by', name: creatorName, detail: wall.category || '' } : null,
+        }), env);
+      } catch (error) {
+        console.warn('[catalog] og_screenshot_failed', `${error}`);
+      }
+      if (bytes == null) return ephemeralRedirect(thumb);
+      await env.OG_IMAGES?.put(objectKey, bytes, { httpMetadata: { contentType: 'image/jpeg' } });
+      return jpeg(bytes);
+    })().finally(() => {
+      catalogOgRenders.delete(objectKey);
+    });
+    catalogOgRenders.set(objectKey, inflight);
+  }
+  return (await inflight).clone();
 }
 
 async function renderPreview(id: string, env: CatalogEnv): Promise<Response> {

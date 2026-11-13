@@ -212,8 +212,8 @@ test('quota coordinator enforces user caps and provider budgets, then releases r
 const ANDROID_UA = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/126.0 Mobile Safari/537.36';
 const IOS_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1';
 const DESKTOP_UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36';
-const SHARE_PATH = '/share?id=wall-1&source=prism&provider=Prism'
-  + '&thumb=https%3A%2F%2Fraw.githubusercontent.com%2FHash-Studios%2Fx.jpg';
+const PUBLIC_OG_THUMB = `https://img.prismwalls.com/previews/${'a'.repeat(64)}.img`;
+const SHARE_PATH = `/share?id=wall-1&source=prism&provider=Prism&thumb=${encodeURIComponent(PUBLIC_OG_THUMB)}`;
 
 async function getShare(userAgent, path = SHARE_PATH, env = workerEnv({
   PLAY_STORE_URL: 'https://play.google.com/store/apps/details?id=com.hash.prism',
@@ -1761,7 +1761,8 @@ async function assertUnpublished(env, result) {
   }), env, { waitUntil() {} });
   assert.equal(history.status, 404, 'history/metadata cannot discover an uncommitted image');
   for (const url of Object.values(result.imageUrls)) {
-    assert.equal((await worker.fetch(new Request(url), env, { waitUntil() {} })).status, 404);
+    const headers = String(url).includes('/ai/original/') ? { authorization: `Bearer ${token}` } : {};
+    assert.equal((await worker.fetch(new Request(url, { headers }), env, { waitUntil() {} })).status, 404);
   }
 }
 
@@ -1915,9 +1916,13 @@ test('legacy ownerless records fail closed for replay and cancellation', async (
   } finally { restore(); }
 });
 
-async function getChargeEvidence(env, txId) {
+async function getChargeEvidence(env, txId, token = undefined) {
+  const headers = {};
+  if (token !== null) {
+    headers.authorization = `Bearer ${token ?? await makeToken({ sub: 'alice' })}`;
+  }
   const response = await worker.fetch(
-    new Request(`https://prismwalls.com/api/ai/charges/${txId}`),
+    new Request(`https://prismwalls.com/api/ai/charges/${txId}`, { headers }),
     env,
     { waitUntil() {} },
   );
@@ -2051,11 +2056,12 @@ test('a valid charge succeeds once and a replay returns the stored image without
   const stats = {};
   const env = chargedEnv(aiKv(5), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
   const token = await makeToken({ sub: 'alice' });
-  let seen;
+  const bobToken = await makeToken({ sub: 'bob' });
+  const seen = [];
   const restore = mockFal({
     stats,
     firestore: (url, init) => {
-      seen = { url, authorization: new Headers(init.headers).get('authorization') };
+      seen.push({ url, authorization: new Headers(init.headers).get('authorization') });
       return chargeDoc();
     },
   });
@@ -2066,17 +2072,21 @@ test('a valid charge succeeds once and a replay returns the stored image without
     const replay = await postGeneration(env, { chargeTxId: TX_ID }, token);
     assert.equal(replay.status, 200);
     assert.deepEqual(await replay.json(), firstBody);
-    assert.equal((await getChargeEvidence(env, TX_ID)).body.status, 'succeeded');
+    assert.equal((await getChargeEvidence(env, TX_ID, token)).body.status, 'succeeded');
+    assert.equal((await getChargeEvidence(env, TX_ID, bobToken)).status, 404);
+    assert.equal((await getChargeEvidence(env, TX_ID, null)).status, 401);
   } finally {
     restore();
   }
   assert.equal(stats.fal, 1);
-  assert.equal(stats.firestore, 2);
-  assert.equal(
-    seen.url,
-    `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/coinTransactions/${TX_ID}`,
-  );
-  assert.equal(seen.authorization, `Bearer ${token}`);
+  assert.equal(stats.firestore, 4, 'two generation receipts plus owner and foreign evidence reads');
+  for (const request of seen) {
+    assert.equal(request.url,
+      `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/coinTransactions/${TX_ID}`);
+  }
+  assert.deepEqual(seen.map((request) => request.authorization), [
+    `Bearer ${token}`, `Bearer ${token}`, `Bearer ${token}`, `Bearer ${bobToken}`,
+  ]);
 });
 
 test('a charge that does not match the caller, tier, ledger state or age is refused and the claim is released', async () => {
@@ -2096,7 +2106,13 @@ test('a charge that does not match the caller, tier, ledger state or age is refu
       const response = await postGeneration(env, { chargeTxId: TX_ID });
       assert.equal(response.status, 402, label);
       assert.equal((await response.json()).error, 'charge_invalid', label);
-      assert.equal((await getChargeEvidence(env, TX_ID)).body.status, 'not_started', label);
+      const evidence = await getChargeEvidence(env, TX_ID);
+      if (label === 'wrong tier amount' || label === 'old debit') {
+        assert.equal(evidence.status, 200, label);
+        assert.equal(evidence.body.status, 'not_started', label);
+      } else {
+        assert.equal(evidence.status, 404, label);
+      }
     } finally {
       restore();
     }
@@ -2117,7 +2133,7 @@ test('a Firestore outage gives 502 without a charge_invalid verdict and frees th
   const restore = mockFal({ firestore: () => new Response('down', { status: 503 }) });
   try {
     assert.equal((await postGeneration(env, { chargeTxId: TX_ID })).status, 502);
-    assert.equal((await getChargeEvidence(env, TX_ID)).body.status, 'not_started');
+    assert.equal((await getChargeEvidence(env, TX_ID)).status, 502);
   } finally {
     restore();
   }
@@ -2185,14 +2201,29 @@ test('a v2 receipt is checked against its own tier and base price', async () => 
   }
 });
 
-test('charge evidence reports not_started for an unseen id, no-store, and 404 for a bad shape', async () => {
+test('charge evidence requires the owner, 404s invalid ids, and reports not_started for an unused own receipt', async () => {
   const env = aiEnv(aiKv(), new AiQuotaCoordinator({ storage: new MemoryStorage() }));
-  const unseen = await getChargeEvidence(env, 'spend_alice_unseen01');
-  assert.equal(unseen.status, 200);
-  assert.deepEqual(unseen.body, { status: 'not_started' });
-  assert.equal(unseen.cache, 'no-store');
+  assert.equal((await getChargeEvidence(env, 'spend_alice_unseen01', null)).status, 401);
   assert.equal((await getChargeEvidence(env, 'bad.id')).status, 404);
   assert.equal((await getChargeEvidence(env, 'abc')).status, 404);
+
+  const restoreMissing = mockFal({ firestore: () => new Response('missing', { status: 404 }) });
+  try {
+    assert.equal((await getChargeEvidence(env, 'spend_alice_unseen01')).status, 404);
+  } finally {
+    restoreMissing();
+  }
+
+  const restoreOwn = mockFal({ firestore: () => chargeDoc() });
+  try {
+    const unseen = await getChargeEvidence(env, 'spend_alice_unseen01');
+    assert.equal(unseen.status, 200);
+    assert.deepEqual(unseen.body, { status: 'not_started' });
+    assert.equal(unseen.cache, 'private, no-store');
+    assert.equal((await getChargeEvidence(env, 'spend_alice_unseen01', await makeToken({ sub: 'bob' }))).status, 404);
+  } finally {
+    restoreOwn();
+  }
 });
 
 test('a paid request is never downgraded by the budget guardrail but an unpaid one still is', async () => {
@@ -2455,6 +2486,18 @@ function postLink(env, body, headers = {}, ctx = { waitUntil() {} }) {
     ctx,
   );
 }
+
+test('createLink fails closed without CF-Connecting-IP', async () => {
+  const response = await worker.fetch(new Request('https://prismwalls.com/api/links', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(LINK_BODY),
+  }), workerEnv(), { waitUntil() {} });
+  assert.equal(response.status, 503);
+  assert.equal(response.headers.get('retry-after'), '60');
+  assert.deepEqual(await response.json(), { error: 'unavailable' });
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+});
 
 const LINK_BODY = { type: 'share', canonical_url: 'https://prismwalls.com/share?id=wall-1' };
 const NORMALIZED_LINK_URL = 'https://prismwalls.com/share?id=wall-1&thumb=';
@@ -2738,6 +2781,28 @@ test('createLink keeps a flat campaign of short strings and drops anything else'
 
 const RENDER_ENV = { BROWSER_RENDERING_ACCOUNT_ID: 'acct', BROWSER_RENDERING_API_TOKEN: 'token' };
 
+function ogWorkerEnv(overrides = {}) {
+  const coordinator = new AiQuotaCoordinator({ storage: new MemoryStorage() });
+  let ogBumps = 0;
+  const env = aiEnv(overrides.AI_STATE_KV ?? new MemoryKv(), coordinator, {
+    ...RENDER_ENV,
+    R2_PREVIEW_BASE_URL: 'https://img.prismwalls.com',
+    ...overrides,
+    AI_QUOTA_DO: {
+      idFromName: () => 'quota-object',
+      get: () => ({
+        fetch: async (url, init) => {
+          const request = new Request(url, init);
+          const peek = await request.clone().json().catch(() => ({}));
+          if (peek.op === 'rate_limit_bump' && String(peek.key ?? '').includes('rl:og:')) ogBumps += 1;
+          return coordinator.fetch(request);
+        },
+      }),
+    },
+  });
+  return { env, coordinator, ogBumps: () => ogBumps };
+}
+
 function mockOgRender({ stats = null, renderStatus = 200 } = {}) {
   const originalFetch = globalThis.fetch;
   const calls = { renders: [], firestore: [] };
@@ -2770,8 +2835,9 @@ function storedLink(code, type, canonicalPath, preview, extra = {}) {
   })];
 }
 
-function getOg(env, path) {
-  return worker.fetch(new Request(`https://prismwalls.com${path}`), env, { waitUntil() {} });
+function getOg(env, path, { ip = '203.0.113.9' } = {}) {
+  const headers = ip == null ? {} : { 'CF-Connecting-IP': ip };
+  return worker.fetch(new Request(`https://prismwalls.com${path}`, { headers }), env, { waitUntil() {} });
 }
 
 test('createLink stores creator, counts and safe gallery images, drops bad values and returns a versioned JPEG URL', async () => {
@@ -2815,8 +2881,7 @@ test('createLink stores creator, counts and safe gallery images, drops bad value
 });
 
 test('an old share link renders the new card once, as a JPEG with its public wallpaper counts', async () => {
-  const env = workerEnv({
-    ...RENDER_ENV,
+  const { env } = ogWorkerEnv({
     LINKS_KV: new MemoryKv([
       storedLink('OldWall1', 'share', SHARE_PATH, {
         title: 'wall-1 - Prism',
@@ -2959,7 +3024,7 @@ test('folder page links reject images outside the allowed strip and public cover
 test('folder page links schedule no browser card while other page links still do', async () => {
   const { calls, restore } = mockOgRender();
   try {
-    const env = workerEnv(FOLDER_ENV);
+    const { env } = ogWorkerEnv(FOLDER_ENV);
     const folderTasks = [];
     const folder = await postLink(env, {
       type: 'page',
@@ -3020,8 +3085,7 @@ test('folder invite landing shows the invite title and description', async () =>
 });
 
 test('profile and invite cards read names from old titles and never query wallpaper counts', async () => {
-  const env = workerEnv({
-    ...RENDER_ENV,
+  const { env } = ogWorkerEnv({
     LINKS_KV: new MemoryKv([
       storedLink('OldUser1', 'user', '/user/maya', { title: 'Maya Rao (@maya)', username: 'maya' }),
       storedLink('OldRefr1', 'refer', '/refer/uid-1', {
@@ -3047,6 +3111,146 @@ test('profile and invite cards read names from old titles and never query wallpa
     assert.equal(calls.firestore.length, 0);
   } finally {
     restore();
+  }
+});
+
+test('OG cards stay public when CF-Connecting-IP is missing and skip paid rendering', async () => {
+  const { env } = ogWorkerEnv({
+    LINKS_KV: new MemoryKv([
+      storedLink('OldWall3', 'share', SHARE_PATH, {
+        title: 'Sunset', wall_id: 'wall-1', image_source_url: 'https://raw.githubusercontent.com/Hash-Studios/x.jpg',
+      }),
+    ]),
+  });
+  const { calls, restore } = mockOgRender();
+  try {
+    const response = await getOg(env, '/og/OldWall3.jpg', { ip: null });
+    assert.equal(response.status, 302);
+    assert.equal(response.headers.get('location'), PUBLIC_OG_THUMB);
+    assert.equal(calls.renders.length, 0);
+  } finally {
+    restore();
+  }
+});
+
+test('concurrent OG renders for the same code screenshot once and charge quota once', async () => {
+  const { env, ogBumps } = ogWorkerEnv({
+    LINKS_KV: new MemoryKv([
+      storedLink('SameOg01', 'share', SHARE_PATH, {
+        title: 'Sunset', wall_id: 'wall-1', image_source_url: 'https://raw.githubusercontent.com/Hash-Studios/x.jpg',
+      }),
+    ]),
+  });
+  const { calls, restore } = mockOgRender();
+  try {
+    const [first, second] = await Promise.all([
+      getOg(env, '/og/SameOg01.jpg'),
+      getOg(env, '/og/SameOg01.jpg'),
+    ]);
+    assert.equal(first.status, 200);
+    assert.equal(second.status, 200);
+    assert.equal(calls.renders.length, 1);
+    assert.equal(ogBumps(), 1);
+    await first.arrayBuffer();
+    await second.arrayBuffer();
+  } finally {
+    restore();
+  }
+});
+
+test('distinct OG codes each consume quota and screenshot once', async () => {
+  const { env, ogBumps } = ogWorkerEnv({
+    LINKS_KV: new MemoryKv([
+      storedLink('DiffOg01', 'share', SHARE_PATH, {
+        title: 'Sunset', wall_id: 'wall-1', image_source_url: 'https://raw.githubusercontent.com/Hash-Studios/x.jpg',
+      }),
+      storedLink('DiffOg02', 'share', SHARE_PATH, {
+        title: 'Dawn', wall_id: 'wall-2', image_source_url: 'https://raw.githubusercontent.com/Hash-Studios/y.jpg',
+      }),
+    ]),
+  });
+  const { calls, restore } = mockOgRender();
+  try {
+    assert.equal((await getOg(env, '/og/DiffOg01.jpg')).status, 200);
+    assert.equal((await getOg(env, '/og/DiffOg02.jpg')).status, 200);
+    assert.equal(calls.renders.length, 2);
+    assert.equal(ogBumps(), 2);
+  } finally {
+    restore();
+  }
+});
+
+test('an IP is limited to twenty paid OG renders in ten minutes and then falls back', async () => {
+  const codes = Array.from({ length: 21 }, (_, index) => `OgLimit${String(index + 1).padStart(2, '0')}`);
+  const { env, ogBumps } = ogWorkerEnv({
+    LINKS_KV: new MemoryKv(codes.map((code) => storedLink(code, 'share', SHARE_PATH, {
+      title: 'Sunset', wall_id: 'wall-1', image_source_url: 'https://raw.githubusercontent.com/Hash-Studios/x.jpg',
+    }))),
+  });
+  const { calls, restore } = mockOgRender();
+  try {
+    for (const [index, code] of codes.entries()) {
+      const response = await getOg(env, `/og/${code}.jpg`);
+      if (index < 20) {
+        assert.equal(response.status, 200, code);
+      } else {
+        assert.equal(response.status, 302, code);
+        assert.equal(response.headers.get('location'), PUBLIC_OG_THUMB);
+      }
+    }
+    assert.equal(calls.renders.length, 20);
+    assert.equal(ogBumps(), 21);
+  } finally {
+    restore();
+  }
+});
+
+test('OG rendering fails closed when the Durable Object limiter is down', async () => {
+  const env = workerEnv({
+    ...RENDER_ENV,
+    R2_PREVIEW_BASE_URL: 'https://img.prismwalls.com',
+    LINKS_KV: new MemoryKv([
+      storedLink('OgDoFail', 'share', SHARE_PATH, {
+        title: 'Sunset', wall_id: 'wall-1', image_source_url: PUBLIC_OG_THUMB,
+      }),
+    ]),
+  });
+  const { calls, restore } = mockOgRender();
+  try {
+    const response = await getOg(env, '/og/OgDoFail.jpg');
+    assert.equal(response.status, 302);
+    assert.equal(response.headers.get('location'), PUBLIC_OG_THUMB);
+    assert.equal(calls.renders.length, 0);
+  } finally {
+    restore();
+  }
+});
+
+test('OG rendering retries after a failed screenshot', async () => {
+  const { env } = ogWorkerEnv({
+    LINKS_KV: new MemoryKv([
+      storedLink('OgRetry1', 'share', SHARE_PATH, {
+        title: 'Sunset', wall_id: 'wall-1', image_source_url: 'https://raw.githubusercontent.com/Hash-Studios/x.jpg',
+      }),
+    ]),
+  });
+  const failing = mockOgRender({ renderStatus: 500 });
+  try {
+    const first = await getOg(env, '/og/OgRetry1.jpg');
+    assert.equal(first.status, 302);
+    assert.equal(first.headers.get('location'), PUBLIC_OG_THUMB);
+    assert.equal(failing.calls.renders.length, 1);
+  } finally {
+    failing.restore();
+  }
+  const ok = mockOgRender();
+  try {
+    const second = await getOg(env, '/og/OgRetry1.jpg');
+    assert.equal(second.status, 200);
+    assert.equal(ok.calls.renders.length, 1);
+    await second.arrayBuffer();
+  } finally {
+    ok.restore();
   }
 });
 
@@ -3337,7 +3541,7 @@ test('studio generation sends the prompt as given, stores the raw image and retu
 
   assert.deepEqual(body, {
     id: STUDIO_ID,
-    imageUrl: `https://prismwalls.com/api/ai/assets/${STUDIO_RAW_KEY.replace('.png', '.jpg')}`,
+    imageUrl: `https://prismwalls.com/api/ai/studio/assets/${STUDIO_RAW_KEY.replace('.png', '.jpg')}`,
     key: `ai/studio/raw/${STUDIO_ID}.jpg`,
     width: 1440,
     height: 2560,
@@ -3351,7 +3555,7 @@ test('studio generation sends the prompt as given, stores the raw image and retu
   assert.equal(stats.falRequest.url, `https://fal.run/${STUDIO_MODEL}`);
   const rawKey = `ai/studio/raw/${STUDIO_ID}.jpg`;
   const candidateRaw = await worker.fetch(new Request(`https://prismwalls.com/api/ai/assets/${rawKey}`), env, { waitUntil() {} });
-  assert.equal(candidateRaw.status, 200, 'candidate raw asset behavior remains unchanged');
+  assert.equal(candidateRaw.status, 404, 'studio raw is not a public asset');
   assert.equal(stats.falRequest.authorization, 'Key test-key');
   assert.deepEqual(stats.falRequest.body, {
     prompt: 'A quiet mountain lake at dawn',
@@ -3364,7 +3568,7 @@ test('studio generation sends the prompt as given, stores the raw image and retu
   const stored = env.AI_IMAGES.objects.get(body.key);
   assert.equal(stored.bytes.length, 4096);
   assert.deepEqual(stored.httpMetadata, { contentType: 'image/jpeg', cacheControl: 'public, max-age=31536000, immutable' });
-  const served = await worker.fetch(new Request(body.imageUrl), env, { waitUntil() {} });
+  const served = await studioFetch(env, 'GET', `/api/ai/studio/assets/${rawKey}`);
   assert.equal(served.status, 200);
   assert.equal(served.headers.get('content-type'), 'image/jpeg');
 
@@ -3395,6 +3599,73 @@ test('desktop studio originals require the studio secret for GET and HEAD', asyn
   } finally {
     restore();
   }
+});
+
+test('studio-secret original reads support KV storage without enabling studio raw storage', async () => {
+  const key = 'ai/original/gen_owner1_aaaaaaaaaaaaaaa1.png';
+  const bytes = new Uint8Array(2048).fill(9);
+  const kv = new MemoryKv([[`ai:asset:${key}`, Buffer.from(bytes).toString('base64')]]);
+  const env = aiEnv(kv, new AiQuotaCoordinator({ storage: new MemoryStorage() }), { STUDIO_SECRET });
+  for (const method of ['GET', 'HEAD']) {
+    const path = `/api/ai/studio/assets/${key}`;
+    assert.equal((await studioFetch(env, method, path, { secret: null })).status, 401);
+    const response = await studioFetch(env, method, path);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.deepEqual(new Uint8Array(await response.arrayBuffer()), method === 'HEAD' ? new Uint8Array() : bytes);
+  }
+  assert.equal((await studioFetch(env, 'GET', '/api/ai/studio/assets/ai/studio/raw/missing.png')).status, 503);
+});
+
+test('original AI assets stay anonymous for shipped Pro clients; studio raw stays private', async () => {
+  const generationId = 'gen_owner1_aaaaaaaaaaaaaaa1';
+  const originalKey = `ai/original/${generationId}.png`;
+  const publicKey = `ai/public/${generationId}.png`;
+  const thumbKey = 'ai/studio/thumb_job-1.jpg';
+  const styleKey = 'ai/studio/style-samples-1.png';
+  const kv = new MemoryKv([['ai:firebase:jwks:v1', jwksCache], [`ai:gen:${generationId}`, JSON.stringify({
+    generationId, userId: 'alice', createdAt: '2026-02-19T08:40:39.977Z',
+  })]]);
+  const env = aiEnv(kv, new AiQuotaCoordinator({ storage: new MemoryStorage() }), {
+    AI_IMAGES: new MemoryR2(),
+    STUDIO_SECRET,
+  });
+  const bytes = new Uint8Array(2048).fill(9);
+  await env.AI_IMAGES.put(originalKey, bytes, { httpMetadata: { contentType: 'image/png' } });
+  await env.AI_IMAGES.put(publicKey, bytes, { httpMetadata: { contentType: 'image/png' } });
+  await env.AI_IMAGES.put(thumbKey, bytes, { httpMetadata: { contentType: 'image/jpeg' } });
+  await env.AI_IMAGES.put(styleKey, bytes, { httpMetadata: { contentType: 'image/png' } });
+  await env.AI_IMAGES.put(STUDIO_RAW_KEY, bytes);
+
+  const get = (key) => worker.fetch(new Request(`https://prismwalls.com/api/ai/assets/${key}`), env, { waitUntil() {} });
+
+  // Shipped Pro clients load the original with a plain image request and no bearer token.
+  const anonymous = await get(originalKey);
+  assert.equal(anonymous.status, 200);
+  assert.deepEqual(new Uint8Array(await anonymous.arrayBuffer()), bytes);
+  assert.equal((await worker.fetch(new Request(`https://prismwalls.com/api/ai/assets/${originalKey}`, { method: 'HEAD' }),
+    env, { waitUntil() {} })).status, 200);
+  assert.equal((await get('ai/other/x.png')).status, 404);
+
+  const studioOriginal = `/api/ai/studio/assets/${originalKey}`;
+  assert.equal((await studioFetch(env, 'GET', studioOriginal, { secret: null })).status, 401);
+  assert.equal((await studioFetch(env, 'GET', studioOriginal, { secret: 'wrong' })).status, 401);
+  const trusted = await studioFetch(env, 'GET', studioOriginal);
+  assert.equal(trusted.status, 200);
+  assert.equal(trusted.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(new Uint8Array(await trusted.arrayBuffer()), bytes);
+  assert.equal((await studioFetch(env, 'HEAD', studioOriginal)).status, 200);
+  assert.equal((await studioFetch(env, 'GET', '/api/ai/studio/assets/ai/original/not-a-generation.png')).status, 404);
+  assert.equal((await studioFetch(env, 'GET', '/api/ai/studio/assets/ai/public/gen.png')).status, 404);
+
+  const published = await get(publicKey);
+  assert.equal(published.status, 200);
+  assert.match(published.headers.get('cache-control'), /public/);
+  assert.equal((await get(thumbKey)).status, 200);
+  assert.equal((await get(styleKey)).status, 200);
+  const raw = await get(STUDIO_RAW_KEY);
+  assert.equal(raw.status, 404);
+  assert.equal(raw.headers.get('cache-control'), 'no-store');
 });
 
 test('studio generation with v5 lite sends no seed and falls back to the requested size', async () => {
@@ -4227,7 +4498,11 @@ class MemoryR2 {
 
   async get(key) {
     const object = this.objects.get(key);
-    return object == null ? null : { body: object.bytes, httpMetadata: object.httpMetadata };
+    return object == null ? null : {
+      body: object.bytes,
+      httpMetadata: object.httpMetadata,
+      arrayBuffer: async () => object.bytes.slice().buffer,
+    };
   }
 
   async delete(key) {

@@ -79,7 +79,7 @@ service cloud.firestore {
     function ownerCoinStateOk() {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['coinState'])
           || request.resource.data.coinState.diff(resource.data.get('coinState', {})).affectedKeys().hasOnly([
-            'premiumPreviewUnlocks', 'streakReminderEnabled', 'streakTimezoneOffsetMinutes', 'streakReminderNextAtUtc'
+            'streakReminderEnabled', 'streakTimezoneOffsetMinutes', 'streakReminderNextAtUtc'
           ]);
     }
 
@@ -229,8 +229,7 @@ service cloud.firestore {
     }
 
     function livePosterUntouched() {
-      return resource.data.get('kind', 'still') != 'live'
-          || !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny([
             'wallpaper_url', 'wallpaper_thumb', 'wallpaper_path', 'wallpaper_sha', 'thumb_path', 'thumb_sha',
             'wallpaper_source_kind', 'thumb_source_kind'
           ]);

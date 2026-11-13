@@ -409,6 +409,103 @@ test("terminal deletion of rejected live history cleans all six owned files", as
   assert.equal(onRejectedLiveWallDeleted.__endpoint.eventTrigger?.retry, true);
 });
 
+test("account closure tombstones unpublished still originals that no wall references", async (t) => {
+  const {posters} = fixture(t);
+  const store = installFakeDb(t, receipts(posters));
+  assert.equal(await tombstoneUnreferencedLiveUploads("owner"), 2);
+  for (const file of posters) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "tombstoned");
+});
+
+function stillOwnedWall(posters: Owned[], extra: Doc = {}): Doc {
+  return {
+    id: "w1", email: "owner@example.com", creatorUid: "owner", review: false,
+    wallpaper_url: "", wallpaper_thumb: posters[1].url, wallpaper_path: posters[0].path, wallpaper_sha: posters[0].sha,
+    thumb_path: posters[1].path, thumb_sha: posters[1].sha, wallpaper_source_kind: "owned", thumb_source_kind: "owned",
+    ...extra,
+  };
+}
+
+test("unpublished still wall rows keep owned originals until accountClosing ignores them", async (t) => {
+  const {posters} = fixture(t);
+  const store = installFakeDb(t, {...receipts(posters), "walls/w1": stillOwnedWall(posters)});
+  assert.equal(await tombstoneUnreferencedLiveUploads("owner"), 0);
+  for (const file of posters) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "active");
+  assert.equal(await tombstoneUnreferencedLiveUploads("owner", Date.now(), {accountClosing: true}), 2);
+  for (const file of posters) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "tombstoned");
+});
+
+test("rejected still wall rows keep owned originals until accountClosing ignores them", async (t) => {
+  const {posters} = fixture(t);
+  const store = installFakeDb(t, {...receipts(posters), "rejectedWalls/w1": stillOwnedWall(posters)});
+  assert.equal(await tombstoneUnreferencedLiveUploads("owner"), 0);
+  assert.equal(await tombstoneUnreferencedLiveUploads("owner", Date.now(), {accountClosing: true}), 2);
+  for (const file of posters) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "tombstoned");
+});
+
+test("accountClosing preserves approved still originals and other principals' assets", async (t) => {
+  const {posters} = fixture(t);
+  const other = owned("other_1234567890123_z.jpg", Buffer.from("other-bytes"), false);
+  const store = installFakeDb(t, {
+    ...receipts(posters),
+    ...receipts([other]),
+    "walls/approved": stillOwnedWall(posters, {id: "approved", review: true}),
+    [`r2ObjectRegistry/${other.asset.objectId}`]: {...other.asset, uid: "other", status: "active"},
+  });
+  assert.equal(await tombstoneUnreferencedLiveUploads("owner", Date.now(), {accountClosing: true}), 0);
+  for (const file of posters) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "active");
+  assert.equal(store.get(`r2ObjectRegistry/${other.asset.objectId}`)?.status, "active");
+  assert.equal(store.get(`r2ObjectRegistry/${other.asset.objectId}`)?.uid, "other");
+});
+
+test("a deleteAccount retry keeps an approved still whose email the first attempt scrubbed", async (t) => {
+  const {posters} = fixture(t);
+  const store = installFakeDb(t, {
+    ...receipts(posters),
+    "walls/approved": stillOwnedWall(posters, {id: "approved", review: true, email: "", creatorUid: undefined}),
+  });
+  assert.equal(await tombstoneUnreferencedLiveUploads("owner", Date.now(), {accountClosing: true}), 0);
+  for (const file of posters) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "active");
+});
+
+test("accountClosing tombstones a scrubbed unpublished still and ignores a foreign approved path", async (t) => {
+  const {posters} = fixture(t);
+  const store = installFakeDb(t, {
+    ...receipts(posters),
+    "walls/pending": stillOwnedWall(posters, {email: "", creatorUid: undefined}),
+    "walls/foreign": {
+      id: "foreign", review: true, email: "attacker@example.com", creatorUid: "attacker",
+      wallpaper_url: "", wallpaper_thumb: posters[1].url, wallpaper_path: posters[0].path, wallpaper_sha: "c".repeat(40),
+      thumb_path: posters[1].path, thumb_sha: "d".repeat(40), wallpaper_source_kind: "owned", thumb_source_kind: "owned",
+    },
+  });
+  assert.equal(await tombstoneUnreferencedLiveUploads("owner", Date.now(), {accountClosing: true}), 2);
+  for (const file of posters) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "tombstoned");
+});
+
+test("accountClosing ignores a foreign approved still with matching path and sha", async (t) => {
+  const {posters} = fixture(t);
+  const store = installFakeDb(t, {
+    ...receipts(posters),
+    "walls/foreign": {
+      id: "foreign", review: true, email: "attacker@example.com", creatorUid: "attacker",
+      wallpaper_url: "", wallpaper_thumb: posters[1].url, wallpaper_path: posters[0].path, wallpaper_sha: posters[0].sha,
+      thumb_path: posters[1].path, thumb_sha: posters[1].sha, wallpaper_source_kind: "owned", thumb_source_kind: "owned",
+    },
+  });
+  assert.equal(await tombstoneUnreferencedLiveUploads("owner", Date.now(), {accountClosing: true}), 2);
+  for (const file of posters) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "tombstoned");
+});
+
+test("a failing still-registry check during accountClosing leaves receipts in place", async (t) => {
+  const {posters} = fixture(t);
+  const store = installFakeDb(t, receipts([posters[0]]));
+  store.set(`r2ObjectRegistry/${posters[0].asset.objectId}`, {...posters[0].asset, status: "active", sha256: "e".repeat(64)});
+  assert.equal(await tombstoneUnreferencedLiveUploads("owner", Date.now(), {accountClosing: true}), 0);
+  assert.equal(store.get(`r2ObjectRegistry/${posters[0].asset.objectId}`)?.status, "active");
+  assert.ok(store.has(`githubUploads/${uploadFileKey("walls",
+    {path: posters[0].path, sha: posters[0].sha, sourceKind: "owned"})}`));
+});
+
 test("account closure tombstones orphan live uploads and preserves retained canonical and archive references", async (t) => {
   const {all, live} = fixture(t);
   const orphanVideo = owned("live_orphan.mp4", mp4());

@@ -151,13 +151,58 @@ test("signed-out admins keep report inbox entries without report pushes", async 
 });
 
 test("signed-out admins keep wall-submission inbox entries without admin pushes", async (t) => {
+  const previous = {GH_REPO_WALLS: process.env.GH_REPO_WALLS, GH_USERNAME: process.env.GH_USERNAME};
+  delete process.env.GH_REPO_WALLS;
+  delete process.env.GH_USERNAME;
+  t.after(() => {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
   const {inbox, topics} = setup(t, {"admin@example.com": {loggedIn: false}, "artist@example.com": {premium: true}});
+  const wall: Record<string, unknown> = {
+    email: "artist@example.com", review: false,
+    wallpaper_url: "https://raw.githubusercontent.com/o/r/main/a.jpg", wallpaper_path: "a.jpg",
+    wallpaper_sha: "a".repeat(40), wallpaper_source_kind: "github",
+    wallpaper_thumb: "https://raw.githubusercontent.com/o/r/main/t.jpg", thumb_path: "t.jpg",
+    thumb_sha: "b".repeat(40), thumb_source_kind: "github",
+  };
+  const snapshot: {
+    id: string;
+    createTime: admin.firestore.Timestamp;
+    ref: {id: string; path: string; get: () => Promise<unknown>; update: (data: Record<string, unknown>) => Promise<void>};
+    data: () => Record<string, unknown>;
+  } = {
+    id: "w1",
+    createTime: admin.firestore.Timestamp.fromMillis(1),
+    ref: {
+      id: "w1", path: "walls/w1", get: async () => snapshot,
+      update: async (data) => {
+        for (const [key, value] of Object.entries(data)) {
+          if (value && typeof value === "object" && "__op" in value && (value as {__op: string}).__op === "delete") {
+            delete wall[key];
+          } else wall[key] = value;
+        }
+      },
+    },
+    data: () => wall,
+  };
   await onWallSubmitted.run({
     params: {wallId: "w1"},
-    data: {data: () => ({email: "artist@example.com", review: false})},
+    data: snapshot,
   } as unknown as Parameters<typeof onWallSubmitted.run>[0]);
   assert.equal(inbox.length, 1);
   assert.deepEqual(topics, []);
+  assert.equal((inbox[0] as {data?: {imageUrl?: string}}).data?.imageUrl, "");
+  assert.equal(wall.wallpaper_url, "");
+  assert.equal(wall.wallpaper_path, "");
+  assert.equal(wall.wallpaper_sha, "");
+  assert.equal(wall.wallpaper_thumb, "");
+  assert.equal(wall.thumb_path, "");
+  assert.equal(wall.thumb_sha, "");
+  assert.equal(wall.wallpaper_source_kind, undefined);
+  assert.equal(wall.thumb_source_kind, undefined);
 });
 
 test("signed-out artist and admins keep inbox entries while artist followers still get the posts push", async (t) => {

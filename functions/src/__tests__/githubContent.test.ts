@@ -535,6 +535,212 @@ test("private original upload, completed retry and deletion never contact GitHub
   assert.equal([...docs.keys()].some((key) => key.startsWith("githubUploads/")), false);
 });
 
+test("githubPutFile refuses to complete after the creator deletion barrier closes", async (t) => {
+  testGithubEnvironment(t);
+  const docs = uploadStore(t, {});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("GitHub must not be contacted");
+  });
+  const bytes = Buffer.from("/9j/", "base64");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  t.mock.method(ownedAssets, "retainUpload", async (input: {uploadId: string}) => {
+    const asset = retainedFixture("late.jpg", sha, "owned", "u", input.uploadId);
+    docs.set(`r2ObjectRegistry/${asset.objectId}`, {...asset, status: "active"});
+    docs.set("creatorDeletionState/u", {closed: true});
+    return asset;
+  });
+  await assert.rejects(() => run(githubPutFile, {auth: {uid: "u"}, data: {repo: "walls", path: "late.jpg",
+    message: "upload", contentBase64: "/9j/", purpose: "wallpaper"}}), {code: "failed-precondition", message: "account-closed"});
+  assert.equal([...docs.keys()].some((key) => key.startsWith("githubUploads/")), false);
+  const registry = [...docs.entries()].find(([key]) => key.startsWith("r2ObjectRegistry/"));
+  assert.equal(registry?.[1].status, "tombstoned");
+  assert.equal([...docs.entries()].find(([key]) => key.startsWith("githubUploadIntents/"))?.[1].status, "pending");
+});
+
+test("githubPutFile returns a completed owned upload when retried after the account closes", async (t) => {
+  testGithubEnvironment(t);
+  const docs = uploadStore(t, {});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("GitHub must not be contacted");
+  });
+  const bytes = Buffer.from("/9j/", "base64");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  t.mock.method(ownedAssets, "retainUpload", async (input: {uploadId: string}) =>
+    retainedFixture("kept.jpg", sha, "owned", "u", input.uploadId));
+  const request = {auth: {uid: "u"}, data: {repo: "walls", path: "kept.jpg", message: "upload", contentBase64: "/9j/",
+    purpose: "wallpaper"}};
+  const expected = {content: {path: "kept.jpg", sha, download_url: ""}, sourceKind: "owned"};
+  assert.deepEqual(await run(githubPutFile, request), expected);
+  docs.set("creatorDeletionState/u", {closed: true});
+  assert.deepEqual(await run(githubPutFile, request), expected);
+  assert.equal([...docs.entries()].find(([key]) => key.startsWith("githubUploads/"))?.[1].sourceKind, "owned");
+});
+
+test("githubPutFile refuses a GitHub completion after usersv2 is marked deleted", async (t) => {
+  testGithubEnvironment(t);
+  const bytes = Buffer.from("/9j/", "base64");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  const docs = uploadStore(t, {"usersv2/u": {deleted: true}});
+  t.mock.method(globalThis, "fetch", async (_url: RequestInfo | URL, init?: RequestInit) => {
+    if (init?.method === "GET") return {ok: false, status: 404, json: async () => ({})};
+    return {ok: true, json: async () => ({
+      content: {path: "avatar.jpg", sha, download_url: "https://raw.example/avatar.jpg"},
+    })};
+  });
+  await assert.rejects(() => run(githubPutFile, {auth: {uid: "u"}, data: {repo: "walls", path: "avatar.jpg",
+    message: "upload", contentBase64: "/9j/", purpose: "profile"}}), {code: "failed-precondition", message: "account-closed"});
+  assert.equal([...docs.keys()].some((key) => key.startsWith("githubUploads/")), false);
+});
+
+test("githubPutFile tombstones a late retain after the intent is deleted and leaves other registry rows", async (t) => {
+  testGithubEnvironment(t);
+  const docs = uploadStore(t, {});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("GitHub must not be contacted");
+  });
+  const bytes = Buffer.from("/9j/", "base64");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  let asset: ReturnType<typeof retainedFixture>;
+  let other: ReturnType<typeof retainedFixture>;
+  t.mock.method(ownedAssets, "retainUpload", async (input: {uploadId: string}) => {
+    asset = retainedFixture("late.jpg", sha, "owned", "u", input.uploadId);
+    other = retainedFixture("other.jpg", sha, "owned", "u");
+    docs.set(`r2ObjectRegistry/${asset.objectId}`, {...asset, status: "active"});
+    docs.set(`r2ObjectRegistry/${other.objectId}`, {...other, status: "active"});
+    for (const key of [...docs.keys()]) if (key.startsWith("githubUploadIntents/")) docs.delete(key);
+    docs.set("creatorDeletionState/u", {closed: true});
+    return asset;
+  });
+  await assert.rejects(() => run(githubPutFile, {auth: {uid: "u"}, data: {repo: "walls", path: "late.jpg",
+    message: "upload", contentBase64: "/9j/", purpose: "wallpaper"}}), {code: "failed-precondition", message: "account-closed"});
+  assert.equal([...docs.keys()].some((key) => key.startsWith("githubUploads/")), false);
+  assert.equal([...docs.keys()].some((key) => key.startsWith("githubUploadIntents/")), false);
+  assert.equal(docs.get(`r2ObjectRegistry/${asset!.objectId}`)?.status, "tombstoned");
+  assert.equal(docs.get(`r2ObjectRegistry/${other!.objectId}`)?.status, "active");
+});
+
+test("githubPutFile keeps a completed owned object when the closed account retries without retainedAsset", async (t) => {
+  testGithubEnvironment(t);
+  const docs = uploadStore(t, {});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("GitHub must not be contacted");
+  });
+  const bytes = Buffer.from("/9j/", "base64");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  t.mock.method(ownedAssets, "retainUpload", async (input: {uploadId: string}) => {
+    const asset = retainedFixture("kept.jpg", sha, "owned", "u", input.uploadId);
+    docs.set(`r2ObjectRegistry/${asset.objectId}`, {...asset, status: "active"});
+    return asset;
+  });
+  const request = {auth: {uid: "u"}, data: {repo: "walls", path: "kept.jpg", message: "upload", contentBase64: "/9j/",
+    purpose: "wallpaper"}};
+  const expected = {content: {path: "kept.jpg", sha, download_url: ""}, sourceKind: "owned"};
+  assert.deepEqual(await run(githubPutFile, request), expected);
+  const intent = [...docs.entries()].find(([key]) => key.startsWith("githubUploadIntents/"));
+  assert.ok(intent);
+  const {retainedAsset, ...rest} = intent[1];
+  docs.set(intent[0], rest);
+  docs.set("creatorDeletionState/u", {closed: true});
+  assert.deepEqual(await run(githubPutFile, request), expected);
+  assert.equal(docs.get(`r2ObjectRegistry/${(retainedAsset as {objectId: string}).objectId}`)?.status, "active");
+  assert.equal([...docs.entries()].find(([key]) => key.startsWith("githubUploads/"))?.[1].sourceKind, "owned");
+});
+
+test("githubPutFile keeps a late retain referenced by the caller's approved still", async (t) => {
+  testGithubEnvironment(t);
+  const docs = uploadStore(t, {});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("GitHub must not be contacted");
+  });
+  const bytes = Buffer.from("/9j/", "base64");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  let asset: ReturnType<typeof retainedFixture>;
+  t.mock.method(ownedAssets, "retainUpload", async (input: {uploadId: string}) => {
+    asset = retainedFixture("kept.jpg", sha, "owned", "u", input.uploadId);
+    docs.set(`r2ObjectRegistry/${asset.objectId}`, {...asset, status: "active"});
+    docs.set("walls/approved", {id: "approved", review: true, creatorUid: "u",
+      wallpaper_path: "kept.jpg", wallpaper_sha: sha, wallpaper_source_kind: "owned"});
+    for (const key of [...docs.keys()]) if (key.startsWith("githubUploadIntents/")) docs.delete(key);
+    docs.set("creatorDeletionState/u", {closed: true});
+    return asset;
+  });
+  await assert.rejects(() => run(githubPutFile, {auth: {uid: "u"}, data: {repo: "walls", path: "kept.jpg",
+    message: "upload", contentBase64: "/9j/", purpose: "wallpaper"}}), {code: "failed-precondition", message: "account-closed"});
+  assert.equal([...docs.keys()].some((key) => key.startsWith("githubUploads/")), false);
+  assert.equal(docs.get(`r2ObjectRegistry/${asset!.objectId}`)?.status, "active");
+});
+
+test("githubPutFile keeps a late retain with a ready ownedAssets originalObjectId proof", async (t) => {
+  testGithubEnvironment(t);
+  const docs = uploadStore(t, {});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("GitHub must not be contacted");
+  });
+  const bytes = Buffer.from("/9j/", "base64");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  let asset: ReturnType<typeof retainedFixture>;
+  t.mock.method(ownedAssets, "retainUpload", async (input: {uploadId: string}) => {
+    asset = retainedFixture("kept.jpg", sha, "owned", "u", input.uploadId);
+    docs.set(`r2ObjectRegistry/${asset.objectId}`, {...asset, status: "active"});
+    docs.set("ownedAssets/kept", {status: "ready", original: asset});
+    for (const key of [...docs.keys()]) if (key.startsWith("githubUploadIntents/")) docs.delete(key);
+    docs.set("creatorDeletionState/u", {closed: true});
+    return asset;
+  });
+  await assert.rejects(() => run(githubPutFile, {auth: {uid: "u"}, data: {repo: "walls", path: "kept.jpg",
+    message: "upload", contentBase64: "/9j/", purpose: "wallpaper"}}), {code: "failed-precondition", message: "account-closed"});
+  assert.equal([...docs.keys()].some((key) => key.startsWith("githubUploads/")), false);
+  assert.equal(docs.get(`r2ObjectRegistry/${asset!.objectId}`)?.status, "active");
+});
+
+test("githubPutFile still fails when the intent is gone and the deletion barrier is open", async (t) => {
+  testGithubEnvironment(t);
+  const docs = uploadStore(t, {});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("GitHub must not be contacted");
+  });
+  const bytes = Buffer.from("/9j/", "base64");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  let asset: ReturnType<typeof retainedFixture>;
+  t.mock.method(ownedAssets, "retainUpload", async (input: {uploadId: string}) => {
+    asset = retainedFixture("late.jpg", sha, "owned", "u", input.uploadId);
+    docs.set(`r2ObjectRegistry/${asset.objectId}`, {...asset, status: "active"});
+    for (const key of [...docs.keys()]) if (key.startsWith("githubUploadIntents/")) docs.delete(key);
+    return asset;
+  });
+  await assert.rejects(() => run(githubPutFile, {auth: {uid: "u"}, data: {repo: "walls", path: "late.jpg",
+    message: "upload", contentBase64: "/9j/", purpose: "wallpaper"}}),
+  {code: "failed-precondition", message: "Upload reservation changed."});
+  assert.equal([...docs.keys()].some((key) => key.startsWith("githubUploads/")), false);
+  assert.equal(docs.get(`r2ObjectRegistry/${asset!.objectId}`)?.status, "active");
+});
+
+test("githubPutFile allows a first owned upload when usersv2 is missing and the barrier is open", async (t) => {
+  testGithubEnvironment(t);
+  const docs = uploadStore(t, {});
+  t.mock.method(ownedAssets, "ownedAssetStorageEnabled", () => true);
+  t.mock.method(globalThis, "fetch", async () => {
+    throw new Error("GitHub must not be contacted");
+  });
+  const bytes = Buffer.from("/9j/", "base64");
+  const sha = createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
+  t.mock.method(ownedAssets, "retainUpload", async (input: {uploadId: string}) =>
+    retainedFixture("first.jpg", sha, "owned", "u", input.uploadId));
+  assert.equal(docs.has("usersv2/u"), false);
+  assert.deepEqual(await run(githubPutFile, {auth: {uid: "u"}, data: {repo: "walls", path: "first.jpg",
+    message: "upload", contentBase64: "/9j/", purpose: "wallpaper"}}),
+  {content: {path: "first.jpg", sha, download_url: ""}, sourceKind: "owned"});
+  assert.equal(docs.has("usersv2/u"), false);
+  assert.equal([...docs.entries()].find(([key]) => key.startsWith("githubUploads/"))?.[1].sourceKind, "owned");
+});
+
 for (const legacyUid of ["u", "victim"]) {
   test(`private deletion cannot remove a colliding GitHub upload owned by ${legacyUid}`, async (t) => {
     testGithubEnvironment(t);
@@ -781,16 +987,18 @@ function uploadStore(t: TestContext, seed: Record<string, Record<string, unknown
     set: async (data: Record<string, unknown>) => set(path, data),
     delete: async () => void docs.delete(path),
   });
+  const fieldValue = (data: Record<string, unknown>, field: string) =>
+    field.split(".").reduce<unknown>((item, part) =>
+      item && typeof item === "object" ? (item as Record<string, unknown>)[part] : undefined, data);
   t.mock.method(db, "collection", (name: string) => ({
     doc: (id: string) => ref(`${name}/${id}`),
-    where: (field: string, _op: string, value: unknown) => ({
-      limit: () => ({query: {name, field, value}}),
-      get: async () => ({docs: [...docs.entries()].filter(([path, data]) => {
-        const actual = field.split(".").reduce<unknown>((item, part) =>
-          item && typeof item === "object" ? (item as Record<string, unknown>)[part] : undefined, data);
-        return path.startsWith(`${name}/`) && actual === value;
-      }).map(([path, data]) => ({ref: ref(path), data: () => data}))}),
-    }),
+    where: (field: string, _op: string, value: unknown) => {
+      const query = {name, field, value};
+      const get = async () => ({docs: [...docs.entries()].filter(([path, data]) =>
+        path.startsWith(`${name}/`) && fieldValue(data, field) === value)
+        .map(([path, data]) => ({ref: ref(path), data: () => data}))});
+      return {query, limit: () => ({query}), get};
+    },
   }));
   t.mock.method(db, "runTransaction", async (callback: (tx: unknown) => Promise<unknown>) => {
     const run = transactionQueue.then(async () => {
@@ -802,7 +1010,8 @@ function uploadStore(t: TestContext, seed: Record<string, Record<string, unknown
           if (hasWritten) throw new Error("Firestore transactions require reads before writes");
           if (document.query) {
             const {name, field, value} = document.query;
-            const rows = [...docs.entries()].filter(([path, data]) => path.startsWith(`${name}/`) && data[field] === value)
+            const rows = [...docs.entries()].filter(([path, data]) =>
+              path.startsWith(`${name}/`) && fieldValue(data, field) === value)
               .map(([path, data]) => ({ref: ref(path), data: () => data, createTime: data.__createTime}));
             return {size: rows.length, docs: rows};
           }

@@ -454,7 +454,9 @@ export async function processCandidate(runId: string, candidateId: string, deps:
     }
     image = await generate(deps, candidateId, candidate);
     if (!await updateOwnedCandidate(ref, attempts, {worker: image})) return;
-    const bytes = await download(image.imageUrl);
+    const bytes = image.key.startsWith("ai/studio/raw/") ?
+      await downloadStudioAsset(deps, image.key) :
+      await download(image.imageUrl);
     const wantsDepth = STUDIO_SERIES.find((s) => s.id === candidate.seriesId)?.depth === true;
     const isDuo = candidate.duoPresetId === duo.presetId;
     const gates = await runGates(bytes, {annotate: deps.annotate, knownSignatures: loadKnownSignatures, duoReveal: isDuo,

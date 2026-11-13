@@ -149,6 +149,17 @@ const seed = () => Promise.all([
   req('PATCH', 'walls/w12', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, depth: depth('auto') }, 'owner'),
   req('PATCH', 'walls/w14', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, searchTerms: arr(['sunset']), visionLabels: arr(['sky']), spatial: spatial('great') }, 'owner'),
   req('PATCH', 'walls/remix-src', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, title: { stringValue: 'Remix source' }, remixOf: { stringValue: 'orig_1' } }, 'owner'),
+  req('PATCH', 'walls/still-src', {
+    email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, title: { stringValue: 'Still source' },
+    wallpaper_url: { stringValue: 'https://raw.githubusercontent.com/o/r/main/a.jpg' },
+    wallpaper_thumb: { stringValue: 'https://raw.githubusercontent.com/o/r/main/thumb_a.jpg' },
+    wallpaper_path: { stringValue: 'a.jpg' }, wallpaper_sha: { stringValue: 'a'.repeat(40) },
+    thumb_path: { stringValue: 'thumb_a.jpg' }, thumb_sha: { stringValue: 'b'.repeat(40) },
+    wallpaper_source_kind: { stringValue: 'github' }, thumb_source_kind: { stringValue: 'github' },
+  }, 'owner'),
+  req('PATCH', 'usersv2/unlocks', { id: { stringValue: 'unlocks' }, coinState: { mapValue: { fields: {
+    premiumPreviewUnlocks: { mapValue: { fields: { W1: { integerValue: '1' } } } },
+  } } } }, 'owner'),
   req('PATCH', 'walls/variant-src', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, title: { stringValue: 'Variant source' }, variantOf: { stringValue: 'orig_1' } }, 'owner'),
   req('PATCH', 'walls/rel-pending', { email: str('b@x.com'), review: { booleanValue: false }, releaseAt: at(2 * HOUR) }, 'owner'),
   req('PATCH', 'walls/rel-owner-set', { email: str('b@x.com'), review: { booleanValue: false } }, 'owner'),
@@ -243,6 +254,7 @@ const seed = () => Promise.all([
   ]),
 ]);
 const A = tok('a', 'a@x.com'), Bu = tok('b', 'b@x.com'), HistoryOwner = tok('history-owner', 'history-owner@x.com'), ADM = tok('adm', 'admin@x.com');
+const UnlocksOwner = tok('unlocks', 'unlocks@x.com');
 const ADM_UNVERIFIED = tok('adm', 'admin@x.com', false);
 const C = tok('c', 'c@x.com');
 const U1 = tok('u1', 'u1@x.com');
@@ -684,6 +696,11 @@ const cases = [
   ['owner cannot change remixOf on own unreviewed wall', () => req('PATCH', 'walls/remix-src', { remixOf: str('orig_2') }, Bu, ['remixOf']), 403],
   ['owner cannot add remixCount to own unreviewed wall', () => req('PATCH', 'walls/remix-src', { remixCount: { integerValue: '3' } }, Bu, ['remixCount']), 403],
   ['owner updates title and leaves remixOf untouched', () => req('PATCH', 'walls/remix-src', { title: str('Remixed') }, Bu, ['title']), 200],
+  ['owner cannot change still wallpaper_url after create', () => req('PATCH', 'walls/still-src', { wallpaper_url: str('https://evil.example/a.jpg') }, Bu, ['wallpaper_url']), 403],
+  ['owner cannot change still wallpaper_path after create', () => req('PATCH', 'walls/still-src', { wallpaper_path: str('evil.jpg') }, Bu, ['wallpaper_path']), 403],
+  ['owner cannot change still wallpaper_sha after create', () => req('PATCH', 'walls/still-src', { wallpaper_sha: str('c'.repeat(40)) }, Bu, ['wallpaper_sha']), 403],
+  ['owner cannot change still source kind after create', () => req('PATCH', 'walls/still-src', { wallpaper_source_kind: str('owned') }, Bu, ['wallpaper_source_kind']), 403],
+  ['owner updates still title and leaves image fields untouched', () => req('PATCH', 'walls/still-src', { title: str('Still edited') }, Bu, ['title']), 200],
   ['user creates own unreviewed wall with variantOf', () => req('PATCH', 'walls/variant-create-ok', { email: str('b@x.com'), review: { booleanValue: false }, variantOf: str('orig_1') }, Bu), 200],
   ['user creates wall with a slash in variantOf', () => req('PATCH', 'walls/variant-create-slash', { email: str('b@x.com'), review: { booleanValue: false }, variantOf: str('a/b') }, Bu), 403],
   ['user creates wall with an integer variantOf', () => req('PATCH', 'walls/variant-create-int', { email: str('b@x.com'), review: { booleanValue: false }, variantOf: { integerValue: '5' } }, Bu), 403],
@@ -796,7 +813,11 @@ const cases = [
   ['owner sets own quests', () => req('PATCH', 'usersv2/b', { quests: { mapValue: { fields: {} } } }, Bu, ['quests']), 403],
   ['owner sets own inventory', () => req('PATCH', 'usersv2/b', { inventory: { mapValue: { fields: {} } } }, Bu, ['inventory']), 403],
   ['owner sets own drops', () => req('PATCH', 'usersv2/b', { drops: { mapValue: { fields: {} } } }, Bu, ['drops']), 403],
-  ['owner sets coinState.premiumPreviewUnlocks', () => req('PATCH', 'usersv2/b', coinState({ premiumPreviewUnlocks: { mapValue: { fields: {} } } }), Bu, ['coinState.premiumPreviewUnlocks']), 200],
+  ['owner sets coinState.premiumPreviewUnlocks', () => req('PATCH', 'usersv2/b', coinState({ premiumPreviewUnlocks: { mapValue: { fields: {} } } }), Bu, ['coinState.premiumPreviewUnlocks']), 403],
+  ['owner adds a nonempty premiumPreviewUnlocks map', () => req('PATCH', 'usersv2/b', coinState({ premiumPreviewUnlocks: { mapValue: { fields: { W1: { integerValue: '1' } } } } }), Bu, ['coinState.premiumPreviewUnlocks']), 403],
+  ['owner modifies a premiumPreviewUnlocks entry', () => req('PATCH', 'usersv2/unlocks', coinState({ premiumPreviewUnlocks: { mapValue: { fields: { W1: { integerValue: '9' } } } } }), UnlocksOwner, ['coinState.premiumPreviewUnlocks']), 403],
+  ['owner toggles streak reminder after unlocks denial', () => req('PATCH', 'usersv2/b', coinState({ streakReminderEnabled: { booleanValue: true } }), Bu, ['coinState.streakReminderEnabled']), 200],
+  ['owner toggles streak reminder after nonempty unlocks denial', () => req('PATCH', 'usersv2/unlocks', coinState({ streakReminderEnabled: { booleanValue: true } }), UnlocksOwner, ['coinState.streakReminderEnabled']), 200],
   ['new user doc with xp', () => req('PATCH', 'usersv2/n1', { id: { stringValue: 'n1' }, xp: { integerValue: '500' } }, tok('n1', 'n1@x.com')), 403],
   ['new user doc without xp', () => req('PATCH', 'usersv2/n2', { id: { stringValue: 'n2' } }, tok('n2', 'n2@x.com')), 200],
   ['owner sets boostedUntil on own wall', () => req('PATCH', 'walls/w8', { email: { stringValue: 'b@x.com' }, review: { booleanValue: false }, boostedUntil: { integerValue: '9999999999999' } }, Bu), 403],

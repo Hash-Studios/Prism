@@ -15,13 +15,17 @@ on:
 
 jobs:
   build-and-upload:
+    if: github.ref == 'refs/heads/master'
     runs-on: macos-latest
+    environment: production
     permissions:
       contents: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
 
       - name: Read Flutter version from .fvmrc
         id: fvm

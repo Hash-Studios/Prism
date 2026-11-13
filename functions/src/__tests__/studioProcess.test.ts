@@ -17,7 +17,7 @@ const RUN = "d20261012";
 const CAND = "d20261012-0";
 const CAND_PATH = `studioRuns/${RUN}/candidates/${CAND}`;
 const RAW_KEY = `ai/studio/raw/${CAND}.png`;
-const IMAGE_URL = `https://prismwalls.com/api/ai/assets/${RAW_KEY}`;
+const IMAGE_URL = `https://prismwalls.com/api/ai/studio/assets/${RAW_KEY}`;
 const IDENTITY = {by: "Prism Studio", email: "studio@prismwalls.com", userPhoto: "https://p/studio.png"};
 const CLEAN: VisionResult = {safeSearchAnnotation: {adult: 1, racy: 1, violence: 1, medical: 1}};
 
@@ -69,7 +69,9 @@ function setup(t: TestContext, opts: {
         bytes: wallpaper.length, model: "fal-ai/model-v2", provider: "fal", seed: 42, costUsd: 0.04,
       });
     }
-    if (method === "GET" && url === IMAGE_URL) return new Response(new Uint8Array(await (opts.image?.() ?? wallpaper)));
+    if (method === "GET" && url === `${BASE}/api/ai/studio/assets/${RAW_KEY}`) {
+      return new Response(new Uint8Array(await (opts.image?.() ?? wallpaper)));
+    }
     const asset = url.replace(`${BASE}/api/ai/studio/assets/`, "");
     if (method === "PUT") {
       opts.beforePut?.(store, asset);
@@ -580,24 +582,24 @@ async function approvalEvent(store: Map<string, Doc>): Promise<Parameters<typeof
   } as unknown as Parameters<typeof onWallApproved.run>[0];
 }
 
+async function submitStudioWall(store: Map<string, Doc>) {
+  const snapshot = await db.doc("walls/WALL1AAAAA").get();
+  return {snapshot, event: {
+    params: {wallId: "WALL1AAAAA"},
+    data: {...snapshot, data: () => store.get("walls/WALL1AAAAA")},
+  } as unknown as Parameters<typeof onWallSubmitted.run>[0]};
+}
+
 test("onWallSubmitted leaves a Studio wall alone: no owner sync, no admin push", async (t) => {
   const {store, send} = walls2(t, studioWall());
-  await onWallSubmitted.run({
-    params: {wallId: "WALL1AAAAA"},
-    data: {data: () => store.get("walls/WALL1AAAAA"), ref: {update: async (u: Doc) =>
-      void store.set("walls/WALL1AAAAA", {...store.get("walls/WALL1AAAAA"), ...u})}},
-  } as unknown as Parameters<typeof onWallSubmitted.run>[0]);
+  await onWallSubmitted.run((await submitStudioWall(store)).event);
   assert.equal(store.get("walls/WALL1AAAAA")?.by, "Prism Studio");
   assert.equal(send.mock.callCount(), 0);
 });
 
 test("a user wall that only claims origin studio still gets the owner sync", async (t) => {
   const {store, send} = walls2(t, studioWall({studioCandidateId: "d20261012-9"}));
-  await onWallSubmitted.run({
-    params: {wallId: "WALL1AAAAA"},
-    data: {data: () => store.get("walls/WALL1AAAAA"), ref: {update: async (u: Doc) =>
-      void store.set("walls/WALL1AAAAA", {...store.get("walls/WALL1AAAAA"), ...u})}},
-  } as unknown as Parameters<typeof onWallSubmitted.run>[0]);
+  await onWallSubmitted.run((await submitStudioWall(store)).event);
   assert.equal(store.get("walls/WALL1AAAAA")?.by, "Someone Else");
   assert.equal(send.mock.callCount(), 1, "the spoofed Studio wall gets one generic private-session alert");
 });
@@ -606,12 +608,13 @@ test("onWallSubmitted stops before owner sync or notification when the candidate
   const {store, send} = walls2(t, studioWall());
   failStudioCandidateRead(t);
   const updates: Doc[] = [];
-  await assert.rejects(onWallSubmitted.run({
-    params: {wallId: "WALL1AAAAA"},
-    data: {data: () => store.get("walls/WALL1AAAAA"), ref: {update: async (u: Doc) => {
-      updates.push(u);
-    }}},
-  } as unknown as Parameters<typeof onWallSubmitted.run>[0]), /candidate read failed/);
+  const {snapshot, event} = await submitStudioWall(store);
+  const originalUpdate = snapshot.ref.update.bind(snapshot.ref);
+  t.mock.method(snapshot.ref, "update", async (u: Doc) => {
+    updates.push(u);
+    return originalUpdate(u);
+  });
+  await assert.rejects(onWallSubmitted.run(event), /candidate read failed/);
   assert.deepEqual(updates, []);
   assert.equal(send.mock.callCount(), 0);
 });
