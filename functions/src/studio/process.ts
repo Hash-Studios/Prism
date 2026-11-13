@@ -303,8 +303,12 @@ async function claimCandidate(ref: admin.firestore.DocumentReference, nowMs: num
 /**
  * Creates the pending wall, its signature doc and the candidate's pending_review state in one transaction. Null when the
  * candidate is no longer held by this attempt. The first `dropReserves` walls of the UTC day are reserved for the next
- * weekly Drop; `studioDropReserves/{day}` counts them.
+ * weekly Drop; `studioDropReserves/{day}` counts them. A series with STUDIO_DROP_SERIES_CAP walls waiting for a Drop
+ * reserves nothing, so the fastest series cannot take every reserve.
  */
+/** Walls of one series that may wait for a Drop at once. */
+export const STUDIO_DROP_SERIES_CAP = 3;
+
 async function publishWall(params: {
   ref: admin.firestore.DocumentReference;
   attempts: number;
@@ -347,6 +351,9 @@ async function publishWall(params: {
         signature: str(doc.data()?.signature), wallId: str(doc.data()?.wallId),
       }));
       const reserved = int((await tx.get(reservesRef)).data()?.count);
+      const seriesWaiting = reserved < params.dropReserves ? (await tx.get(db.collection("walls")
+        .where("dropReserved", "==", true).where("review", "==", false)
+        .where("seriesId", "==", str(wall.seriesId)).limit(STUDIO_DROP_SERIES_CAP))).size : 0;
       const check = duplicateCheck(signature, known);
       if (check.reasons.length > 0) {
         const gates = params.candidateUpdate.gates as admin.firestore.DocumentData;
@@ -360,7 +367,7 @@ async function publishWall(params: {
         return "duplicate";
       }
       const now = admin.firestore.FieldValue.serverTimestamp();
-      const reserve = reserved < params.dropReserves;
+      const reserve = reserved < params.dropReserves && seriesWaiting < STUDIO_DROP_SERIES_CAP;
       tx.create(wallRef, {...wall, id: wallId, ...(reserve ? {dropReserved: true} : {})});
       if (reserve) tx.set(reservesRef, {day: params.day, count: reserved + 1, updatedAt: now});
       tx.create(db.collection("studioSignatures").doc(ref.id), {signature, wallId, candidateId: ref.id, createdAt: now});
