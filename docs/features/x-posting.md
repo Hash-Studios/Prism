@@ -67,10 +67,10 @@ The webhook accepts only POST requests and compares the secret in constant time.
 
 - Search: `purity=100` (SFW only), `sorting=favorites` (all time), portrait, at least 1080 x 1920. Landscapes use `categories=110` (keeps painted anime-style skies). Subjects use `categories=100`, because their anime walls are mostly portraits. Flowers is `+flowers +photography`.
 - Pages: up to 8 (24 walls each), read until 40 unposted walls are found or the theme ends, so a daily set goes months deep.
-- Rotation: the set uses the day's theme, so each theme comes back every 16 days. When it has no style group of 8 left, the next theme takes the rest of the time. The eve and night stills use 2 other themes (offsets 3 and 5).
+- Rotation: the set uses the day's theme, so each theme comes back every 16 days. When it has no style group of 8 left or its search fails, the next theme takes the remaining time with its own detail budget. The eve and night stills use 2 other themes (offsets 3 and 5).
 - One art style per set: details come first, and each wall gets a medium from its tags (pixel art, anime, comic art, minimal, photography, 3d, digital art; first match wins). Walls with no medium tag are left out. A specific style with 8 or more walls wins over the catch-all digital art group. Only that group is then downloaded and checked. Batman, for example, becomes a comic-art set. The caption names the style: "12 batman wallpapers, all comic art".
 - Same checks as the grid, but stricter: the detail purity must be SFW, and a wall with any Vision flag hint is dropped, so no set or still needs the flag. Portrait and pin-up tags (`PORTRAIT_TAGS`) and collage posters (more than 30 tags) are skipped. A set also drops near-duplicate images (difference hash), because Wallhaven holds re-uploads under new ids.
-- Budgets: a grid checks at most 30 walls in 3 minutes, a set reads at most 40 details in 2.5 minutes (both themes together), and a still checks at most 8 walls in 45 seconds. These deadlines include searches and rate-limit waits.
+- Budgets: a grid checks at most 30 walls in 3 minutes, a set reads at most 40 details in 2 minutes (both themes together), and a still checks at most 8 walls in 45 seconds. These deadlines include searches and rate-limit waits. Expired checks cannot start another download or Vision request.
 - Wallhaven still captions name the theme without claiming that the image is available in Prism.
 - X takes up to 20 images in one post (its request check refuses 21). Telegram albums take 10, so a set preview arrives as 2 albums.
 
@@ -96,7 +96,7 @@ Metrics missing on one side retry independently without replacing an existing sa
 
 - Post a test panorama from a test account. Check that X shows the 3 panels in order after a tap, on iOS and Android.
 - Check the `sensitive_media_warning` payload of `POST /2/media/metadata` on a test image. `x.ts` sends `{adult_content: true}`.
-- Check the pay-per-use price: about $0.015 a post (no URLs, so about $2 a month at 4 posts a day).
+- Check the pay-per-use price: about $0.015 a post (no URLs, so about $2.25 a month at 5 posts a day).
 - Calibrate `FLAT_PANEL_STDEV` in `content.ts` on real After Dark companions.
 
 ## Not built yet

@@ -406,16 +406,17 @@ interface Picked {wall: WallhavenWall; jpeg: Buffer; sensitive: boolean; style?:
  */
 async function pickWallhaven(candidates: (deadline: number) => Promise<WallhavenCandidate[]>, exclude: Set<string>,
   opts: {count: number; min: number; budget: number; deadlineMs: number; sketchyPerPost: number; blockedTags: string[];
-    strict: boolean; oneStyle?: boolean}, deps: WallhavenDeps): Promise<Picked[] | null> {
+    strict: boolean; oneStyle?: boolean; deadline?: number}, deps: WallhavenDeps): Promise<Picked[] | null> {
   const picked: Picked[] = [];
   const hashes: string[] = [];
   let sketchy = 0;
   let checked = 0;
   const blocked = opts.blockedTags.map((t) => t.toLowerCase());
-  const deadline = Date.now() + (deps.deadlineMs ?? opts.deadlineMs);
+  const deadline = opts.deadline ?? Date.now() + (deps.deadlineMs ?? opts.deadlineMs);
   // The checks on Wallhaven's details alone: null when the wall cannot pass.
   const detailsOk = async (candidate: WallhavenCandidate) => {
     const wall = await deps.details(candidate.id, deadline);
+    if (Date.now() >= deadline) return null;
     if (wall.purity !== candidate.purity || !(opts.strict ? ["sfw"] : ["sfw", "sketchy"]).includes(wall.purity)) return null;
     if (wall.tags.some((tag) => YOUTH_TAG.test(tag) || blocked.includes(tag.toLowerCase()))) return null;
     if (opts.strict && wall.tags.some((tag) => PORTRAIT_TAGS.has(tag.toLowerCase()))) return null;
@@ -430,8 +431,11 @@ async function pickWallhaven(candidates: (deadline: number) => Promise<Wallhaven
     return wall ? imageOk(wall) : null;
   };
   const imageOk = async (wall: WallhavenWall) => {
+    if (Date.now() >= deadline) return null;
     const jpeg = await fitFiveMb(await deps.download(wall.path));
+    if (Date.now() >= deadline) return null;
     const decision = gridVisionDecision((await deps.annotate(jpeg)).safeSearchAnnotation as Record<string, unknown>);
+    if (Date.now() >= deadline) return null;
     if (!decision.ok || (opts.strict && decision.sensitive)) return null;
     const hash = opts.strict ? await dHash(jpeg) : "";
     if (opts.strict && hashes.some((h) => bitsApart(h, hash) <= NEAR_DUPLICATE_BITS)) return null;
@@ -442,7 +446,8 @@ async function pickWallhaven(candidates: (deadline: number) => Promise<Wallhaven
     const timedOut = new Promise<"timeout">((resolve) => {
       timer = setTimeout(() => resolve("timeout"), Math.max(0, deadline - Date.now()));
     });
-    return Promise.race([work, timedOut]).finally(() => clearTimeout(timer));
+    const result = await Promise.race([work, timedOut]).finally(() => clearTimeout(timer));
+    return Date.now() >= deadline ? "timeout" : result;
   };
   const pool = await bounded(candidates(deadline));
   if (pool === "timeout") return null;
@@ -522,7 +527,7 @@ export const SET_MIN = 8;
  * 13 of the top 40. Searches and details share the 45-a-minute limiter.
  */
 export const SET_DETAIL_BUDGET = 40;
-export const SET_DEADLINE_MS = 150_000;
+export const SET_DEADLINE_MS = 120_000;
 
 /**
  * Up to 12 SFW walls of one theme and one medium, like a curated thread. Themes rotate daily. When the day's theme has
@@ -539,10 +544,14 @@ export async function setContent(day: string, exclude: Set<string>, config: {blo
     theme = rotate(THEMES, day, offset);
     const query = theme.query;
     const categories = theme.categories;
-    picked = await pickWallhaven((deadline) => deps.candidates(query, deadline, exclude, SET_DETAIL_BUDGET, categories),
+    // Each theme gets the full detail budget: a thin theme can use most of it and still fail. The shared limiter and
+    // deadline bound the requests.
+    const budget = SET_DETAIL_BUDGET;
+    picked = await pickWallhaven((deadline) => deps.candidates(query, deadline, exclude, budget, categories),
       exclude,
-      {count: SET_SIZE, min: SET_MIN, budget: SET_DETAIL_BUDGET, deadlineMs: end - Date.now(), sketchyPerPost: 0,
-        blockedTags: config.blockedTags, strict: true, oneStyle: true}, {...deps, deadlineMs: end - Date.now()});
+      {count: SET_SIZE, min: SET_MIN, budget, deadlineMs: SET_DEADLINE_MS, deadline: end, sketchyPerPost: 0,
+        blockedTags: config.blockedTags, strict: true, oneStyle: true}, deps)
+      .catch(() => null);
     if (picked) break;
   }
   if (!picked) return null;

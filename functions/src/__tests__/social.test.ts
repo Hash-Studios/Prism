@@ -7,7 +7,7 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db} from "../common";
-import {assertFits, DARK_STILL_TAILS, GRID_DETAIL_BUDGET, GRID_LINES, gridContent, gridVisionDecision, PANORAMA_LINES, panoramaPanels, rotate, SET_MIN, SET_SIZE, setContent, STILL_TAILS, stillCaption, stillContent, THEMES, themedStillContent, wallhavenCandidates, wallhavenDetails, wallhavenThemeCandidates, THEME_PAGES, artStyle, YOUTH_TAG, type WallhavenWall} from "../social/content";
+import {assertFits, DARK_STILL_TAILS, GRID_DETAIL_BUDGET, GRID_LINES, gridContent, gridVisionDecision, PANORAMA_LINES, panoramaPanels, rotate, SET_DETAIL_BUDGET, SET_MIN, SET_SIZE, setContent, STILL_TAILS, stillCaption, stillContent, THEMES, themedStillContent, wallhavenCandidates, wallhavenDetails, wallhavenThemeCandidates, THEME_PAGES, artStyle, YOUTH_TAG, type WallhavenWall} from "../social/content";
 import {applyPress, contentHash, defaultBuilders, handleTelegramUpdate, JITTER_MS, loadSocialConfig, measurePosts, normalizePostText, prepareDay, prepareFor, publishDue, scheduledAt, socialPrepare, socialTelegramWebhook, uncertaintyHash, type SocialConfig, type SocialDeps} from "../social/jobs";
 import {callbackData, parsePress, socialBotToken, socialOwnerChatId, telegramClient, type Telegram, webhookSecret} from "../social/telegram";
 import {R2Storage} from "../r2Storage";
@@ -2097,4 +2097,115 @@ test("a specific style beats a larger catch-all digital art group, and collage p
   assert.ok(content.source.ids.every((id) => tags[id].includes("comic art")), content.source.ids.join());
   assert.ok(!content.source.ids.includes("c23"), "a collage poster is not one subject");
   assert.equal(content.media.length, 9);
+});
+
+test("a thin first theme that uses its whole detail budget still leaves the fallback a full one", async () => {
+  const first = Array.from({length: 50}, (_, i) => ({id: `u${i}`, purity: "sfw"}));
+  const next = Array.from({length: 12}, (_, i) => ({id: `v${i}`, purity: "sfw"}));
+  const d = await themeDeps([...first, ...next], {tags: Object.fromEntries(first.map(({id}) => [id, ["Batman"]]))});
+  let reads = 0;
+  const content = await setContent("2026-11-14", new Set(), {blockedTags: []}, {...d,
+    candidates: async (query) => query === rotate(THEMES, "2026-11-14").query ? first : next,
+    details: async (id) => {
+      reads++;
+      return d.details(id);
+    }});
+  assert.ok(content);
+  assert.deepEqual(content.source.ids, next.map(({id}) => id));
+  assert.equal(reads, SET_DETAIL_BUDGET + next.length);
+});
+
+test("a failed first theme search falls back without resetting the set deadline", async () => {
+  const next = Array.from({length: 12}, (_, i) => ({id: `f${i}`, purity: "sfw"}));
+  const d = await themeDeps(next);
+  const deadlines: number[] = [];
+  const content = await setContent("2026-11-14", new Set(), {blockedTags: []}, {...d,
+    candidates: async (query, deadline) => {
+      deadlines.push(deadline ?? 0);
+      if (query === rotate(THEMES, "2026-11-14").query) throw new Error("search unavailable");
+      return next;
+    }});
+  assert.ok(content);
+  assert.deepEqual(content.source.ids, next.map(({id}) => id));
+  assert.ok(content.text.startsWith("12 " + rotate(THEMES, "2026-11-14", 1).name));
+  assert.equal(deadlines.length, 2);
+  assert.equal(deadlines[1], deadlines[0]);
+});
+
+test("a set exhausted at 120 seconds cannot start another theme", async (t) => {
+  const d = await themeDeps([]);
+  let now = Date.now();
+  t.mock.method(Date, "now", () => now);
+  const queries: string[] = [];
+  const content = await setContent("2026-11-14", new Set(), {blockedTags: []}, {...d,
+    candidates: async (query) => {
+      queries.push(query);
+      if (queries.length === 1) now += 120001;
+      return [];
+    }});
+  assert.equal(content, null);
+  assert.deepEqual(queries, [rotate(THEMES, "2026-11-14").query]);
+});
+
+test("expired in-flight details and downloads never start later network stages", async (t) => {
+  for (const stage of ["details", "download"]) {
+    await t.test(stage, async () => {
+      const walls = Array.from({length: 8}, (_, i) => ({id: `l${i}`, purity: "sfw"}));
+      const d = await themeDeps(walls);
+      let release: () => void = () => undefined;
+      const pending = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      let downloads = 0;
+      let annotations = 0;
+      const content = await gridContent("2026-11-14", new Set(), {blockedTags: [], sketchyPerPost: 0}, {...d,
+        candidates: async () => walls, deadlineMs: 20,
+        details: async (id) => {
+          if (stage === "details") await pending;
+          return d.details(id);
+        },
+        download: async (url) => {
+          downloads++;
+          if (stage === "download") await pending;
+          return d.download(url);
+        },
+        annotate: async (jpeg) => {
+          annotations++;
+          return d.annotate(jpeg);
+        }});
+      assert.equal(content, null);
+      release();
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      assert.equal(downloads, stage === "details" ? 0 : 1);
+      assert.equal(annotations, 0);
+    });
+  }
+});
+
+test("a completed image check cannot return a grid after its absolute deadline", async (t) => {
+  const d = await gridDeps(Array.from({length: 3}, (_, i) => ({id: `q${i}`, purity: "sfw"})));
+  let now = Date.now();
+  let annotations = 0;
+  t.mock.method(Date, "now", () => now);
+  const content = await gridContent("2026-11-14", new Set(), {blockedTags: [], sketchyPerPost: 0}, {...d,
+    deadlineMs: 100,
+    annotate: async () => {
+      if (++annotations === 3) now += 101;
+      return d.annotate();
+    }});
+  assert.equal(content, null);
+});
+
+test("a rejected style group cannot poison duplicate hashes in the fallback group", async () => {
+  const walls = Array.from({length: 17}, (_, i) => ({id: `r${i}`, purity: "sfw"}));
+  const d = await themeDeps(walls, {flagHint: ["r7", "r8"], tags: Object.fromEntries(walls.map(({id}, i) =>
+    [id, [i < 9 ? "comic art" : "digital art"]]))});
+  const content = await setContent("2026-11-14", new Set(), {blockedTags: []}, {...d,
+    download: async (url) => {
+      const index = Number((url.split("/").pop() ?? "").replace("r", "").replace(".jpg", ""));
+      return d.download(index < 7 ? `https://w.wallhaven.cc/full/r${index + 9}.jpg` : url);
+    }});
+  assert.ok(content);
+  assert.deepEqual(content.source.ids, walls.slice(9).map(({id}) => id));
+  assert.match(content.text, /all digital art/);
 });
