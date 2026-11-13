@@ -45,6 +45,7 @@ import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_dispatcher.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/deep_link_startup_gate.dart';
+import 'package:Prism/core/router/launch_link_buffer.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/router/short_link_retry.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
@@ -117,6 +118,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 late LocalNotification localNotification;
+LaunchLinkBuffer? _launchLinks;
 const double _sentryReplaySessionSampleRate = 0.1;
 const double _sentryReplayOnErrorSampleRate = 1.0;
 
@@ -207,6 +209,7 @@ Future<void> main() async {
       } else {
         WidgetsFlutterBinding.ensureInitialized();
       }
+      if (defaultTargetPlatform == TargetPlatform.android) _launchLinks = LaunchLinkBuffer.install();
       PerformanceProbe.mark('startup.binding_ready');
       if (!kReleaseMode) {
         HttpsCallable.perfSink = (String name, int ms, bool ok) =>
@@ -845,6 +848,9 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         _shortLinkRetries[ticket] = (action, source);
         _shortLinkRetry.schedule(ticket);
       },
+    );
+    _launchLinks?.drain(
+      (Uri link) => unawaited(_deepLinkDispatcher.openUri(link, source: DeepLinkSourceValue.appLinks)),
     );
     _shortLinkRetry = ShortLinkRetryScheduler(
       onlineChanges: () => getIt<ConnectivityService>().onConnectionChange,
