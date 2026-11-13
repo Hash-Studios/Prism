@@ -40,7 +40,7 @@ export function planCategoryChange(
     return "studio";
   }
   const labels = wall.visionLabels;
-  if (!Array.isArray(labels) || labels.length === 0 || !labels.every((label) => typeof label === "string")) {
+  if (!Array.isArray(labels) || labels.length === 0 || !labels.every((label) => typeof label === "string" && label.trim().length > 0)) {
     return "noLabels";
   }
   const current = typeof wall.category === "string" ? wall.category.trim() : "";

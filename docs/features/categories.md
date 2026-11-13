@@ -183,7 +183,7 @@ Other points:
 
 - A keyword matches whole words only. "car" does not match "Cartoon". A plural with "s" or "es" matches.
 - **Gaming** matches `video game`, `pc game`, `action-adventure game`, `shooter game`, `gaming`, `esports`, `game controller` and `joystick`. A plain `game` does not count, because Vision also uses it for dice, cards and ball games.
-- Game art that Vision calls only a "fictional character" goes to Gaming, because `character` is a style word.
+- "Fictional character" alone maps to Anime. A matching game label beats it because game labels are in the Subject tier.
 - `CATEGORY_NAMES` did not change. The app list in `lib/features/folders/domain/entities/smart_rule.dart` must stay the same as it.
 - Prism Studio walls get their category from the Studio plan (`functions/src/studio/plan.ts`). The classifier does not change them.
 
@@ -195,7 +195,7 @@ It skips these walls:
 
 - Prism Studio walls (`origin` is `studio`).
 - Walls with a category that a creator or an admin picked. The classifier sets `aiCategorized: true` when it writes a category. A wall without that flag and with a category other than General has a picked category.
-- Walls without labels.
+- Walls with no labels or invalid labels.
 - Walls in Gaming or Pastel (a rule from #574).
 
 An admin who edits `category` directly in the console does not clear `aiCategorized`. The script cannot see that edit. On 2026-11-13, each classifier-owned wall had the category that the old rule gives, so no such edit existed.

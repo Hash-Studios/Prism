@@ -14,9 +14,10 @@ type Write = {ref: Ref; data: Doc; precondition: unknown};
 
 /** A fake bulkWriter that records each update and applies it to the fake store with its precondition. */
 function installBulkWriter(t: TestContext, options: {failWrites?: boolean; staleWrites?: boolean} = {}):
-  {writes: Write[]; creations: {count: number}} {
+  {writes: Write[]; creations: {count: number}; flushSizes: number[]} {
   const writes: Write[] = [];
   const creations = {count: 0};
+  const flushSizes: number[] = [];
   const pending: Array<Promise<unknown>> = [];
   t.mock.method(db, "bulkWriter", () => {
     creations.count += 1;
@@ -30,13 +31,14 @@ function installBulkWriter(t: TestContext, options: {failWrites?: boolean; stale
       },
       flush: async () => {
         await Promise.allSettled(pending);
+        flushSizes.push(writes.length);
       },
       close: async () => {
         await Promise.allSettled(pending);
       },
     };
   });
-  return {writes, creations};
+  return {writes, creations, flushSizes};
 }
 
 const SEED: Record<string, Doc> = {
@@ -227,4 +229,31 @@ test("the summary lists the 20 most common moves, most common first", async (t) 
 test("parseWallCategoryArgs reads --apply", () => {
   assert.equal(parseWallCategoryArgs(["--apply"]).apply, true);
   assert.equal(parseWallCategoryArgs([]).apply, false);
+});
+
+test("the category backfill skips empty and whitespace labels without changing categories", async (t) => {
+  const seed = Object.fromEntries([[""], ["   \t\n"], ["Mountain", ""]].map((visionLabels, i) =>
+    [`walls/${i}`, {review: true, category: "Nature", aiCategorized: true, visionLabels}]));
+  const store = installFakeDb(t, seed);
+  const {writes} = installBulkWriter(t);
+  const before = JSON.stringify([...store.entries()]);
+  const counts = await backfillWallCategories(db, {apply: true}, () => undefined);
+
+  assert.equal(counts.noLabels, 3);
+  assert.equal(counts.changed, 0);
+  assert.equal(writes.length, 0);
+  assert.equal(JSON.stringify([...store.entries()]), before);
+});
+
+test("the category backfill flushes each apply page before it queues the next page", async (t) => {
+  const seed = Object.fromEntries(Array.from({length: 301}, (_, i) => [`walls/${String(i).padStart(3, "0")}`,
+    {review: true, category: "General", visionLabels: ["PC game"]}]));
+  installFakeDb(t, seed);
+  const {writes, flushSizes} = installBulkWriter(t);
+  const counts = await backfillWallCategories(db, {apply: true}, () => undefined);
+
+  assert.equal(counts.scanned, 301);
+  assert.equal(counts.written, 301);
+  assert.equal(new Set(writes.map(({ref}) => ref.id)).size, 301);
+  assert.deepEqual(flushSizes, [300, 301]);
 });
