@@ -45,9 +45,9 @@
     "note": "No run note found. PR #610 is a search top hit (title match), not verified."
   },
   "functions/src/scripts/backfillWallCategories.ts": {
-    "npm": "migrate:wall-categories",
-    "pr": "#843",
-    "note": "PR #843: dry run done (848 walls, 17 classified-only). Apply is a later step in #843 and #846. No apply note."
+    "npm": "recategorize:walls",
+    "pr": "#538",
+    "note": "Fix for #538: dry run 2026-11-13 read 2,636 walls, 67 change. Apply after the onWallCategorize deploy, with the owner's OK. No apply note."
   },
   "functions/src/scripts/backfillWallCollections.ts": {
     "npm": "migrate:wall-collections",

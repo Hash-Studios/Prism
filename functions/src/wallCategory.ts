@@ -3,34 +3,47 @@ import type {ImageAnnotatorClient} from "@google-cloud/vision";
 export const DEFAULT_CATEGORY = "General";
 export const DEFAULT_COLLECTION = "community";
 
-// First matching rule wins, so keywords already covered by an earlier rule are left out. A keyword matches whole
-// words only, so "car" does not match "Cartoon" or "Playing card". Anime and Flowers have two rules each. A label that
-// names anime comes first, so an anime wall with a sky stays Anime. Flower close-up words beat Nature's "flower". A game
-// label beats a plain "character", and a subject (space, ocean, flowers) beats a plain "illustration". Pastel is last,
-// so it only takes walls that no other category matches.
-const CATEGORY_RULES: ReadonlyArray<readonly [string, readonly string[]]> = [
-  ["Anime", ["anime", "manga", "anime girl", "anime boy"]],
-  ["Flowers", ["petal", "rose", "bouquet", "floristry", "cut flowers"]],
-  ["Nature", ["mountain", "landscape", "sunset", "sky", "tree", "forest", "beach", "ocean", "sea", "river", "lake", "flower", "garden", "plant", "leaf", "grass", "cloud", "rain", "snow", "winter", "autumn"]],
-  ["Architecture", ["city", "building", "architecture", "house", "home", "interior", "room", "office", "tower", "bridge", "urban", "modern"]],
-  ["Cars", ["car", "vehicle", "automobile", "sports car", "motorcycle", "truck", "jeep", "luxury car", "race car", "vintage car"]],
-  ["Gaming", ["video game", "pc game", "action-adventure game", "shooter game", "gaming", "esports", "game controller", "joystick"]],
-  ["Space", ["space", "galaxy", "stars", "universe", "planet", "nebula", "astronaut", "rocket", "moon", "cosmos", "stellar"]],
-  ["Ocean", ["underwater", "marine", "coral", "fish", "jellyfish", "dolphin", "whale", "tropical"]],
-  ["Flowers", ["lotus", "tulip", "blossom", "floral"]],
-  ["Anime", ["character", "illustration", "cartoon"]],
-  ["Neon", ["neon", "light", "night lights", "led", "glow", "cyberpunk", "laser", "sign"]],
-  ["Dark", ["dark", "darkness", "night", "black", "shadow", "moody", "mysterious", "horror", "creepy", "mystery"]],
-  ["Abstract", ["abstract", "pattern", "art", "geometric", "texture", "minimal", "colorful", "artistic"]],
-  ["3D Render", ["3d", "render", "cgi", "surreal"]],
-  ["Minimal", ["simple", "clean", "white", "plain", "elegant"]],
-  ["Gradient", ["gradient", "color gradient", "blend", "mesh gradient", "gradient background"]],
-  ["AI Art", ["ai", "generated"]],
-  ["Cyberpunk", ["future", "tech", "technology", "robot", "android", "cyborg", "digital"]],
-  ["Vintage", ["vintage", "retro", "old", "classic", "nostalgic", "vintage style", "antique"]],
-  ["Landscape", ["scenery", "panorama", "vista", "horizon", "valley", "desert", "countryside"]],
-  ["Galaxy", ["star", "cosmic", "milky way", "astronomy"]],
-  ["Pastel", ["pastel"]],
+// A keyword matches whole words only, so "car" does not match "Cartoon" or "Playing card". Each rule has a tier.
+// SUBJECT names what the wall shows. STYLE names a look, a mood or a backdrop that many walls share (sky, night,
+// light, art). LAST is Pastel, which takes only walls that no other rule matches. The most specific tier that any label
+// matches wins. In that tier, the label with the best Vision rank wins. In one label, the rule order breaks the tie.
+const SUBJECT = 0;
+const STYLE = 1;
+const LAST = 2;
+type Tier = typeof SUBJECT | typeof STYLE | typeof LAST;
+
+const CATEGORY_RULES: ReadonlyArray<readonly [string, Tier, readonly string[]]> = [
+  ["Anime", SUBJECT, ["anime", "manga", "anime girl", "anime boy"]],
+  ["Flowers", SUBJECT, ["petal", "rose", "bouquet", "floristry", "cut flowers", "lotus", "tulip", "blossom", "floral"]],
+  ["Nature", SUBJECT, ["mountain", "landscape", "sunset", "tree", "forest", "beach", "ocean", "sea", "river", "lake",
+    "garden", "grass", "rain", "snow", "winter", "autumn"]],
+  ["Nature", STYLE, ["sky", "cloud", "flower", "plant", "leaf"]],
+  ["Architecture", SUBJECT, ["city", "building", "architecture", "house", "interior", "room", "tower", "bridge", "urban"]],
+  ["Cars", SUBJECT, ["car", "vehicle", "automobile", "sports car", "motorcycle", "truck", "jeep", "luxury car", "race car",
+    "vintage car"]],
+  ["Gaming", SUBJECT, ["video game", "pc game", "action-adventure game", "shooter game", "gaming", "esports",
+    "game controller", "joystick"]],
+  ["Space", SUBJECT, ["space", "galaxy", "stars", "universe", "planet", "nebula", "astronaut", "rocket", "moon", "cosmos",
+    "stellar"]],
+  ["Ocean", SUBJECT, ["underwater", "marine", "coral", "fish", "jellyfish", "dolphin", "whale"]],
+  ["Ocean", STYLE, ["tropical"]],
+  ["Anime", STYLE, ["character", "illustration", "cartoon"]],
+  ["Neon", SUBJECT, ["neon", "night lights", "cyberpunk", "laser"]],
+  ["Neon", STYLE, ["light", "led", "glow", "sign"]],
+  ["Dark", STYLE, ["dark", "darkness", "night", "black", "shadow", "moody", "mysterious", "horror", "creepy", "mystery"]],
+  ["Abstract", STYLE, ["abstract", "pattern", "art", "geometric", "texture", "minimal", "colorful", "artistic"]],
+  ["Architecture", STYLE, ["home", "office", "modern"]],
+  ["3D Render", STYLE, ["3d", "render", "cgi", "surreal"]],
+  ["Minimal", STYLE, ["simple", "clean", "white", "plain", "elegant"]],
+  ["Gradient", STYLE, ["gradient", "color gradient", "blend", "mesh gradient", "gradient background"]],
+  ["AI Art", STYLE, ["ai", "generated"]],
+  ["Cyberpunk", STYLE, ["future", "tech", "technology", "robot", "android", "cyborg", "digital"]],
+  ["Vintage", STYLE, ["vintage", "retro", "old", "classic", "nostalgic", "vintage style", "antique"]],
+  ["Landscape", SUBJECT, ["scenery", "panorama", "vista", "valley", "desert", "countryside"]],
+  ["Landscape", STYLE, ["horizon"]],
+  ["Galaxy", SUBJECT, ["cosmic", "milky way"]],
+  ["Galaxy", STYLE, ["star", "astronomy"]],
+  ["Pastel", LAST, ["pastel"]],
 ];
 
 /** Every name the classifier can write to `walls.category`, in rule order. */
@@ -46,17 +59,16 @@ function labelHas(label: string[], keyword: string[]): boolean {
   }));
 }
 
+/** The category for Vision labels in score order, best first. */
 export function mapLabelsToCategory(labels: string[]): string {
   const labelWords = labels.map(wordsOf);
-
-  for (const [category, keywords] of CATEGORY_RULES) {
-    for (const keyword of keywords) {
-      if (labelWords.some((label) => labelHas(label, wordsOf(keyword)))) {
-        return category;
-      }
+  for (const tier of [SUBJECT, STYLE, LAST]) {
+    for (const label of labelWords) {
+      const rule = CATEGORY_RULES.find(([, ruleTier, keywords]) =>
+        ruleTier === tier && keywords.some((keyword) => labelHas(label, wordsOf(keyword))));
+      if (rule) return rule[0];
     }
   }
-
   return DEFAULT_CATEGORY;
 }
 

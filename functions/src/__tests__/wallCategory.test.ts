@@ -3,11 +3,45 @@ import test from "node:test";
 
 import {mapLabelsToCategory} from "../wallCategory";
 
-test("mapLabelsToCategory returns the first matching category, case-insensitively", () => {
+test("mapLabelsToCategory matches labels case-insensitively", () => {
   assert.equal(mapLabelsToCategory(["Mountain"]), "Nature");
   assert.equal(mapLabelsToCategory(["Anime girl"]), "Anime");
   assert.equal(mapLabelsToCategory(["Coral reef"]), "Ocean");
-  assert.equal(mapLabelsToCategory(["Sports car", "Sky"]), "Nature");
+});
+
+// #538. Vision gives labels best first. The old rule let the first matching rule win, so Nature took these walls.
+test("the best-ranked label picks the category", () => {
+  assert.equal(mapLabelsToCategory(["Anime girl", "Sky"]), "Anime");
+  assert.equal(mapLabelsToCategory(["Sports car", "Sky"]), "Cars");
+  assert.equal(mapLabelsToCategory(["Sports car", "Mountain"]), "Cars");
+  assert.equal(mapLabelsToCategory(["Mountain", "Sports car"]), "Nature");
+  assert.equal(mapLabelsToCategory(["Lighthouse", "Tower", "Beacon", "Sea", "Ocean"]), "Architecture");
+  assert.equal(mapLabelsToCategory(["Desert", "Dune", "Sunset", "Sand"]), "Landscape");
+});
+
+test("a style or backdrop label loses to any subject label", () => {
+  assert.equal(mapLabelsToCategory(["Sky", "Anime girl"]), "Anime");
+  assert.equal(mapLabelsToCategory(["Sky", "Moon", "Cloud", "Astronomical object"]), "Space");
+  assert.equal(mapLabelsToCategory(["Night", "Skyscraper", "Tower"]), "Architecture");
+  assert.equal(mapLabelsToCategory(["Light", "Car"]), "Cars");
+  assert.equal(mapLabelsToCategory(["Art", "Moon"]), "Space");
+  assert.equal(mapLabelsToCategory(["Home", "Mountain"]), "Nature");
+  assert.equal(mapLabelsToCategory(["Old-growth forest"]), "Nature");
+  assert.equal(mapLabelsToCategory(["Leaf", "Green", "Petal", "Plant stem"]), "Flowers");
+  assert.equal(mapLabelsToCategory(["Lighting", "Electricity", "Night", "Neon"]), "Neon");
+});
+
+test("with only style labels, the best-ranked one picks the category", () => {
+  assert.equal(mapLabelsToCategory(["Red", "Art", "Pink", "Modern art"]), "Abstract");
+  assert.equal(mapLabelsToCategory(["Night", "Star", "Midnight"]), "Dark");
+  assert.equal(mapLabelsToCategory(["White", "Black", "Grey"]), "Minimal");
+  assert.equal(mapLabelsToCategory(["Sky", "Cloud"]), "Nature");
+});
+
+test("in one label, the rule order breaks the tie", () => {
+  assert.equal(mapLabelsToCategory(["Black and white"]), "Dark");
+  assert.equal(mapLabelsToCategory(["Modern art"]), "Abstract");
+  assert.equal(mapLabelsToCategory(["City car"]), "Architecture");
 });
 
 test("mapLabelsToCategory falls back to General", () => {
@@ -44,7 +78,7 @@ test("maps pastel labels to Pastel", () => {
   assert.equal(mapLabelsToCategory(["Pastel colors"]), "Pastel");
 });
 
-test("Gaming keeps out of the categories before it", () => {
+test("Gaming takes a wall only when its game label ranks first", () => {
   assert.equal(mapLabelsToCategory(["Mountain", "PC game"]), "Nature");
   assert.equal(mapLabelsToCategory(["Building", "Video game"]), "Architecture");
   assert.equal(mapLabelsToCategory(["Sports car", "Video game software"]), "Cars");

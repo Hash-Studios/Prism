@@ -153,38 +153,82 @@ With 6 desktop walls today, **the Desktop tile stays hidden** until the desktop 
 
 #### Classifier labels
 
-`functions/src/wallCategory.ts` keeps an ordered rule list (`CATEGORY_RULES`). The first rule that matches wins.
+`functions/src/wallCategory.ts` maps the Vision labels of a wall to one category (`mapLabelsToCategory`). Vision gives the labels in score order, best first. The rule list is `CATEGORY_RULES`.
 
+The rule (#538): the most specific tier that a label matches wins. In that tier, the label with the best rank picks the category. If one label matches two rules, the rule that comes first in the list wins.
+
+Each rule has one of three tiers:
+
+| Tier | What it names | Examples |
+|---|---|---|
+| Subject | What the wall shows | `anime`, `petal`, `mountain`, `tower`, `car`, `video game`, `moon`, `coral`, `neon`, `desert`, `milky way` |
+| Style | A look, a mood or a backdrop that many walls share | `sky`, `cloud`, `flower`, `plant`, `leaf`, `home`, `modern`, `light`, `night`, `art`, `old`, `star`, `horizon`, `character`, `illustration`, `cartoon` |
+| Last | Pastel only | `pastel` |
+
+A style label is used only when no label matches a subject. Pastel is used only when no other rule matches.
+
+Examples:
+
+| Labels, best first | Category | Why |
+|---|---|---|
+| Anime girl, Sky | Anime | `sky` is a style word. |
+| Sky, Anime girl | Anime | The same. A backdrop never beats a subject. |
+| Sports car, Sky | Cars | Before #538, this gave Nature, because the Nature rule came first. |
+| Mountain, Sports car | Nature | Both are subjects. Mountain has the better rank. |
+| Leaf, Green, Petal | Flowers | `leaf` is a style word. `petal` is a subject. |
+| Red, Art, Modern art | Abstract | Only style words. Art has the better rank. Before #538, `modern` gave Architecture. |
+| Black and white | Dark | One label matches Dark and Minimal. Dark comes first in the list. |
+
+Other points:
+
+- A keyword matches whole words only. "car" does not match "Cartoon". A plural with "s" or "es" matches.
 - **Gaming** matches `video game`, `pc game`, `action-adventure game`, `shooter game`, `gaming`, `esports`, `game controller` and `joystick`. A plain `game` does not count, because Vision also uses it for dice, cards and ball games.
-- Gaming comes after Nature, Architecture and Cars. A game screenshot of a mountain or a car stays in Nature or Cars.
-- Anime has two rules. The first one (`anime`, `manga`) comes before Gaming. The second one (`character`, `illustration`, `cartoon`) comes after it. Thus game art that Vision only calls a "fictional character" goes to Gaming, and a wall that Vision calls "anime" stays in Anime.
-- **Pastel** matches `pastel` and is the last rule. It only takes walls that no other category matches, so it never takes Gradient or Minimal walls.
-- With the old and the new rules on all 2,358 labelled walls, only 4 walls change: Anime to Gaming. No other wall changes.
+- Game art that Vision calls only a "fictional character" goes to Gaming, because `character` is a style word.
+- `CATEGORY_NAMES` did not change. The app list in `lib/features/folders/domain/entities/smart_rule.dart` must stay the same as it.
+- Prism Studio walls get their category from the Studio plan (`functions/src/studio/plan.ts`). The classifier does not change them.
 
-#### Backfill
+#### Recategorize script
 
-`functions/src/scripts/backfillWallCategories.ts` moves approved walls into Gaming or Pastel when their stored Vision labels point there.
+`functions/src/scripts/backfillWallCategories.ts` gives approved walls the category that the current rule gives. It reads the stored `visionLabels`. It calls no paid service and no Vision API.
 
-- It changes a wall only when the classifier owns its category: `aiCategorized` is true, or the category is General or empty. A category that a creator picked never changes.
-- It reads the stored `visionLabels`. It calls no paid service.
-- A dry run is the default. It lists each wall that would change, the counts by old and new category, and up to 10 sample ids.
-- `--apply` writes `category`, `aiCategorized` and `categorizedAt`. It does not change the wall's collections. Get the owner's OK first.
-- If a write fails, the script prints the summary and exits with an error. Each write requires the document's scanned update time, so a later creator edit is not overwritten.
+It skips these walls:
+
+- Prism Studio walls (`origin` is `studio`).
+- Walls with a category that a creator or an admin picked. The classifier sets `aiCategorized: true` when it writes a category. A wall without that flag and with a category other than General has a picked category.
+- Walls without labels.
+- Walls in Gaming or Pastel (a rule from #574).
+
+An admin who edits `category` directly in the console does not clear `aiCategorized`. The script cannot see that edit. On 2026-11-13, each classifier-owned wall had the category that the old rule gives, so no such edit existed.
+
+- A dry run is the default. It reads approved walls and writes nothing. It prints each wall that would change, the 20 most common moves and up to 10 sample ids.
+- `--classified-only` skips General walls that the classifier never set.
+- `--apply` writes `category`, `aiCategorized` and `categorizedAt`. It writes in pages of 300 walls through a bulk writer. It does not change the collections of a wall. Get the owner's OK first.
+- Each write requires the update time that the scan read. A later edit is thus not overwritten. If a write fails, the script prints the summary and exits with an error.
 
 ```sh
-cd functions && npm run migrate:wall-categories            # dry run
-cd functions && npm run migrate:wall-categories -- --apply # owner's OK only
+cd functions && npm run recategorize:walls            # dry run
+cd functions && npm run recategorize:walls -- --apply # owner's OK only
 ```
 
-The dry run on 2026-11-03 used a read-only copy of production (the public read of approved walls). It scanned 2,559 walls. 201 had no labels and 145 had a category that a creator picked.
+The dry run on 2026-11-13 read production. It scanned 2,636 approved walls and wrote nothing. It skipped 228 Studio walls, 190 walls without labels and 5 picked categories. 67 walls change:
 
 | Move | Walls |
 |---|---|
-| Anime to Gaming | 2 |
-| General to Gaming | 2 |
-| Any category to Pastel | 0 |
+| Nature to Architecture | 14 |
+| Architecture to Abstract | 12 |
+| Nature to Space | 11 |
+| Dark to Minimal | 10 |
+| Nature to Landscape | 8 |
+| Anime to Dark | 2 |
+| Nature to Dark | 2 |
+| Architecture to Cars | 2 |
+| Anime to Abstract | 2 |
+| Dark to Cyberpunk | 1 |
+| Architecture to Neon | 1 |
+| Anime to Space | 1 |
+| Anime to Galaxy | 1 |
 
-Sample ids: `CIBYff51Qdcjon75z4sk`, `Rv0Qbw9SHBwhJVWuDVIq`, `kNymiuASCHrPL1ceXKum`, `pxRsNQYanrGCHxgedXsT`. All four have the labels "video game software" or "pc game".
+Two of the 67 moves are worse. `ekfFrL8tagUJIpVDgG5i` is an anime wall where Vision put "Anime" tenth, after "Moon". It goes to Space. `mGo0EYRjYKdloYy20iNP` is an anime wall where "Star" ranks above "Fictional character". It goes to Galaxy.
 
 #### Other lists
 
@@ -200,7 +244,7 @@ The web catalogue does not read the app list. It groups approved walls by their 
 
 1. Deploy the Firestore index: `firebase deploy --only firestore:indexes`. Wait until the `walls (review, desktopVariant.v)` index is ready.
 2. Deploy the functions: `make functions-deploy`. This ships the new classifier rules and the new wall request tags. Deploy it before the app release, because the server refuses a request tag it does not know.
-3. Run the backfill dry run, then `--apply` with the owner's OK.
+3. Run the recategorize dry run, then `--apply` with the owner's OK.
 4. If Remote Config `categories_v1` is set, it replaces the built-in list. Then add the Pastel, Gaming and Desktop entries to it, with their `query` values. Remote Config cannot express the Desktop tile, so a set `categories_v1` hides Desktop. Leave the key empty to show the built-in list.
 5. Release the app.
 6. The Desktop tile shows when 12 or more walls have a desktop version. Run the desktop backfill with the owner's OK. See [desktop-companions.md](desktop-companions.md).
