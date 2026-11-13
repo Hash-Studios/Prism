@@ -244,6 +244,29 @@ test("only the first dailyDropReserves walls of a UTC day are reserved for the D
   assert.equal(off.store.has("studioDropReserves/2026-10-19"), false);
 });
 
+test("a series with three walls waiting for a Drop leaves the day's reserve to another series", async (t) => {
+  const nowMs = () => Date.parse("2026-10-19T21:00:00Z");
+  const waiting = (id: string, extra: Doc = {}): Record<string, Doc> =>
+    ({[`walls/${id}`]: {origin: "studio", review: false, dropReserved: true, seriesId: "after-dark", ...extra}});
+  const newWall = (store: Map<string, Doc>) => walls(store).filter(([path]) => !path.startsWith("walls/R"))[0][1];
+
+  const full = setup(t, {nowMs, seed: {...waiting("R1"), ...waiting("R2"), ...waiting("R3")}});
+  await full.run();
+  assert.equal(newWall(full.store).dropReserved, undefined);
+  assert.equal(full.store.has("studioDropReserves/2026-10-19"), false);
+
+  const other = setup(t, {nowMs, seed: {...waiting("R1"), ...waiting("R2"), ...waiting("R3"),
+    [CAND_PATH]: candidate({seriesId: "paper-worlds"})}});
+  await other.run();
+  assert.equal(newWall(other.store).dropReserved, true);
+  assert.equal(other.store.get("studioDropReserves/2026-10-19")?.count, 1);
+
+  const notWaiting = setup(t, {nowMs, seed: {...waiting("R1"), ...waiting("R2"), ...waiting("R3", {review: true}),
+    ...waiting("R4", {dropReserved: false, dropWeek: "2026-W43"})}});
+  await notWaiting.run();
+  assert.equal(newWall(notWaiting.store).dropReserved, true);
+});
+
 test("a wall id that exists already is not overwritten; the next id is used", async (t) => {
   const taken = randomWallId(seededRng(9));
   const {store, run, cand} = setup(t, {seed: {[`walls/${taken}`]: {title: "Old"}}, rng: seededRng(9)});

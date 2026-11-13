@@ -169,6 +169,48 @@ test("the planner writes snapshots, prices and flips the wall flags", async (t) 
   assert.equal(store.get("walls/X1")?.dropWeek, undefined);
 });
 
+const dropIds = (store: Map<string, Doc>, key = KEY) =>
+  ((store.get(`drops/${key}`)?.walls ?? []) as Doc[]).map((w) => w.id);
+
+test("the planner takes reserves round-robin by series when the oldest are all one series", async (t) => {
+  const store = installFakeDb(t, {
+    ...reservedWalls(8),
+    "walls/W9": wall(9, {seriesId: "dawn"}),
+    "walls/W10": wall(10, {seriesId: "dawn"}),
+    "walls/W11": wall(11, {seriesId: "noon"}),
+    "walls/W12": wall(12, {seriesId: "noon"}),
+  });
+  await plan(t);
+  assert.deepEqual(dropIds(store), ["W1", "W9", "W11", "W2", "W10", "W12", "W3", "W4", "W5", "W6"]);
+});
+
+test("the planner still plans a one-series week with every ready reserve", async (t) => {
+  const store = installFakeDb(t, reservedWalls(5));
+  await plan(t);
+  assert.deepEqual(dropIds(store), ["W1", "W2", "W3", "W4", "W5"]);
+});
+
+test("reserves a Drop leaves out keep their flag and lead their series in the next Drop", async (t) => {
+  const store = installFakeDb(t, {
+    ...reservedWalls(10),
+    "walls/W11": wall(11, {seriesId: "dawn"}),
+    "walls/W12": wall(12, {seriesId: "dawn"}),
+  });
+  await plan(t);
+  assert.deepEqual(dropIds(store), ["W1", "W11", "W2", "W12", "W3", "W4", "W5", "W6", "W7", "W8"]);
+  assert.deepEqual([store.get("walls/W9")?.dropReserved, store.get("walls/W9")?.dropWeek], [true, undefined]);
+
+  store.set("walls/W13", wall(13, {seriesId: "dawn"}));
+  store.set("walls/W14", wall(14, {seriesId: "noon"}));
+  store.set("walls/W15", wall(15, {seriesId: "noon"}));
+  const nextMonday = MONDAY + 7 * 86_400_000;
+  const nextKey = weekKey(nextMonday);
+  t.mock.timers.reset();
+  t.mock.timers.enable({apis: ["Date"], now: nextMonday});
+  await planWeeklyDrop.run({jobName: "t", scheduleTime: new Date(nextMonday).toISOString()});
+  assert.deepEqual(dropIds(store, nextKey), ["W9", "W13", "W14", "W10", "W15"]);
+});
+
 test("the planner falls back to a mood name when no title is set", async (t) => {
   const store = installFakeDb(t, reservedWalls(4));
   await plan(t);
