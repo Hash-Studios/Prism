@@ -403,6 +403,112 @@ void main() {
   );
 
   group('relation lists', () {
+    test('failed refresh can retry an exhausted list and replaces its old rows', () async {
+      var calls = 0;
+      when(() => relationPage(any())).thenAnswer((_) async {
+        calls++;
+        return calls == 2
+            ? Result.error<RelationPage>(const ServerFailure('offline'))
+            : Result.success<RelationPage>(
+                RelationPage(users: [_user('a@x.com', id: calls == 1 ? 'old' : 'fresh')], next: null),
+              );
+      });
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      const page = PublicProfileEvent.relationPageRequested(kind: UserRelationKind.followers, profileUid: 'p');
+      bloc.add(page);
+      await pumpEventQueue();
+      bloc.add(const PublicProfileEvent.relationRefreshRequested(kind: UserRelationKind.followers, profileUid: 'p'));
+      await pumpEventQueue();
+      expect(bloc.state.followers.failed, isTrue);
+      expect(bloc.state.followers.isFetching, isFalse);
+      expect(bloc.state.followers.summaries.single.id, 'old');
+      bloc.add(page);
+      await pumpEventQueue();
+      expect(bloc.state.followers.failed, isFalse);
+      expect(bloc.state.followers.summaries.single.id, 'fresh');
+      expect(bloc.state.followers.pages, 1);
+    });
+
+    test('failed initial refresh exposes a retry instead of an endless skeleton', () async {
+      when(
+        () => relationPage(any()),
+      ).thenAnswer((_) async => Result.error<RelationPage>(const ServerFailure('offline')));
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      bloc.add(const PublicProfileEvent.relationRefreshRequested(kind: UserRelationKind.followers, profileUid: 'p'));
+      await pumpEventQueue();
+      expect(bloc.state.followers.failed, isTrue);
+      expect(bloc.state.followers.isFetching, isFalse);
+    });
+
+    test('a repeated search query cannot accept an earlier matching request', () async {
+      final held = Completer<Result<List<UserSummaryEntity>>>();
+      var calls = 0;
+      when(() => relationIds(any())).thenAnswer((_) async => Result.success<List<String>>(['a']));
+      when(() => search(any())).thenAnswer((_) {
+        calls++;
+        return calls == 1 ? held.future : Future.value(Result.success<List<UserSummaryEntity>>([_user('new')]));
+      });
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      const query = PublicProfileEvent.relationSearchRequested(
+        kind: UserRelationKind.followers,
+        profileUid: 'p',
+        query: 'ab',
+      );
+      bloc.add(query);
+      await pumpEventQueue();
+      bloc.add(const PublicProfileEvent.relationSearchCleared(kind: UserRelationKind.followers));
+      await pumpEventQueue();
+      bloc.add(query);
+      await pumpEventQueue();
+      held.complete(Result.success<List<UserSummaryEntity>>([_user('old')]));
+      await pumpEventQueue();
+      expect(bloc.state.followers.searchResults!.single.id, 'new');
+      expect(bloc.state.followers.isSearching, isFalse);
+    });
+
+    test('refresh rejects an old search and its scope failure cannot evict the new scope', () async {
+      final oldScope = Completer<Result<List<String>>>();
+      var calls = 0;
+      when(() => relationIds(any())).thenAnswer((_) {
+        calls++;
+        return calls == 1 ? oldScope.future : Future.value(Result.success<List<String>>(['fresh']));
+      });
+      when(
+        () => relationPage(any()),
+      ).thenAnswer((_) async => Result.success<RelationPage>(const RelationPage(users: [], next: null)));
+      final searchedIds = <List<String>>[];
+      when(() => search(any())).thenAnswer((invocation) async {
+        searchedIds.add((invocation.positionalArguments.single as SearchUsersByUsernameParams).scopeUserIds);
+        return Result.success<List<UserSummaryEntity>>([]);
+      });
+      final bloc = buildBloc();
+      addTearDown(bloc.close);
+      const query = PublicProfileEvent.relationSearchRequested(
+        kind: UserRelationKind.followers,
+        profileUid: 'p',
+        query: 'ab',
+      );
+      bloc.add(query);
+      await pumpEventQueue();
+      bloc.add(const PublicProfileEvent.relationRefreshRequested(kind: UserRelationKind.followers, profileUid: 'p'));
+      await pumpEventQueue();
+      expect(bloc.state.followers.isSearching, isFalse);
+      bloc.add(query);
+      await pumpEventQueue();
+      oldScope.complete(Result.error<List<String>>(const ServerFailure('old')));
+      await pumpEventQueue();
+      bloc.add(query);
+      await pumpEventQueue();
+      expect(calls, 2);
+      expect(searchedIds, [
+        ['fresh'],
+        ['fresh'],
+      ]);
+    });
+
     test('pages through 75 edges in 3 pages with no duplicates and stops at the end', () async {
       final List<String> ids = <String>[for (int i = 0; i < 75; i++) 'u${i.toString().padLeft(2, '0')}'];
       List<UserSummaryEntity> users(int from, int to) => <UserSummaryEntity>[

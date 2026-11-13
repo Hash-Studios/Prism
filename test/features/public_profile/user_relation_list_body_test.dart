@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/prism_refresh.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_summary_entity.dart';
@@ -197,6 +198,95 @@ void main() {
     expect(find.bySemanticsLabel(l10n.accountRelationLoadingMore), findsOneWidget);
   });
 
+  testWidgets('refresh ignores unrelated settled states until its request starts', (tester) async {
+    final states = StreamController<PublicProfileState>.broadcast();
+    addTearDown(states.close);
+    final list = RelationList(summaries: [_user(0)], pages: 1);
+    stubState(followersState(list), stream: states.stream);
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: UserRelationListBody(kind: UserRelationKind.followers, profileUid: _profileUid),
+      ),
+    );
+    bool completed = false;
+    final refresh = tester.widget<PrismRefresh>(find.byType(PrismRefresh)).onRefresh().then((_) => completed = true);
+    states.add(followersState(list).copyWith(profileId: 'unrelated'));
+    await tester.pump();
+    expect(completed, isFalse);
+    states.add(followersState(list.copyWith(isFetching: true)));
+    await tester.pump();
+    states.add(followersState(list));
+    await tester.pump();
+    await refresh;
+    expect(completed, isTrue);
+  });
+
+  testWidgets('refresh during a page load completes when the refreshed list settles', (tester) async {
+    final states = StreamController<PublicProfileState>.broadcast();
+    addTearDown(states.close);
+    final list = RelationList(summaries: [_user(0)], pages: 1, isFetching: true);
+    stubState(followersState(list), stream: states.stream);
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: UserRelationListBody(kind: UserRelationKind.followers, profileUid: _profileUid),
+      ),
+    );
+    final refresh = tester.widget<PrismRefresh>(find.byType(PrismRefresh)).onRefresh();
+    states.add(followersState(list.copyWith(isFetching: false)));
+    await tester.pump();
+    await refresh;
+    verify(() => bloc.add(_refreshFollowers)).called(1);
+  });
+
+  testWidgets('disposing during refresh completes without a stream error', (tester) async {
+    final states = StreamController<PublicProfileState>.broadcast();
+    final list = RelationList(summaries: [_user(0)], pages: 1, isFetching: true);
+    stubState(followersState(list), stream: states.stream);
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: UserRelationListBody(kind: UserRelationKind.followers, profileUid: _profileUid),
+      ),
+    );
+    final refresh = tester.widget<PrismRefresh>(find.byType(PrismRefresh)).onRefresh();
+    final expectation = expectLater(refresh, completes);
+    await tester.pumpWidget(const SizedBox());
+    await states.close();
+    await expectation;
+  });
+
+  testWidgets('footer asks once while unrelated relation state changes', (tester) async {
+    final states = StreamController<PublicProfileState>.broadcast();
+    addTearDown(states.close);
+    final list = RelationList(summaries: [_user(0)], next: _nextCursor, pages: 1);
+    stubState(followersState(list), stream: states.stream);
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: UserRelationListBody(kind: UserRelationKind.followers, profileUid: _profileUid),
+      ),
+    );
+    await tester.pump();
+    clearInteractions(bloc);
+    states.add(followersState(list.copyWith(isSearching: true)));
+    await tester.pump();
+    await tester.pump();
+    verifyNever(() => bloc.add(_loadFollowersPage));
+  });
+
+  testWidgets('empty filtered page keeps loading instead of showing empty state', (tester) async {
+    await pumpBody(tester, followers: const RelationList(next: _nextCursor, pages: 1));
+    expect(find.text(l10n.accountNoFollowersYet), findsNothing);
+    expect(find.bySemanticsLabel(l10n.accountRelationLoadingMore), findsOneWidget);
+    expect(verify(() => bloc.add(_loadFollowersPage)).callCount, 2);
+  });
+
   testWidgets('pull to refresh asks for a refresh', (tester) async {
     final StreamController<PublicProfileState> states = StreamController<PublicProfileState>.broadcast();
     addTearDown(states.close);
@@ -218,7 +308,8 @@ void main() {
     await tester.pump(const Duration(seconds: 2));
     verify(() => bloc.add(_refreshFollowers)).called(1);
 
-    // The refresh future waits for a state with isFetching false. Emit one so it completes.
+    states.add(followersState(followers.copyWith(isFetching: true)));
+    await tester.pump();
     states.add(followersState(followers));
     await tester.pump(const Duration(seconds: 1));
     expect(tester.takeException(), isNull);

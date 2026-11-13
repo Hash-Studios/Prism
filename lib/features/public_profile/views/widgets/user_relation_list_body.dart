@@ -42,6 +42,8 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
 
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
+  StreamSubscription<PublicProfileState>? _refreshSubscription;
+  Completer<void>? _refreshCompletion;
   bool _isSearchActive = false;
 
   RelationList _list(PublicProfileState state) => state.relation(widget.kind);
@@ -49,10 +51,28 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
   void _loadNextPage() =>
       _bloc.add(PublicProfileEvent.relationPageRequested(kind: widget.kind, profileUid: widget.profileUid));
 
-  Future<void> _refresh() async {
-    final Future<PublicProfileState> settled = _bloc.stream.firstWhere((state) => !_list(state).isFetching);
+  Future<void> _refresh() {
+    final Completer<void>? pending = _refreshCompletion;
+    if (pending != null) return pending.future;
+    final completion = Completer<void>();
+    _refreshCompletion = completion;
+    bool started = _list(_bloc.state).isFetching;
+    _refreshSubscription = _bloc.stream.listen((state) {
+      if (_list(state).isFetching) {
+        started = true;
+      } else if (started) {
+        _finishRefresh();
+      }
+    }, onDone: _finishRefresh);
     _bloc.add(PublicProfileEvent.relationRefreshRequested(kind: widget.kind, profileUid: widget.profileUid));
-    await settled;
+    return completion.future;
+  }
+
+  void _finishRefresh() {
+    _refreshSubscription?.cancel();
+    _refreshSubscription = null;
+    _refreshCompletion?.complete();
+    _refreshCompletion = null;
   }
 
   String _title(AppLocalizations l10n) => _isFollowers ? l10n.accountFollowers : l10n.accountFollowing;
@@ -77,6 +97,7 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _finishRefresh();
     _searchController.dispose();
     _bloc.close();
     super.dispose();
@@ -171,7 +192,7 @@ class _UserRelationListBodyState extends State<UserRelationListBody> {
                   footer: list.failed
                       ? _LoadMoreErrorRow(onRetry: _loadNextPage)
                       : list.hasMore
-                      ? _LoadingRow(onShown: list.isFetching ? null : _loadNextPage)
+                      ? _LoadingRow(key: ObjectKey(list.next), onShown: list.isFetching ? null : _loadNextPage)
                       : null,
                 ),
               );
@@ -213,7 +234,7 @@ class _UserList extends StatelessWidget {
 /// The last row while more pages exist. The list builds it when it comes near the viewport, and then it asks for
 /// the next page once.
 class _LoadingRow extends StatefulWidget {
-  const _LoadingRow({required this.onShown});
+  const _LoadingRow({super.key, required this.onShown});
 
   /// Null while a page loads.
   final VoidCallback? onShown;
@@ -223,6 +244,8 @@ class _LoadingRow extends StatefulWidget {
 }
 
 class _LoadingRowState extends State<_LoadingRow> {
+  bool _requested = false;
+
   @override
   void initState() {
     super.initState();
@@ -237,9 +260,10 @@ class _LoadingRowState extends State<_LoadingRow> {
 
   void _requestAfterFrame() {
     final VoidCallback? onShown = widget.onShown;
-    if (onShown == null) return;
+    if (onShown == null || _requested) return;
+    _requested = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) onShown();
+      if (mounted) widget.onShown?.call();
     });
   }
 

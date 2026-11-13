@@ -474,6 +474,74 @@ void main() {
       expect(edgeSpecs[1].startAfterFieldValues, <Object?>[sorted[29].createdAt, sorted[29].id]);
     });
 
+    test('continues after a deleted boundary edge without skipping tied timestamps', () async {
+      final List<_Edge> edges = _relationEdges();
+      client.onQuery = _relationQuery(edges);
+      final List<_Edge> sorted = <_Edge>[...edges]..sort(_compareEdges);
+      final RelationPage first = (await repo.fetchRelationPage(
+        profileUid: 'P',
+        kind: UserRelationKind.followers,
+      )).data!;
+      expect(first.next!.edgeId, sorted[29].id);
+      expect(sorted[29].createdAt, sorted[30].createdAt);
+      edges.removeWhere((edge) => edge.id == first.next!.edgeId);
+
+      final RelationPage second = (await repo.fetchRelationPage(
+        profileUid: 'P',
+        kind: UserRelationKind.followers,
+        cursor: first.next,
+      )).data!;
+
+      expect(second.users.map((user) => user.id).toList(), sorted.skip(30).take(30).map((edge) => edge.id).toList());
+      expect(
+        second.users.map((user) => user.id).toSet().intersection(first.users.map((user) => user.id).toSet()),
+        isEmpty,
+      );
+    });
+
+    test('exactly 30 edges require one terminal empty page and then stop', () async {
+      final List<_Edge> edges = _relationEdges().take(30).toList();
+      client.onQuery = _relationQuery(edges);
+      final RelationPage first = (await repo.fetchRelationPage(
+        profileUid: 'P',
+        kind: UserRelationKind.followers,
+      )).data!;
+      expect(first.users, hasLength(30));
+      expect(first.next, isNotNull);
+
+      final RelationPage last = (await repo.fetchRelationPage(
+        profileUid: 'P',
+        kind: UserRelationKind.followers,
+        cursor: first.next,
+      )).data!;
+
+      expect(last.users, isEmpty);
+      expect(last.next, isNull);
+      expect(client.querySpecs.where((spec) => spec.collection == 'profiles/P/followers'), hasLength(2));
+    });
+
+    test('a fully blocked page still advances by its last edge', () async {
+      final List<_Edge> edges = _relationEdges();
+      final List<_Edge> sorted = <_Edge>[...edges]..sort(_compareEdges);
+      blocks.completeInitial(sorted.take(30).map((edge) => edge.id).toSet());
+      client.onQuery = _relationQuery(edges);
+      final RelationPage first = (await repo.fetchRelationPage(
+        profileUid: 'P',
+        kind: UserRelationKind.followers,
+      )).data!;
+      expect(first.users, isEmpty);
+      expect(first.next!.edgeId, sorted[29].id);
+      expect(client.querySpecs.where((spec) => spec.collection == 'profiles'), isEmpty);
+
+      final RelationPage second = (await repo.fetchRelationPage(
+        profileUid: 'P',
+        kind: UserRelationKind.followers,
+        cursor: first.next,
+      )).data!;
+
+      expect(second.users.map((user) => user.id).toList(), sorted.skip(30).take(30).map((edge) => edge.id).toList());
+    });
+
     test('hides users the viewer blocked', () async {
       blocks.completeInitial(<String>{'u01', 'u05'});
       client.onQuery = _relationQuery(_relationEdges());
@@ -517,6 +585,17 @@ void main() {
   });
 
   group('searchUsersByUsername', () {
+    test('fails without reading profiles when the block list is unknown', () async {
+      blocks = FakeUserBlockRepository.pending()..timeOutInitialLoad();
+      repo = PublicProfileRepositoryImpl(client, blocks);
+      client.onQuery = (spec) => _profileRows(spec);
+
+      final result = await repo.searchUsersByUsername(query: 'b', scopeUserIds: <String>['b1']);
+
+      expect(result.isFailure, isTrue);
+      expect(client.querySpecs, isEmpty);
+    });
+
     test('hides blocked users', () async {
       blocks.completeInitial(<String>{'b1'});
       client.onQuery = (spec) => spec.collection == 'profiles' ? _profileRows(spec) : const <FakeDocRow>[];
