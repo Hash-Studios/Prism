@@ -107,7 +107,7 @@ class _FakeRepo implements PublicProfileRepository {
     required String profileUid,
     required UserRelationKind kind,
     RelationCursor? cursor,
-  }) async => Result.success(const RelationPage(users: <UserSummaryEntity>[], next: null));
+  }) async => Result.success(RelationPage(users: _summaries, next: null));
 
   @override
   Future<void> clearForUser(String userId) async {}
