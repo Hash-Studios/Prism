@@ -919,7 +919,7 @@ export async function handleAiApiRequest(
   }
 
   if ((request.method === 'GET' || request.method === 'HEAD') && url.pathname.startsWith('/api/ai/assets/')) {
-    return handleAssetRead(request, url.pathname, request.method, env);
+    return handleAssetRead(url.pathname, request.method, env);
   }
 
   if (request.method === 'POST' && url.pathname === '/api/ai/generations') {
@@ -938,9 +938,7 @@ export async function handleAiApiRequest(
   return aiError('invalid_request', 404, 'Unsupported AI endpoint');
 }
 
-async function handleAssetRead(
-  request: Request, pathname: string, method: string, env: AiEnvBindings,
-): Promise<Response> {
+async function handleAssetRead(pathname: string, method: string, env: AiEnvBindings): Promise<Response> {
   const objectKey = pathname.replace('/api/ai/assets/', '').trim();
   if (!isNonEmptyString(objectKey)) {
     return aiError('invalid_request', 400, 'Invalid asset key');
@@ -949,20 +947,10 @@ async function handleAssetRead(
     return new Response('Not found', { status: 404, headers: { 'cache-control': 'no-store' } });
   }
 
-  const originalMatch = ORIGINAL_ASSET_KEY_REGEX.exec(objectKey);
-  let cacheControl: string | undefined;
-  if (originalMatch != null) {
-    // Owner proof is the live Worker KV generation record (`ai:gen:{id}`), TTL 90 days. Firestore
-    // `aiGenerationReceipts` is Functions-only, and R2 objects have no userId metadata. After expiry
-    // the original stays 404 for every caller, including the creator. There is no public-read fallback.
-    const auth = await parseAuth(request, env);
-    if (auth == null) return aiError('unauthorized', 401, 'Missing or invalid bearer token');
-    const record = await readGenerationRecord(originalMatch[1], env);
-    if (record == null || record.userId !== auth.userId) {
-      return aiError('generation_not_found', 404, 'Asset not found');
-    }
-    cacheControl = 'private, no-store';
-  } else if (!PUBLIC_ASSET_KEY_REGEX.test(objectKey) && !STUDIO_PUBLIC_ASSET_KEY_REGEX.test(objectKey)) {
+  // ponytail: AI originals stay public reads. Shipped Pro clients load them with plain image requests and no
+  // bearer token. Gate them on the owner only after a client release that sends the token is widely adopted.
+  if (!ORIGINAL_ASSET_KEY_REGEX.test(objectKey) && !PUBLIC_ASSET_KEY_REGEX.test(objectKey) &&
+    !STUDIO_PUBLIC_ASSET_KEY_REGEX.test(objectKey)) {
     return aiError('generation_not_found', 404, 'Asset not found');
   }
 
@@ -976,7 +964,7 @@ async function handleAssetRead(
     }
     const headers = {
       'content-type': object.httpMetadata?.contentType ?? 'image/png',
-      'cache-control': cacheControl ?? object.httpMetadata?.cacheControl ?? 'public, max-age=31536000, immutable',
+      'cache-control': object.httpMetadata?.cacheControl ?? 'public, max-age=31536000, immutable',
     };
     if (method === 'HEAD') {
       return new Response(null, { status: 200, headers });
@@ -994,7 +982,7 @@ async function handleAssetRead(
   const bytes = fromBase64(encoded);
   const headers = {
     'content-type': 'image/png',
-    'cache-control': cacheControl ?? 'public, max-age=2592000',
+    'cache-control': 'public, max-age=2592000',
   };
   if (method === 'HEAD') {
     return new Response(null, { status: 200, headers });

@@ -457,6 +457,16 @@ test("accountClosing preserves approved still originals and other principals' as
   assert.equal(store.get(`r2ObjectRegistry/${other.asset.objectId}`)?.uid, "other");
 });
 
+test("a deleteAccount retry keeps an approved still whose email the first attempt scrubbed", async (t) => {
+  const {posters} = fixture(t);
+  const store = installFakeDb(t, {
+    ...receipts(posters),
+    "walls/approved": stillOwnedWall(posters, {id: "approved", review: true, email: "", creatorUid: undefined}),
+  });
+  assert.equal(await tombstoneUnreferencedLiveUploads("owner", Date.now(), {accountClosing: true}), 0);
+  for (const file of posters) assert.equal(store.get(`r2ObjectRegistry/${file.asset.objectId}`)?.status, "active");
+});
+
 test("accountClosing tombstones a scrubbed unpublished still and ignores a foreign approved path", async (t) => {
   const {posters} = fixture(t);
   const store = installFakeDb(t, {

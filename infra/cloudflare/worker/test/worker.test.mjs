@@ -877,12 +877,7 @@ test('a watermark failure still returns success, keeps the original and defers t
   }
 
   const { imageUrl, watermarkedImageUrl } = payload.imageUrls;
-  const token = await makeToken({ sub: 'alice' });
-  const unauth = await worker.fetch(new Request(imageUrl), env, { waitUntil() {} });
-  assert.equal(unauth.status, 401);
-  const original = await worker.fetch(new Request(imageUrl, {
-    headers: { authorization: `Bearer ${token}` },
-  }), env, { waitUntil() {} });
+  const original = await worker.fetch(new Request(imageUrl), env, { waitUntil() {} });
   assert.equal(original.status, 200);
   const pending = await worker.fetch(new Request(watermarkedImageUrl), env, { waitUntil() {} });
   assert.equal(pending.status, 503);
@@ -1816,11 +1811,7 @@ test('a lost success acknowledgement stays unpublished until owner replay confir
     assert.equal(replay.status, 200);
     assert.deepEqual(await replay.json(), stagedResponse);
     assert.ok(await env.AI_STATE_KV.get(`ai:gen:${stagedResponse.generationId}`));
-    const owner = await makeToken({ sub: 'alice' });
-    assert.equal((await worker.fetch(new Request(stagedResponse.imageUrls.imageUrl), env, { waitUntil() {} })).status, 401);
-    assert.equal((await worker.fetch(new Request(stagedResponse.imageUrls.imageUrl, {
-      headers: { authorization: `Bearer ${owner}` },
-    }), env, { waitUntil() {} })).status, 200);
+    assert.equal((await worker.fetch(new Request(stagedResponse.imageUrls.imageUrl), env, { waitUntil() {} })).status, 200);
     assert.equal(stats.fal, 1);
   } finally { restore(); }
 });
@@ -3610,7 +3601,7 @@ test('desktop studio originals require the studio secret for GET and HEAD', asyn
   }
 });
 
-test('original AI assets require the owner; public studio thumbs stay anonymous', async () => {
+test('original AI assets stay anonymous for shipped Pro clients; studio raw stays private', async () => {
   const generationId = 'gen_owner1_aaaaaaaaaaaaaaa1';
   const originalKey = `ai/original/${generationId}.png`;
   const publicKey = `ai/public/${generationId}.png`;
@@ -3630,24 +3621,15 @@ test('original AI assets require the owner; public studio thumbs stay anonymous'
   await env.AI_IMAGES.put(styleKey, bytes, { httpMetadata: { contentType: 'image/png' } });
   await env.AI_IMAGES.put(STUDIO_RAW_KEY, bytes);
 
-  const alice = await makeToken({ sub: 'alice' });
-  const bob = await makeToken({ sub: 'bob' });
-  const get = (key, token) => worker.fetch(new Request(`https://prismwalls.com/api/ai/assets/${key}`, {
-    headers: token == null ? {} : { authorization: `Bearer ${token}` },
-  }), env, { waitUntil() {} });
+  const get = (key) => worker.fetch(new Request(`https://prismwalls.com/api/ai/assets/${key}`), env, { waitUntil() {} });
 
-  const missingAuth = await get(originalKey);
-  assert.equal(missingAuth.status, 401);
-  assert.equal((await missingAuth.json()).error, 'unauthorized');
-  const studioOnPublic = await worker.fetch(new Request(`https://prismwalls.com/api/ai/assets/${originalKey}`, {
-    headers: { 'x-studio-secret': STUDIO_SECRET },
-  }), env, { waitUntil() {} });
-  assert.equal(studioOnPublic.status, 401);
-  assert.equal((await get(originalKey, bob)).status, 404);
-  const owned = await get(originalKey, alice);
-  assert.equal(owned.status, 200);
-  assert.equal(owned.headers.get('cache-control'), 'private, no-store');
-  assert.deepEqual(new Uint8Array(await owned.arrayBuffer()), bytes);
+  // Shipped Pro clients load the original with a plain image request and no bearer token.
+  const anonymous = await get(originalKey);
+  assert.equal(anonymous.status, 200);
+  assert.deepEqual(new Uint8Array(await anonymous.arrayBuffer()), bytes);
+  assert.equal((await worker.fetch(new Request(`https://prismwalls.com/api/ai/assets/${originalKey}`, { method: 'HEAD' }),
+    env, { waitUntil() {} })).status, 200);
+  assert.equal((await get('ai/other/x.png')).status, 404);
 
   const studioOriginal = `/api/ai/studio/assets/${originalKey}`;
   assert.equal((await studioFetch(env, 'GET', studioOriginal, { secret: null })).status, 401);

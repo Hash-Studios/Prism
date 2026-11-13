@@ -280,6 +280,9 @@ async function ownsReference(tx: admin.firestore.Transaction, wall: admin.firest
   return !!email && !email.includes("/") && await verifiedUidForEmail(email, tx) === uid;
 }
 
+const anonymizedWall = (wall: admin.firestore.DocumentData): boolean =>
+  wall.creatorUid === undefined && (typeof wall.email !== "string" || wall.email.trim() === "");
+
 export async function rawPosterReferenced(tx: admin.firestore.Transaction, asset: StoredUpload,
   options: {ignoreUnpublished?: boolean} = {}): Promise<boolean> {
   const role = asset.previewObjectId ? "thumb" : "wallpaper";
@@ -289,7 +292,11 @@ export async function rawPosterReferenced(tx: admin.firestore.Transaction, asset
   for (const rows of queries) {
     for (const row of rows.docs) {
       if (options.ignoreUnpublished && row.data().review !== true) continue;
-      if (row.data()[`${role}_sha`] === asset.sha && await ownsReference(tx, row.data(), asset.uid)) return true;
+      if (row.data()[`${role}_sha`] !== asset.sha) continue;
+      // A deleteAccount retry runs after the first attempt scrubbed the email on the closing user's walls.
+      // An approved wall with no owner left is that user's own and must keep its image.
+      if (options.ignoreUnpublished && anonymizedWall(row.data())) return true;
+      if (await ownsReference(tx, row.data(), asset.uid)) return true;
     }
   }
   const manifests = await Promise.all(["original", "thumb"].map((role) =>
