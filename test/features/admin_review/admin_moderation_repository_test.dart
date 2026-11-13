@@ -231,6 +231,18 @@ void main() {
     expect(write.data!['collections'], <String>['community']);
   });
 
+  test('approval of a wall reserved for the Drop removes the reserve, so the feeds show it', () async {
+    const wall = FirestoreDocument('wall-3', <String, dynamic>{
+      'origin': 'studio',
+      'review': false,
+      'dropReserved': true,
+    });
+
+    await repository.approveWall(wall);
+
+    expect(client.writes.single.data!['dropReserved'], isA<FieldValue>());
+  });
+
   test('approval replaces creator-written collections and removes the streak fields', () async {
     const wall = FirestoreDocument('wall-2', <String, dynamic>{
       'email': 'creator@example.com',
