@@ -6,7 +6,9 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {db, REGION, str} from "../common";
 import {R2Storage, r2Secrets} from "../r2Storage";
 import {postDay} from "../studio/telegram";
-import {assertFits, gridContent, panoramaContent, type Pipeline, type SocialContent, stillContent} from "./content";
+import {
+  assertFits, gridContent, panoramaContent, type Pipeline, setContent, type SocialContent, stillContent, themedStillContent,
+} from "./content";
 import {
   type ApprovalPress, parsePress, socialBotToken, socialOwnerChatId, socialTelegramSecrets, type Telegram, telegramClient,
   webhookSecret,
@@ -21,10 +23,11 @@ export const SOCIAL_POSTS = "socialPosts";
 const SEEN = "socialSeen";
 const STATE = "socialState";
 
-export type Slot = "am" | "noon" | "eve" | "night";
+export type Slot = "am" | "noon" | "set" | "eve" | "night";
 export const SLOTS: Record<Slot, {time: string; pipeline: Pipeline}> = {
   am: {time: "09:30", pipeline: "grid"},
   noon: {time: "13:00", pipeline: "panorama"},
+  set: {time: "15:00", pipeline: "set"},
   eve: {time: "17:00", pipeline: "still"},
   night: {time: "20:00", pipeline: "still"},
 };
@@ -77,6 +80,8 @@ export const uncertaintyHash = (hash: string, attemptId: string, reply = false) 
 const storedContentHash = (post: admin.firestore.DocumentData) => contentHash(
   (post.media ?? []).map((m: admin.firestore.DocumentData) => m.sha256), str(post.text), str(post.replyText),
   (post.media ?? []).map((m: admin.firestore.DocumentData) => ({alt: str(m.alt), sensitive: m.sensitive})));
+const requiresApproval = (post: admin.firestore.DocumentData) =>
+  post.pipeline === "grid" || post.source?.kind === "wallhaven" || post.approval?.required === true;
 const sha256 = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 
 export interface SocialDeps {
@@ -85,6 +90,23 @@ export interface SocialDeps {
   telegram: Telegram | null;
   x: XClient | null;
   storage: Pick<R2Storage, "get" | "put">;
+}
+
+async function withinBudget<T>(deadline: number, run: () => Promise<T>):
+  Promise<{done: true; value: T} | {done: false}> {
+  if (Date.now() >= deadline) return {done: false};
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    const result = await Promise.race([
+      run().then((value) => ({done: true as const, value})),
+      new Promise<{done: false}>((resolve) => {
+        timer = setTimeout(() => resolve({done: false}), Math.max(0, deadline - Date.now()));
+      }),
+    ]);
+    return Date.now() >= deadline ? {done: false} : result;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // ---------- prepare ----------
@@ -121,15 +143,25 @@ export const prepareFor = (now: Date) =>
 export const defaultBuilders: Builders = {
   grid: (day, exclude, _slot, config) => gridContent(day, exclude, config),
   panorama: (day, exclude) => panoramaContent(day, exclude),
-  still: (day, exclude, slot) => stillContent(day, exclude, {
-    wotd: slot === "night" && isSunday(day), salt: slot === "eve" ? 0 : 1}),
+  still: async (day, exclude, slot, config) => {
+    const wotd = slot === "night" && isSunday(day);
+    const salt = slot === "eve" ? 0 : 1;
+    // Wallhaven's most favourited walls of a theme first. Studio walls fill in when Wallhaven fails or runs dry.
+    const themed = wotd ? null : await themedStillContent(day, exclude, config, salt).catch(() => {
+      logger.warn("social: themed still failed.", {day, slot});
+      return null;
+    });
+    return themed ?? stillContent(day, exclude, {wotd, salt});
+  },
+  set: (day, exclude, _slot, config) => setContent(day, exclude, config),
 };
 
 /** States a dry-run trigger may replace. Never anything that reached, or may have reached, X. */
 const DRY_RUN_REBUILDS = new Set(["pending_approval", "approved", "dry_run", "skipped", "failed"]);
 
 /** Builds missing posts, or rebuilds never-attempted posts in dry run. */
-export async function prepareDay(deps: SocialDeps, builders: Builders = defaultBuilders): Promise<string[]> {
+export async function prepareDay(deps: SocialDeps, builders: Builders = defaultBuilders,
+  deadline = Date.now() + 480_000): Promise<string[]> {
   const {config, now} = deps;
   if (!config.enabled) return [];
   const day = prepareFor(now);
@@ -166,6 +198,7 @@ export async function prepareDay(deps: SocialDeps, builders: Builders = defaultB
   }
   const made: string[] = [];
   for (const slot of Object.keys(SLOTS) as Slot[]) {
+    if (Date.now() >= deadline) break;
     const postId = `${day}_${slot}`;
     if (!config.slots[slot] || kept.has(postId)) continue;
     // Wall of the Day is picked at 09:00 IST, so the Sunday night post waits for Sunday's 10:00 run.
@@ -176,7 +209,9 @@ export async function prepareDay(deps: SocialDeps, builders: Builders = defaultB
       createdAt: admin.firestore.FieldValue.serverTimestamp()};
     let content: SocialContent | null;
     try {
-      content = await builders[pipeline](day, exclude, slot, config);
+      const built = await withinBudget(deadline, () => builders[pipeline](day, exclude, slot, config));
+      if (!built.done) break;
+      content = built.value;
       if (content) assertFits(content);
     } catch {
       logger.error("social: build failed.", {postId});
@@ -191,13 +226,17 @@ export async function prepareDay(deps: SocialDeps, builders: Builders = defaultB
     for (const item of content.media) {
       const digest = sha256(item.jpeg);
       const r2Key = `social/${postId}/${digest}.jpg`;
-      await deps.storage.put("private", r2Key, item.jpeg, {sha256: digest}, "image/jpeg");
+      const stored = await withinBudget(deadline, () =>
+        deps.storage.put("private", r2Key, item.jpeg, {sha256: digest}, "image/jpeg"));
+      if (!stored.done) return made;
       media.push({r2Key, sha256: digest, bytes: item.jpeg.length, alt: item.alt, sensitive: item.sensitive,
         suggestFlag: item.suggestFlag === true});
     }
     const hash = contentHash(media.map((m) => m.sha256), content.text, content.replyText,
       media.map((m) => ({alt: m.alt, sensitive: m.sensitive})));
-    const needsApproval = pipeline === "grid" || !config.autoApprove[pipeline];
+    // Every Wallhaven post (grid, set, themed still) needs the owner: tags and Vision cannot prove what is in a picture.
+    const needsApproval = content.source.kind === "wallhaven" ||
+      !(config.autoApprove as Record<string, boolean | undefined>)[pipeline];
     const queued = {...base, status: needsApproval ? "pending_approval" : "approved", source: content.source, media,
       text: content.text, replyText: content.replyText, contentHash: hash, approval: {required: needsApproval}};
     try {
@@ -209,7 +248,8 @@ export async function prepareDay(deps: SocialDeps, builders: Builders = defaultB
     for (const id of content.source.ids) exclude.add(id);
     made.push(postId);
     if (deps.telegram && (needsApproval || config.dryRun)) {
-      await preview(deps, ref, queued, content.media.map((m) => m.jpeg));
+      const sent = await withinBudget(deadline, () => preview(deps, ref, queued, content.media.map((m) => m.jpeg)));
+      if (!sent.done) return made;
     }
   }
   return made;
@@ -233,7 +273,7 @@ async function preview(deps: SocialDeps, ref: admin.firestore.DocumentReference,
         [`Vision suggests a flag on: ${media.filter((m: admin.firestore.DocumentData) => m.suggestFlag).length} of ${media.length}`] : []),
       `Source: ${post.source.kind} ${post.source.ids.join(", ")}`,
     ].join("\n\n"), images);
-    if (post.pipeline === "grid" || post.approval?.required) {
+    if (requiresApproval(post)) {
       await deps.telegram.sendButtons(`${ref.id}: post this?`, [
         {label: "Approve", action: "approve", postId: ref.id, hash: str(post.contentHash)},
         ...(post.pipeline === "grid" ? [{label: "Approve + flag", action: "flag" as const, postId: ref.id,
@@ -241,7 +281,8 @@ async function preview(deps: SocialDeps, ref: admin.firestore.DocumentReference,
         {label: "Skip", action: "skip", postId: ref.id, hash: str(post.contentHash)},
       ]);
     }
-    await ref.update({previewSentAt: admin.firestore.FieldValue.serverTimestamp()});
+    await transition(ref, (current) => current.contentHash === post.contentHash,
+      {previewSentAt: admin.firestore.FieldValue.serverTimestamp()});
   } catch {
     logger.error("social: preview failed.", {postId: ref.id});
   }
@@ -365,7 +406,8 @@ async function transition(ref: admin.firestore.DocumentReference, expect: (post:
   });
 }
 
-async function postMain(deps: SocialDeps, x: XClient, ref: admin.firestore.DocumentReference, post: admin.firestore.DocumentData) {
+async function postMain(deps: SocialDeps, x: XClient, ref: admin.firestore.DocumentReference,
+  post: admin.firestore.DocumentData, deadline: number) {
   const attemptId = `${deps.now.getTime()}-${Math.random().toString(36).slice(2, 8)}`;
   if (!await transition(ref, (p) => p.status === "approved" && p.contentHash === post.contentHash,
     {status: "posting", attemptId, attemptAt: admin.firestore.Timestamp.fromDate(deps.now)})) return;
@@ -374,20 +416,24 @@ async function postMain(deps: SocialDeps, x: XClient, ref: admin.firestore.Docum
       dispatchedAt: admin.firestore.FieldValue.delete(), mediaIds: admin.firestore.FieldValue.delete()});
   let mediaIds: string[];
   try {
-    mediaIds = [];
-    for (const item of post.media ?? []) {
-      const jpeg = await deps.storage.get("private", str(item.r2Key));
-      if (sha256(jpeg) !== item.sha256) throw new XError("Stored media changed.", 400);
-      const id = await x.uploadImage(jpeg);
-      try {
-        await x.setMediaMetadata(id, str(item.alt), item.sensitive === true);
-      } catch (err) {
-        // Alt text is worth having but not worth a lost post. A sensitive image never posts without its flag.
-        if (item.sensitive === true) throw err;
-        logger.warn("social: alt text not set.", {postId: ref.id});
-      }
-      mediaIds.push(id);
-    }
+    const uploaded = await withinBudget(deadline, () => Promise.all(
+      (post.media ?? []).map(async (item: admin.firestore.DocumentData) => {
+        const jpeg = await deps.storage.get("private", str(item.r2Key));
+        if (sha256(jpeg) !== item.sha256) throw new XError("Stored media changed.", 400);
+        if (Date.now() >= deadline) throw new Error("Media preparation timed out.");
+        const id = await x.uploadImage(jpeg);
+        if (Date.now() >= deadline) throw new Error("Media preparation timed out.");
+        try {
+          await x.setMediaMetadata(id, str(item.alt), item.sensitive === true);
+        } catch (err) {
+          // Alt text may fail, but a sensitive image never posts without its flag.
+          if (item.sensitive === true) throw err;
+          logger.warn("social: alt text not set.", {postId: ref.id});
+        }
+        return id;
+      })));
+    if (!uploaded.done) throw new Error("Media preparation timed out.");
+    mediaIds = uploaded.value;
   } catch (err) {
     // Nothing is posted before the create call, so any failure here is safe to try again, except a refusal.
     const refused = err instanceof XError && err.status >= 400 && err.status < 500 && !err.retryable;
@@ -497,6 +543,7 @@ const ms = (value: unknown) => (value as admin.firestore.Timestamp | undefined)?
 export async function publishDue(deps: SocialDeps): Promise<void> {
   if (!deps.config.enabled) return;
   const now = deps.now.getTime();
+  const deadline = Date.now() + 210_000;
   // Open work in any state, plus recent posts that may still need their reply. Old posted docs are never read again.
   const [open, recent] = await Promise.all([
     db.collection(SOCIAL_POSTS).where("status", "in", ["pending_approval", "approved", "posting", "uncertain"]).get(),
@@ -505,12 +552,14 @@ export async function publishDue(deps: SocialDeps): Promise<void> {
   const posts = {docs: [...open.docs, ...recent.docs.filter((doc) => doc.data().status === "posted")]};
   let sentMain = false;
   for (const doc of posts.docs.sort((a, b) => ms(a.data().scheduledAt) - ms(b.data().scheduledAt))) {
+    if (Date.now() >= deadline) return;
     const post = doc.data();
     const due = ms(post.scheduledAt);
     try {
       if (!post.previewSentAt && deps.telegram && now <= due + EXPIRE_AFTER_MS &&
           (post.status === "pending_approval" || (deps.config.dryRun && post.status === "approved"))) {
-        await preview(deps, doc.ref, post);
+        const sent = await withinBudget(deadline, () => preview(deps, doc.ref, post));
+        if (!sent.done) return;
       }
       if (["pending_approval", "approved"].includes(post.status) && now > due + EXPIRE_AFTER_MS) {
         await transition(doc.ref, (p) => p.status === post.status, {status: "skipped", error: "expired"});
@@ -527,7 +576,7 @@ export async function publishDue(deps: SocialDeps): Promise<void> {
           await transition(doc.ref, (p) => p.status === "approved", {status: "failed", error: "content_changed"});
           continue;
         }
-        if ((post.pipeline === "grid" || post.approval?.required) &&
+        if (requiresApproval(post) &&
             (post.approval?.decision !== "approve" || post.approval?.approvedHash !== post.contentHash)) {
           await transition(doc.ref, (p) => p.status === "approved", {status: "pending_approval",
             approval: {...post.approval, required: true}, previewSentAt: admin.firestore.FieldValue.delete()});
@@ -536,7 +585,7 @@ export async function publishDue(deps: SocialDeps): Promise<void> {
         if (deps.config.dryRun || !deps.x) {
           await transition(doc.ref, (p) => p.status === "approved", {status: "dry_run"});
         } else {
-          await postMain(deps, deps.x, doc.ref, post);
+          await postMain(deps, deps.x, doc.ref, post, deadline);
           sentMain = true;
         }
       } else if (post.status === "uncertain") {
@@ -633,11 +682,12 @@ const projectId = () => process.env.GCLOUD_PROJECT || JSON.parse(process.env.FIR
 
 export const socialPrepare = onSchedule({schedule: "0 7,10,22 * * *", timeZone: "Asia/Kolkata", region: REGION,
   memory: "1GiB", timeoutSeconds: 540, retryCount: 1, secrets: [...socialTelegramSecrets, ...r2Secrets]}, async () => {
+  const deadline = Date.now() + 480_000;
   const deps = await liveDeps(false, true);
   // Points the approval bot at the webhook. Idempotent, so every run repairs a lost or changed registration.
   await deps.telegram?.setWebhook(`https://${REGION}-${projectId()}.cloudfunctions.net/${WEBHOOK_FUNCTION}`,
     webhookSecret(socialBotToken.value())).catch(() => logger.error("social: setWebhook failed."));
-  const made = await prepareDay(deps);
+  const made = await prepareDay(deps, defaultBuilders, deadline);
   logger.info("social: prepared.", {made});
 });
 
