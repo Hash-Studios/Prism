@@ -7,20 +7,23 @@ import 'package:flutter/widgets.dart';
 /// before any Router listens, so the binding drops it. Install this right after the binding, then [drain] it once the
 /// deep link dispatcher exists.
 class LaunchLinkBuffer with WidgetsBindingObserver {
-  LaunchLinkBuffer._();
-
-  factory LaunchLinkBuffer.install() {
-    final LaunchLinkBuffer buffer = LaunchLinkBuffer._();
-    WidgetsBinding.instance.addObserver(buffer);
-    return buffer;
-  }
-
   final List<Uri> _links = <Uri>[];
   bool _drained = false;
+  bool _initialLinkHandled = false;
+
+  void install() => WidgetsBinding.instance.addObserver(this);
+
+  bool claimInitialLink(Uri link) {
+    if (link.path == '/' && link.query.isEmpty) return false;
+    if (_initialLinkHandled) return false;
+    _initialLinkHandled = true;
+    return true;
+  }
 
   @override
   Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
     if (_drained) return false;
+    _initialLinkHandled = true;
     _links.add(routeInformation.uri);
     return true;
   }

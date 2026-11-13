@@ -118,7 +118,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 late LocalNotification localNotification;
-LaunchLinkBuffer? _launchLinks;
+final LaunchLinkBuffer _launchLinks = LaunchLinkBuffer();
 const double _sentryReplaySessionSampleRate = 0.1;
 const double _sentryReplayOnErrorSampleRate = 1.0;
 
@@ -209,7 +209,7 @@ Future<void> main() async {
       } else {
         WidgetsFlutterBinding.ensureInitialized();
       }
-      if (defaultTargetPlatform == TargetPlatform.android) _launchLinks = LaunchLinkBuffer.install();
+      if (defaultTargetPlatform == TargetPlatform.android) _launchLinks.install();
       PerformanceProbe.mark('startup.binding_ready');
       if (!kReleaseMode) {
         HttpsCallable.perfSink = (String name, int ms, bool ok) =>
@@ -591,7 +591,6 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   late final DeepLinkStartupGate _startupGate;
   late final ShortLinkRetryScheduler _shortLinkRetry;
   SessionEndWatcher? _sessionWatcher;
-  static bool _launchLinkHandled = false;
   bool _coinSyncInFlight = false;
   static const Duration _coinSyncCooldown = Duration(seconds: 30);
   DateTime? _lastCoinSyncAt;
@@ -753,11 +752,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   Future<DeepLink> _routerDeepLinkBuilder(PlatformDeepLink platformDeepLink) async {
-    // Router rebuilds after logout must not replay the process launch link.
-    if (platformDeepLink.initial) {
-      if (platformDeepLink.uri.path == '/' && platformDeepLink.uri.query.isEmpty) return DeepLink.defaultPath;
-      if (_launchLinkHandled) return DeepLink.defaultPath;
-      _launchLinkHandled = true;
+    if (platformDeepLink.initial && !_launchLinks.claimInitialLink(platformDeepLink.uri)) {
+      return DeepLink.defaultPath;
     }
     if (defaultTargetPlatform == TargetPlatform.iOS && _isShareIn(platformDeepLink.uri)) {
       unawaited(_openPendingShare(arriving: platformDeepLink.uri));
@@ -849,7 +845,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         _shortLinkRetry.schedule(ticket);
       },
     );
-    _launchLinks?.drain(
+    _launchLinks.drain(
       (Uri link) => unawaited(_deepLinkDispatcher.openUri(link, source: DeepLinkSourceValue.appLinks)),
     );
     _shortLinkRetry = ShortLinkRetryScheduler(
