@@ -119,3 +119,5 @@ To get the effect of a hint, compare the rate of its feature event for users wit
 
 - `fvm flutter test test/features/hints`
 - On a device: start a fresh install, open the app 3 times, then open a wall with colour variants. The dots hint shows. Use Reset tips in Settings to see it again (the budget allows one a day).
+- The dots hint attaches to `VariantDots` (the "N variants" row). It does not attach to the accent colour row under the actions.
+- Android emulator proof (2026-11-13, signed in): the Save to folder hint showed on wall detail, under the heart, with its arrow. The smart folder hint showed on Android in the 2026-11-10 accessibility pass. The other Android hints are not checked on a device: the budget allows one hint a day, and the run found no wall with a variant group.

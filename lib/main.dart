@@ -45,6 +45,7 @@ import 'package:Prism/core/router/deep_link_action_entity.dart';
 import 'package:Prism/core/router/deep_link_dispatcher.dart';
 import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/deep_link_startup_gate.dart';
+import 'package:Prism/core/router/launch_link_buffer.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/router/short_link_retry.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
@@ -117,6 +118,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 late LocalNotification localNotification;
+final LaunchLinkBuffer _launchLinks = LaunchLinkBuffer();
 const double _sentryReplaySessionSampleRate = 0.1;
 const double _sentryReplayOnErrorSampleRate = 1.0;
 
@@ -207,6 +209,7 @@ Future<void> main() async {
       } else {
         WidgetsFlutterBinding.ensureInitialized();
       }
+      if (defaultTargetPlatform == TargetPlatform.android) _launchLinks.install();
       PerformanceProbe.mark('startup.binding_ready');
       if (!kReleaseMode) {
         HttpsCallable.perfSink = (String name, int ms, bool ok) =>
@@ -588,7 +591,6 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   late final DeepLinkStartupGate _startupGate;
   late final ShortLinkRetryScheduler _shortLinkRetry;
   SessionEndWatcher? _sessionWatcher;
-  static bool _launchLinkHandled = false;
   bool _coinSyncInFlight = false;
   static const Duration _coinSyncCooldown = Duration(seconds: 30);
   DateTime? _lastCoinSyncAt;
@@ -750,11 +752,8 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
   }
 
   Future<DeepLink> _routerDeepLinkBuilder(PlatformDeepLink platformDeepLink) async {
-    // Router rebuilds after logout must not replay the process launch link.
-    if (platformDeepLink.initial) {
-      if (platformDeepLink.uri.path == '/' && platformDeepLink.uri.query.isEmpty) return DeepLink.defaultPath;
-      if (_launchLinkHandled) return DeepLink.defaultPath;
-      _launchLinkHandled = true;
+    if (platformDeepLink.initial && !_launchLinks.claimInitialLink(platformDeepLink.uri)) {
+      return DeepLink.defaultPath;
     }
     if (defaultTargetPlatform == TargetPlatform.iOS && _isShareIn(platformDeepLink.uri)) {
       unawaited(_openPendingShare(arriving: platformDeepLink.uri));
@@ -845,6 +844,9 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
         _shortLinkRetries[ticket] = (action, source);
         _shortLinkRetry.schedule(ticket);
       },
+    );
+    _launchLinks.drain(
+      (Uri link) => unawaited(_deepLinkDispatcher.openUri(link, source: DeepLinkSourceValue.appLinks)),
     );
     _shortLinkRetry = ShortLinkRetryScheduler(
       onlineChanges: () => getIt<ConnectivityService>().onConnectionChange,

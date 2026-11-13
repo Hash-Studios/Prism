@@ -152,6 +152,10 @@ Set button -> SetWallpaperFlow.run -> (default target or set sheet)
 - Undo needs history, and history clears on sign out. Quick tiles, auto-rotate, and live wallpapers do not write history, so the "previous" wallpaper can be out of date.
 - **Match accent** changes only Prism's own colours. Android 12 and later already recolours the system.
 - `recordWallpaperAction` needs the deployed backend and a signed-in user. The set count is best effort.
+- Emulator proof (2026-11-13, API 36, signed in):
+  - Set on the home screen changed the wallpaper. A paid wall asked for 10 coins first.
+  - In Spanish and German, all Set screen labels show in full. "Pantalla de bloqueo" goes onto 2 lines in its segment.
+  - In airplane mode, Set showed "Couldn't set the wallpaper." The app stayed usable.
 
 ## How to test
 

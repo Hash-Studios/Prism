@@ -133,6 +133,7 @@ When the system asks for less motion (`MediaQuery.disableAnimations`):
 - The quiz pairs walls by tags and palette colours, before any image loads. A Pexels wall has neither, so its pairs contrast on category only. The summary line reads the pixels, so it covers Pexels walls too.
 - On For you, the carousel takes the first 4 Prism walls of the page and the grid shows the rest. So the "Tuning your feed" walls all show at the top, but not in the same order.
 - The brightness and edge cut-offs come from 120 cached thumbnails on one device (2026-10-28).
+- Google sign-in with no account on the device (emulator, 2026-11-13): Google Play services opened its "add account" screen, not the web fallback. Sign-in through that screen worked. The web fallback runs only when Credential Manager returns "No credential" or `providerConfigurationError`, and this device gave neither. So a real web sign-in is still not checked on a device.
 
 ## How to test
 

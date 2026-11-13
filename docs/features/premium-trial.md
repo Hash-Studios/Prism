@@ -221,4 +221,5 @@ Sandbox and Play license testing make a 1-week trial last about 3 minutes. So th
 3. Start the trial. The App Store sheet shows the free trial. Premium shows "Trial, ends <date>".
 4. On a sandbox account that already redeemed the trial (iOS), or that had any subscription (Android), open a paywall. The normal paywall shows with no trial text.
 5. Repeat 1 to 4 with a Play license tester on Android.
+   - Android emulator proof (2026-11-13, signed-in account with no trial): **View plans** opened the timeline with the Google Play price (7 days free, then ₹999.00 a year). Today, Day 5 and Day 7 had the correct dates. With the reminder off, Day 5 read "No reminder. You turned it off below." The trial was not started, so the reminder notification is not checked.
 6. Open a paywall in the current store version of the app (no timeline). Eligible users see the RevenueCat trial text. Ineligible users see the old text.

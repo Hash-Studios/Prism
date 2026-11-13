@@ -146,6 +146,9 @@ A set whose wall only a fix shaped tracks `set_wall` with `fit` = `readability_f
 - The analysis reads the wall at a small size. Very fine detail can read as smooth.
 - The system can change the clock colour after the set. iOS and Android choose it from the wall, so the result can differ from the preview.
 - On iOS the fixed copy has the screen size, not the size of the original.
+- A debug build on an Android emulator can need more than 2 s for the analysis. Then the chip does not show. Use a profile or release build to check the chip.
+- On Android, Save keeps the original file. Only Set uses the fix. The Set screen has no Save.
+- Emulator proof (2026-11-13, API 36, profile build, signed in): on a wall with a light top, **Lock screen** showed the clock chip. **Apply**, then **Set**, set the dimmed file as the lock screen wallpaper. The chip also showed in Spanish.
 
 ## Test
 
