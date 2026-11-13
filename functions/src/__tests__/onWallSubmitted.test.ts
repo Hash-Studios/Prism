@@ -7,6 +7,7 @@ import {uploadFileKey, uploadPathKey} from "../completedWallUpload";
 import {HttpsError} from "firebase-functions/v2/https";
 import {isGithubRawUrl, onWallSubmitted} from "../onWallSubmitted";
 import {removeRemixOfIfUnchanged} from "../wallRemix";
+import * as wallRemix from "../wallRemix";
 import {type Doc, installFakeDb} from "./fakeDb";
 
 const RAW = "https://raw.githubusercontent.com/owner/walls/main";
@@ -567,7 +568,7 @@ test("submission keeps a link if its original is approved before sanitization co
 
 test("a failed remixOf check still notifies the admins", async (t) => {
   const {store, pushes} = setup(t, {name: "Maker", premium: true}, wall({isAiGenerated: true, remixOf: "a/b"}));
-  t.mock.method(db, "runTransaction", async () => {
+  t.mock.method(wallRemix, "keepRemixOf", async () => {
     throw new Error("unavailable");
   });
   await fire(store);
@@ -654,3 +655,30 @@ test("a retried submission keeps one admin inbox entry per wall", async (t) => {
   const inbox = [...store.keys()].filter((key) => key.startsWith("notifications/"));
   assert.deepEqual(inbox, ["notifications/wall_submitted_w1"]);
 });
+
+for (const configured of [true, false]) {
+  test(`a delayed still submission preserves server-bound images (configured: ${configured})`, async (t) => {
+    withGithubRepo(t);
+    if (!configured) delete process.env.GH_REPO_WALLS;
+    const {store} = setup(t, {premium: false}, wall());
+    const submitted = await db.doc("walls/w1").get();
+    const bound = wall({originalProtected: true, originalObjectId: "original-id", wallpaper_url: "",
+      wallpaper_thumb: "https://images.example.com/bound.jpg", wallpaper_path: "", wallpaper_sha: "",
+      thumb_path: "", thumb_sha: ""});
+    await submitted.ref.update(bound);
+    await onWallSubmitted.run({params: {wallId: "w1"}, data: submitted} as never);
+    assert.equal(store.get("walls/w1")?.wallpaper_thumb, bound.wallpaper_thumb);
+  });
+
+  test(`a stale still submission does not strip a recreated wall (configured: ${configured})`, async (t) => {
+    withGithubRepo(t);
+    if (!configured) delete process.env.GH_REPO_WALLS;
+    const {store} = setup(t, {premium: false}, wall());
+    const submitted = await db.doc("walls/w1").get();
+    await submitted.ref.delete();
+    const replacement = wall({wallpaper_thumb: "https://images.example.com/replacement.jpg"});
+    await submitted.ref.set(replacement);
+    await onWallSubmitted.run({params: {wallId: "w1"}, data: submitted} as never);
+    assert.equal(store.get("walls/w1")?.wallpaper_thumb, replacement.wallpaper_thumb);
+  });
+}

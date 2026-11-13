@@ -163,7 +163,7 @@ export const downloadStudioAsset = (asset: GithubAsset): Promise<Buffer> =>
   downloadImage(asset.url, undefined, asset.expectedResolution);
 
 /**
- * User AI originals are private. Functions reads them through the studio-secret route after `proveAiWall`.
+ * Functions reads AI originals through the studio-secret route after `proveAiWall`.
  * The secret is attached only to this constructed Worker URL, never to the recorded public URL or a redirect.
  */
 async function downloadAiOriginal(asset: GithubAsset): Promise<Buffer> {

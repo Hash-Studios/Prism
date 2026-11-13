@@ -211,16 +211,17 @@ function clearStillRole(role: "original" | "thumbnail"): Record<string, unknown>
 async function bindStillWallImages(snapshot: admin.firestore.QueryDocumentSnapshot, artistEmail: string): Promise<void> {
   const repo = process.env.GH_REPO_WALLS?.trim();
   const owner = process.env.GH_USERNAME?.trim();
-  if (!repo || !owner) {
-    logger.warn("onWallSubmitted: still upload proof is not configured; unproven images stripped.",
-      {wallId: snapshot.id});
-    await snapshot.ref.update({...clearStillRole("original"), ...clearStillRole("thumbnail")});
-    return;
-  }
-  const ownerUid = artistEmail ? await verifiedUidForEmail(artistEmail) : null;
+  const ownerUid = repo && owner && artistEmail ? await verifiedUidForEmail(artistEmail) : null;
   await db.runTransaction(async (tx) => {
-    const current = (await tx.get(snapshot.ref)).data();
-    if (!current) return;
+    const currentSnapshot = await tx.get(snapshot.ref);
+    const current = currentSnapshot.data();
+    if (!current || !currentSnapshot.createTime?.isEqual(snapshot.createTime) || current.originalProtected === true) return;
+    if (!repo || !owner) {
+      logger.warn("onWallSubmitted: still upload proof is not configured; unproven images stripped.",
+        {wallId: snapshot.id});
+      tx.update(snapshot.ref, {...clearStillRole("original"), ...clearStillRole("thumbnail")});
+      return;
+    }
     const updates: Record<string, unknown> = {};
     for (const role of ["original", "thumbnail"] as const) {
       const parsed = stillFile(current, role);

@@ -2427,13 +2427,17 @@ async function handleStudioRequest(request: Request, pathname: string, env: AiEn
   if (request.method === 'GET' && recordMatch != null) {
     return handleGenerationRecordRead(recordMatch[1], env);
   }
+  const assetKey = pathname.startsWith(STUDIO_ASSETS_PATH_PREFIX) ? pathname.slice(STUDIO_ASSETS_PATH_PREFIX.length) : null;
+  if ((request.method === 'GET' || request.method === 'HEAD') && assetKey != null &&
+    ORIGINAL_ASSET_KEY_REGEX.test(assetKey)) {
+    return handleStudioAssetRead(assetKey, request.method, env);
+  }
   if (env.AI_IMAGES == null) {
     return aiError('service_disabled', 503, 'Studio asset storage is not configured');
   }
   if (request.method === 'POST' && pathname === '/api/ai/studio/generations') {
     return handleStudioGenerate(request, env);
   }
-  const assetKey = pathname.startsWith(STUDIO_ASSETS_PATH_PREFIX) ? pathname.slice(STUDIO_ASSETS_PATH_PREFIX.length) : null;
   if ((request.method === 'GET' || request.method === 'HEAD') && assetKey != null) {
     return handleStudioAssetRead(assetKey, request.method, env);
   }

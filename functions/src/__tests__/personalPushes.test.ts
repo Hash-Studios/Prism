@@ -170,10 +170,12 @@ test("signed-out admins keep wall-submission inbox entries without admin pushes"
   };
   const snapshot: {
     id: string;
+    createTime: admin.firestore.Timestamp;
     ref: {id: string; path: string; get: () => Promise<unknown>; update: (data: Record<string, unknown>) => Promise<void>};
     data: () => Record<string, unknown>;
   } = {
     id: "w1",
+    createTime: admin.firestore.Timestamp.fromMillis(1),
     ref: {
       id: "w1", path: "walls/w1", get: async () => snapshot,
       update: async (data) => {

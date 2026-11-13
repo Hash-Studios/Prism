@@ -3601,6 +3601,22 @@ test('desktop studio originals require the studio secret for GET and HEAD', asyn
   }
 });
 
+test('studio-secret original reads support KV storage without enabling studio raw storage', async () => {
+  const key = 'ai/original/gen_owner1_aaaaaaaaaaaaaaa1.png';
+  const bytes = new Uint8Array(2048).fill(9);
+  const kv = new MemoryKv([[`ai:asset:${key}`, Buffer.from(bytes).toString('base64')]]);
+  const env = aiEnv(kv, new AiQuotaCoordinator({ storage: new MemoryStorage() }), { STUDIO_SECRET });
+  for (const method of ['GET', 'HEAD']) {
+    const path = `/api/ai/studio/assets/${key}`;
+    assert.equal((await studioFetch(env, method, path, { secret: null })).status, 401);
+    const response = await studioFetch(env, method, path);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.deepEqual(new Uint8Array(await response.arrayBuffer()), method === 'HEAD' ? new Uint8Array() : bytes);
+  }
+  assert.equal((await studioFetch(env, 'GET', '/api/ai/studio/assets/ai/studio/raw/missing.png')).status, 503);
+});
+
 test('original AI assets stay anonymous for shipped Pro clients; studio raw stays private', async () => {
   const generationId = 'gen_owner1_aaaaaaaaaaaaaaa1';
   const originalKey = `ai/original/${generationId}.png`;
