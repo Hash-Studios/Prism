@@ -7,6 +7,7 @@ import 'dart:math';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
+import 'package:Prism/core/coins/coin_events.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/daily_chest.dart';
@@ -1138,6 +1139,13 @@ class CoinsService with WidgetsBindingObserver {
           if (firstSettlement) {
             _noteAdWatched();
             _markBonusQuestDone(QuestEvent.watchAd);
+            if (CoinEventReceipt.tryParse(data['coinEvent']) case final CoinEventReceipt event) {
+              unawaited(
+                analytics.track(
+                  CoinEventAdWatchedEvent(eventId: event.id, multiplier: event.multiplier, coins: rewardCoins),
+                ),
+              );
+            }
           }
         }
         unawaited(
