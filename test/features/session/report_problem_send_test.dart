@@ -180,6 +180,66 @@ void main() {
     expect(items.where((_Item i) => i.header['type'] == 'attachment'), isEmpty);
   });
 
+  test('diagnostics off never reads device or OS labels', () async {
+    final ReportProblemService reports = ReportProblemService(
+      readConfig: () => _config,
+      canSend: () => true,
+      readDevice: () => throw StateError('device must not be read'),
+      readOs: () => throw StateError('OS must not be read'),
+      feedbackTransport: transport,
+    );
+
+    await reports.send(const ProblemReportDraft(topic: ReportTopic.other, trigger: ReportTrigger.menu));
+
+    final List<_Item> items = await _items(transport.envelopes.single);
+    final Map<String, dynamic> tags =
+        items.singleWhere((_Item i) => i.header['type'] == 'feedback').json['tags'] as Map<String, dynamic>;
+    expect(tags.containsKey('device'), isFalse);
+    expect(tags.containsKey('os'), isFalse);
+  });
+
+  test('device and OS tags collapse whitespace and stay within 200 characters', () async {
+    final ReportProblemService reports = ReportProblemService(
+      readConfig: () => _config,
+      canSend: () => true,
+      readDevice: () async => '  Google\nPixel\t9  ',
+      readOs: () => ' android\r\n${List<String>.filled(220, 'x').join()} ',
+      feedbackTransport: transport,
+    );
+
+    await reports.send(
+      const ProblemReportDraft(topic: ReportTopic.other, trigger: ReportTrigger.menu, diagnostics: ''),
+    );
+
+    final List<_Item> items = await _items(transport.envelopes.single);
+    final Map<String, dynamic> tags =
+        items.singleWhere((_Item i) => i.header['type'] == 'feedback').json['tags'] as Map<String, dynamic>;
+    expect(tags['device'], 'Google Pixel 9');
+    expect(tags['os'], 'android ${List<String>.filled(192, 'x').join()}');
+    expect((tags['os'] as String).length, 200);
+  });
+
+  test('a later report with diagnostics off does not reuse earlier device tags or attachments', () async {
+    final ReportProblemService reports = service();
+    await reports.send(
+      const ProblemReportDraft(topic: ReportTopic.other, trigger: ReportTrigger.menu, diagnostics: 'logs'),
+    );
+    await reports.send(const ProblemReportDraft(topic: ReportTopic.other, trigger: ReportTrigger.menu));
+
+    expect(transport.envelopes, hasLength(2));
+    final List<_Item> first = await _items(transport.envelopes.first);
+    final Map<String, dynamic> firstTags =
+        first.singleWhere((_Item i) => i.header['type'] == 'feedback').json['tags'] as Map<String, dynamic>;
+    expect(firstTags['device'], 'Google Pixel 9');
+    expect(firstTags['os'], 'android 16');
+    final List<_Item> second = await _items(transport.envelopes.last);
+    final Map<String, dynamic> secondTags =
+        second.singleWhere((_Item i) => i.header['type'] == 'feedback').json['tags'] as Map<String, dynamic>;
+    expect(secondTags.containsKey('device'), isFalse);
+    expect(secondTags.containsKey('os'), isFalse);
+    expect(second.where((_Item i) => i.header['type'] == 'attachment'), isEmpty);
+  });
+
   test('with monitoring off, throws and sends nothing', () async {
     const ProblemReportDraft draft = ProblemReportDraft(topic: ReportTopic.other, trigger: ReportTrigger.menu);
 

@@ -90,7 +90,9 @@ void main() {
           expect(sanitizeProfileLink(_kind('telegram'), url), url, reason: url);
         }
       }
-      expect(sanitizeProfileLink(_kind('telegram'), 'telegram.me/prism'), 'https://telegram.me/prism');
+      for (final String host in <String>['t.me', 'telegram.me', 'telegram.dog', 'www.t.me', 'www.telegram.me']) {
+        expect(sanitizeProfileLink(_kind('telegram'), ' ${host.toUpperCase()}/prism '), 'https://$host/prism');
+      }
     });
 
     test('Telegram matches the host rather than text elsewhere in the URL', () {
@@ -99,6 +101,11 @@ void main() {
         'https://chat.me/prism',
         'https://t.me.example.com/prism',
         'https://example.com/prism?ref=telegram.me',
+        'https://t.me@example.com/prism',
+        'https://creator.telegram.me/prism',
+        'https://example.com/prism#t.me',
+        'mailto:prism@t.me',
+        'file://t.me/prism',
       ]) {
         expect(sanitizeProfileLink(_kind('telegram'), raw), isNull, reason: raw);
       }
@@ -129,6 +136,12 @@ void main() {
 
     test('accepts links saved before the scheme was required', () {
       expect(safeProfileLinkUri('instagram.com/prism').toString(), 'https://instagram.com/prism');
+    });
+
+    test('still opens saved links rejected by the stricter Telegram editor', () {
+      const String saved = 'https://chat.me/prism';
+      expect(sanitizeProfileLink(_kind('telegram'), saved), isNull);
+      expect(safeProfileLinkUri(saved).toString(), saved);
     });
 
     test('refuses unsafe schemes and missing hosts', () {

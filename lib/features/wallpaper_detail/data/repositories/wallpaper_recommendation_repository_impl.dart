@@ -147,13 +147,25 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
         return _PrismRow(docId, PrismFeedItem(id: wall.id, wallpaper: wall));
       },
     );
-    final stop = wrapped ? rows.indexWhere((row) => row.documentId == start) : -1;
+    final visited = cursor?.visitedDocumentIds ?? const <String>{};
+    final stop = rows.indexWhere((row) => (wrapped && row.documentId == start) || visited.contains(row.documentId));
     final kept = stop < 0 ? rows : rows.sublist(0, stop);
     // Advance from the raw last document, even when every item is blocked, anime, or a duplicate.
     final PrismRecommendationCursor? next = switch ((stop >= 0, rows.length < pageSize)) {
       (true, _) => null,
-      (false, false) => PrismRecommendationCursor(rows.last.documentId, wrapped: wrapped),
-      (false, true) => wrapped || start == null ? null : const PrismRecommendationCursor(null, wrapped: true),
+      (false, false) => PrismRecommendationCursor(
+        rows.last.documentId,
+        wrapped: wrapped,
+        visitedDocumentIds: Set.unmodifiable({...visited, ...rows.map((row) => row.documentId)}),
+      ),
+      (false, true) =>
+        wrapped || start == null
+            ? null
+            : PrismRecommendationCursor(
+                null,
+                wrapped: true,
+                visitedDocumentIds: Set.unmodifiable({...visited, ...rows.map((row) => row.documentId)}),
+              ),
     };
     return RecommendationPage(items: kept.map((row) => row.item).toList(growable: false), kind: kind, nextCursor: next);
   }
