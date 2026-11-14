@@ -371,8 +371,9 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
         await activity?.finish(imageUrl);
         if (!_isCurrent(revision)) return;
         analytics.track(PhotoJobDoneEvent(mode: mode.analytics, target: job.target.analytics, cost: job.cost));
-        if (style != null)
+        if (style != null) {
           analytics.track(const PhotoRestyleFinishedEvent(outcome: PhotoRestyleOutcomeValue.succeeded));
+        }
       case PhotoJobFailed(:final PhotoJobFailure reason, :final bool refunded):
         await activity?.fail(_errorText(l10n, result));
         if (!_isCurrent(revision)) return;
@@ -618,12 +619,21 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       if (_tool == PhotoTool.restyle) ...<Widget>[
         Text(l10n.photoWallStyleTitle, style: PrismTextStyles.rowTitle(context)),
         const SizedBox(height: PrismSpace.xs),
-        AiStylePicker(
-          selected: _style,
-          padding: EdgeInsets.zero,
-          onSelected: (AiStylePreset style) {
-            if (canEdit()) setState(() => _style = style);
-          },
+        // The row scrolls from screen edge to screen edge, and its first tile lines up with the page margin.
+        LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints box) => SizedBox(
+            height: AiStylePicker.tileHeight,
+            child: OverflowBox(
+              minWidth: box.maxWidth + 2 * PrismSpace.page,
+              maxWidth: box.maxWidth + 2 * PrismSpace.page,
+              child: AiStylePicker(
+                selected: _style,
+                onSelected: (AiStylePreset style) {
+                  if (canEdit()) setState(() => _style = style);
+                },
+              ),
+            ),
+          ),
         ),
         const SizedBox(height: PrismSpace.md),
       ],
