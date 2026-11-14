@@ -1119,6 +1119,28 @@ events:
       - name: balance
         key: balance
         type: int
+  - id: coin_event_seen
+    fields:
+      - name: event_id
+        key: event_id
+        type: string
+      - name: multiplier
+        key: multiplier
+        type: int
+      - name: phase
+        key: phase
+        type: string
+  - id: coin_event_ad_watched
+    fields:
+      - name: event_id
+        key: event_id
+        type: string
+      - name: multiplier
+        key: multiplier
+        type: int
+      - name: coins
+        key: coins
+        type: int
   - id: coin_watch_and_download_used
     fields:
       - name: is_premium_content

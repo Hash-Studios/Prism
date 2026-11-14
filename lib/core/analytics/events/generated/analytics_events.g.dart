@@ -749,6 +749,38 @@ class CoinLowBalanceNudgeShownEvent extends AnalyticsEvent {
   }
 }
 
+class CoinEventSeenEvent extends AnalyticsEvent {
+  const CoinEventSeenEvent({required this.eventId, required this.multiplier, required this.phase});
+
+  final String eventId;
+  final int multiplier;
+  final String phase;
+
+  @override
+  String get eventName => 'coin_event_seen';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'event_id': eventId, 'multiplier': multiplier, 'phase': phase};
+  }
+}
+
+class CoinEventAdWatchedEvent extends AnalyticsEvent {
+  const CoinEventAdWatchedEvent({required this.eventId, required this.multiplier, required this.coins});
+
+  final String eventId;
+  final int multiplier;
+  final int coins;
+
+  @override
+  String get eventName => 'coin_event_ad_watched';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'event_id': eventId, 'multiplier': multiplier, 'coins': coins};
+  }
+}
+
 class CoinWatchAndDownloadUsedEvent extends AnalyticsEvent {
   const CoinWatchAndDownloadUsedEvent({required this.isPremiumContent, required this.sourceTag});
 

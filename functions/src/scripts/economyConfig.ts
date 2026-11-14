@@ -61,6 +61,11 @@ function getPath(source: unknown, path: string): unknown {
   return node;
 }
 
+/** JSON with object keys sorted, so a parsed value that only reorders keys still matches the override. */
+function canonical(value: unknown): string {
+  return JSON.stringify(value, (_key, v) => isRecord(v) ? Object.fromEntries(Object.entries(v).sort(([x], [y]) => x < y ? -1 : 1)) : v);
+}
+
 function flatten(value: unknown, prefix = "", out: Record<string, unknown> = {}): Record<string, unknown> {
   if (isRecord(value)) {
     for (const [key, child] of Object.entries(value)) flatten(child, prefix ? `${prefix}.${key}` : key, out);
@@ -84,7 +89,7 @@ export function planConfig(liveRaw: unknown, sets: Array<[string, unknown]>): Co
   }
   const next = parseEconomy(draft);
   for (const [path, value] of sets) {
-    if (JSON.stringify(getPath(next, path)) !== JSON.stringify(value)) {
+    if (canonical(getPath(next, path)) !== canonical(value)) {
       throw new Error(`Rejected ${path}=${JSON.stringify(value)}: unknown key or wrong type`);
     }
   }

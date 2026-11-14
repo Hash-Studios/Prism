@@ -1,3 +1,4 @@
+import 'package:Prism/core/coins/coin_events.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/coin_transaction_label.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -8,20 +9,22 @@ late AppLocalizations _l10n;
 
 String _label(CoinTransactionEntry entry) => coinTransactionLabel(entry, _l10n);
 
-CoinTransactionEntry _tx(String action, {String? reason, String description = ''}) => CoinTransactionEntry(
-  id: 'ctx_$action',
-  userId: 'u',
-  createdAt: DateTime.utc(2026),
-  delta: 1,
-  balanceBefore: 0,
-  balanceAfter: 1,
-  action: action,
-  description: description,
-  sourceTag: '',
-  status: 'completed',
-  type: 'credit',
-  reason: reason,
-);
+CoinTransactionEntry _tx(String action, {String? reason, String description = '', CoinEventReceipt? coinEvent}) =>
+    CoinTransactionEntry(
+      id: 'ctx_$action',
+      userId: 'u',
+      createdAt: DateTime.utc(2026),
+      delta: 1,
+      balanceBefore: 0,
+      balanceAfter: 1,
+      action: action,
+      description: description,
+      sourceTag: '',
+      status: 'completed',
+      type: 'credit',
+      reason: reason,
+      coinEvent: coinEvent,
+    );
 
 void main() {
   setUpAll(() async {
@@ -89,5 +92,25 @@ void main() {
     expect(_label(_tx('someNewThing')), 'Coins');
     expect(_label(_tx('content_abc_def')), 'Coins');
     expect(_label(_tx('')), 'Coins');
+  });
+
+  test('a rewarded ad under a weekend event names the event and multiplier', () {
+    final entry = _tx(
+      'rewardedAd',
+      coinEvent: const CoinEventReceipt(id: 'weekend-2026-11-14', multiplier: 2, label: CoinEventLabel.weekend),
+    );
+    expect(_label(entry), 'Watched a video · 2x weekend');
+  });
+
+  test('a generic event names the multiplier', () {
+    final entry = _tx(
+      'rewardedAd',
+      coinEvent: const CoinEventReceipt(id: 'launch', multiplier: 3, label: CoinEventLabel.event),
+    );
+    expect(_label(entry), 'Watched a video · 3x event');
+  });
+
+  test('without an event receipt the plain label stays', () {
+    expect(_label(_tx('rewardedAd')), 'Watched a video');
   });
 }

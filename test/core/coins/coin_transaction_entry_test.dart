@@ -1,3 +1,4 @@
+import 'package:Prism/core/coins/coin_events.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -98,5 +99,37 @@ void main() {
     expect(entry.metadata, isNull);
     expect(entry.delta, 0);
     expect(entry.type, 'credit');
+  });
+
+  test('coinEvent parses from the ledger and round-trips through toJson', () {
+    final entry = CoinTransactionEntry.fromJson(<String, dynamic>{
+      'createdAt': DateTime.utc(2026, 11, 14),
+      'delta': 20,
+      'action': 'rewardedAd',
+      'coinEvent': <String, dynamic>{'id': 'weekend-2026-11-14', 'multiplier': 2, 'label': 'weekend'},
+    });
+
+    expect(entry.coinEvent?.id, 'weekend-2026-11-14');
+    expect(entry.coinEvent?.multiplier, 2);
+    expect(entry.coinEvent?.label, CoinEventLabel.weekend);
+
+    final again = CoinTransactionEntry.fromJson(entry.toJson());
+    expect(again.toJson()['coinEvent'], <String, dynamic>{
+      'id': 'weekend-2026-11-14',
+      'multiplier': 2,
+      'label': 'weekend',
+    });
+    expect(again.coinEvent?.label, CoinEventLabel.weekend);
+  });
+
+  test('an invalid coinEvent is dropped', () {
+    final List<Map<String, dynamic>> bad = <Map<String, dynamic>>[
+      <String, dynamic>{'id': 'weekend-2026-11-14', 'multiplier': 5, 'label': 'weekend'},
+      <String, dynamic>{'multiplier': 2, 'label': 'weekend'},
+    ];
+    for (final Map<String, dynamic> raw in bad) {
+      final entry = CoinTransactionEntry.fromJson(<String, dynamic>{'createdAt': DateTime.utc(2026), 'coinEvent': raw});
+      expect(entry.coinEvent, isNull, reason: '$raw');
+    }
   });
 }

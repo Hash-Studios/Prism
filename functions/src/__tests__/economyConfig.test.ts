@@ -37,3 +37,13 @@ test("planConfig rejects unknown keys, wrong types and prototype paths", () => {
 test("planConfig reports no change when the value already matches", () => {
   assert.deepEqual(planConfig(null, [["flags.dropsEnabled", true]]).diff, []);
 });
+
+test("planConfig sets coin events in any key order and rejects a bad one", () => {
+  const event = {id: "launch", startsAtMs: 1, endsAtMs: 1000, multiplier: 2, actions: ["rewardedAd"], label: "event"};
+  assert.deepEqual(planConfig(null, [["events", [event]]]).overrides, {events: [event]});
+  const weekly = {id: "weekend", startDay: 6, startMinute: 0, durationMinutes: 2880, multiplier: 2,
+    actions: ["rewardedAd"], label: "weekend"};
+  assert.deepEqual(planConfig(null, [["weeklyEvent", weekly]]).next.weeklyEvent, weekly);
+  assert.throws(() => planConfig(null, [["events", [{...event, multiplier: 5}]]]), /Rejected/);
+  assert.throws(() => planConfig(null, [["weeklyEvent", {...weekly, startDay: 8}]]), /Rejected/);
+});
