@@ -10,10 +10,16 @@ sealed class RecommendationCursor extends Equatable {
 }
 
 final class PrismRecommendationCursor extends RecommendationCursor {
-  const PrismRecommendationCursor(this.documentId);
-  final String documentId;
+  const PrismRecommendationCursor(this.documentId, {this.wrapped = false, this.visitedDocumentIds = const {}});
+
+  /// Null starts from the newest wall.
+  final String? documentId;
+
+  /// True once the older walls ran out and the feed went back to the newest ones.
+  final bool wrapped;
+  final Set<String> visitedDocumentIds;
   @override
-  List<Object?> get props => [documentId];
+  List<Object?> get props => [documentId, wrapped, visitedDocumentIds];
 }
 
 final class ExternalRecommendationCursor extends RecommendationCursor {

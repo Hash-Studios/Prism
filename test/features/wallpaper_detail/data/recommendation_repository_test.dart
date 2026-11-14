@@ -40,7 +40,14 @@ class _Firestore extends Fake implements FirestoreClient {
     queryEntered?.complete();
     await queryGate?.future;
     if (fail) throw StateError('offline');
-    return rows.map((row) => map(row, 'doc-${row['id']}')).toList();
+    // Like the real client: start after the cursor document when it exists, else from the top.
+    final after = rows.indexWhere((row) => 'doc-${row['id']}' == spec.startAfterDocId);
+    return rows
+        .skip(after + 1)
+        .where((row) => spec.filters.every((filter) => row[filter.field] == filter.value))
+        .take(spec.limit ?? rows.length)
+        .map((row) => map(row, 'doc-${row['id']}'))
+        .toList();
   }
 }
 
@@ -55,12 +62,13 @@ FeedItemEntity _item(
   WallpaperSource source = WallpaperSource.prism,
   List<String>? tags,
   String category = 'Nature',
+  String? documentId,
 }) {
   final core = WallpaperCore(id: id, source: source, fullUrl: '', thumbnailUrl: '', category: category);
   return switch (source) {
     WallpaperSource.prism => PrismFeedItem(
       id: id,
-      wallpaper: PrismWallpaper(core: core, tags: tags),
+      wallpaper: PrismWallpaper(core: core, tags: tags, firestoreDocumentId: documentId),
     ),
     WallpaperSource.wallhaven => WallhavenFeedItem(
       id: id,
@@ -112,7 +120,10 @@ void main() {
     ];
     final page = await repository.load(current: _item('current'), sessionKey: 'a');
     expect(page.items.map((item) => item.id), [for (var i = 0; i < 22; i++) '$i']);
-    expect(page.nextCursor, const PrismRecommendationCursor('doc-23'));
+    expect(
+      page.nextCursor,
+      PrismRecommendationCursor('doc-23', visitedDocumentIds: {for (var i = 0; i < 24; i++) 'doc-$i'}),
+    );
     firestore.rows = [
       {'id': 'next', 'category': 'Nature', 'review': true},
     ];
@@ -124,6 +135,103 @@ void main() {
       ('category', 'Nature'),
       ('review', true),
     ]);
+  });
+
+  test('each Prism wall gets its own neighbours, then the newer walls, and stops at itself', () async {
+    firestore.rows = [
+      for (var i = 0; i < 30; i++) {'id': 'w$i', 'category': 'Nature', 'review': true},
+    ];
+    Future<List<String>> visit(String id) async {
+      final ids = <String>[];
+      RecommendationCursor? cursor;
+      do {
+        final page = await repository.load(
+          current: _item(id, documentId: 'doc-$id'),
+          sessionKey: id,
+          cursor: cursor,
+        );
+        ids.addAll(page.items.map((item) => item.id));
+        cursor = page.nextCursor;
+      } while (cursor != null);
+      return ids;
+    }
+
+    expect(await visit('w10'), [for (var i = 11; i < 30; i++) 'w$i', for (var i = 0; i < 10; i++) 'w$i']);
+    expect((await visit('w20')).take(3), ['w21', 'w22', 'w23']);
+  });
+
+  for (final anchor in ['doc-missing', 'doc-w10']) {
+    test('missing or recategorised anchor $anchor does not repeat walls on wrap', () async {
+      firestore.rows = [
+        for (var i = 0; i < 30; i++) {'id': 'w$i', 'category': i == 10 ? 'Other' : 'Nature', 'review': true},
+      ];
+      final ids = <String>[];
+      RecommendationCursor? cursor;
+      var calls = 0;
+      do {
+        final page = await repository.load(
+          current: _item('current', documentId: anchor),
+          sessionKey: anchor,
+          cursor: cursor,
+        );
+        ids.addAll(page.items.map((item) => item.id));
+        cursor = page.nextCursor;
+        expect(++calls, lessThan(6));
+      } while (cursor != null);
+      expect(ids.toSet(), {
+        for (var i = 0; i < 30; i++)
+          if (i != 10) 'w$i',
+      });
+      expect(ids, hasLength(29));
+    });
+  }
+
+  test('deleting the open wall and first returned wall mid-visit still stops before duplicates', () async {
+    firestore.rows = [
+      for (var i = 0; i < 60; i++) {'id': 'w$i', 'category': 'Nature', 'review': true},
+    ];
+    final current = _item('w10', documentId: 'doc-w10');
+    final first = await repository.load(current: current, sessionKey: 'deleted-anchor');
+    firestore.rows.removeWhere((row) => ['w10', 'w11'].contains(row['id']));
+    final ids = first.items.map((item) => item.id).toList();
+    var cursor = first.nextCursor;
+    var calls = 0;
+    do {
+      final page = await repository.load(current: current, sessionKey: 'deleted-anchor', cursor: cursor);
+      ids.addAll(page.items.map((item) => item.id));
+      cursor = page.nextCursor;
+      expect(++calls, lessThan(6));
+    } while (cursor != null);
+    expect(ids, [for (var i = 11; i < 60; i++) 'w$i', for (var i = 0; i < 10; i++) 'w$i']);
+  });
+
+  test('deleted later cursor cannot restart the same full page forever', () async {
+    firestore.rows = [
+      for (var i = 0; i < 50; i++) {'id': 'w$i', 'category': 'Nature', 'review': true},
+    ];
+    final current = _item('current', documentId: 'doc-missing');
+    final first = await repository.load(current: current, sessionKey: 'deleted-cursor');
+    firestore.rows.removeAt(23);
+    final next = await repository.load(current: current, sessionKey: 'deleted-cursor', cursor: first.nextCursor);
+    expect(first.items.first.id, 'w0');
+    expect(next.items, isEmpty);
+    expect(next.nextCursor, isNull);
+  });
+
+  test('empty document IDs use finite unanchored discovery and retries keep the same page', () async {
+    firestore.rows = [
+      for (var i = 0; i < 30; i++) {'id': 'w$i', 'category': 'Nature', 'review': true},
+    ];
+    final current = _item('current', documentId: '', category: '');
+    final first = await repository.load(current: current, sessionKey: 'empty-id');
+    final next = await repository.load(current: current, sessionKey: 'empty-id', cursor: first.nextCursor);
+    final retry = await repository.load(current: current, sessionKey: 'empty-id', cursor: first.nextCursor);
+    expect(first.kind, RecommendationKind.discovery);
+    expect([...first.items, ...next.items].map((item) => item.id), [for (var i = 0; i < 30; i++) 'w$i']);
+    expect(next.nextCursor, isNull);
+    expect(retry.items.map((item) => item.id), [for (var i = 24; i < 30; i++) 'w$i']);
+    expect(retry.nextCursor, isNull);
+    expect(firestore.specs.first.startAfterDocId, isNull);
   });
 
   test('AI recommendations hide walls with metadata even when the legacy flag is absent', () async {

@@ -172,7 +172,16 @@ const Duration _sendTimeout = Duration(seconds: 30);
 
 typedef DeviceLabelReader = Future<String> Function();
 typedef AppVersionReader = Future<String> Function();
+typedef OsLabelReader = String Function();
 typedef ReportFileSharer = Future<void> Function(String text);
+
+String _platformOsLabel() => '${Platform.operatingSystem} ${Platform.operatingSystemVersion}';
+
+/// Sentry tag values are one line of at most 200 characters.
+String _tagValue(String value) {
+  final String line = value.replaceAll(RegExp(r'\s+'), ' ').trim();
+  return line.length <= 200 ? line : line.substring(0, 200);
+}
 
 SentryClient _createFeedbackClient(
   SentryConfig config,
@@ -239,6 +248,7 @@ class ReportProblemService {
     List<AppLogRecord> Function()? readRecords,
     DeviceLabelReader? readDevice,
     AppVersionReader? readAppVersion,
+    OsLabelReader? readOs,
     ReportFileSharer? shareFile,
     DateTime Function()? clock,
     bool Function()? canSend,
@@ -249,6 +259,7 @@ class ReportProblemService {
   }) : _readRecords = readRecords ?? (() => InMemoryLogSink.instance.records),
        _readDevice = readDevice ?? _platformDeviceLabel,
        _readAppVersion = readAppVersion ?? _platformAppVersion,
+       _readOs = readOs ?? _platformOsLabel,
        _shareFile = shareFile,
        _clock = clock ?? DateTime.now,
        _canSend = canSend ?? (() => MonitoringRuntime.reporter.isEnabled),
@@ -262,6 +273,7 @@ class ReportProblemService {
   final List<AppLogRecord> Function() _readRecords;
   final DeviceLabelReader _readDevice;
   final AppVersionReader _readAppVersion;
+  final OsLabelReader _readOs;
   final ReportFileSharer? _shareFile;
   final DateTime Function() _clock;
   final bool Function() _canSend;
@@ -277,7 +289,7 @@ class ReportProblemService {
       environment: ReportEnvironment(
         appVersion: parts[1],
         device: parts[0],
-        os: '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+        os: _readOs(),
         theme: theme,
         signedIn: app_state.prismUser.loggedIn,
       ),
@@ -318,6 +330,10 @@ class ReportProblemService {
       'hasScreenshot': '${draft.screenshot != null}',
       'reference': reference,
     };
+    if (draft.diagnostics != null) {
+      tags['device'] = _tagValue(await _readDevice());
+      tags['os'] = _tagValue(_readOs());
+    }
     final SentryClient client = _createFeedbackClient(config, tags, _feedbackTransport, _feedbackHttpClient);
     final Hint hint = Hint();
     _addDraftAttachments(hint, draft);
