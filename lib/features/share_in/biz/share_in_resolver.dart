@@ -68,6 +68,7 @@ WallpaperDetailRoute withFolderSheet(WallpaperDetailRoute route) {
     localFile: args.localFile,
     aspectRatio: args.aspectRatio,
     requestId: args.requestId,
+    entry: args.entry,
     feed: args.feed,
     desktopDownload: args.desktopDownload,
     openFolderSheet: true,

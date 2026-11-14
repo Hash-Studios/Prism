@@ -294,7 +294,7 @@ class PrismWallpaperRepositoryImpl implements PrismWallpaperRepository {
           )
           .timeout(_queryTimeout);
       if (rows.isEmpty) return Result.success(null);
-      if (rows.length != 1) return Result.error(const ServerFailure('Ambiguous wallpaper identity'));
+      if (rows.length != 1) return Result.error(const ServerFailure(ambiguousWallpaperIdentity));
       final PrismWallpaper wall = rows.single.doc.toDomain(docId: rows.single.docId);
       final BlockedCreators blocked = await blockedFuture;
       if (BlockedCreatorsFilter.hidesCreatorUid(wall.core.authorUid, blocked)) return Result.success(null);

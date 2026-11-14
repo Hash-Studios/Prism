@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/core/router/app_router.dart';
@@ -65,7 +66,11 @@ Future<PageRouteInfo?> routeForPageLink(
     DeepLinkPageTarget.rewardsTab => const DashboardRoute(children: <PageRouteInfo>[RewardsTabRoute()]),
     DeepLinkPageTarget.collectionTab => const DashboardRoute(children: <PageRouteInfo>[CollectionTabRoute()]),
     DeepLinkPageTarget.ai => AiTabRoute(),
-    DeepLinkPageTarget.wallpaperDetail => WallpaperDetailRoute(wallId: wallId, source: source ?? WallpaperSource.prism),
+    DeepLinkPageTarget.wallpaperDetail => WallpaperDetailRoute(
+      wallId: wallId,
+      source: source ?? WallpaperSource.prism,
+      entry: WallOpenEntryValue.link,
+    ),
     DeepLinkPageTarget.wotdArchive => const WotdArchiveRoute(),
     DeepLinkPageTarget.downloadWallpaperInput =>
       wallId.isEmpty && (path['wallpaperId'] ?? query['wallpaperId'] ?? '').isEmpty
@@ -329,11 +334,11 @@ Future<PageRouteInfo?> _wallpaperActionRoute({
   if (wallId.isEmpty) return _inputRoute(workflow);
   final WallpaperSource selectedSource = source ?? WallpaperSource.prism;
   if (selectedSource == WallpaperSource.prism) {
-    return WallpaperDetailRoute(wallId: wallId, source: selectedSource);
+    return WallpaperDetailRoute(wallId: wallId, source: selectedSource, entry: WallOpenEntryValue.link);
   }
   final FeedItemEntity? entity = await (wallpaperLookup ?? _lookupWallpaper)(wallId: wallId, source: selectedSource);
   if (entity?.source == WallpaperSource.prism) {
-    return WallpaperDetailRoute(wallId: entity!.id, source: WallpaperSource.prism);
+    return WallpaperDetailRoute(wallId: entity!.id, source: WallpaperSource.prism, entry: WallOpenEntryValue.link);
   }
   if (entity == null || !_isTrustedImageUrl(entity.fullUrl, entity.source)) {
     return null;
@@ -356,10 +361,12 @@ Future<PageRouteInfo?> _downloadRoute({
   Future<File> Function({required String imageUrl, required String wallId, required WallpaperSource source})?
   localFileResolver,
 }) async {
-  if (source == WallpaperSource.prism) return WallpaperDetailRoute(wallId: wallId, source: source);
+  if (source == WallpaperSource.prism) {
+    return WallpaperDetailRoute(wallId: wallId, source: source, entry: WallOpenEntryValue.link);
+  }
   final FeedItemEntity? entity = await (wallpaperLookup ?? _lookupWallpaper)(wallId: wallId, source: source);
   if (entity?.source == WallpaperSource.prism) {
-    return WallpaperDetailRoute(wallId: entity!.id, source: WallpaperSource.prism);
+    return WallpaperDetailRoute(wallId: entity!.id, source: WallpaperSource.prism, entry: WallOpenEntryValue.link);
   }
   if (entity == null || !_isTrustedImageUrl(entity.fullUrl, entity.source)) {
     return null;

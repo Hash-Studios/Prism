@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/monitoring/field_diagnostics.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
@@ -200,18 +202,21 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     if (event.entity.source == WallpaperSource.prism &&
         !BundledWallpapers.isStarter(event.entity) &&
         !OriginalAccessService.isUnlockedDropUrl(event.entity.fullUrl, event.entity.id, event.entity.source)) {
+      final bool documentId = switch (event.entity) {
+        PrismFeedItem(:final wallpaper) => wallpaper.firestoreDocumentId == event.entity.id,
+        _ => false,
+      };
       await _onLoadFromId(
         LoadFromId(
           wallId: event.entity.id,
           source: event.entity.source,
           thumbnailUrl: event.entity.thumbnailUrl,
           localFilePath: event.localFilePath,
+          origin: event.origin,
         ),
         emit,
-        allowDocumentIdFallback: switch (event.entity) {
-          PrismFeedItem(:final wallpaper) => wallpaper.firestoreDocumentId == event.entity.id,
-          _ => false,
-        },
+        allowDocumentIdFallback: documentId,
+        idKind: documentId ? WallIdKindValue.documentId : WallIdKindValue.id,
       );
       return;
     }
@@ -227,26 +232,52 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     LoadFromId event,
     Emitter<WallpaperDetailState> emit, {
     bool allowDocumentIdFallback = true,
+    WallIdKindValue idKind = WallIdKindValue.id,
   }) async {
     emit(WallpaperDetailLoading(thumbnailUrl: event.thumbnailUrl));
+    bool documentIdFallbackRan = false;
 
     final result = await _fetchWallpaper(
       wallId: event.wallId,
       source: event.source,
       allowDocumentIdFallback: allowDocumentIdFallback,
+      onDocumentIdFallback: () => documentIdFallbackRan = true,
     );
-    if (_closing) return;
     final failure = result.failure;
     if (failure != null) {
-      emit(WallpaperDetailError(failure: _loadErrorKind(failure), thumbnailUrl: event.thumbnailUrl));
+      FieldDiagnostics.track(
+        WallOpenFailedEvent(
+          entry: event.origin.entry,
+          homeTab: event.origin.homeTab,
+          source: event.source.name,
+          wallId: event.origin.entry == WallOpenEntryValue.link ? null : event.wallId,
+          idKind: idKind,
+          error: _openError(failure),
+          fallbackRan: documentIdFallbackRan,
+        ),
+      );
+      if (!_closing) {
+        emit(WallpaperDetailError(failure: _loadErrorKind(failure), thumbnailUrl: event.thumbnailUrl));
+      }
       return;
     }
+    if (_closing) return;
 
     final entity = result.data!;
     emit(WallpaperDetailLoaded(entity: entity));
     _fetchAndUpdateViews(entity);
     await _loadPalette(entity, emit, event.localFilePath);
   }
+
+  static WallOpenErrorValue _openError(Failure failure) => switch (failure) {
+    UnknownFailure(message: notFoundMessage) => WallOpenErrorValue.notFound,
+    ServerFailure(message: ambiguousWallpaperIdentity) => WallOpenErrorValue.ambiguous,
+    NetworkFailure() => WallOpenErrorValue.network,
+    ServerFailure() => WallOpenErrorValue.server,
+    CacheFailure() => WallOpenErrorValue.cache,
+    ValidationFailure() => WallOpenErrorValue.validation,
+    _ => WallOpenErrorValue.unknown,
+  };
 
   /// Keep the server failure separate from its presentation so the view can localize it.
   WallpaperDetailLoadFailure _loadErrorKind(Failure failure) =>
@@ -404,6 +435,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     required String wallId,
     required WallpaperSource source,
     bool allowDocumentIdFallback = false,
+    void Function()? onDocumentIdFallback,
   }) async {
     if (BundledWallpapers.isStarterIdentity(wallId, source)) {
       try {
@@ -425,6 +457,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     Future<Result<PrismWallpaper?>> fetchPrism() async {
       final canonical = await _prismRepository.fetchCanonicalById(wallId);
       if (canonical.isFailure || canonical.data != null || !allowDocumentIdFallback) return canonical;
+      onDocumentIdFallback?.call();
       return _prismRepository.fetchCanonicalByDocumentId(wallId);
     }
 

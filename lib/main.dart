@@ -22,6 +22,7 @@ import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/monitoring/error_reporter.dart';
+import 'package:Prism/core/monitoring/field_diagnostics.dart';
 import 'package:Prism/core/monitoring/flutter_error_handler.dart';
 import 'package:Prism/core/monitoring/monitoring_runtime.dart';
 import 'package:Prism/core/monitoring/sentry_before_send.dart';
@@ -913,6 +914,7 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    FieldDiagnostics.onLifecycle(state);
     if (state == AppLifecycleState.resumed) {
       unawaited(_openPendingShare());
       final now = DateTime.now();

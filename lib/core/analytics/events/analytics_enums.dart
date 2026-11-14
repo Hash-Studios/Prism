@@ -3,6 +3,7 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/readability/domain/readability.dart';
 import 'package:Prism/features/wall_remix/domain/wall_remix.dart';
@@ -34,6 +35,10 @@ extension ReadabilityFixKindWire on ReadabilityFixKind {
 }
 
 extension WallGridDensityWire on WallGridDensity {
+  String get wireValue => _snakeCase(name);
+}
+
+extension HomeFeedChipWire on HomeFeedChip {
   String get wireValue => _snakeCase(name);
 }
 
@@ -617,6 +622,46 @@ enum OtaFailureReasonValue {
   downloadTimeout,
   downloadFailed,
   installFailed,
+  unknown;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum JankScreenValue {
+  homeFeed,
+  wallDetail,
+  detailSwipe;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum WallOpenEntryValue {
+  home,
+  profile,
+  search,
+  folder,
+  favourites,
+  detail,
+  link,
+  other;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum WallIdKindValue {
+  id,
+  documentId;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum WallOpenErrorValue {
+  notFound,
+  ambiguous,
+  network,
+  server,
+  cache,
+  validation,
   unknown;
 
   String get wireValue => _snakeCase(name);

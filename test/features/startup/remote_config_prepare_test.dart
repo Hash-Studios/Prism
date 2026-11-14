@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:Prism/core/monitoring/field_diagnostics.dart';
 import 'package:Prism/features/startup/data/repositories/startup_repository_impl.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
@@ -20,6 +21,7 @@ void main() {
 
   setUp(() {
     calls.clear();
+    FieldDiagnostics.resetSampling();
     rc = _MockRemoteConfig();
     when(() => rc.setConfigSettings(any())).thenAnswer((_) async => calls.add('settings'));
     when(() => rc.setDefaults(any())).thenAnswer((_) async => calls.add('defaults'));
@@ -27,8 +29,25 @@ void main() {
       calls.add('activate');
       return true;
     });
+    when(() => rc.getDouble(FieldDiagnostics.sampleRateKey)).thenReturn(0);
     when(() => rc.lastFetchStatus).thenReturn(RemoteConfigFetchStatus.noFetchYet);
     when(() => rc.lastFetchTime).thenReturn(DateTime.fromMillisecondsSinceEpoch(0));
+  });
+
+  tearDown(FieldDiagnostics.resetSampling);
+
+  test('sampling waits for cached config activation rather than Firebase availability', () async {
+    final Completer<bool> activated = Completer<bool>();
+    when(() => rc.activate()).thenAnswer((_) => activated.future);
+    when(() => rc.getDouble(FieldDiagnostics.sampleRateKey)).thenReturn(1);
+    when(() => rc.fetchAndActivate()).thenAnswer((_) async => true);
+
+    final Future<void> preparation = prepareRemoteConfig(rc, release: true);
+    await Future<void>.delayed(Duration.zero);
+    expect(FieldDiagnostics.sampled, isFalse);
+    activated.complete(true);
+    await preparation;
+    expect(FieldDiagnostics.sampled, isTrue);
   });
 
   test('cached values are activated before the fetch starts', () async {

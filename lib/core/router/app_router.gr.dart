@@ -2969,6 +2969,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
     WallpaperFeed? feed,
     bool desktopDownload = false,
     bool openFolderSheet = false,
+    WallOpenEntryValue? entry,
     List<PageRouteInfo>? children,
   }) : super(
          WallpaperDetailRoute.name,
@@ -2986,6 +2987,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
            feed: feed,
            desktopDownload: desktopDownload,
            openFolderSheet: openFolderSheet,
+           entry: entry,
          ),
          initialChildren: children,
        );
@@ -3013,6 +3015,7 @@ class WallpaperDetailRoute extends PageRouteInfo<WallpaperDetailRouteArgs> {
           feed: args.feed,
           desktopDownload: args.desktopDownload,
           openFolderSheet: args.openFolderSheet,
+          entry: args.entry,
         ),
       );
     },
@@ -3034,6 +3037,7 @@ class WallpaperDetailRouteArgs {
     this.feed,
     this.desktopDownload = false,
     this.openFolderSheet = false,
+    this.entry,
   });
 
   final Key? key;
@@ -3062,9 +3066,11 @@ class WallpaperDetailRouteArgs {
 
   final bool openFolderSheet;
 
+  final WallOpenEntryValue? entry;
+
   @override
   String toString() {
-    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile, aspectRatio: $aspectRatio, requestId: $requestId, feed: $feed, desktopDownload: $desktopDownload, openFolderSheet: $openFolderSheet}';
+    return 'WallpaperDetailRouteArgs{key: $key, entity: $entity, wallId: $wallId, source: $source, thumbnailUrl: $thumbnailUrl, analyticsSurface: $analyticsSurface, heroTag: $heroTag, localFile: $localFile, aspectRatio: $aspectRatio, requestId: $requestId, feed: $feed, desktopDownload: $desktopDownload, openFolderSheet: $openFolderSheet, entry: $entry}';
   }
 
   @override
@@ -3083,7 +3089,8 @@ class WallpaperDetailRouteArgs {
         requestId == other.requestId &&
         feed == other.feed &&
         desktopDownload == other.desktopDownload &&
-        openFolderSheet == other.openFolderSheet;
+        openFolderSheet == other.openFolderSheet &&
+        entry == other.entry;
   }
 
   @override
@@ -3100,7 +3107,8 @@ class WallpaperDetailRouteArgs {
       requestId.hashCode ^
       feed.hashCode ^
       desktopDownload.hashCode ^
-      openFolderSheet.hashCode;
+      openFolderSheet.hashCode ^
+      entry.hashCode;
 }
 
 /// generated route for
