@@ -1555,8 +1555,13 @@ test("restyle with a missing, unknown or prototype styleId is refused before any
     ["missing styleId", {...await restyleData(), styleId: undefined}],
     ["unknown styleId", await restyleData({styleId: "vaporwave"})],
     ["prototype styleId", await restyleData({styleId: "toString"})],
+    ["prototype constructor", await restyleData({styleId: "constructor"})],
+    ["prototype __proto__", await restyleData({styleId: "__proto__"})],
+    ["null styleId", await restyleData({styleId: null})],
+    ["object styleId", await restyleData({styleId: {id: "anime"}})],
     ["numeric styleId", await restyleData({styleId: 42})],
     ["extend with a styleId", await extendData({styleId: "anime"})],
+    ["upscale with a styleId", await upscaleData({styleId: "anime"})],
     ["restyle with a placement", await restyleData({placement: {left: 0, top: 0, width: 1080, height: 2340}})],
   ];
   for (const [name, data] of cases) {
@@ -1678,4 +1683,93 @@ test("the sweeper refunds a stale restyle job once", async (t) => {
 test("parseStyleId and restylePrompt read the Restyle style map", () => {
   assert.equal(parseStyleId("restyle", "3d render"), "3d render");
   assert.ok(restylePrompt("3d render").includes("clay-like"));
+});
+
+test("Seedream minimum-area output is cropped to a small phone target before SafeSearch and storage", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  const deps = mockDeps(t);
+  const fetch = photoDeps.fetch;
+  const output = (await jpegOf(760, 1216)).toString("base64");
+  t.mock.method(photoDeps, "fetch", async (url: string, init: RequestInit) => {
+    const response = await fetch(url, init);
+    return url === FAL_RESTYLE ? Response.json({images: [{url: `data:image/jpeg;base64,${output}`}]},
+      {headers: {"x-fal-request-id": "req-abcdef12"}}) : response;
+  });
+  const checked: Buffer[] = [];
+  t.mock.method(photoDeps, "safeSearch", async (jpeg: Buffer) => {
+    checked.push(jpeg);
+    assert.equal(deps.stored.length, 0);
+    return SAFE;
+  });
+  const data = await restyleData({targetWidth: 720, targetHeight: 1152, cost: 0, price: 0});
+  const result = await run(data) as Succeeded;
+  assert.equal(result.state, "succeeded");
+  assert.equal(result.cost, 75);
+  assert.deepEqual(deps.fal()[0].body.image_size, {width: 720, height: 1152});
+  assert.equal(checked.length, 2);
+  assert.deepEqual(await sizeOf(checked[1]), {width: 720, height: 1152});
+  assert.deepEqual(deps.stored[0], checked[1]);
+  assert.deepEqual(await run(data), result);
+  assert.equal(deps.fal().length, 1);
+  assert.equal(coinTxCount(store), 1);
+});
+
+test("Seedream empty, invalid and oversized results refund once and clean provider payloads", async (t) => {
+  const oversized = Buffer.alloc(30 * 1024 * 1024 + 1);
+  const cases: Array<[string, unknown, Buffer | undefined]> = [
+    ["empty images", {images: []}, undefined],
+    ["null image", {images: [null]}, undefined],
+    ["non-HTTPS URL", {images: [{url: "http://cdn.test/result.jpg"}]}, undefined],
+    ["oversized inline", {images: [{url: `data:image/jpeg;base64,${oversized.toString("base64")}`}]}, undefined],
+    ["oversized download", {images: [{url: "https://cdn.test/result.jpg"}]}, oversized],
+  ];
+  for (const [name, payload, download] of cases) {
+    await t.test(name, async (s) => {
+      const store = installFakeDb(s, {"usersv2/u1": {coins: 200}});
+      const deps = mockDeps(s);
+      const fetch = photoDeps.fetch;
+      s.mock.method(photoDeps, "fetch", async (url: string, init: RequestInit) => {
+        if (download && url === "https://cdn.test/result.jpg") return new Response(new Uint8Array(download));
+        const response = await fetch(url, init);
+        return url === FAL_RESTYLE ? Response.json(payload,
+          {headers: {"x-fal-request-id": "req-abcdef12"}}) : response;
+      });
+      const removed: string[] = [];
+      s.mock.method(photoDeps, "remove", async (key: string) => {
+        removed.push(key);
+      });
+      const data = await restyleData();
+      const result = await run(data) as Failed;
+      assert.equal(result.state, "failed");
+      assert.equal(result.reason, "provider_error");
+      assert.equal(result.refunded, true);
+      assert.equal(store.get("usersv2/u1")?.coins, 200);
+      assert.equal(store.get(JOB)?.cleanupPending, false);
+      assert.equal(store.get(JOB)?.falCleanupPending, false);
+      assert.deepEqual(removed, [store.get(JOB)?.resultKey]);
+      assert.equal(deps.calls.filter((c) => c.url === FAL_DELETE).length, 1);
+      assert.equal(deps.stored.length, 0);
+      assert.deepEqual(await run(data), result);
+      assert.equal(coinTxCount(store), 2);
+    });
+  }
+});
+
+test("a recovered stale restyle refunds once across lookup, replay and sweeping", async (t) => {
+  const store = installFakeDb(t, {
+    "usersv2/u1": {coins: 125},
+    [CHARGE]: {delta: -75},
+    [JOB]: {...runningJob(admin.firestore.Timestamp.fromMillis(Date.now() - 11 * MINUTE)),
+      mode: "restyle", model: "fal-ai/bytedance/seedream/v4/edit", styleId: "anime"},
+  });
+  const deps = mockDeps(t);
+  const result = await lookup({requestId: "req-00000001"}) as Failed;
+  assert.equal(result.state, "failed");
+  assert.equal(result.mode, "restyle");
+  assert.equal(result.refunded, true);
+  assert.deepEqual(await run(await restyleData()), result);
+  assert.equal(await sweepStalePhotoJobsOnce(), 0);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(coinTxCount(store), 2);
+  assert.equal(deps.fal().length, 0);
 });
