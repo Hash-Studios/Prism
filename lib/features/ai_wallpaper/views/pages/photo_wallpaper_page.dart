@@ -69,6 +69,9 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
 
   /// Kept across a retry after a dropped connection or a job still in progress, so the server replays it.
   String? _pendingRequestId;
+
+  // Keep these across owner switches: a failed clear can leave an already reported job recoverable.
+  final Set<({String userId, String requestId})> _reportedRestyleRequests = <({String userId, String requestId})>{};
   bool _picking = false;
   bool _acting = false;
   bool _initialApplied = false;
@@ -139,11 +142,14 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
               : result.reason != PhotoJobFailure.network && result.reason != PhotoJobFailure.inProgress));
 
   /// Only for a final outcome. An uncertain job keeps its request id, and recovery reports it once it resolves.
-  static void _trackRestyleOutcome(PhotoJobState result) => analytics.track(
-    PhotoRestyleFinishedEvent(
-      outcome: result is PhotoJobSucceeded ? PhotoRestyleOutcomeValue.succeeded : PhotoRestyleOutcomeValue.failed,
-    ),
-  );
+  void _trackRestyleOutcome(String userId, String requestId, PhotoJobState result) {
+    if (!_isFinal(result) || !_reportedRestyleRequests.add((userId: userId, requestId: requestId))) return;
+    analytics.track(
+      PhotoRestyleFinishedEvent(
+        outcome: result is PhotoJobSucceeded ? PhotoRestyleOutcomeValue.succeeded : PhotoRestyleOutcomeValue.failed,
+      ),
+    );
+  }
 
   Future<bool> _clearPending(String userId, String requestId) async {
     try {
@@ -192,7 +198,9 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
         PhotoJobRunning() => const PhotoJobFailed(reason: PhotoJobFailure.inProgress, charged: false, refunded: false),
         _ => result,
       };
-      if (pending.mode == PhotoJobMode.restyle && result != null && _isFinal(shown)) _trackRestyleOutcome(shown);
+      if (pending.mode == PhotoJobMode.restyle && result != null) {
+        _trackRestyleOutcome(userId, pending.requestId, shown);
+      }
       final bool cleared = (result == null || _isFinal(shown)) && await _clearPending(userId, pending.requestId);
       if (!_isCurrent(revision)) return;
       setState(() {
@@ -379,7 +387,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
         await activity?.finish(imageUrl);
         if (!_isCurrent(revision)) return;
         analytics.track(PhotoJobDoneEvent(mode: mode.analytics, target: job.target.analytics, cost: job.cost));
-        if (style != null) _trackRestyleOutcome(result);
+        if (style != null) _trackRestyleOutcome(userId, requestId, result);
       case PhotoJobFailed(:final PhotoJobFailure reason, :final bool refunded):
         await activity?.fail(_errorText(l10n, result));
         if (!_isCurrent(revision)) return;
@@ -391,7 +399,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
             refunded: refunded,
           ),
         );
-        if (style != null && _isFinal(result)) _trackRestyleOutcome(result);
+        if (style != null && _isFinal(result)) _trackRestyleOutcome(userId, requestId, result);
       case PhotoJobDraft() || PhotoJobRunning():
         await activity?.cancel();
     }

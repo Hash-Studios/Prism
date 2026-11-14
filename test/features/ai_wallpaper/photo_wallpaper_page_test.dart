@@ -784,6 +784,120 @@ void main() {
     });
   });
 
+  testWidgets('a dropped restyle connection reports only the recovered refund', (tester) async {
+    final _Harness harness = _Harness()..onCall = (_) async => throw StateError('connection dropped');
+    harness.onLookup = (_) async => <String, Object?>{'state': 'running'};
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+    expect(harness.payloads, hasLength(2));
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>(), isEmpty);
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>(), isEmpty);
+    harness.onLookup = (_) async => <String, Object?>{
+      'state': 'failed',
+      'reason': 'network',
+      'refunded': true,
+      'cost': 75,
+    };
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+    expect(harness.pendingJson, isNull);
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>().single.toWireParameters(), <String, Object?>{
+      'outcome': 'failed',
+    });
+  });
+
+  testWidgets('a stale restyle run cannot report after account switch; recovery reports once', (tester) async {
+    final _Harness harness = _Harness();
+    final Completer<Object?> result = Completer<Object?>();
+    final Completer<Object?> recovered = Completer<Object?>();
+    harness.onCall = (_) => result.future;
+    harness.onLookup = (_) => recovered.future;
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+    await tester.tap(find.byKey(_runKey));
+    await tester.pump();
+    expect(harness.payloads, hasLength(1));
+    harness.session.switchTo('user-2');
+    await _settle(tester);
+    harness.session.switchTo('user-1');
+    await tester.pump();
+    result.complete(_successMap);
+    await _settle(tester);
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>(), isEmpty);
+    recovered.complete(_successMap);
+    await _settle(tester);
+    expect(harness.pendingJson, isNull);
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>().single.toWireParameters(), <String, Object?>{
+      'outcome': 'succeeded',
+    });
+  });
+
+  for (final bool recovered in <bool>[false, true]) {
+    for (final bool succeeded in <bool>[false, true]) {
+      testWidgets('restyle outcome is emitted once after clear failure (recovered=$recovered, success=$succeeded)', (
+        tester,
+      ) async {
+        final Map<String, Object?> result = succeeded
+            ? _successMap
+            : <String, Object?>{'state': 'failed', 'reason': 'provider_error', 'refunded': true, 'cost': 75};
+        final _Harness harness = _Harness()..onLookup = (_) async => result;
+        if (recovered) {
+          harness.pendingJson = jsonEncode(
+            const PendingPhotoJob(
+              userId: 'user-1',
+              requestId: 'req-00000042',
+              mode: PhotoJobMode.restyle,
+              target: PhotoJobTarget.phone,
+            ).toJson(),
+          );
+        }
+        harness.onWrite = (json) async {
+          if (json == null) throw StateError('disk full');
+        };
+        await _pumpPage(tester, harness);
+        if (!recovered) {
+          await _pickPhoto(tester);
+          await tester.tap(find.text('Restyle'));
+          await _settle(tester);
+          harness.onCall = (_) async => result;
+        }
+        if (!recovered) await tester.tap(find.byKey(_runKey));
+        await _settle(tester);
+        expect(harness.pendingJson, isNotNull);
+        expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>(), hasLength(1));
+
+        // Both the same-page retry and returning to this account must not report it again.
+        if (succeeded) {
+          await tester.tap(find.text('Use another photo'));
+        } else if (recovered) {
+          await tester.tap(find.text('Choose a photo'));
+        } else {
+          await tester.tap(find.byKey(_runKey));
+        }
+        await _settle(tester);
+        expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>(), hasLength(1));
+        harness.session.switchTo('user-2');
+        await _settle(tester);
+        harness.onWrite = null;
+        harness.session.switchTo('user-1');
+        await _settle(tester);
+        expect(harness.pendingJson, isNull);
+        expect(
+          harness.analytics.events.whereType<PhotoRestyleFinishedEvent>().single.toWireParameters(),
+          <String, Object?>{'outcome': succeeded ? 'succeeded' : 'failed'},
+        );
+      });
+    }
+  }
+
   testWidgets('a photo that already fits can still be restyled', (tester) async {
     await _pumpPage(tester, _Harness(photo: const PhotoSize(1080, 2340)));
     await _pickPhoto(tester);
