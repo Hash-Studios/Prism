@@ -103,11 +103,13 @@ void main() {
   ReportProblemService service({bool canSend = true, Transport? feedbackTransport}) => ReportProblemService(
     readConfig: () => _config,
     canSend: () => canSend,
+    readDevice: () async => 'Google Pixel 9',
+    readOs: () => 'android 16',
     feedbackTransport: feedbackTransport ?? transport,
   );
 
   test(
-    'sends feedback tagged with release, environment, topic, trigger and screenshot, linked to the last error',
+    'sends feedback tagged with release, environment, topic, trigger, screenshot, device and os, linked to the last error',
     () async {
       final SentryId crash = await Sentry.captureMessage('boom');
       transport.envelopes.clear();
@@ -133,6 +135,8 @@ void main() {
         'topic': 'wallpaper_wont_set',
         'trigger': 'shake',
         'hasScreenshot': 'true',
+        'device': 'Google Pixel 9',
+        'os': 'android 16',
         'reference': reference,
       });
       expect(event['release'], 'Prism@3.14.0+353');
@@ -167,6 +171,8 @@ void main() {
     final List<_Item> items = await _items(transport.envelopes.single);
     final Map<String, dynamic> event = items.singleWhere((_Item i) => i.header['type'] == 'feedback').json;
     expect((event['tags'] as Map<String, dynamic>)['hasScreenshot'], 'false');
+    expect((event['tags'] as Map<String, dynamic>).containsKey('device'), isFalse);
+    expect((event['tags'] as Map<String, dynamic>).containsKey('os'), isFalse);
     final Map<String, dynamic> feedback =
         (event['contexts'] as Map<String, dynamic>)['feedback'] as Map<String, dynamic>;
     expect(feedback['message'], '[slow]');
