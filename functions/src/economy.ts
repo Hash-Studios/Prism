@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import {db} from "./common";
+import {type CoinEvent, parseCoinEvents, type WeeklyCoinEvent} from "./coinEvents";
 
 /** Where admins tune the economy. Clients read the same doc. */
 export const ECONOMY_CONFIG_DOC = "economyConfig/current";
@@ -87,6 +88,9 @@ export interface EconomyConfig {
   };
   /** Per shop item price overrides, keyed by item id. */
   shopPrices: Record<string, number>;
+  /** Coin doubler events, see coinEvents.ts. A bad entry is dropped on parse. */
+  events: CoinEvent[];
+  weeklyEvent: WeeklyCoinEvent | null;
 }
 
 export const DEFAULT_ECONOMY: EconomyConfig = {
@@ -190,6 +194,8 @@ export const DEFAULT_ECONOMY: EconomyConfig = {
     legacyPricingUntil: "2027-01-31T00:00:00Z",
   },
   shopPrices: {},
+  events: [],
+  weeklyEvent: null,
 };
 
 const MAX_PRICE = 10_000;
@@ -305,6 +311,7 @@ export function parseEconomy(raw: unknown): EconomyConfig {
   award.spinWheel = parseWheel(award.spinWheel) ?? defaults.award.spinWheel;
   award.dailyChest = parseWheel(award.dailyChest) ?? defaults.award.dailyChest;
   merged.award = award;
+  Object.assign(merged, parseCoinEvents(raw));
   merged.proDiscountActions = merged.proDiscountActions.filter((a) => typeof a === "string");
   merged.proBypassActions = merged.proBypassActions.filter((a) => typeof a === "string" && !NEVER_BYPASSED.has(a));
   const ranks = merged.xp.ranks;

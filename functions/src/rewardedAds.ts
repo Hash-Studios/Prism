@@ -2,6 +2,7 @@ import {createHash, randomBytes} from "node:crypto";
 import * as admin from "firebase-admin";
 import {HttpsError, onCall, onRequest, type CallableRequest} from "firebase-functions/v2/https";
 import {coinTransactionDoc, db, int, utcDateString} from "./common";
+import {coinEventReceipt, liveCoinEvent} from "./coinEvents";
 import {loadEconomy} from "./economy";
 import {applyQuestEvent, buildQuestState} from "./questCatalog";
 import {GoogleSsvVerifier, SsvInvalid} from "./admobSsv";
@@ -92,11 +93,15 @@ export const beginRewardedSession = onCall(options, async (request: CallableRequ
     if (adsRemaining === 0) return unavailable("daily_limit");
     const cooldownUntil = Math.max(int(rate.lastAt) + 20_000, int(lock.cooldownUntilMs));
     if (cooldownUntil > now) return unavailable("cooldown", cooldownUntil);
-    const rewardCoins = int(rate.count) + Object.keys(pending).length === 0 ?
+    const baseCoins = int(rate.count) + Object.keys(pending).length === 0 ?
       economy.award.rewardedAdFirstOfDay : economy.award.rewardedAd;
+    // The quote is the award: settlement pays exactly this, so a retry or a late callback cannot change it.
+    const event = liveCoinEvent(economy, "rewardedAd", now);
     const reservation = {version: 1, status: "reserved", sessionId: ref.id, userId: uid,
       customData: `${ref.id}.${randomBytes(24).toString("base64url")}`, adUnitId: config[data.platform as "android" | "ios"],
-      rewardCoins, showBeforeMs: now + SHOW_MS, callbackBeforeMs: now + SHOW_MS + GRACE_MS, adsRemaining: adsRemaining - 1};
+      rewardCoins: baseCoins * (event?.multiplier ?? 1), showBeforeMs: now + SHOW_MS,
+      callbackBeforeMs: now + SHOW_MS + GRACE_MS, adsRemaining: adsRemaining - 1,
+      ...(event ? {coinEvent: coinEventReceipt(event)} : {})};
     tx.set(ref, {uid, requestId, placement: data.placement, platform: data.platform, day, createdAtMs: now,
       ...reservation, reservation, rewardType: config.rewardType, rewardAmount: config.amount});
     tx.set(rateRef, {...rate, reservations: {...pending, [ref.id]: reservation.callbackBeforeMs}, lastAt: now});
@@ -120,7 +125,8 @@ export const getRewardedSession = onCall({...options, maxInstances: 2}, async (r
     const rate = (await tx.get(db.doc(`coinAdRateDaily/${uid}_${utcDateString(new Date(now))}`))).data() ?? {};
     return {version: 1, sessionId: ref.id, status: saved.status === "settled" ? "settled" :
       now > saved.callbackBeforeMs ? "expired" : "reserved", rewardCoins: saved.rewardCoins,
-    ...(saved.transactionId ? {transactionId: saved.transactionId} : {}), currentBalance: int(user.data.coins),
+    ...(saved.transactionId ? {transactionId: saved.transactionId} : {}),
+    ...(saved.coinEvent ? {coinEvent: saved.coinEvent} : {}), currentBalance: int(user.data.coins),
     adsRemaining: Math.max(0, economy.award.rewardedAdMaxPerDay - int(rate.count) - Object.keys(liveReservations(rate.reservations, now)).length)};
   });
 });
@@ -178,9 +184,10 @@ export async function settleVerifiedReward(params: URLSearchParams): Promise<voi
       ...(lock.sessionId === id ? {showBeforeMs: 0} : {})});
     tx.set(privateRef, {rev: int(privateData.rev) + 1,
       quests: applyQuestEvent(buildQuestState(privateData.quests, now, data.premium === true), "watch_ad", economy).state}, {merge: true});
-    tx.set(db.doc(`coinTransactions/${transactionId}`), coinTransactionDoc({id: transactionId, userId: session.uid,
+    tx.set(db.doc(`coinTransactions/${transactionId}`), {...coinTransactionDoc({id: transactionId, userId: session.uid,
       at: admin.firestore.Timestamp.fromMillis(now), delta: session.rewardCoins, balanceBefore: int(data.coins),
-      action: "rewardedAd", sourceTag: session.placement, reason: "google_ssv", description: "Verified rewarded ad"}));
+      action: "rewardedAd", sourceTag: session.placement, reason: "google_ssv", description: "Verified rewarded ad"}),
+    ...(session.coinEvent ? {coinEvent: session.coinEvent} : {})});
     tx.update(ref, {status: "settled", transactionId});
     tx.set(receiptRef, {sessionId: id});
   });

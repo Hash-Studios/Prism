@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:Prism/core/coins/coin_events.dart';
 import 'package:Prism/core/coins/daily_chest.dart';
 import 'package:Prism/core/coins/spin_wheel.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
@@ -382,6 +383,7 @@ class EconomyConfig {
     this.xp = const EconomyXp(),
     this.flags = const EconomyFlags(),
     this.shopPrices = const <String, int>{},
+    this.coinEvents = CoinEventSchedule.none,
   });
 
   /// Reads a raw `economyConfig/current` doc. Each missing or malformed field falls back to its default.
@@ -406,6 +408,7 @@ class EconomyConfig {
                 if (_int(e.value, -1) >= 0) e.key.toString(): _int(e.value, 0),
             })
           : defaults.shopPrices,
+      coinEvents: CoinEventSchedule.fromConfig(raw),
     );
   }
 
@@ -427,6 +430,9 @@ class EconomyConfig {
   final EconomyXp xp;
   final EconomyFlags flags;
   final Map<String, int> shopPrices;
+
+  /// Coin doubler events, from the doc's `events` and `weeklyEvent`.
+  final CoinEventSchedule coinEvents;
 
   Rank rankFor(int xpTotal) {
     RankDef rank = xp.ranks.first;

@@ -494,8 +494,10 @@ class CoinsService with WidgetsBindingObserver {
   /// Auto-rotate is open: Pro or an active auto-rotate pass.
   bool get autoRotateUnlocked => app_state.prismUser.premium || currentPasses.autoRotatePassActive(DateTime.now());
 
-  /// What the next rewarded ad pays: more for the first ad of the UTC day.
-  int get adsRewardNow {
+  /// What the next rewarded ad pays: more for the first ad of the UTC day, times a live coin event.
+  int get adsRewardNow => _adsBaseReward * EconomyConfig.current.coinEvents.multiplierAt(DateTime.now());
+
+  int get _adsBaseReward {
     final int? remaining = adsRemainingToday;
     if (remaining != null) {
       return remaining == EconomyConfig.current.award.rewardedAdMaxPerDay
