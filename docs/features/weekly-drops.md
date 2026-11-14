@@ -36,7 +36,7 @@ An admin can give one Drop a theme series: `studioConfig/current.dropSeries[week
 - When the week has a theme, the planner takes only ready walls of that series, oldest first, up to 10. Other reserves keep `dropReserved: true` and wait for the next Drop.
 - When the theme series has fewer than 4 ready walls, the planner logs `drops: the theme series has too few ready walls; using the mixed pick` with the count. Then it uses the normal round-robin pick over all series.
 - A theme that names an unknown series is ignored. The week gets the normal pick.
-- The plan transaction reads the theme again. If the theme changed after the first read, the run fails and writes nothing. The scheduler retries once and picks again with the new theme.
+- The plan transaction reads the theme again. If the theme changed after the first read, the run fails and writes nothing. The scheduler retries once and picks again with the new theme. Studio's upcoming-Drop week-key boundary is Monday 00:30 UTC, the time this planner runs.
 - The reserves for the themed Drop come from the theme series only. See "Weekly Drop reserve" in the Studio doc.
 - The theme does not change the prices or the pushes. To name the Drop, call `setDropTitle` with the week key, for example `"Winter Drop"`. The planner then writes that title. The last call push shows the title. The live push title stays "A new Drop is live", because installed apps localize it from a fixed key. Its body shows the 3 tags that most walls share (moods, Vision labels and collections). For a Winter Drop these are likely snow labels, but no test proves it.
 

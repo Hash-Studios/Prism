@@ -2,6 +2,8 @@
 
 Status: code is ready (series, `startsOff`, Drop theme). Nothing is generated or deployed. A paid run needs the owner's OK.
 
+The scheduled and unfiltered manual planners omit `winter-light` by default; ordinary series still default to weight 1. Giving a manual run `seriesId: "winter-light"` explicitly selects it. The `studio:run --series winter-light` dry-run script currently supplies an empty weights map, so it plans no winter candidates; this does not model a real selected-series manual run. The script is intentionally unchanged here.
+
 ## Goal
 
 Give the Winter theme (1 December to 6 January) fresh walls that match it: a "Winter" Studio series and a December Drop made from it. The copy stays neutral. It says "winter" and "holidays". It shows no religious symbols.

@@ -241,6 +241,11 @@ export const planWeeklyDrop = onSchedule(
           !releaseTimeReached(wall, nowMs) ||
           wall.kind === "live" && wall.live?.verified !== true;
       })) return false;
+      if (themed.length >= MIN_DROP_WALLS && currentWalls.some((snapshot) =>
+        str(snapshot.data()?.seriesId) !== theme)) {
+        const moved = currentWalls.find((snapshot) => str(snapshot.data()?.seriesId) !== theme);
+        throw new Error(`drops: themed reserve ${moved?.id ?? "unknown"} changed while planning; the retry picks again.`);
+      }
       const titles = currentConfig.data()?.dropTitles;
       const configuredTitle =
         titles && typeof titles === "object" && !Array.isArray(titles) &&

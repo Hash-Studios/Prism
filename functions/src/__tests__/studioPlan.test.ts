@@ -168,6 +168,7 @@ test("a manual run of winter-light plans four of its items while it starts off",
 });
 
 test("config is off without the flag or an identity email, and numbers are clamped", () => {
+  assert.equal(parseStudioConfig({}).generationEnabled, false);
   const off = parseStudioConfig(undefined);
   assert.equal(off.generationEnabled, false);
   assert.deepEqual([off.dailyCandidates, off.maxCandidatesPerDay, off.width, off.height], [10, 30, 1440, 3200]);

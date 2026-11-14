@@ -6,7 +6,7 @@ import {db, int, REGION, str, utcDateString} from "../common";
 import {weekBounds, weekKey} from "../economy";
 import {WALL_REQUESTS} from "../wallRequests";
 import {falKey, type WallDepth, wallDepthFor} from "../wallDepth";
-import {loadStudioConfig, type StudioIdentity} from "./config";
+import {loadStudioConfig, parseDropSeries, type StudioIdentity} from "./config";
 import {annotateWithVision, duplicateCheck, type KnownSignature, runGates, type VisionAnnotate} from "./gates";
 import {randomWallId, type Rng} from "./ids";
 import {STUDIO_SERIES} from "./series";
@@ -313,6 +313,13 @@ export const STUDIO_DROP_SERIES_CAP = 3;
 /** Walls of the theme series that may wait for its Drop: the most walls a Drop takes. */
 export const STUDIO_DROP_THEME_CAP = 10;
 
+/** The Monday Drop is planned at 00:30 UTC; until then, the current ISO week is still upcoming. */
+export function upcomingDropWeekKey(nowMs: number): string {
+  const {start, end} = weekBounds(nowMs);
+  const mondayDropTime = start + 30 * 60_000;
+  return weekKey(nowMs < mondayDropTime ? start : end);
+}
+
 async function publishWall(params: {
   ref: admin.firestore.DocumentReference;
   attempts: number;
@@ -323,8 +330,8 @@ async function publishWall(params: {
   rng: Rng;
   day: string;
   dropReserves: number;
-  /** The theme series of the next Drop, or null. */
-  dropSeries: string | null;
+  /** Week key of the Drop whose reserves are being claimed. */
+  dropWeekKey: string;
 }): Promise<string | null | "duplicate" | "request_unavailable"> {
   const {ref, attempts, wall, signature, rng} = params;
   const reservesRef = db.collection("studioDropReserves").doc(params.day);
@@ -357,9 +364,11 @@ async function publishWall(params: {
         signature: str(doc.data()?.signature), wallId: str(doc.data()?.wallId),
       }));
       const reserved = int((await tx.get(reservesRef)).data()?.count);
+      const config = await tx.get(db.doc("studioConfig/current"));
+      const dropSeries = parseDropSeries(config.data()?.dropSeries)[params.dropWeekKey] ?? null;
       const seriesId = str(wall.seriesId);
-      const seriesCap = params.dropSeries === seriesId ? STUDIO_DROP_THEME_CAP : STUDIO_DROP_SERIES_CAP;
-      const mayReserve = reserved < params.dropReserves && (params.dropSeries === null || params.dropSeries === seriesId);
+      const seriesCap = dropSeries === seriesId ? STUDIO_DROP_THEME_CAP : STUDIO_DROP_SERIES_CAP;
+      const mayReserve = reserved < params.dropReserves && (dropSeries === null || dropSeries === seriesId);
       const seriesWaiting = mayReserve ? (await tx.get(db.collection("walls")
         .where("dropReserved", "==", true).where("review", "==", false)
         .where("seriesId", "==", seriesId).limit(seriesCap))).size : 0;
@@ -511,7 +520,7 @@ export async function processCandidate(runId: string, candidateId: string, deps:
       rng: deps.rng,
       day: utcDateString(new Date(deps.nowMs())),
       dropReserves: isDuo ? 0 : config.dailyDropReserves,
-      dropSeries: config.dropSeries[weekKey(weekBounds(deps.nowMs()).end)] ?? null,
+      dropWeekKey: upcomingDropWeekKey(deps.nowMs()),
     });
     if (wallId === null) {
       logger.warn("studio: another attempt took this candidate over; not publishing.", {runId, candidateId});

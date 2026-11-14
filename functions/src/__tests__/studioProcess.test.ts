@@ -7,7 +7,7 @@ import {onWallApproved} from "../onWallApproved";
 import {onWallSubmitted} from "../onWallSubmitted";
 import {imageSignature, type VisionResult} from "../studio/gates";
 import {randomWallId} from "../studio/ids";
-import {humanSize, isStudioWall, processCandidate, type StudioProcessDeps, thumbSize} from "../studio/process";
+import {humanSize, isStudioWall, processCandidate, type StudioProcessDeps, thumbSize, upcomingDropWeekKey} from "../studio/process";
 import type {WallDepth} from "../wallDepth";
 import {type Doc, installFakeDb} from "./fakeDb";
 import {flatPng, gradientPng, seededRng} from "./studioTestUtil";
@@ -300,6 +300,47 @@ test("while the next Drop has a theme, only that series reserves, past the usual
     dropSeries: {"2026-W43": "paper-worlds"}}}});
   await thisWeek.run();
   assert.equal(newWall(thisWeek.store).dropReserved, true);
+});
+
+test("publish uses the current configured Drop theme, not the theme loaded before generation", async (t) => {
+  const nowMs = () => Date.parse("2026-10-19T21:00:00Z");
+  const {store, run} = setup(t, {
+    nowMs,
+    seed: {"studioConfig/current": {generationEnabled: true, identity: IDENTITY,
+      dropSeries: {"2026-W44": "after-dark"}}},
+    beforePut: (current, key) => {
+      if (key.endsWith("/" + CAND + ".jpg")) {
+        current.set("studioConfig/current", {generationEnabled: true, identity: IDENTITY,
+          dropSeries: {"2026-W44": "paper-worlds"}});
+      }
+    },
+  });
+  await run();
+  assert.equal(walls(store)[0][1].dropReserved, undefined);
+  assert.equal(store.has("studioDropReserves/2026-10-19"), false);
+});
+
+test("the Monday 00:30 Drop uses the current week until its planning time", () => {
+  assert.equal(upcomingDropWeekKey(Date.parse("2026-10-19T00:00:00Z")), "2026-W43");
+  assert.equal(upcomingDropWeekKey(Date.parse("2026-10-19T00:29:59.999Z")), "2026-W43");
+  assert.equal(upcomingDropWeekKey(Date.parse("2026-10-19T00:30:00Z")), "2026-W44");
+});
+
+test("a themed Monday Drop reserves its walls during the 00:00-00:30 window", async (t) => {
+  const waiting = Object.fromEntries(Array.from({length: 3}, (_, i) =>
+    [`walls/Before${i}`, {origin: "studio", review: false, dropReserved: true, seriesId: "after-dark"}]));
+  const {store, run} = setup(t, {
+    nowMs: () => Date.parse("2026-10-19T00:15:00Z"),
+    seed: {...waiting, "studioConfig/current": {generationEnabled: true, identity: IDENTITY,
+      dropSeries: {"2026-W43": "after-dark"}}},
+  });
+  await run();
+  const published = walls(store).find(([path]) => path.startsWith("walls/") && !path.includes("Before"))?.[1];
+  assert.equal(published?.dropReserved, true);
+  assert.equal(store.get("studioDropReserves/2026-10-19")?.count, 1);
+  await run();
+  assert.equal(walls(store).length, 4);
+  assert.equal(store.get("studioDropReserves/2026-10-19")?.count, 1);
 });
 
 test("walls for separate requests in the same series share the waiting cap", async (t) => {

@@ -192,6 +192,27 @@ test("a scheduled run leaves out winter-light while it has no seriesWeights entr
   assert.ok(candidates(store, "d20261012").every(([, c]) => c.seriesId !== "winter-light"));
 });
 
+test("scheduled and unfiltered manual runs omit winter-light by default but include ordinary series", async (t) => {
+  for (const [runId, source] of [["d20261012", "schedule"], ["m1760300000020", "manual"]] as const) {
+    const store = setup(t);
+    await createStudioRun({runId, source, count: 30, nowMs: NOW, rng: seededRng(7)});
+    const items = candidates(store, runId).map(([, candidate]) => candidate);
+    assert.ok(items.length > 0);
+    assert.ok(items.every((item) => item.seriesId !== "winter-light"));
+    assert.ok(items.some((item) => item.seriesId === "after-dark"));
+  }
+});
+
+test("an explicit zero keeps winter-light out even when ordinary defaults remain enabled", async (t) => {
+  const store = setup(t, {seriesWeights: {"winter-light": 0}});
+  const result = await createStudioRun({runId: "d20261013", source: "schedule", count: 30,
+    nowMs: NOW + DAY_MS, rng: seededRng(9)});
+  assert.equal(result.count, 30);
+  const items = candidates(store, "d20261013").map(([, candidate]) => candidate);
+  assert.ok(items.every((item) => item.seriesId !== "winter-light"));
+  assert.ok(items.some((item) => item.seriesId === "after-dark"));
+});
+
 test("a manual winter-light run plans four winter-light candidates", async (t) => {
   const store = setup(t);
   const result = await createStudioRun({runId: "m1760300000010", source: "manual", seriesId: "winter-light", count: 4,

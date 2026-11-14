@@ -22,7 +22,7 @@ export interface StudioConfig {
   model: string;
   width: number;
   height: number;
-  /** Series id -> weight. A series that is not in the map has weight 1. */
+  /** Series id -> weight. Missing entries default to 1, except `startsOff` series which default to 0. */
   seriesWeights: Record<string, number>;
   /** Drop week key (`2026-W50`) -> the only series that Drop takes. */
   dropSeries: Record<string, string>;
