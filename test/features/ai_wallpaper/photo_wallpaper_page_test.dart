@@ -29,6 +29,7 @@ import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -694,6 +695,10 @@ void main() {
 
     expect(find.text('Style'), findsOneWidget);
     expect(find.byType(AiStylePicker), findsOneWidget);
+    final Rect pickerRect = tester.getRect(find.byType(AiStylePicker));
+    expect(pickerRect.left, 0);
+    expect(pickerRect.right, tester.view.physicalSize.width / tester.view.devicePixelRatio);
+    expect(tester.getRect(_styleTile(AiStylePreset.anime)).left, PrismSpace.page);
     expect(_styleTile(AiStylePreset.anime), findsOneWidget);
     expect(find.text('Restyle as Anime'), findsOneWidget);
     expect(find.text('Restyle · 75 coins'), findsOneWidget);
@@ -799,6 +804,24 @@ void main() {
     expect(find.byKey(_runKey), findsOneWidget);
   });
 
+  testWidgets('the full-bleed style row accepts drags and taps in the left margin', (tester) async {
+    await _pumpPage(tester, _Harness());
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+    await tester.ensureVisible(_styleTile(AiStylePreset.watercolor));
+    await tester.pumpAndSettle();
+
+    final Rect tileBefore = tester.getRect(_styleTile(AiStylePreset.watercolor));
+    await tester.dragFrom(Offset(4, tileBefore.center.dy), const Offset(-40, 0));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(_styleTile(AiStylePreset.watercolor)).left, isNot(tileBefore.left));
+
+    await tester.tapAt(Offset(4, tileBefore.center.dy));
+    await _settle(tester);
+    expect(find.text('Restyle as Watercolor'), findsOneWidget);
+  });
+
   testWidgets('Restyle works right to left', (tester) async {
     await _pumpPage(tester, _Harness(), textDirection: TextDirection.rtl);
     await _pickPhoto(tester);
@@ -807,8 +830,13 @@ void main() {
     await tester.tap(find.text('Restyle'));
     await _settle(tester);
     await tester.ensureVisible(_styleTile(AiStylePreset.watercolor));
-    await tester.pump();
-    await tester.tap(_styleTile(AiStylePreset.watercolor));
+    await tester.pumpAndSettle();
+    final Rect tileBefore = tester.getRect(_styleTile(AiStylePreset.watercolor));
+    final double width = tester.view.physicalSize.width / tester.view.devicePixelRatio;
+    await tester.dragFrom(Offset(width - 4, tileBefore.center.dy), const Offset(40, 0));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(_styleTile(AiStylePreset.watercolor)).left, isNot(tileBefore.left));
+    await tester.tapAt(Offset(width - 4, tileBefore.center.dy));
     await _settle(tester);
 
     expect(find.text('Restyle as Watercolor'), findsOneWidget);

@@ -554,16 +554,26 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
   Widget _body(AppLocalizations l10n) {
     final PhotoSource? source = _source;
     if (source == null && _state is PhotoJobDraft) return _empty(l10n);
+    final List<Widget> content = switch (_state) {
+      PhotoJobSucceeded() && final PhotoJobSucceeded done => _done(l10n, source, done),
+      PhotoJobFailed() && final PhotoJobFailed failed => _failed(l10n, failed),
+      PhotoJobRunning() => _working(l10n, source),
+      PhotoJobDraft() => _draft(l10n, source!),
+    };
     return SingleChildScrollView(
-      padding: PrismSpace.pageInsets.copyWith(top: PrismSpace.xs, bottom: PrismSpace.xxl),
+      padding: const EdgeInsets.only(top: PrismSpace.xs, bottom: PrismSpace.xxl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: switch (_state) {
-          PhotoJobSucceeded() && final PhotoJobSucceeded done => _done(l10n, source, done),
-          PhotoJobFailed() && final PhotoJobFailed failed => _failed(l10n, failed),
-          PhotoJobRunning() => _working(l10n, source),
-          PhotoJobDraft() => _draft(l10n, source!),
-        },
+        children: content
+            .map(
+              (Widget child) => child is AiStylePicker
+                  ? child
+                  : Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page),
+                      child: child,
+                    ),
+            )
+            .toList(),
       ),
     );
   }
@@ -619,21 +629,11 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       if (_tool == PhotoTool.restyle) ...<Widget>[
         Text(l10n.photoWallStyleTitle, style: PrismTextStyles.rowTitle(context)),
         const SizedBox(height: PrismSpace.xs),
-        // The row scrolls from screen edge to screen edge, and its first tile lines up with the page margin.
-        LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints box) => SizedBox(
-            height: AiStylePicker.tileHeight,
-            child: OverflowBox(
-              minWidth: box.maxWidth + 2 * PrismSpace.page,
-              maxWidth: box.maxWidth + 2 * PrismSpace.page,
-              child: AiStylePicker(
-                selected: _style,
-                onSelected: (AiStylePreset style) {
-                  if (canEdit()) setState(() => _style = style);
-                },
-              ),
-            ),
-          ),
+        AiStylePicker(
+          selected: _style,
+          onSelected: (AiStylePreset style) {
+            if (canEdit()) setState(() => _style = style);
+          },
         ),
         const SizedBox(height: PrismSpace.md),
       ],

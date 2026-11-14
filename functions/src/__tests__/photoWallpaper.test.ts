@@ -15,6 +15,7 @@ import {
   PHOTO_JOBS,
   STALE_RUNNING_MS,
   photoDeps,
+  PhotoJob,
   PhotoJobResult,
   planPhotoJob,
   sweepStalePhotoJobsOnce,
@@ -26,6 +27,7 @@ import {
   parseStyleId,
   PHOTO_STYLES,
   cropToShape,
+  runPhotoJob,
   restylePrompt,
 } from "../photoWallpaper";
 import {installFakeDb} from "./fakeDb";
@@ -1703,6 +1705,73 @@ test("Restyle sends fal the centre of the photo in the target shape, so the mode
   assert.deepEqual({width: cropped.width, height: cropped.height}, {width: 554, height: 1200});
   const same = await cropToShape(photo, {width: 1600, height: 1200}, {width: 2560, height: 1600});
   assert.deepEqual(await sharp(same).metadata().then((m) => [m.width, m.height]), [1600, 1000]);
+});
+
+test("cropToShape stays in bounds without enlarging legal extreme photos and strips metadata", async () => {
+  const cases = [
+    [{width: 256, height: 4096}, {width: 1600, height: 3840}, [256, 614]],
+    [{width: 4096, height: 256}, {width: 720, height: 1728}, [107, 256]],
+    [{width: 4096, height: 4096}, {width: 2560, height: 1600}, [4096, 2560]],
+    [{width: 256, height: 256}, {width: 2560, height: 1600}, [256, 160]],
+    [{width: 260, height: 4095}, {width: 2560, height: 1600}, [260, 163]],
+    [{width: 257, height: 4095}, {width: 720, height: 1152}, [257, 411]],
+  ] as const;
+  for (const [photo, target, expected] of cases) {
+    const source = await sharp({create: {width: photo.width, height: photo.height, channels: 3, background: BLUE}})
+      .withExif({IFD0: {Copyright: "private-photo-metadata"}}).jpeg().toBuffer();
+    const result = await cropToShape(source, photo, target);
+    const metadata = await sharp(result).metadata();
+    assert.deepEqual([metadata.width, metadata.height], expected);
+    assert.equal(metadata.exif, undefined);
+    assert.equal(result.includes("private-photo-metadata"), false);
+  }
+  const withExif = await sharp({create: {width: 1600, height: 1000, channels: 3, background: BLUE}})
+    .withExif({IFD0: {Copyright: "private-photo-metadata"}}).jpeg().toBuffer();
+  const normalized = await normalizePhoto(withExif.toString("base64"));
+  const noop = await cropToShape(normalized.jpeg, normalized.size, {width: 2560, height: 1600});
+  assert.deepEqual(await sizeOf(noop), {width: 1600, height: 1000});
+  assert.equal((await sharp(noop).metadata()).exif, undefined);
+  assert.equal(noop.includes("private-photo-metadata"), false);
+});
+
+test("cropToShape centers an odd-sized photo with nearest-pixel rounding", async () => {
+  const pixels = Buffer.alloc(769 * 513 * 3);
+  for (let y = 0; y < 513; y++) {
+    for (let x = 0; x < 769; x++) {
+      const i = (y * 769 + x) * 3;
+      pixels[i] = x % 256;
+      pixels[i + 1] = y % 256;
+      pixels[i + 2] = (x + y) % 256;
+    }
+  }
+  const source = await sharp(pixels, {raw: {width: 769, height: 513, channels: 3}}).jpeg().toBuffer();
+  const expected = await sharp(source).extract({left: 277, top: 0, width: 214, height: 513})
+    .jpeg({quality: 92}).toBuffer();
+  assert.deepEqual(await cropToShape(source, {width: 769, height: 513}, {width: 720, height: 1728}), expected);
+});
+
+test("a crop exception fails and refunds the active job once", async (t) => {
+  const startedAt = admin.firestore.Timestamp.now();
+  const store = installFakeDb(t, {
+    "usersv2/u1": {coins: 125},
+    [JOB]: {...runningJob(startedAt), mode: "restyle", styleId: "anime"},
+    [CHARGE]: {uid: "u1", delta: -75, action: "photoWallpaper"},
+  });
+  const deps = mockDeps(t);
+  const badJpeg = Buffer.from("not an image");
+  const job = {...runningJob(startedAt), mode: "restyle" as const, styleId: "anime"} as PhotoJob;
+  const result = await runPhotoJob(JOB_ID, job,
+    badJpeg, {width: 1600, height: 1200}, null, false) as Failed;
+  assert.equal(result.state, "failed");
+  assert.equal(result.reason, "provider_error");
+  assert.equal(result.refunded, true);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(store.get(REFUND)?.delta, 75);
+  assert.equal(coinTxCount(store), 2);
+  assert.equal(deps.fal().length, 0);
+  assert.equal((await runPhotoJob(JOB_ID, job, badJpeg, {width: 1600, height: 1200}, null, false)).state, "failed");
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(coinTxCount(store), 2);
 });
 
 test("Seedream minimum-area output is cropped to a small phone target before SafeSearch and storage", async (t) => {
