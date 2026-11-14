@@ -1,5 +1,4 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
-import 'package:Prism/core/analytics/events/analytics_event.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_events.dart';
 import 'package:Prism/features/rewards/views/widgets/coin_event_banner.dart';
