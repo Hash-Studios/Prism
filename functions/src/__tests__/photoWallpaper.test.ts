@@ -25,6 +25,7 @@ import {
   removePhotoJobsForAccount,
   parseStyleId,
   PHOTO_STYLES,
+  cropToShape,
   restylePrompt,
 } from "../photoWallpaper";
 import {installFakeDb} from "./fakeDb";
@@ -1597,6 +1598,8 @@ test("restyle sends the photo to Seedream edit with the style prompt, charges 75
     assert.equal(post.method, "POST");
     assert.equal(post.headers["X-Fal-Store-IO"], "0");
     assert.ok((post.body.image_urls as string[])[0].startsWith("data:image/jpeg;base64,"));
+    assert.deepEqual(await sizeOf(Buffer.from((post.body.image_urls as string[])[0].split(",")[1], "base64")),
+      {width: 554, height: 1200});
     assert.deepEqual(post.body.image_size, {width: 1080, height: 2340});
     assert.equal(post.body.enable_safety_checker, true);
     assert.equal(post.body.sync_mode, true);
@@ -1688,10 +1691,18 @@ test("parseStyleId and restylePrompt read the Restyle style map", () => {
 
 test("the Restyle prompt names no device, so the model does not draw a phone frame", () => {
   for (const style of PHOTO_STYLES.keys()) {
-    const prompt = restylePrompt(style);
-    assert.ok(!/wallpaper|phone screen|mockup/i.test(prompt), style);
-    assert.ok(prompt.includes("Do not add a phone, a device frame, a border or text."), style);
+    assert.ok(!/wallpaper|phone|device|mockup/i.test(restylePrompt(style)), style);
   }
+});
+
+test("Restyle sends fal the centre of the photo in the target shape, so the model invents no extra space", async () => {
+  const sharp = (await import("sharp")).default;
+  const photo = await sharp({create: {width: 1600, height: 1200, channels: 3, background: "#808080"}}).jpeg().toBuffer();
+  const cropped = await sharp(await cropToShape(photo, {width: 1600, height: 1200}, {width: 1080, height: 2340}))
+    .metadata();
+  assert.deepEqual({width: cropped.width, height: cropped.height}, {width: 554, height: 1200});
+  const same = await cropToShape(photo, {width: 1600, height: 1200}, {width: 2560, height: 1600});
+  assert.deepEqual(await sharp(same).metadata().then((m) => [m.width, m.height]), [1600, 1000]);
 });
 
 test("Seedream minimum-area output is cropped to a small phone target before SafeSearch and storage", async (t) => {

@@ -222,10 +222,22 @@ export async function normalizePhoto(raw: unknown): Promise<{jpeg: Buffer; size:
 export function restylePrompt(styleId: string): string {
   const style = PHOTO_STYLES.get(styleId);
   if (!style) throw new Error("unknown style");
-  // "Phone wallpaper" in the prompt made Seedream draw a phone frame around the scene, so the prompt names no device.
   return `Redraw this photo in ${style}. Keep the same composition, the same people with the same faces and poses, ` +
-    "and the main shapes in the same places. Fill the whole image with the scene. Do not add a phone, a device " +
-    "frame, a border or text.";
+    "and the main shapes in the same places. Fill the whole image with the scene.";
+}
+
+/**
+ * The centre of the photo in the target shape: what the app preview shows. A photo of another shape made Seedream
+ * invent the extra space, often as a phone mockup around the scene.
+ */
+export async function cropToShape(jpeg: Buffer, photo: Size, target: Size): Promise<Buffer> {
+  const scale = Math.min(photo.width / target.width, photo.height / target.height);
+  const width = Math.min(photo.width, Math.round(target.width * scale));
+  const height = Math.min(photo.height, Math.round(target.height * scale));
+  if (width === photo.width && height === photo.height) return jpeg;
+  const sharp = (await import("sharp")).default;
+  return sharp(jpeg).extract({left: Math.floor((photo.width - width) / 2), top: Math.floor((photo.height - height) / 2),
+    width, height}).jpeg({quality: 92}).toBuffer();
 }
 
 function falBody(mode: PhotoJobMode, input: string, photo: Size, size: Size, placement: Placement | null,
@@ -272,7 +284,8 @@ async function runFal(jobId: string, job: PhotoJob, jpeg: Buffer, photo: Size, s
   const mode = job.mode;
   const key = deps.falKey().trim();
   if (key === "") throw new Error("FAL_API_KEY is empty");
-  const body = falBody(mode, `data:image/jpeg;base64,${jpeg.toString("base64")}`, photo, size, placement, job.styleId);
+  const input = mode === "restyle" ? await cropToShape(jpeg, photo, size) : jpeg;
+  const body = falBody(mode, `data:image/jpeg;base64,${input.toString("base64")}`, photo, size, placement, job.styleId);
   let requestId: string | null = null;
   try {
     const response = await deps.fetch(`https://fal.run/${PHOTO_MODELS[mode]}`, {
