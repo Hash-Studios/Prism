@@ -74,23 +74,28 @@ const int _maxEvents = 50;
 const Duration _maxEventLength = Duration(days: 31);
 const int _minutesInWeek = 7 * 24 * 60;
 
-bool _isInt(Object? raw, int min, int max) => raw is int && raw >= min && raw <= max;
+const int _maxTimestampMs = 8640000000000000;
+
+int? _integer(Object? raw, int min, int max) {
+  if (raw is! num || !raw.isFinite || raw < min || raw > max || raw != raw.truncateToDouble()) return null;
+  return raw.toInt();
+}
 
 /// Same rules as `parseCommon` on the server: a bad entry is dropped, never repaired.
 _Rule? _common(Map<String, dynamic> m) {
   final Object? id = m['id'];
-  final Object? multiplier = m['multiplier'];
+  final int? multiplier = _integer(m['multiplier'], 2, 3);
   final Object? actions = m['actions'];
-  final Object? label = m['label'] ?? 'event';
+  final Object? label = m.containsKey('label') ? m['label'] : 'event';
   if (id is! String || !_id.hasMatch(id)) return null;
-  if (multiplier != 2 && multiplier != 3) return null;
+  if (multiplier == null) return null;
   if (actions is! List || actions.isEmpty || actions.any((Object? a) => a != 'rewardedAd')) return null;
   final CoinEventLabel? parsed = switch (label) {
     'weekend' => CoinEventLabel.weekend,
     'event' => CoinEventLabel.event,
     _ => null,
   };
-  return parsed == null ? null : _Rule(id, multiplier! as int, parsed);
+  return parsed == null ? null : _Rule(id, multiplier, parsed);
 }
 
 /// The coin doubler events from `economyConfig/current` (`events` and `weeklyEvent`). v1 events double rewarded ads
@@ -106,9 +111,9 @@ class CoinEventSchedule {
         if (entry is! Map) continue;
         final Map<String, dynamic> m = toJsonMap(entry);
         final _Rule? rule = _common(m);
-        final Object? start = m['startsAtMs'];
-        final Object? end = m['endsAtMs'];
-        if (rule == null || start is! int || end is! int || start < 0 || end <= start) continue;
+        final int? start = _integer(m['startsAtMs'], 0, _maxTimestampMs);
+        final int? end = _integer(m['endsAtMs'], 0, _maxTimestampMs);
+        if (rule == null || start == null || end == null || end <= start) continue;
         if (end - start > _maxEventLength.inMilliseconds) continue;
         events.add(
           CoinEventWindow(
@@ -126,18 +131,11 @@ class CoinEventSchedule {
     if (rawWeekly is Map) {
       final Map<String, dynamic> m = toJsonMap(rawWeekly);
       final _Rule? rule = _common(m);
-      if (rule != null &&
-          _isInt(m['startDay'], 1, 7) &&
-          _isInt(m['startMinute'], 0, 1439) &&
-          _isInt(m['durationMinutes'], 1, _minutesInWeek - 1)) {
-        weekly = _WeeklyRule(
-          rule.id,
-          rule.multiplier,
-          rule.label,
-          m['startDay'] as int,
-          m['startMinute'] as int,
-          m['durationMinutes'] as int,
-        );
+      final int? startDay = _integer(m['startDay'], 1, 7);
+      final int? startMinute = _integer(m['startMinute'], 0, 1439);
+      final int? durationMinutes = _integer(m['durationMinutes'], 1, _minutesInWeek - 1);
+      if (rule != null && startDay != null && startMinute != null && durationMinutes != null) {
+        weekly = _WeeklyRule(rule.id, rule.multiplier, rule.label, startDay, startMinute, durationMinutes);
       }
     }
     return CoinEventSchedule._(List<CoinEventWindow>.unmodifiable(events), weekly);
@@ -187,10 +185,10 @@ class CoinEventReceipt {
   static CoinEventReceipt? tryParse(Object? raw) {
     if (raw is! Map) return null;
     final Object? id = raw['id'];
-    final Object? multiplier = raw['multiplier'];
+    final int? multiplier = _integer(raw['multiplier'], 2, 3);
     final CoinEventLabel label = raw['label'] == 'weekend' ? CoinEventLabel.weekend : CoinEventLabel.event;
-    if (id is! String || id.isEmpty || (multiplier != 2 && multiplier != 3)) return null;
-    return CoinEventReceipt(id: id, multiplier: multiplier! as int, label: label);
+    if (id is! String || id.isEmpty || multiplier == null) return null;
+    return CoinEventReceipt(id: id, multiplier: multiplier, label: label);
   }
 
   final String id;

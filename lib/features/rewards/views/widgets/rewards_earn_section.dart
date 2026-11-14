@@ -29,7 +29,9 @@ import 'package:flutter/material.dart';
 
 /// "Earn coins": every way to get coins, with the reward for each.
 class RewardsEarnSection extends StatefulWidget {
-  const RewardsEarnSection({super.key});
+  const RewardsEarnSection({super.key, this.clock = DateTime.now});
+
+  final DateTime Function() clock;
 
   @override
   State<RewardsEarnSection> createState() => _RewardsEarnSectionState();
@@ -37,14 +39,13 @@ class RewardsEarnSection extends StatefulWidget {
 
 class _RewardsEarnSectionState extends State<RewardsEarnSection> {
   bool _loadingReward = false;
-  DateTime _now = DateTime.now();
   Timer? _ticker;
 
   @override
   void initState() {
     super.initState();
     _ticker = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) setState(() => _now = DateTime.now());
+      if (mounted) setState(() {});
     });
   }
 
@@ -93,9 +94,10 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
   }
 
   Widget _buildRows(BuildContext context, CoinEarnFlags flags) {
+    final DateTime now = widget.clock();
     final bool isPro = app_state.prismUser.premium;
     final String proMultiplier = '${EconomyConfig.current.award.proStreakMultiplier}';
-    final CoinEventWindow? liveEvent = EconomyConfig.current.coinEvents.liveAt(_now);
+    final CoinEventWindow? liveEvent = EconomyConfig.current.coinEvents.liveAt(now);
     final List<Widget> rows = <Widget>[
       if (!DailyMomentConfig.enabled)
         _EarnRow(
@@ -173,7 +175,7 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
           title: context.l10n.economyEarnCoins,
           padding: const EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.sm),
         ),
-        CoinEventBanner(schedule: EconomyConfig.current.coinEvents, now: _now),
+        CoinEventBanner(schedule: EconomyConfig.current.coinEvents, now: now),
         PrismGroup(children: rows),
       ],
     );

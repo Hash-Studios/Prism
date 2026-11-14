@@ -1,4 +1,5 @@
 import test from "node:test";
+import {logger} from "firebase-functions/v2";
 import assert from "node:assert/strict";
 import {type CoinEvent, liveCoinEvent, parseCoinEvents, type WeeklyCoinEvent} from "../coinEvents";
 import {resetEconomyCache} from "../economy";
@@ -199,4 +200,28 @@ test("legacy awardCoins outside the window pays 20 with no coinEvent", async (t)
   assert.equal(legacy.delta, 20);
   assert.equal(legacy.coinEvent, undefined);
   assert.equal(h.store.get("usersv2/u")!.coins, 20);
+});
+
+test("parseCoinEvents drops unrepresentable timestamps and logs only bad entries", (t) => {
+  const warn = t.mock.method(logger, "warn", () => undefined);
+  const maximum = 8_640_000_000_000_000;
+  const bad = launch({id: "invalid_date", startsAtMs: maximum, endsAtMs: maximum + 1});
+  const lastDate = launch({id: "last_date", startsAtMs: maximum - 1, endsAtMs: maximum});
+  const parsed = parseCoinEvents({events: [launch(), bad, lastDate]});
+  assert.deepEqual(parsed.events, [launch(), lastDate]);
+  assert.deepEqual(warn.mock.calls.map((call) => call.arguments), [
+    ["economy: invalid coin event ignored", {index: 1, entry: bad}],
+  ]);
+});
+
+test("weekly events cross UTC weeks and years without a DST shift", () => {
+  const weekly: WeeklyCoinEvent = {id: "weekly", startDay: 7, startMinute: 23 * 60 + 30,
+    durationMinutes: 120, multiplier: 3, actions: ["rewardedAd"], label: "event"};
+  const schedule = {events: [], weeklyEvent: weekly};
+  for (const start of [Date.UTC(2023, 11, 31, 23, 30), Date.UTC(2026, 2, 29, 23, 30), Date.UTC(2026, 9, 25, 23, 30)]) {
+    assert.equal(liveCoinEvent(schedule, "rewardedAd", start - 1), null);
+    assert.equal(liveCoinEvent(schedule, "rewardedAd", start)?.startsAtMs, start);
+    assert.equal(liveCoinEvent(schedule, "rewardedAd", start + 7_199_999)?.endsAtMs, start + 7_200_000);
+    assert.equal(liveCoinEvent(schedule, "rewardedAd", start + 7_200_000), null);
+  }
 });

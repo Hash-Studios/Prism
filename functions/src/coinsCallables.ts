@@ -494,7 +494,7 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
         success: true,
         changed: true,
         previousBalance: typeof original.balanceBefore === "number" ? Math.trunc(original.balanceBefore) : previous,
-        currentBalance: typeof original.balanceAfter === "number" ? Math.trunc(original.balanceAfter) : previous,
+        currentBalance: previous,
         delta: typeof original.delta === "number" ? Math.trunc(original.delta) : 0,
         ...adsRemaining,
         ...(original.coinEvent ? {coinEvent: original.coinEvent} : {}),

@@ -47,6 +47,7 @@ const DAY_MS = 86_400_000;
 const WEEK_MS = 7 * DAY_MS;
 const MAX_EVENTS = 50;
 const MAX_EVENT_MS = 31 * DAY_MS;
+const MAX_DATE_MS = 8_640_000_000_000_000;
 const ID = /^[a-z0-9_-]{1,40}$/;
 const ACTIONS: ReadonlySet<string> = new Set<CoinEventAction>(["rewardedAd"]);
 
@@ -74,7 +75,7 @@ function parseEvent(raw: unknown): CoinEvent | null {
   if (!isRecord(raw)) return null;
   const common = parseCommon(raw);
   const {startsAtMs, endsAtMs} = raw;
-  if (!common || !isIntIn(startsAtMs, 0, Number.MAX_SAFE_INTEGER) || !isIntIn(endsAtMs, 0, Number.MAX_SAFE_INTEGER) ||
+  if (!common || !isIntIn(startsAtMs, 0, MAX_DATE_MS) || !isIntIn(endsAtMs, 0, MAX_DATE_MS) ||
       endsAtMs <= startsAtMs || endsAtMs - startsAtMs > MAX_EVENT_MS) return null;
   return {...common, startsAtMs, endsAtMs};
 }

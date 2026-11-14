@@ -66,6 +66,10 @@ function canonical(value: unknown): string {
   return JSON.stringify(value, (_key, v) => isRecord(v) ? Object.fromEntries(Object.entries(v).sort(([x], [y]) => x < y ? -1 : 1)) : v);
 }
 
+function withEventLabel(value: unknown): unknown {
+  return isRecord(value) && !("label" in value) ? {...value, label: "event"} : value;
+}
+
 function flatten(value: unknown, prefix = "", out: Record<string, unknown> = {}): Record<string, unknown> {
   if (isRecord(value)) {
     for (const [key, child] of Object.entries(value)) flatten(child, prefix ? `${prefix}.${key}` : key, out);
@@ -83,12 +87,16 @@ export function planConfig(liveRaw: unknown, sets: Array<[string, unknown]>): Co
   const current = parseEconomy(liveRaw);
   const draft = JSON.parse(JSON.stringify(current)) as Json;
   const overrides: Json = {};
-  for (const [path, value] of sets) {
+  const normalizedSets = sets.map(([path, value]): [string, unknown] => [path,
+    path === "events" && Array.isArray(value) ? value.map(withEventLabel) :
+      path === "weeklyEvent" ? withEventLabel(value) : value,
+  ]);
+  for (const [path, value] of normalizedSets) {
     setPath(draft, path, value);
     setPath(overrides, path, value);
   }
   const next = parseEconomy(draft);
-  for (const [path, value] of sets) {
+  for (const [path, value] of normalizedSets) {
     if (canonical(getPath(next, path)) !== canonical(value)) {
       throw new Error(`Rejected ${path}=${JSON.stringify(value)}: unknown key or wrong type`);
     }

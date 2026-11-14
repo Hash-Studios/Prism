@@ -114,7 +114,7 @@ Rules (`functions/src/coinEvents.ts`, mirrored in `lib/core/coins/coin_events.da
 - `id` matches `^[a-z0-9_-]{1,40}$`. `multiplier` is the integer 2 or 3. `actions` is `["rewardedAd"]` in v1.
 - `label` is `weekend` or `event` (default `event`). It selects the copy: "Weekend 2x" or "2x coins".
 - A one-off event is live from `startsAtMs` (included) to `endsAtMs` (not included). It can be at most 31 days long.
-  The list can have at most 50 events.
+  Both timestamps are integer milliseconds in `0..8640000000000000`. The list can have at most 50 events.
 - `startDay` is the ISO day (1 is Monday, 7 is Sunday). `startMinute` is 0 to 1439 after 00:00 UTC.
   `durationMinutes` is 1 to 10079. Each weekly occurrence has the id `<id>-<YYYY-MM-DD>` of its UTC start day.
 - When two events are live at the same time, the higher multiplier pays. If the multipliers are equal, the lower id pays.
@@ -128,7 +128,9 @@ How the server applies an event:
   once. The client shows the quote before the ad starts, so a user who starts an ad before the event ends gets the
   multiplier. The session show window (10 minutes) limits this.
 - Legacy ads (`awardCoins` with `rewardedAd`, while `REWARDED_AD_LEGACY_UNTIL` allows them): the server checks
-  for a live event at the award time. A replay of the same `requestId` returns the stored reply and pays nothing more.
+  for a live event at the award time. A replay of the same `requestId` returns the stored award and `coinEvent`,
+  with the current balance, and pays nothing more. Without a `requestId`, retries have only the cooldown and daily cap
+  as guards; a retry after the cooldown can pay again.
 - The ledger doc (`ssv_<sessionId>` or `award_<uid>_<requestId>`) gets `coinEvent: {id, multiplier, label}`.
   `getRewardedSession` and the legacy reply also return `coinEvent`.
 

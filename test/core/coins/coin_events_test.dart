@@ -67,10 +67,49 @@ void main() {
 
   test('a missing label is the event label', () {
     final CoinEventWindow? live = _schedule(
-      events: <Map<String, dynamic>>[_event(startsAt: _launchStart, endsAt: _launchEnd, label: null)],
+      events: <Map<String, dynamic>>[(_event(startsAt: _launchStart, endsAt: _launchEnd)..remove('label'))],
     ).liveAt(_launchStart);
 
     expect(live?.label, CoinEventLabel.event);
+  });
+
+  test('explicit null labels are dropped without hiding valid entries', () {
+    final schedule = _schedule(
+      events: [
+        _event(id: 'a-null', startsAt: _launchStart, endsAt: _launchEnd, label: null),
+        _event(id: 'good', startsAt: _launchStart, endsAt: _launchEnd),
+      ],
+    );
+    expect(schedule.liveAt(_launchStart)?.id, 'good');
+  });
+
+  test('integral Firestore doubles match the server event and weekly rules', () {
+    final event = _event(startsAt: _launchStart, endsAt: _launchEnd, multiplier: 3.0)
+      ..['startsAtMs'] = _launchStart.millisecondsSinceEpoch.toDouble()
+      ..['endsAtMs'] = _launchEnd.millisecondsSinceEpoch.toDouble();
+    expect(_schedule(events: [event]).liveAt(_launchStart)?.multiplier, 3);
+    final weekly = _weekly()
+      ..['startDay'] = 6.0
+      ..['startMinute'] = 0.0
+      ..['durationMinutes'] = 2880.0;
+    expect(_schedule(weekly: weekly).liveAt(_launchStart)?.id, 'weekend-2026-11-14');
+  });
+
+  test('out of range timestamps do not discard good events', () {
+    final schedule = _schedule(
+      events: [
+        _event(id: 'invalid', startsAt: _launchStart, endsAt: _launchEnd)
+          ..['startsAtMs'] = 8640000000000001
+          ..['endsAtMs'] = 8640000000000002,
+        _event(id: 'good', startsAt: _launchStart, endsAt: _launchEnd),
+      ],
+    );
+    expect(schedule.liveAt(_launchStart)?.id, 'good');
+  });
+
+  test('receipt accepts integral doubles without throwing', () {
+    expect(CoinEventReceipt.tryParse({'id': 'launch', 'multiplier': 2.0})?.multiplier, 2);
+    expect(CoinEventReceipt.tryParse({'id': 'launch', 'multiplier': 2.5}), isNull);
   });
 
   test('bad weekly rules are ignored', () {

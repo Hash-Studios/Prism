@@ -47,3 +47,20 @@ test("planConfig sets coin events in any key order and rejects a bad one", () =>
   assert.throws(() => planConfig(null, [["events", [{...event, multiplier: 5}]]]), /Rejected/);
   assert.throws(() => planConfig(null, [["weeklyEvent", {...weekly, startDay: 8}]]), /Rejected/);
 });
+
+test("planConfig accepts omitted event labels and preserves parser defaults", () => {
+  const event = {id: "launch", startsAtMs: 1, endsAtMs: 1000, multiplier: 2, actions: ["rewardedAd"]};
+  const weekly = {id: "weekly", startDay: 7, startMinute: 30, durationMinutes: 60, multiplier: 3, actions: ["rewardedAd"]};
+  const plan = planConfig(null, [["events", [event]], ["weeklyEvent", weekly]]);
+  assert.deepEqual(plan.next.events, [{...event, label: "event"}]);
+  assert.deepEqual(plan.next.weeklyEvent, {...weekly, label: "event"});
+  assert.deepEqual(plan.overrides, {events: [{...event, label: "event"}], weeklyEvent: {...weekly, label: "event"}});
+  assert.throws(() => planConfig(null, [["events", [{...event, label: null}]]]), /Rejected/);
+  assert.throws(() => planConfig(null, [["weeklyEvent", {...weekly, unexpected: true}]]), /Rejected/);
+});
+
+test("planConfig writes the default weekly label over an existing non-default label", () => {
+  const weekly = {id: "weekly", startDay: 7, startMinute: 30, durationMinutes: 60, multiplier: 3, actions: ["rewardedAd"]};
+  const plan = planConfig({weeklyEvent: {...weekly, label: "weekend"}}, [["weeklyEvent", weekly]]);
+  assert.deepEqual(plan.overrides.weeklyEvent, {...weekly, label: "event"});
+});
