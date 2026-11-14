@@ -24,6 +24,7 @@ import {
   PHOTO_JOB_BUDGET,
   removePhotoJobsForAccount,
   parseStyleId,
+  PHOTO_STYLES,
   restylePrompt,
 } from "../photoWallpaper";
 import {installFakeDb} from "./fakeDb";
@@ -1683,6 +1684,14 @@ test("the sweeper refunds a stale restyle job once", async (t) => {
 test("parseStyleId and restylePrompt read the Restyle style map", () => {
   assert.equal(parseStyleId("restyle", "3d render"), "3d render");
   assert.ok(restylePrompt("3d render").includes("clay-like"));
+});
+
+test("the Restyle prompt names no device, so the model does not draw a phone frame", () => {
+  for (const style of PHOTO_STYLES.keys()) {
+    const prompt = restylePrompt(style);
+    assert.ok(!/wallpaper|phone screen|mockup/i.test(prompt), style);
+    assert.ok(prompt.includes("Do not add a phone, a device frame, a border or text."), style);
+  }
 });
 
 test("Seedream minimum-area output is cropped to a small phone target before SafeSearch and storage", async (t) => {

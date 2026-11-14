@@ -222,8 +222,10 @@ export async function normalizePhoto(raw: unknown): Promise<{jpeg: Buffer; size:
 export function restylePrompt(styleId: string): string {
   const style = PHOTO_STYLES.get(styleId);
   if (!style) throw new Error("unknown style");
-  return `Redraw this photo as a phone wallpaper in ${style}. Keep the same composition, the same people with the ` +
-    "same faces and poses, and the main shapes in the same places.";
+  // "Phone wallpaper" in the prompt made Seedream draw a phone frame around the scene, so the prompt names no device.
+  return `Redraw this photo in ${style}. Keep the same composition, the same people with the same faces and poses, ` +
+    "and the main shapes in the same places. Fill the whole image with the scene. Do not add a phone, a device " +
+    "frame, a border or text.";
 }
 
 function falBody(mode: PhotoJobMode, input: string, photo: Size, size: Size, placement: Placement | null,
