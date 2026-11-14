@@ -5,7 +5,6 @@ import 'dart:ui';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
-import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
@@ -22,13 +21,22 @@ class FieldDiagnostics {
   static bool? sampledOverride;
   static bool? _sampled;
 
-  /// False until Remote Config is ready, so the rate it holds decides.
-  static bool get sampled {
-    if (sampledOverride case final bool forced) return forced;
-    if (_sampled case final bool decided) return decided;
-    final double? rate = FirebaseInit.remoteConfigIfInitialized?.getDouble(sampleRateKey);
-    if (rate == null) return false;
-    return _sampled = Random().nextDouble() < rate;
+  static final ValueNotifier<bool?> _samplingChanges = ValueNotifier<bool?>(null);
+
+  /// False until defaults and cached Remote Config values have been activated.
+  static bool get sampled => sampledOverride ?? _sampled ?? false;
+
+  static void configureSampling(double rate) {
+    if (_sampled != null) return;
+    _sampled = Random().nextDouble() < rate;
+    _samplingChanges.value = _sampled;
+  }
+
+  @visibleForTesting
+  static void resetSampling() {
+    _sampled = null;
+    sampledOverride = null;
+    _samplingChanges.value = null;
   }
 
   static final ResumeStallProbe _resume = ResumeStallProbe();
@@ -113,6 +121,13 @@ class _Visit {
   _Bucket? swipe;
 }
 
+/// An opaque identity for a sampled screen visit.
+class JankVisit {
+  JankVisit._(this._visit);
+
+  final _Visit _visit;
+}
+
 /// Sends one [FieldJankEvent] per screen visit in sampled sessions. Visits stack: the top one gets the frames, and a
 /// visit covered by another ends there and starts again when it is on top once more. Frames go to visits by frame
 /// number, because the engine reports them in batches up to a second late.
@@ -154,15 +169,18 @@ class JankSampler {
   final List<({int after, _Bucket bucket})> _ending = <({int after, _Bucket bucket})>[];
   bool _listening = false;
 
-  void begin(JankScreenValue screen) {
-    if (!_sampled()) return;
+  JankVisit? begin(JankScreenValue screen) {
+    if (!_sampled()) return null;
     if (_stack.isNotEmpty) _end(_stack.last);
-    _stack.add(_Visit(screen));
+    final _Visit visit = _Visit(screen);
+    _stack.add(visit);
     _route();
+    return JankVisit._(visit);
   }
 
-  void end(JankScreenValue screen) {
-    final int index = _stack.lastIndexWhere((_Visit v) => v.screen == screen);
+  void end(JankVisit? visit) {
+    if (visit == null) return;
+    final int index = _stack.indexOf(visit._visit);
     if (index < 0) return;
     final bool top = index == _stack.length - 1;
     _end(_stack.removeAt(index));
@@ -306,8 +324,10 @@ class ResumeStallProbe {
     int longest = 0;
     int last = 0;
     late final Timer timer;
+    bool finished = false;
     void finish() {
-      if (_finish == null) return;
+      if (finished) return;
+      finished = true;
       _finish = null;
       timer.cancel();
       _report(
@@ -329,6 +349,7 @@ class ResumeStallProbe {
       if (firstFrameMs != null) finish();
     });
     _afterNextFrame((_) {
+      if (finished) return;
       firstFrameMs = clock.elapsedMilliseconds;
       if (!timer.isActive) finish();
     });
@@ -348,13 +369,22 @@ class JankVisitScope extends StatefulWidget {
 }
 
 class _JankVisitScopeState extends State<JankVisitScope> {
-  bool _visiting = false;
+  JankVisit? _visit;
+
+  @override
+  void initState() {
+    super.initState();
+    FieldDiagnostics._samplingChanges.addListener(_sync);
+  }
 
   void _sync() {
     final bool visiting = widget.active && (ModalRoute.isCurrentOf(context) ?? true);
-    if (visiting == _visiting) return;
-    _visiting = visiting;
-    visiting ? JankSampler.instance.begin(widget.screen) : JankSampler.instance.end(widget.screen);
+    if (visiting && _visit == null) {
+      _visit = JankSampler.instance.begin(widget.screen);
+    } else if (!visiting && _visit != null) {
+      JankSampler.instance.end(_visit);
+      _visit = null;
+    }
   }
 
   @override
@@ -371,7 +401,8 @@ class _JankVisitScopeState extends State<JankVisitScope> {
 
   @override
   void dispose() {
-    if (_visiting) JankSampler.instance.end(widget.screen);
+    FieldDiagnostics._samplingChanges.removeListener(_sync);
+    JankSampler.instance.end(_visit);
     super.dispose();
   }
 

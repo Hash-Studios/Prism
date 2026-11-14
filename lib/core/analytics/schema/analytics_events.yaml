@@ -3953,6 +3953,7 @@ events:
       - name: wall_id
         key: wall_id
         type: string
+        required: false
       - name: id_kind
         key: id_kind
         type: enum

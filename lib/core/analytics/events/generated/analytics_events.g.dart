@@ -6077,7 +6077,7 @@ class WallOpenFailedEvent extends AnalyticsEvent {
     required this.entry,
     this.homeTab,
     required this.source,
-    required this.wallId,
+    this.wallId,
     required this.idKind,
     required this.error,
     required this.fallbackRan,
@@ -6086,7 +6086,7 @@ class WallOpenFailedEvent extends AnalyticsEvent {
   final WallOpenEntryValue entry;
   final HomeFeedChip? homeTab;
   final String source;
-  final String wallId;
+  final String? wallId;
   final WallIdKindValue idKind;
   final WallOpenErrorValue error;
   final bool fallbackRan;
@@ -6100,7 +6100,7 @@ class WallOpenFailedEvent extends AnalyticsEvent {
       'entry': entry.wireValue,
       if (homeTab != null) 'home_tab': homeTab!.wireValue,
       'source': source,
-      'wall_id': wallId,
+      if (wallId != null) 'wall_id': wallId!,
       'id_kind': idKind.wireValue,
       'error': error.wireValue,
       'fallback_ran': fallbackRan ? 1 : 0,

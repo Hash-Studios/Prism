@@ -97,12 +97,12 @@ Wall of the Day: `_lastWotdRefresh` starts at app launch. The resume handler ref
 
 Three signals tell us the cause of bugs that we cannot reproduce: #533 (lag), #557 (a wall fails to open) and #551 (freeze on resume). They go to Mixpanel and Firebase Analytics through the typed analytics events. They send no email, no uid and no free text. Code: `lib/core/monitoring/field_diagnostics.dart` and `lib/features/wallpaper_detail/biz/wall_open_entry.dart`.
 
-Sampling: the Remote Config key `field_diagnostics_sample_rate` (a number from 0 to 1, default `0.05` in `prepareRemoteConfig`). The app decides once per process, after Remote Config is ready. `0` turns off jank and resume. Wall open failures are always sent. A session that is not sampled adds no frame timings callback and no timer.
+Sampling: the Remote Config key `field_diagnostics_sample_rate` (a number from 0 to 1, default `0.05` in `prepareRemoteConfig`). The app decides once per process, after defaults and cached Remote Config values are activated, before the network fetch. `0` turns off jank and resume. Wall open failures are always sent. A session that is not sampled adds no frame timings callback and no timer.
 
 | Event | When | Properties |
 |---|---|---|
 | `field_jank` | Once per screen visit, in sampled sessions. A visit ends when another screen covers it, when the app goes to the background, or when the screen closes. | `screen` (`home_feed`, `wall_detail`, `detail_swipe`), `frames`, `slow_frames` (build or raster over the display frame budget), `frozen_frames` (over 700 ms), `build_p90_ms`, `raster_p90_ms`, `refresh_hz` |
-| `wall_open_failed` | Each failed wall detail load, not sampled. | `entry` (`home`, `profile`, `search`, `folder`, `favourites`, `detail`, `link`, `other`), `home_tab` (only for `home`), `source`, `wall_id`, `id_kind` (`id` or `document_id`), `error` (`not_found`, `ambiguous`, `network`, `server`, `cache`, `validation`, `unknown`), `fallback_ran` (the document-id lookup ran) |
+| `wall_open_failed` | Each failed wall detail load, not sampled. | `entry` (`home`, `profile`, `search`, `folder`, `favourites`, `detail`, `link`, `other`), `home_tab` (only for `home`), `source`, `wall_id` (omitted for links because the id is external input), `id_kind` (`id` or `document_id`), `error` (`not_found`, `ambiguous`, `network`, `server`, `cache`, `validation`, `unknown`), `fallback_ran` (the document-id lookup ran) |
 | `resume_stall` | Each resume from the background, in sampled sessions. | `first_frame_ms`, `longest_task_ms` (only when the main thread was blocked for more than 700 ms in the 3 s after resume), `background_s` |
 
 `detail_swipe` holds the frames while the detail feed moves between walls. `wall_detail` holds the other detail frames. The p90 values use the first 3600 frames of a visit. In debug and profile builds each event also prints a `PRISM_PERF {"kind":"field",...}` line.

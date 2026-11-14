@@ -72,6 +72,7 @@ Future<void> prepareRemoteConfig(
   } catch (error) {
     logger.w('Remote Config activate failed; using defaults.', tag: 'StartupRepository', error: error);
   }
+  FieldDiagnostics.configureSampling(remoteConfig.getDouble(FieldDiagnostics.sampleRateKey));
   final Future<bool> fetch = remoteConfig.fetchAndActivate();
   unawaited(fetch.then<void>((_) {}, onError: (Object _) {}));
   final bool fresh =

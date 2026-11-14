@@ -618,7 +618,9 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
 
   void _onMove() {
     final double position = _position.value;
-    JankSampler.instance.swiping(position != position.roundToDouble());
+    if (FieldDiagnostics.sampled) {
+      JankSampler.instance.swiping(position != position.roundToDouble());
+    }
     final int last = _tiles.length - 1;
     final (int, int) span = (position.floor().clamp(0, last), position.ceil().clamp(0, last));
     if (span != _span) setState(() => _span = span);

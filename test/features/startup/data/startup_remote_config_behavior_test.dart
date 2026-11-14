@@ -53,6 +53,8 @@ class _Config extends FirebaseRemoteConfigPlatform {
   bool getBool(String key) => key != 'ai_submit_enabled';
   @override
   int getInt(String key) => rollout;
+  @override
+  double getDouble(String key) => 0;
 }
 
 void main() {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
@@ -142,9 +143,90 @@ void main() {
     expect(failure.idKind, WallIdKindValue.id);
     expect(failure.error, WallOpenErrorValue.ambiguous);
     expect(failure.fallbackRan, isFalse);
-    expect(failure.wallId, wallId);
+    expect(failure.wallId, isNull);
+    expect(failure.toWireParameters(), isNot(contains('wall_id')));
     verifyNever(() => prism.fetchCanonicalByDocumentId(any()));
   });
+
+  test('concurrent loads keep their own document fallback flag', () async {
+    final Completer<Result<PrismWallpaper?>> fallback = Completer<Result<PrismWallpaper?>>();
+    final Completer<Result<PrismWallpaper?>> canonical = Completer<Result<PrismWallpaper?>>();
+    when(() => prism.fetchCanonicalByDocumentId('fallback')).thenAnswer((_) => fallback.future);
+    when(() => prism.fetchCanonicalById('canonical')).thenAnswer((_) => canonical.future);
+
+    bloc.add(const LoadFromId(wallId: 'fallback', source: WallpaperSource.prism));
+    await settle();
+    verify(() => prism.fetchCanonicalByDocumentId('fallback')).called(1);
+    bloc.add(const LoadFromId(wallId: 'canonical', source: WallpaperSource.prism));
+    await settle();
+    fallback.complete(Result.error(const NetworkFailure('private error')));
+    await settle();
+    canonical.complete(Result.error(const NetworkFailure('another private error')));
+    await settle();
+
+    final Map<String, bool> flags = {for (final event in openFailures()) event.wallId!: event.fallbackRan};
+    expect(flags, {'fallback': true, 'canonical': false});
+  });
+
+  test('a failed lookup still reports once if its bloc closes while loading', () async {
+    final Completer<Result<PrismWallpaper?>> lookup = Completer<Result<PrismWallpaper?>>();
+    when(() => prism.fetchCanonicalById('closing')).thenAnswer((_) => lookup.future);
+    bloc.add(const LoadFromId(wallId: 'closing', source: WallpaperSource.prism));
+    await settle();
+    final Future<void> closing = bloc.close();
+    lookup.complete(Result.error(const NetworkFailure('private error')));
+    await closing;
+    await settle();
+
+    expect(openFailures(), hasLength(1));
+    expect(openFailures().single.wallId, 'closing');
+    expect(openFailures().single.error, WallOpenErrorValue.network);
+  });
+
+  test('each failed retry reports once and only sends identity, enums and flags', () async {
+    when(
+      () => prism.fetchCanonicalById('retry'),
+    ).thenAnswer((_) async => Result.error(const NetworkFailure('email@example.test https://private.test user-name')));
+    const LoadFromId retry = LoadFromId(wallId: 'retry', source: WallpaperSource.prism);
+    await load(retry);
+    await settle();
+    await load(retry);
+    await settle();
+
+    expect(openFailures(), hasLength(2));
+    for (final event in openFailures()) {
+      expect(event.toWireParameters(), {
+        'entry': 'other',
+        'source': 'prism',
+        'wall_id': 'retry',
+        'id_kind': 'id',
+        'error': 'network',
+        'fallback_ran': 0,
+      });
+    }
+  });
+
+  for (final String untrusted in ['alice@example.test', 'A user name', 'https://private.test', 'uid123456']) {
+    test('link failure omits untrusted identity $untrusted without changing the lookup', () async {
+      when(
+        () => prism.fetchCanonicalById(untrusted),
+      ).thenAnswer((_) async => Result.error(const NetworkFailure('private error')));
+      final WallpaperDetailState state = await load(
+        LoadFromId(
+          wallId: untrusted,
+          source: WallpaperSource.prism,
+          origin: (entry: WallOpenEntryValue.link, homeTab: null),
+        ),
+      );
+      await settle();
+
+      expect(state, isA<WallpaperDetailError>());
+      verify(() => prism.fetchCanonicalById(untrusted)).called(1);
+      expect(openFailures(), hasLength(1));
+      expect(openFailures().single.wallId, isNull);
+      expect(openFailures().single.toWireParameters(), isNot(contains('wall_id')));
+    });
+  }
 
   test('a wall that loads sends no open failure', () async {
     const String wallId = 'wall-ok';
