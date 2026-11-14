@@ -16056,6 +16056,56 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get discoverLiveWallsSubtitle => 'Vídeos em loop de criadores Prism';
+
+  @override
+  String coinEventTitleWeekend(int multiplier) {
+    return 'Fim de semana ${multiplier}x';
+  }
+
+  @override
+  String coinEventTitle(int multiplier) {
+    return '${multiplier}x moedas';
+  }
+
+  @override
+  String coinEventLiveBody(int multiplier, String time) {
+    return 'Os anúncios dão ${multiplier}x moedas até $time.';
+  }
+
+  @override
+  String coinEventNextBody(int multiplier, String time) {
+    return 'Começa $time. Os anúncios vão dar ${multiplier}x moedas.';
+  }
+
+  @override
+  String coinEventEndsIn(String time) {
+    return 'Termina em $time';
+  }
+
+  @override
+  String coinEventStartsIn(String time) {
+    return 'Começa em $time';
+  }
+
+  @override
+  String coinEventAdBadge(int multiplier) {
+    return '${multiplier}x';
+  }
+
+  @override
+  String coinEventAdBadgeLabel(int multiplier) {
+    return 'Evento de moedas ${multiplier}x';
+  }
+
+  @override
+  String coreCoinEventWeekend(String action, int multiplier) {
+    return '$action · fim de semana ${multiplier}x';
+  }
+
+  @override
+  String coreCoinEventGeneric(String action, int multiplier) {
+    return '$action · evento ${multiplier}x';
+  }
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -32108,4 +32158,54 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get discoverLiveWallsSubtitle => 'Vídeos em loop de criadores Prism';
+
+  @override
+  String coinEventTitleWeekend(int multiplier) {
+    return 'Fim de semana ${multiplier}x';
+  }
+
+  @override
+  String coinEventTitle(int multiplier) {
+    return '${multiplier}x moedas';
+  }
+
+  @override
+  String coinEventLiveBody(int multiplier, String time) {
+    return 'Anúncios dão ${multiplier}x moedas até $time.';
+  }
+
+  @override
+  String coinEventNextBody(int multiplier, String time) {
+    return 'Começa $time. Anúncios vão dar ${multiplier}x moedas.';
+  }
+
+  @override
+  String coinEventEndsIn(String time) {
+    return 'Termina em $time';
+  }
+
+  @override
+  String coinEventStartsIn(String time) {
+    return 'Começa em $time';
+  }
+
+  @override
+  String coinEventAdBadge(int multiplier) {
+    return '${multiplier}x';
+  }
+
+  @override
+  String coinEventAdBadgeLabel(int multiplier) {
+    return 'Evento de moedas ${multiplier}x';
+  }
+
+  @override
+  String coreCoinEventWeekend(String action, int multiplier) {
+    return '$action · fim de semana ${multiplier}x';
+  }
+
+  @override
+  String coreCoinEventGeneric(String action, int multiplier) {
+    return '$action · evento ${multiplier}x';
+  }
 }

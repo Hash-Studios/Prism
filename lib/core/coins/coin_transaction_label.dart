@@ -1,3 +1,4 @@
+import 'package:Prism/core/coins/coin_events.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/l10n/l10n.dart';
 
@@ -24,7 +25,12 @@ String coinTransactionLabel(CoinTransactionEntry entry, AppLocalizations l10n) {
     final String name = entry.description.trim();
     return name.isEmpty ? l10n.coreCoinShop : name;
   }
-  return _actionLabel(entry.action, l10n) ?? l10n.coreCoinCoins;
+  final String label = _actionLabel(entry.action, l10n) ?? l10n.coreCoinCoins;
+  return switch (entry.coinEvent) {
+    null => label,
+    CoinEventReceipt(label: CoinEventLabel.weekend, :final multiplier) => l10n.coreCoinEventWeekend(label, multiplier),
+    CoinEventReceipt(:final multiplier) => l10n.coreCoinEventGeneric(label, multiplier),
+  };
 }
 
 String? _actionLabel(String action, AppLocalizations l10n) => switch (action) {

@@ -15850,5 +15850,15 @@
   "discoverLiveWallsTitle": "लाइव वॉलपेपर",
   "@discoverLiveWallsTitle": {"description": "Search discover: row that opens the live walls."},
   "discoverLiveWallsSubtitle": "Prism क्रिएटर्स के लूप वीडियो",
-  "@discoverLiveWallsSubtitle": {"description": "Search discover: subtitle of the Live walls row."}
+  "@discoverLiveWallsSubtitle": {"description": "Search discover: subtitle of the Live walls row."},
+  "coinEventTitleWeekend": "वीकेंड {multiplier}x",
+  "coinEventTitle": "{multiplier}x सिक्के",
+  "coinEventLiveBody": "{time} तक विज्ञापनों से {multiplier}x सिक्के मिलेंगे।",
+  "coinEventNextBody": "{time} से शुरू। विज्ञापनों से {multiplier}x सिक्के मिलेंगे।",
+  "coinEventEndsIn": "{time} में समाप्त",
+  "coinEventStartsIn": "{time} में शुरू",
+  "coinEventAdBadge": "{multiplier}x",
+  "coinEventAdBadgeLabel": "{multiplier}x सिक्का इवेंट",
+  "coreCoinEventWeekend": "{action} · {multiplier}x वीकेंड",
+  "coreCoinEventGeneric": "{action} · {multiplier}x इवेंट"
 }

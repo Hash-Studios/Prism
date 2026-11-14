@@ -4356,5 +4356,15 @@
   "searchKindsPrismOnlyNote": "Só os papéis de parede Prism têm estes tipos, então os resultados do Wallhaven e Pexels estão ocultos.",
   "searchRemoveFilter": "Remover {filter}",
   "discoverLiveWallsTitle": "Papéis de parede animados",
-  "discoverLiveWallsSubtitle": "Vídeos em loop de criadores Prism"
+  "discoverLiveWallsSubtitle": "Vídeos em loop de criadores Prism",
+  "coinEventTitleWeekend": "Fim de semana {multiplier}x",
+  "coinEventTitle": "{multiplier}x moedas",
+  "coinEventLiveBody": "Os anúncios dão {multiplier}x moedas até {time}.",
+  "coinEventNextBody": "Começa {time}. Os anúncios vão dar {multiplier}x moedas.",
+  "coinEventEndsIn": "Termina em {time}",
+  "coinEventStartsIn": "Começa em {time}",
+  "coinEventAdBadge": "{multiplier}x",
+  "coinEventAdBadgeLabel": "Evento de moedas {multiplier}x",
+  "coreCoinEventWeekend": "{action} · fim de semana {multiplier}x",
+  "coreCoinEventGeneric": "{action} · evento {multiplier}x"
 }
