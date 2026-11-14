@@ -716,7 +716,7 @@ export const socialPublish = onSchedule({schedule: "every 5 minutes", region: RE
 });
 
 export const socialMeasure = onSchedule({schedule: "30 6 * * *", timeZone: "Asia/Kolkata", region: REGION,
-  timeoutSeconds: 120, secrets: [...xSecrets], cpu: "gcf_gen1"}, async () => {
+  timeoutSeconds: 120, secrets: [...xSecrets, ...r2Secrets], cpu: "gcf_gen1"}, async () => {
   const measured = await measurePosts(await liveDeps(true, false));
   logger.info("social: measured.", {measured});
 });
