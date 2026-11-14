@@ -7,6 +7,7 @@ import 'dart:math';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
+import 'package:Prism/core/coins/coin_events.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coin_transaction_entry.dart';
 import 'package:Prism/core/coins/daily_chest.dart';
@@ -494,15 +495,20 @@ class CoinsService with WidgetsBindingObserver {
   /// Auto-rotate is open: Pro or an active auto-rotate pass.
   bool get autoRotateUnlocked => app_state.prismUser.premium || currentPasses.autoRotatePassActive(DateTime.now());
 
-  /// What the next rewarded ad pays: more for the first ad of the UTC day.
-  int get adsRewardNow {
-    final int? remaining = adsRemainingToday;
+  /// What the next rewarded ad pays: more for the first ad of the UTC day, times a live coin event.
+  int get adsRewardNow => adsRewardAt(DateTime.now());
+
+  /// [adsRewardNow] at [now], so a screen can show the reward and its event badge from one instant.
+  int adsRewardAt(DateTime now) => _adsBaseRewardAt(now) * EconomyConfig.current.coinEvents.multiplierAt(now);
+
+  int _adsBaseRewardAt(DateTime now) {
+    final int? remaining = _adsRemainingAt(now);
     if (remaining != null) {
       return remaining == EconomyConfig.current.award.rewardedAdMaxPerDay
           ? CoinPolicy.rewardedAdFirstOfDay
           : CoinPolicy.rewardedAd;
     }
-    return _ownsEconomyState && _adsTodayDay == _utcDayKey() && _adsTodayCount > 0
+    return _ownsEconomyState && _adsTodayDay == _offsetDayKey(now.toUtc(), 0) && _adsTodayCount > 0
         ? CoinPolicy.rewardedAd
         : CoinPolicy.rewardedAdFirstOfDay;
   }
@@ -1136,6 +1142,13 @@ class CoinsService with WidgetsBindingObserver {
           if (firstSettlement) {
             _noteAdWatched();
             _markBonusQuestDone(QuestEvent.watchAd);
+            if (CoinEventReceipt.tryParse(data['coinEvent']) case final CoinEventReceipt event) {
+              unawaited(
+                analytics.track(
+                  CoinEventAdWatchedEvent(eventId: event.id, multiplier: event.multiplier, coins: rewardCoins),
+                ),
+              );
+            }
           }
         }
         unawaited(
@@ -1398,8 +1411,12 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   /// Rewarded ads left today, as the last `rewardedAd` reply told. Null when unknown or from an earlier UTC day.
-  int? get adsRemainingToday =>
-      _canMutateCoins() && _adsRemainingOwner == app_state.prismUser.id && _adsRemainingDay == _utcDayKey()
+  int? get adsRemainingToday => _adsRemainingAt(DateTime.now());
+
+  int? _adsRemainingAt(DateTime now) =>
+      _canMutateCoins() &&
+          _adsRemainingOwner == app_state.prismUser.id &&
+          _adsRemainingDay == _offsetDayKey(now.toUtc(), 0)
       ? adsRemainingNotifier.value
       : null;
 

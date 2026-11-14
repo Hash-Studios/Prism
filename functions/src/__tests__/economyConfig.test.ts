@@ -37,3 +37,30 @@ test("planConfig rejects unknown keys, wrong types and prototype paths", () => {
 test("planConfig reports no change when the value already matches", () => {
   assert.deepEqual(planConfig(null, [["flags.dropsEnabled", true]]).diff, []);
 });
+
+test("planConfig sets coin events in any key order and rejects a bad one", () => {
+  const event = {id: "launch", startsAtMs: 1, endsAtMs: 1000, multiplier: 2, actions: ["rewardedAd"], label: "event"};
+  assert.deepEqual(planConfig(null, [["events", [event]]]).overrides, {events: [event]});
+  const weekly = {id: "weekend", startDay: 6, startMinute: 0, durationMinutes: 2880, multiplier: 2,
+    actions: ["rewardedAd"], label: "weekend"};
+  assert.deepEqual(planConfig(null, [["weeklyEvent", weekly]]).next.weeklyEvent, weekly);
+  assert.throws(() => planConfig(null, [["events", [{...event, multiplier: 5}]]]), /Rejected/);
+  assert.throws(() => planConfig(null, [["weeklyEvent", {...weekly, startDay: 8}]]), /Rejected/);
+});
+
+test("planConfig accepts omitted event labels and preserves parser defaults", () => {
+  const event = {id: "launch", startsAtMs: 1, endsAtMs: 1000, multiplier: 2, actions: ["rewardedAd"]};
+  const weekly = {id: "weekly", startDay: 7, startMinute: 30, durationMinutes: 60, multiplier: 3, actions: ["rewardedAd"]};
+  const plan = planConfig(null, [["events", [event]], ["weeklyEvent", weekly]]);
+  assert.deepEqual(plan.next.events, [{...event, label: "event"}]);
+  assert.deepEqual(plan.next.weeklyEvent, {...weekly, label: "event"});
+  assert.deepEqual(plan.overrides, {events: [{...event, label: "event"}], weeklyEvent: {...weekly, label: "event"}});
+  assert.throws(() => planConfig(null, [["events", [{...event, label: null}]]]), /Rejected/);
+  assert.throws(() => planConfig(null, [["weeklyEvent", {...weekly, unexpected: true}]]), /Rejected/);
+});
+
+test("planConfig writes the default weekly label over an existing non-default label", () => {
+  const weekly = {id: "weekly", startDay: 7, startMinute: 30, durationMinutes: 60, multiplier: 3, actions: ["rewardedAd"]};
+  const plan = planConfig({weeklyEvent: {...weekly, label: "weekend"}}, [["weeklyEvent", weekly]]);
+  assert.deepEqual(plan.overrides.weeklyEvent, {...weekly, label: "event"});
+});

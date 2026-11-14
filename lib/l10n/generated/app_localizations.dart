@@ -25008,6 +25008,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Looping videos from Prism creators'**
   String get discoverLiveWallsSubtitle;
+
+  /// Banner title for a weekly weekend coin event that multiplies ad rewards.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekend {multiplier}x'**
+  String coinEventTitleWeekend(int multiplier);
+
+  /// Banner title for a one-off coin event that multiplies ad rewards.
+  ///
+  /// In en, this message translates to:
+  /// **'{multiplier}x coins'**
+  String coinEventTitle(int multiplier);
+
+  /// Banner body while a coin event is live. time is the local end time, like Sun 23:59.
+  ///
+  /// In en, this message translates to:
+  /// **'Ads pay {multiplier}x coins until {time}.'**
+  String coinEventLiveBody(int multiplier, String time);
+
+  /// Banner body before a coin event starts. time is the local start time, like Sat 00:00.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts {time}. Ads will pay {multiplier}x coins.'**
+  String coinEventNextBody(int multiplier, String time);
+
+  /// Countdown to the end of a live coin event. time is a short duration, like 4d 2h.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends in {time}'**
+  String coinEventEndsIn(String time);
+
+  /// Countdown to the start of a coin event. time is a short duration, like 4d 2h.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts in {time}'**
+  String coinEventStartsIn(String time);
+
+  /// Short badge on the watch-ad row while a coin event is live, like 2x.
+  ///
+  /// In en, this message translates to:
+  /// **'{multiplier}x'**
+  String coinEventAdBadge(int multiplier);
+
+  /// Screen reader label for the coin event badge on the watch-ad row.
+  ///
+  /// In en, this message translates to:
+  /// **'{multiplier}x coin event'**
+  String coinEventAdBadgeLabel(int multiplier);
+
+  /// Coin history line for an ad paid during a weekend coin event. action is the base label, like Watched a video.
+  ///
+  /// In en, this message translates to:
+  /// **'{action} · {multiplier}x weekend'**
+  String coreCoinEventWeekend(String action, int multiplier);
+
+  /// Coin history line for an ad paid during a one-off coin event. action is the base label, like Watched a video.
+  ///
+  /// In en, this message translates to:
+  /// **'{action} · {multiplier}x event'**
+  String coreCoinEventGeneric(String action, int multiplier);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

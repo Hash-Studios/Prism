@@ -1,3 +1,4 @@
+import 'package:Prism/core/coins/coin_events.dart';
 import 'package:Prism/core/utils/json_utils.dart';
 import 'package:Prism/core/wallpaper/parse_helpers.dart';
 
@@ -21,6 +22,7 @@ class CoinTransactionEntry {
     this.shortLinkUrl,
     this.metadata,
     this.updatedAt,
+    this.coinEvent,
   });
 
   final String id;
@@ -41,6 +43,9 @@ class CoinTransactionEntry {
   final String? shortLinkUrl;
   final Map<String, dynamic>? metadata;
   final DateTime? updatedAt;
+
+  /// Set when a coin event multiplied this award.
+  final CoinEventReceipt? coinEvent;
 
   bool get isCredit => delta > 0;
 
@@ -64,6 +69,8 @@ class CoinTransactionEntry {
       if (deepLinkUrl != null && deepLinkUrl!.isNotEmpty) 'deepLinkUrl': deepLinkUrl,
       if (shortLinkUrl != null && shortLinkUrl!.isNotEmpty) 'shortLinkUrl': shortLinkUrl,
       if (metadata != null) 'metadata': metadata,
+      if (coinEvent case final CoinEventReceipt event)
+        'coinEvent': <String, dynamic>{'id': event.id, 'multiplier': event.multiplier, 'label': event.label.name},
     };
   }
 
@@ -87,6 +94,7 @@ class CoinTransactionEntry {
       deepLinkUrl: json['deepLinkUrl']?.toString(),
       shortLinkUrl: json['shortLinkUrl']?.toString(),
       metadata: json['metadata'] is Map ? toJsonMap(json['metadata']) : null,
+      coinEvent: CoinEventReceipt.tryParse(json['coinEvent']),
     );
   }
 

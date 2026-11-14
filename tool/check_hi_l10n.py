@@ -13,6 +13,7 @@ from pathlib import Path
 UNCHANGED_ENGLISH = {
     'foldersSmartRuleSummary': '{kind}: {values}',
     'economyCoinReward': '+{count}',
+    'coinEventAdBadge': '{multiplier}x',
     'wallpaperCropPresetPortrait': '9:16',
     'wallpaperCropPresetSquare': '1:1',
     'wallpaperCropSize': '{width} × {height} px',

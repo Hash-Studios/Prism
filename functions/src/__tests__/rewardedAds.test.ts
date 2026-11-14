@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {generateKeyPairSync, sign} from "node:crypto";
 import {db} from "../common";
+import {ECONOMY_CONFIG_DOC, resetEconomyCache} from "../economy";
 import {admobRewardedSsv, beginRewardedSession, getRewardedSession, settleVerifiedReward, rewardedConfig} from "../rewardedAds";
 import {GoogleSsvVerifier, SsvInvalid, SsvUnavailable} from "../admobSsv";
 import {awardCoins, legacyRewardedAdsAllowed} from "../coinsCallables";
@@ -11,6 +12,7 @@ const UNIT = "ca-app-pub-1234567890123456/1234567890";
 const NOW = Date.UTC(2026, 9, 30, 12);
 type Store = Map<string, Record<string, any>>;
 function harness(t: test.TestContext, observed?: {reads: number; writes: number; outsideReads: number; outsideWrites: number}) {
+  resetEconomyCache();
   const store: Store = installFakeDb(t, {"usersv2/u": {coins: 0}}, observed);
   let now = NOW;
   t.mock.method(Date, "now", () => now);
@@ -322,4 +324,46 @@ test("unknown-key outages remain retryable and concurrent refreshes share one fe
   now += 30_001;
   assert.equal((await verifier.verify(query(two, 2))).get("ad_unit"), "x");
   assert.equal(calls, 3);
+});
+
+test("event quotes survive their end, config changes, midnight and concurrent callback replays", async (t) => {
+  const h = harness(t);
+  h.store.set(ECONOMY_CONFIG_DOC, {events: [{id: "sale", startsAtMs: NOW, endsAtMs: NOW + 60_000,
+    multiplier: 3, actions: ["rewardedAd"], label: "event"}]});
+  const [first, replay] = await Promise.all([begin(), begin()]);
+  assert.deepEqual(replay, first);
+  assert.equal(first.rewardCoins, 60);
+  assert.deepEqual(first.coinEvent, {id: "sale", multiplier: 3, label: "event"});
+  h.advance(12 * 3_600_000);
+  h.store.set(ECONOMY_CONFIG_DOC, {award: {rewardedAdFirstOfDay: 7}, events: []});
+  resetEconomyCache();
+  const nextDay = await begin("request_002");
+  assert.equal(nextDay.rewardCoins, 7);
+  assert.equal(nextDay.coinEvent, undefined);
+  await Promise.all([settleVerifiedReward(callback(first)), settleVerifiedReward(callback(first))]);
+  const result = await get({sessionId: first.sessionId});
+  assert.equal(result.status, "settled");
+  assert.equal(result.rewardCoins, 60);
+  assert.equal(result.currentBalance, 60);
+  assert.equal(result.adsRemaining, 19);
+  assert.deepEqual(result.coinEvent, {id: "sale", multiplier: 3, label: "event"});
+  assert.equal(h.store.get("coinAdRateDaily/u_2026-10-30")?.count, 1);
+  assert.equal(h.store.get("coinAdRateDaily/u_2026-10-31")?.count, undefined);
+  assert.deepEqual(h.store.get(`coinTransactions/ssv_${first.sessionId}`)?.coinEvent, first.coinEvent);
+  assert.equal(h.store.get(`coinTransactions/ssv_${first.sessionId}`)?.delta, 60);
+});
+
+test("an event multiplies later ads once and does not increase the daily capacity", async (t) => {
+  const h = harness(t);
+  h.store.set(ECONOMY_CONFIG_DOC, {events: [{id: "sale", startsAtMs: NOW, endsAtMs: NOW + 3_600_000,
+    multiplier: 2, actions: ["rewardedAd"]}]});
+  h.store.set("coinAdRateDaily/u_2026-10-30", {count: 19});
+  const last = await begin();
+  assert.equal(last.rewardCoins, 20);
+  assert.equal(last.adsRemaining, 0);
+  await settleVerifiedReward(callback(last));
+  h.advance(20_001);
+  assert.equal((await begin("request_002")).reason, "daily_limit");
+  assert.equal(h.store.get("usersv2/u")?.coins, 20);
+  assert.equal(h.store.get("coinAdRateDaily/u_2026-10-30")?.count, 20);
 });

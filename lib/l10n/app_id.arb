@@ -15241,5 +15241,15 @@
   "discoverLiveWallsTitle": "Wallpaper bergerak",
   "@discoverLiveWallsTitle": {"description": "Search discover: row that opens the live walls."},
   "discoverLiveWallsSubtitle": "Video berulang dari kreator Prism",
-  "@discoverLiveWallsSubtitle": {"description": "Search discover: subtitle of the Live walls row."}
+  "@discoverLiveWallsSubtitle": {"description": "Search discover: subtitle of the Live walls row."},
+  "coinEventTitleWeekend": "Akhir pekan {multiplier}x",
+  "coinEventTitle": "{multiplier}x koin",
+  "coinEventLiveBody": "Iklan memberi {multiplier}x koin sampai {time}.",
+  "coinEventNextBody": "Mulai {time}. Iklan akan memberi {multiplier}x koin.",
+  "coinEventEndsIn": "Berakhir dalam {time}",
+  "coinEventStartsIn": "Mulai dalam {time}",
+  "coinEventAdBadge": "{multiplier}x",
+  "coinEventAdBadgeLabel": "Event koin {multiplier}x",
+  "coreCoinEventWeekend": "{action} · akhir pekan {multiplier}x",
+  "coreCoinEventGeneric": "{action} · event {multiplier}x"
 }

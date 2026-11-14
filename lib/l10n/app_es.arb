@@ -4514,5 +4514,15 @@
   "searchKindsPrismOnlyNote": "Solo los fondos de Prism tienen estos tipos, así que se ocultan los resultados de Wallhaven y Pexels.",
   "searchRemoveFilter": "Quitar {filter}",
   "discoverLiveWallsTitle": "Fondos animados",
-  "discoverLiveWallsSubtitle": "Videos en bucle de creadores de Prism"
+  "discoverLiveWallsSubtitle": "Videos en bucle de creadores de Prism",
+  "coinEventTitleWeekend": "Fin de semana {multiplier}x",
+  "coinEventTitle": "{multiplier}x monedas",
+  "coinEventLiveBody": "Los anuncios dan {multiplier}x monedas hasta {time}.",
+  "coinEventNextBody": "Empieza {time}. Los anuncios darán {multiplier}x monedas.",
+  "coinEventEndsIn": "Termina en {time}",
+  "coinEventStartsIn": "Empieza en {time}",
+  "coinEventAdBadge": "{multiplier}x",
+  "coinEventAdBadgeLabel": "Evento de monedas {multiplier}x",
+  "coreCoinEventWeekend": "{action} · fin de semana {multiplier}x",
+  "coreCoinEventGeneric": "{action} · evento {multiplier}x"
 }

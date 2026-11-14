@@ -90,6 +90,67 @@ Old clients show the old prices and cannot confirm new ones, so the server must 
 client call) pays the config prices. Awards, the streak and the referral need no version: old clients render the amount
 the server returns. The legacy `proDailyBonus` award keeps working and shares its daily receipt with the Pro spin.
 
+### Coin doubler events (J9)
+
+During a coin event, a verified rewarded ad pays 2x or 3x coins. The daily ad cap does not change. Only the coins
+for each ad change. The server decides the amount. The client never sends a multiplier.
+
+Two optional keys in `economyConfig/current` hold the events:
+
+```jsonc
+{
+  "events": [
+    {"id": "launch", "startsAtMs": 1795132800000, "endsAtMs": 1795219200000,
+     "multiplier": 2, "actions": ["rewardedAd"], "label": "event"}
+  ],
+  // Saturday 00:00 UTC to Monday 00:00 UTC, every week.
+  "weeklyEvent": {"id": "weekend", "startDay": 6, "startMinute": 0, "durationMinutes": 2880,
+                  "multiplier": 2, "actions": ["rewardedAd"], "label": "weekend"}
+}
+```
+
+Rules (`functions/src/coinEvents.ts`, mirrored in `lib/core/coins/coin_events.dart`):
+
+- `id` matches `^[a-z0-9_-]{1,40}$`. `multiplier` is the integer 2 or 3. `actions` is `["rewardedAd"]` in v1.
+- `label` is `weekend` or `event` (default `event`). It selects the copy: "Weekend 2x" or "2x coins".
+- A one-off event is live from `startsAtMs` (included) to `endsAtMs` (not included). It can be at most 31 days long.
+  Both timestamps are integer milliseconds in `0..8640000000000000`. The list can have at most 50 events.
+- `startDay` is the ISO day (1 is Monday, 7 is Sunday). `startMinute` is 0 to 1439 after 00:00 UTC.
+  `durationMinutes` is 1 to 10079. Each weekly occurrence has the id `<id>-<YYYY-MM-DD>` of its UTC start day.
+- When two events are live at the same time, the higher multiplier pays. If the multipliers are equal, the lower id pays.
+- The parser removes a bad event and logs a warning. The other events stay live. A bad weekly rule becomes `null`.
+
+How the server applies an event:
+
+- Verified ads (SSV): `beginRewardedSession` checks for a live event when it quotes the reward. The quote is
+  `base × multiplier`, where `base` is `rewardedAdFirstOfDay` or `rewardedAd`. The session stores the quote and
+  `coinEvent`. `settleVerifiedReward` pays the stored quote. Thus a late callback or a retry pays the quoted amount
+  once. The client shows the quote before the ad starts, so a user who starts an ad before the event ends gets the
+  multiplier. The session show window (10 minutes) limits this.
+- Legacy ads (`awardCoins` with `rewardedAd`, while `REWARDED_AD_LEGACY_UNTIL` allows them): the server checks
+  for a live event at the award time. A replay of the same `requestId` returns the stored award and `coinEvent`,
+  with the current balance, and pays nothing more. Without a `requestId`, retries have only the cooldown and daily cap
+  as guards; a retry after the cooldown can pay again.
+- The ledger doc (`ssv_<sessionId>` or `award_<uid>_<requestId>`) gets `coinEvent: {id, multiplier, label}`.
+  `getRewardedSession` and the legacy reply also return `coinEvent`.
+
+The client reads the events from the config doc it already loads. No callable was added. Rewards shows a banner
+above Earn coins while an event is live, or when one starts in the next 7 days. The banner shows the local end or
+start time and a countdown. The ad row shows the multiplied amount and a "2x" badge. The coin history shows
+"Watched a video · 2x weekend". Analytics: `coin_event_seen` (`event_id`, `multiplier`, `phase`) and
+`coin_event_ad_watched` (`event_id`, `multiplier`, `coins`).
+
+To set the events, use the admin script (dry run without `--apply`):
+
+```sh
+npm run economy:config -- --set 'weeklyEvent={"id":"weekend","startDay":6,"startMinute":0,"durationMinutes":2880,"multiplier":2,"actions":["rewardedAd"],"label":"weekend"}'
+npm run economy:config -- --set 'events=[{"id":"launch","startsAtMs":1795132800000,"endsAtMs":1795219200000,"multiplier":2,"actions":["rewardedAd"],"label":"event"}]'
+npm run economy:config -- --set 'weeklyEvent=null'   # stop the weekly event
+```
+
+The script refuses a value that the parser would remove. Deploy the functions before you write an event, because
+older functions ignore the keys. No push notification is sent in v1.
+
 ## Before and after
 
 | | Today | v2 |

@@ -15113,5 +15113,15 @@
   "discoverLiveWallsTitle": "Live-Hintergrundbilder",
   "@discoverLiveWallsTitle": {"description": "Search discover: row that opens the live walls."},
   "discoverLiveWallsSubtitle": "Loop-Videos von Prism-Kreativen",
-  "@discoverLiveWallsSubtitle": {"description": "Search discover: subtitle of the Live walls row."}
+  "@discoverLiveWallsSubtitle": {"description": "Search discover: subtitle of the Live walls row."},
+  "coinEventTitleWeekend": "Wochenende {multiplier}x",
+  "coinEventTitle": "{multiplier}x Münzen",
+  "coinEventLiveBody": "Anzeigen bringen bis {time} {multiplier}x Münzen.",
+  "coinEventNextBody": "Startet {time}. Anzeigen bringen dann {multiplier}x Münzen.",
+  "coinEventEndsIn": "Endet in {time}",
+  "coinEventStartsIn": "Startet in {time}",
+  "coinEventAdBadge": "{multiplier}x",
+  "coinEventAdBadgeLabel": "{multiplier}x-Münzaktion",
+  "coreCoinEventWeekend": "{action} · {multiplier}x Wochenende",
+  "coreCoinEventGeneric": "{action} · {multiplier}x Aktion"
 }

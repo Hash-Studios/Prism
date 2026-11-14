@@ -187,6 +187,14 @@ void main() {
       expect(service.adsRewardNow, 10);
     });
 
+    test("tomorrow's reward ignores today's cached ad count", () async {
+      reply((_, _) => _paid(after: 120, extra: <String, Object?>{'adsRemaining': 19}));
+      await settleAd();
+      final DateTime now = DateTime.now();
+      expect(service.adsRewardAt(now), 10);
+      expect(service.adsRewardAt(now.add(const Duration(days: 1))), 20);
+    });
+
     test("a credited ad ticks today's watch_ad bonus quest without reconciling rank rewards", () async {
       final Map<String, Object?> today = <String, Object?>{..._quests(), 'dayKey': economyDayKey(DateTime.now())};
       reply(

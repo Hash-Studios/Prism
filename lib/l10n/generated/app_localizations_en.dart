@@ -15702,4 +15702,54 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get discoverLiveWallsSubtitle => 'Looping videos from Prism creators';
+
+  @override
+  String coinEventTitleWeekend(int multiplier) {
+    return 'Weekend ${multiplier}x';
+  }
+
+  @override
+  String coinEventTitle(int multiplier) {
+    return '${multiplier}x coins';
+  }
+
+  @override
+  String coinEventLiveBody(int multiplier, String time) {
+    return 'Ads pay ${multiplier}x coins until $time.';
+  }
+
+  @override
+  String coinEventNextBody(int multiplier, String time) {
+    return 'Starts $time. Ads will pay ${multiplier}x coins.';
+  }
+
+  @override
+  String coinEventEndsIn(String time) {
+    return 'Ends in $time';
+  }
+
+  @override
+  String coinEventStartsIn(String time) {
+    return 'Starts in $time';
+  }
+
+  @override
+  String coinEventAdBadge(int multiplier) {
+    return '${multiplier}x';
+  }
+
+  @override
+  String coinEventAdBadgeLabel(int multiplier) {
+    return '${multiplier}x coin event';
+  }
+
+  @override
+  String coreCoinEventWeekend(String action, int multiplier) {
+    return '$action · ${multiplier}x weekend';
+  }
+
+  @override
+  String coreCoinEventGeneric(String action, int multiplier) {
+    return '$action · ${multiplier}x event';
+  }
 }

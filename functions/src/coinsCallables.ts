@@ -12,6 +12,7 @@ import {isStudioWall} from "./studio/isStudioWall";
 import {inventoryOwned, rankRewardsFor} from "./rankRewards";
 import {verifiedUploadOwner} from "./creatorProgress";
 import {liveReservations} from "./rewardedAds";
+import {coinEventReceipt, liveCoinEvent} from "./coinEvents";
 
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
@@ -440,6 +441,7 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
     delta: number;
     reason: string;
     adsRemaining?: number;
+    coinEvent?: ReturnType<typeof coinEventReceipt>;
   } = {
     ...xpReceipt({}, nowMs),
     success: false,
@@ -492,9 +494,10 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
         success: true,
         changed: true,
         previousBalance: typeof original.balanceBefore === "number" ? Math.trunc(original.balanceBefore) : previous,
-        currentBalance: typeof original.balanceAfter === "number" ? Math.trunc(original.balanceAfter) : previous,
+        currentBalance: previous,
         delta: typeof original.delta === "number" ? Math.trunc(original.delta) : 0,
         ...adsRemaining,
+        ...(original.coinEvent ? {coinEvent: original.coinEvent} : {}),
       };
       return;
     }
@@ -554,9 +557,10 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
       return;
     }
 
+    const adEvent = action === "rewardedAd" ? liveCoinEvent(config, "rewardedAd", nowMs) : null;
     const delta = action === "refund" ?
       refundableDelta(debit, callerUid, nowMs, refundWindowMs) :
-      awardAmount(action, award, adCapacityUsed);
+      awardAmount(action, award, adCapacityUsed) * (adEvent?.multiplier ?? 1);
     if (delta === null) throw new HttpsError("failed-precondition", "No refundable spend.");
 
     if (action === "refund" && debitRef) {
@@ -591,7 +595,8 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
       coinState: state,
       ...nextXp,
     });
-    writeTx(tx, {userId: callerUid, delta, previous, action, sourceTag, reason, fixedId: adAwardRef?.id});
+    const coinEvent = adEvent ? {coinEvent: coinEventReceipt(adEvent)} : {};
+    writeTx(tx, {userId: callerUid, delta, previous, action, sourceTag, reason, fixedId: adAwardRef?.id, extra: coinEvent});
     response = {
       ...xpReceipt(nextXp ?? data, nowMs, xpAwarded),
       success: true,
@@ -601,6 +606,7 @@ export const awardCoins = onCall(CALLABLE_OPTIONS, async (request: CallableReque
       delta,
       reason,
       ...(action === "rewardedAd" ? {adsRemaining: Math.max(0, award.rewardedAdMaxPerDay - adCapacityUsed - 1)} : {}),
+      ...coinEvent,
     };
   });
   return response;

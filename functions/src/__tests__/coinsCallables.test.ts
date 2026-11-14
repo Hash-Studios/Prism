@@ -1670,3 +1670,54 @@ test("buyStreakFreeze and restoreStreak: prices come from the config", async (t)
   assert.equal(store.get(USER)?.coins, 10);
   assert.equal(DEFAULT_ECONOMY.spend.streakFreeze, 50);
 });
+
+test("rewarded ad event replay preserves its award but returns the current wallet balance", async (t) => {
+  const now = Date.parse("2026-10-18T12:00:00Z");
+  const setNow = clock(t, now);
+  const store = installFakeDb(t, {
+    [USER]: {coins: 100},
+    [ECONOMY_CONFIG_DOC]: {events: [{id: "sale", startsAtMs: now, endsAtMs: now + 60_000,
+      multiplier: 3, actions: ["rewardedAd"], label: "event"}]},
+  });
+  const request = awardRequest({action: "rewardedAd", requestId: "event_retry_001", multiplier: 999});
+  const results = await Promise.all([awardCoins.run(request), awardCoins.run(request)]);
+  for (const result of results) {
+    assert.equal(result.delta, 60);
+    assert.deepEqual(result.coinEvent, {id: "sale", multiplier: 3, label: "event"});
+  }
+  assert.equal(store.get(USER)?.coins, 160);
+  assert.equal(store.get("coinAdRateDaily/user-1_2026-10-18")?.count, 1);
+  assert.deepEqual(store.get("coinTransactions/award_user-1_event_retry_001")?.coinEvent,
+    {id: "sale", multiplier: 3, label: "event"});
+  store.set(USER, {...store.get(USER), coins: 145});
+  setNow(now + 60_000);
+  const replay = await awardCoins.run(request);
+  assert.equal(replay.delta, 60);
+  assert.equal(replay.currentBalance, 145);
+  assert.deepEqual(replay.coinEvent, {id: "sale", multiplier: 3, label: "event"});
+  assert.equal(store.get(USER)?.coins, 145);
+});
+
+test("legacy event awards without requestId retain cooldown and cap but cannot identify a delayed retry", async (t) => {
+  const now = Date.parse("2026-10-18T12:00:00Z");
+  const setNow = clock(t, now);
+  const store = installFakeDb(t, {
+    [USER]: {coins: 100},
+    ["coinAdRateDaily/user-1_2026-10-18"]: {count: 18},
+    [ECONOMY_CONFIG_DOC]: {events: [{id: "sale", startsAtMs: now, endsAtMs: now + 60_000,
+      multiplier: 2, actions: ["rewardedAd"]}]},
+  });
+  const request = awardRequest({action: "rewardedAd"});
+  const first = await awardCoins.run(request);
+  assert.equal(first.delta, 20);
+  assert.equal(first.adsRemaining, 1);
+  assert.equal((await awardCoins.run(request)).success, false);
+  setNow(now + 20_000);
+  const second = await awardCoins.run(request);
+  assert.equal(second.delta, 20);
+  assert.equal(second.adsRemaining, 0);
+  setNow(now + 40_000);
+  assert.equal((await awardCoins.run(request)).success, false);
+  assert.equal(store.get(USER)?.coins, 140);
+  assert.equal(store.get("coinAdRateDaily/user-1_2026-10-18")?.count, 20);
+});
