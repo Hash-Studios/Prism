@@ -5,6 +5,7 @@ import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/monitoring/field_diagnostics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
@@ -64,6 +65,7 @@ Future<void> prepareRemoteConfig(
     personalizedInterestsRemoteConfigKey: defaultPersonalizedInterestsJson,
     AdExperimentConfig.remoteConfigKey: '{}',
     iosShortcutLinkRemoteConfigKey: '',
+    FieldDiagnostics.sampleRateKey: FieldDiagnostics.defaultSampleRate,
   });
   try {
     await remoteConfig.activate();

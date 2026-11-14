@@ -13,6 +13,7 @@ import 'package:Prism/core/constants/admin_users.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/monitoring/field_diagnostics.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
@@ -77,8 +78,10 @@ import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper
 import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/hints/views/feature_hint.dart';
+import 'package:Prism/features/layout_prefs/data/layout_prefs_store.dart';
 import 'package:Prism/features/live_photo/views/open_live_photo.dart';
 import 'package:Prism/features/live_wallpaper/domain/repositories/live_wallpaper_repository.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/public_profile/domain/creator_label.dart';
 import 'package:Prism/features/readability/domain/readability.dart';
 import 'package:Prism/features/theme_mode/biz/bloc/theme_bloc.j.dart';
@@ -93,6 +96,7 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.dart';
 import 'package:Prism/features/wallpaper_detail/biz/block_wall_creator.dart';
 import 'package:Prism/features/wallpaper_detail/biz/tag_search_launcher.dart';
+import 'package:Prism/features/wallpaper_detail/biz/wall_open_entry.dart';
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:Prism/features/wallpaper_detail/data/wallpaper_tint_renderer.dart';
@@ -157,6 +161,7 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
     this.feed,
     this.desktopDownload = false,
     this.openFolderSheet = false,
+    this.entry,
   }) : assert(entity != null || (wallId != null && source != null), 'Either entity or wallId+source must be provided');
 
   final FeedItemEntity? entity;
@@ -186,6 +191,9 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
   /// Set when a Prism link was shared to the app: Save to Folder opens once the wall loads.
   final bool openFolderSheet;
 
+  /// Where the wall was opened from, when the router cannot tell: a link opens over any page.
+  final WallOpenEntryValue? entry;
+
   /// Warms one colour variant's pictures. Tests replace it.
   @visibleForTesting
   static Future<void> Function(BuildContext context, WallpaperDisplaySource display) precacheVariant =
@@ -198,18 +206,24 @@ class WallpaperDetailScreen extends StatefulWidget implements AutoRouteWrapper {
     final FeedItemEntity? entity = this.entity;
     final int start = feed == null || entity == null ? -1 : feed.indexOf(entity);
     if (feed != null && start >= 0) {
-      return ExperimentalInterstitialReturn(
-        grid: feed.grid,
-        child: _DetailImmersion(
-          child: _FeedBrowser(screen: this, feed: feed, start: start),
+      return JankVisitScope(
+        screen: JankScreenValue.wallDetail,
+        child: ExperimentalInterstitialReturn(
+          grid: feed.grid,
+          child: _DetailImmersion(
+            child: _FeedBrowser(screen: this, feed: feed, start: start),
+          ),
         ),
       );
     }
-    return _DetailImmersion(
-      child: BlocProvider<WallpaperDetailBloc>(
-        key: ValueKey<(WallpaperSource, String)>((entity?.source ?? source!, entity?.id ?? wallId!)),
-        create: (_) => getIt<WallpaperDetailBloc>(),
-        child: this,
+    return JankVisitScope(
+      screen: JankScreenValue.wallDetail,
+      child: _DetailImmersion(
+        child: BlocProvider<WallpaperDetailBloc>(
+          key: ValueKey<(WallpaperSource, String)>((entity?.source ?? source!, entity?.id ?? wallId!)),
+          create: (_) => getIt<WallpaperDetailBloc>(),
+          child: this,
+        ),
       ),
     );
   }
@@ -604,6 +618,7 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
 
   void _onMove() {
     final double position = _position.value;
+    JankSampler.instance.swiping(position != position.roundToDouble());
     final int last = _tiles.length - 1;
     final (int, int) span = (position.floor().clamp(0, last), position.ceil().clamp(0, last));
     if (span != _span) setState(() => _span = span);
@@ -694,6 +709,7 @@ class _FeedBrowserState extends State<_FeedBrowser> with SingleTickerProviderSta
                   heroTag: tile.heroTag,
                   aspectRatio: index == widget.start ? screen.aspectRatio : null,
                   desktopDownload: screen.desktopDownload,
+                  entry: screen.entry,
                 ),
               ),
             ),
@@ -1212,8 +1228,9 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
   void _loadWallpaper(BuildContext context) {
     final bloc = context.read<WallpaperDetailBloc>();
     final entity = widget.entity;
+    final WallOpenOrigin origin = _openOrigin(context);
     if (entity != null) {
-      bloc.add(LoadFromEntity(entity: entity, localFilePath: widget.localFile?.path));
+      bloc.add(LoadFromEntity(entity: entity, localFilePath: widget.localFile?.path, origin: origin));
     } else {
       bloc.add(
         LoadFromId(
@@ -1221,9 +1238,32 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           source: widget.source!,
           thumbnailUrl: widget.thumbnailUrl,
           localFilePath: widget.localFile?.path,
+          origin: origin,
         ),
       );
     }
+  }
+
+  /// Diagnostics only: a router that cannot answer gives [WallOpenEntryValue.other] instead of breaking the load.
+  WallOpenOrigin _openOrigin(BuildContext context) {
+    WallOpenEntryValue? entry = widget.entry;
+    if (entry == null) {
+      try {
+        final StackRouter? root = StackRouterScope.of(context)?.controller.root;
+        final List<RouteData> stack = root?.stackData ?? const <RouteData>[];
+        final int detail = stack.lastIndexWhere((RouteData route) => route.name == WallpaperDetailRoute.name);
+        entry = wallOpenEntry(
+          below: detail > 0 ? stack[detail - 1].name : null,
+          activeTab: root?.innerRouterOf<TabsRouter>(DashboardRoute.name)?.current.name,
+        );
+      } catch (_) {
+        return unknownWallOpenOrigin;
+      }
+    }
+    final HomeFeedChip? homeTab = entry == WallOpenEntryValue.home && getIt.isRegistered<LayoutPrefsStore>()
+        ? getIt<LayoutPrefsStore>().value.feedTab
+        : null;
+    return (entry: entry, homeTab: homeTab);
   }
 
   void _loadFavouritesForPinMenu() {

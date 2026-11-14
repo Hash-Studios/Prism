@@ -93,6 +93,7 @@ class DeepLinkNavigation {
           source: action.source,
           thumbnailUrl: action.thumbnailUrl,
           analyticsSurface: AnalyticsSurfaceValue.shareWallpaperView,
+          entry: WallOpenEntryValue.link,
         );
       case UserLinkIntent():
         return ProfileRoute(profileIdentifier: action.profileIdentifier);

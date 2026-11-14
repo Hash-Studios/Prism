@@ -9,6 +9,7 @@ import 'package:Prism/core/platform/wallpaper_service.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
+import 'package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart';
 import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
 import 'package:Prism/features/public_profile/domain/entities/user_relation_kind.dart';
 import 'package:Prism/features/readability/domain/readability.dart';
@@ -95,6 +96,11 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'redeem_failure_reason': RedeemFailureReason.values.map((value) => value.wireValue).toList(),
   'store_code_platform': StoreCodePlatform.values.map((value) => value.wireValue).toList(),
   'ota_failure_reason': OtaFailureReasonValue.values.map((value) => value.wireValue).toList(),
+  'home_feed_chip': HomeFeedChip.values.map((value) => value.wireValue).toList(),
+  'jank_screen': JankScreenValue.values.map((value) => value.wireValue).toList(),
+  'wall_open_entry': WallOpenEntryValue.values.map((value) => value.wireValue).toList(),
+  'wall_id_kind': WallIdKindValue.values.map((value) => value.wireValue).toList(),
+  'wall_open_error': WallOpenErrorValue.values.map((value) => value.wireValue).toList(),
 };
 
 class ContentReportSubmitEvent extends AnalyticsEvent {
@@ -6027,5 +6033,97 @@ class ReadabilityFixKeptEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'zone': zone.wireValue};
+  }
+}
+
+class FieldJankEvent extends AnalyticsEvent {
+  const FieldJankEvent({
+    required this.screen,
+    required this.frames,
+    required this.slowFrames,
+    required this.frozenFrames,
+    required this.buildP90Ms,
+    required this.rasterP90Ms,
+    required this.refreshHz,
+  });
+
+  final JankScreenValue screen;
+  final int frames;
+  final int slowFrames;
+  final int frozenFrames;
+  final double buildP90Ms;
+  final double rasterP90Ms;
+  final int refreshHz;
+
+  @override
+  String get eventName => 'field_jank';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'screen': screen.wireValue,
+      'frames': frames,
+      'slow_frames': slowFrames,
+      'frozen_frames': frozenFrames,
+      'build_p90_ms': buildP90Ms,
+      'raster_p90_ms': rasterP90Ms,
+      'refresh_hz': refreshHz,
+    };
+  }
+}
+
+class WallOpenFailedEvent extends AnalyticsEvent {
+  const WallOpenFailedEvent({
+    required this.entry,
+    this.homeTab,
+    required this.source,
+    required this.wallId,
+    required this.idKind,
+    required this.error,
+    required this.fallbackRan,
+  });
+
+  final WallOpenEntryValue entry;
+  final HomeFeedChip? homeTab;
+  final String source;
+  final String wallId;
+  final WallIdKindValue idKind;
+  final WallOpenErrorValue error;
+  final bool fallbackRan;
+
+  @override
+  String get eventName => 'wall_open_failed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      'entry': entry.wireValue,
+      if (homeTab != null) 'home_tab': homeTab!.wireValue,
+      'source': source,
+      'wall_id': wallId,
+      'id_kind': idKind.wireValue,
+      'error': error.wireValue,
+      'fallback_ran': fallbackRan ? 1 : 0,
+    };
+  }
+}
+
+class ResumeStallEvent extends AnalyticsEvent {
+  const ResumeStallEvent({this.firstFrameMs, this.longestTaskMs, required this.backgroundS});
+
+  final int? firstFrameMs;
+  final int? longestTaskMs;
+  final int backgroundS;
+
+  @override
+  String get eventName => 'resume_stall';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{
+      if (firstFrameMs != null) 'first_frame_ms': firstFrameMs!,
+      if (longestTaskMs != null) 'longest_task_ms': longestTaskMs!,
+      'background_s': backgroundS,
+    };
   }
 }

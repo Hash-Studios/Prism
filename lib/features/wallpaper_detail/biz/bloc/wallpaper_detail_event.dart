@@ -1,5 +1,6 @@
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/wallpaper_detail/biz/wall_open_entry.dart';
 import 'package:Prism/features/wallpaper_upload/domain/entities/wall_metadata.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
@@ -12,25 +13,33 @@ sealed class WallpaperDetailEvent extends Equatable {
 }
 
 final class LoadFromEntity extends WallpaperDetailEvent {
-  const LoadFromEntity({required this.entity, this.localFilePath});
+  const LoadFromEntity({required this.entity, this.localFilePath, this.origin = unknownWallOpenOrigin});
 
   final FeedItemEntity entity;
   final String? localFilePath;
+  final WallOpenOrigin origin;
 
   @override
-  List<Object?> get props => [entity, localFilePath];
+  List<Object?> get props => [entity, localFilePath, origin];
 }
 
 final class LoadFromId extends WallpaperDetailEvent {
-  const LoadFromId({required this.wallId, required this.source, this.thumbnailUrl, this.localFilePath});
+  const LoadFromId({
+    required this.wallId,
+    required this.source,
+    this.thumbnailUrl,
+    this.localFilePath,
+    this.origin = unknownWallOpenOrigin,
+  });
 
   final String wallId;
   final WallpaperSource source;
   final String? thumbnailUrl;
   final String? localFilePath;
+  final WallOpenOrigin origin;
 
   @override
-  List<Object?> get props => [wallId, source, thumbnailUrl, localFilePath];
+  List<Object?> get props => [wallId, source, thumbnailUrl, localFilePath, origin];
 }
 
 final class FetchViews extends WallpaperDetailEvent {

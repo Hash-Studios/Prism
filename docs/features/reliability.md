@@ -93,6 +93,31 @@ Disk budget:
 
 Wall of the Day: `_lastWotdRefresh` starts at app launch. The resume handler refetches when `shouldRefreshWotdOnResume` returns true.
 
+## Field diagnostics
+
+Three signals tell us the cause of bugs that we cannot reproduce: #533 (lag), #557 (a wall fails to open) and #551 (freeze on resume). They go to Mixpanel and Firebase Analytics through the typed analytics events. They send no email, no uid and no free text. Code: `lib/core/monitoring/field_diagnostics.dart` and `lib/features/wallpaper_detail/biz/wall_open_entry.dart`.
+
+Sampling: the Remote Config key `field_diagnostics_sample_rate` (a number from 0 to 1, default `0.05` in `prepareRemoteConfig`). The app decides once per process, after Remote Config is ready. `0` turns off jank and resume. Wall open failures are always sent. A session that is not sampled adds no frame timings callback and no timer.
+
+| Event | When | Properties |
+|---|---|---|
+| `field_jank` | Once per screen visit, in sampled sessions. A visit ends when another screen covers it, when the app goes to the background, or when the screen closes. | `screen` (`home_feed`, `wall_detail`, `detail_swipe`), `frames`, `slow_frames` (build or raster over the display frame budget), `frozen_frames` (over 700 ms), `build_p90_ms`, `raster_p90_ms`, `refresh_hz` |
+| `wall_open_failed` | Each failed wall detail load, not sampled. | `entry` (`home`, `profile`, `search`, `folder`, `favourites`, `detail`, `link`, `other`), `home_tab` (only for `home`), `source`, `wall_id`, `id_kind` (`id` or `document_id`), `error` (`not_found`, `ambiguous`, `network`, `server`, `cache`, `validation`, `unknown`), `fallback_ran` (the document-id lookup ran) |
+| `resume_stall` | Each resume from the background, in sampled sessions. | `first_frame_ms`, `longest_task_ms` (only when the main thread was blocked for more than 700 ms in the 3 s after resume), `background_s` |
+
+`detail_swipe` holds the frames while the detail feed moves between walls. `wall_detail` holds the other detail frames. The p90 values use the first 3600 frames of a visit. In debug and profile builds each event also prints a `PRISM_PERF {"kind":"field",...}` line.
+
+Sentry already covers part of #551: iOS App Hang tracking (release only, 2 s) and Android ANR (5 s). It does not give per-screen frame stats, because route transactions are off (`enableAutoTransactions: false`).
+
+How to read them:
+
+- Jank, in Mixpanel Insights: event `field_jank`, filter `screen`, measure the sum of `slow_frames` and `frozen_frames` over the sum of `frames`, and break down by app version and `screen`. Compare `build_p90_ms` (Dart work) with `raster_p90_ms` (GPU work).
+- Wall open failures, in Mixpanel Insights: event `wall_open_failed`, total, break down by `entry` and `error`. For #557, filter `entry` = `home` and look at `home_tab`, `id_kind` and `fallback_ran`. Open the wall by `wall_id` to check its document.
+- Resume stalls, in Mixpanel Insights: event `resume_stall`, the 90th percentile of `first_frame_ms`, and the count where `longest_task_ms` is set. Break down by `background_s` buckets.
+- Hard freezes, in Sentry Issues for project Prism: `error.type:ApplicationNotResponding` (Android) and `error.type:"App Hanging"` (iOS).
+
+After a release, set `field_diagnostics_sample_rate` in Remote Config. `0.05` is the default. Set `0` to stop.
+
 ## Limits
 
 - The Swift badge code and the UMP form need a device to confirm. The Swift code was not compiled here.
@@ -150,6 +175,10 @@ Automated tests:
 - `test/features/pexels_feed/data/repositories/pexels_wallpaper_repository_impl_test.dart`
 - `test/features/prism_feed/data/repositories/prism_wallpaper_repository_impl_test.dart`
 - `test/features/personalized_feed/data/personalized_feed_repository_impl_test.dart`
+- `test/core/monitoring/field_diagnostics_test.dart`
+- `test/features/wallpaper_detail/biz/wall_open_entry_test.dart`
+- `test/features/wallpaper_detail/biz/bloc/wall_open_failed_event_test.dart`
+- `test/features/wallpaper_detail/views/pages/wallpaper_detail_open_failure_test.dart`
 
 Command:
 

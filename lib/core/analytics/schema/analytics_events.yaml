@@ -609,6 +609,48 @@ enums:
       - install_failed
       - unknown
 
+  - name: home_feed_chip
+    dart_type: HomeFeedChip
+    import: package:Prism/features/personalized_feed/domain/entities/home_feed_chip.dart
+    values:
+      - for_you
+      - following
+      - trending
+      - latest
+      - popular
+  - name: jank_screen
+    dart_type: JankScreenValue
+    values:
+      - home_feed
+      - wall_detail
+      - detail_swipe
+  - name: wall_open_entry
+    dart_type: WallOpenEntryValue
+    values:
+      - home
+      - profile
+      - search
+      - folder
+      - favourites
+      - detail
+      - link
+      - other
+  - name: wall_id_kind
+    dart_type: WallIdKindValue
+    values:
+      - id
+      - document_id
+  - name: wall_open_error
+    dart_type: WallOpenErrorValue
+    values:
+      - not_found
+      - ambiguous
+      - network
+      - server
+      - cache
+      - validation
+      - unknown
+
 events:
   - id: content_report_submit
     fields:
@@ -3870,3 +3912,68 @@ events:
         key: zone
         type: enum
         enum: ReadabilityZone
+  - id: field_jank
+    fields:
+      - name: screen
+        key: screen
+        type: enum
+        enum: JankScreenValue
+      - name: frames
+        key: frames
+        type: int
+      - name: slow_frames
+        key: slow_frames
+        type: int
+      - name: frozen_frames
+        key: frozen_frames
+        type: int
+      - name: build_p90_ms
+        key: build_p90_ms
+        type: double
+      - name: raster_p90_ms
+        key: raster_p90_ms
+        type: double
+      - name: refresh_hz
+        key: refresh_hz
+        type: int
+  - id: wall_open_failed
+    fields:
+      - name: entry
+        key: entry
+        type: enum
+        enum: WallOpenEntryValue
+      - name: home_tab
+        key: home_tab
+        type: enum
+        enum: HomeFeedChip
+        required: false
+      - name: source
+        key: source
+        type: string
+      - name: wall_id
+        key: wall_id
+        type: string
+      - name: id_kind
+        key: id_kind
+        type: enum
+        enum: WallIdKindValue
+      - name: error
+        key: error
+        type: enum
+        enum: WallOpenErrorValue
+      - name: fallback_ran
+        key: fallback_ran
+        type: bool
+  - id: resume_stall
+    fields:
+      - name: first_frame_ms
+        key: first_frame_ms
+        type: int
+        required: false
+      - name: longest_task_ms
+        key: longest_task_ms
+        type: int
+        required: false
+      - name: background_s
+        key: background_s
+        type: int

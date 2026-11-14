@@ -5,6 +5,7 @@ import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/constants/app_constants.dart';
 import 'package:Prism/core/di/injection.dart';
+import 'package:Prism/core/monitoring/field_diagnostics.dart';
 import 'package:Prism/core/network/connectivity_service.dart';
 import 'package:Prism/core/persistence/data_sources/notifications_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -114,7 +115,10 @@ class HomeTabTickerMode extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool enabled = TabsRouterScope.of(context, watch: true)?.controller.activeIndex == _homeTabIndex;
-    return TickerMode(enabled: enabled, child: child);
+    return TickerMode(
+      enabled: enabled,
+      child: JankVisitScope(screen: JankScreenValue.homeFeed, active: enabled, child: child),
+    );
   }
 }
 

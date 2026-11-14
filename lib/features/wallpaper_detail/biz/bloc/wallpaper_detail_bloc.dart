@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
@@ -76,6 +78,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
   final String _recommendationSession = '${_nextVisit++}';
   bool _closing = false;
   int _metadataRefreshGeneration = 0;
+  bool _documentIdFallbackRan = false;
 
   Future<void> _onRefreshWallMetadata(RefreshWallMetadata event, Emitter<WallpaperDetailState> emit) async {
     final WallpaperDetailState initial = state;
@@ -200,18 +203,21 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     if (event.entity.source == WallpaperSource.prism &&
         !BundledWallpapers.isStarter(event.entity) &&
         !OriginalAccessService.isUnlockedDropUrl(event.entity.fullUrl, event.entity.id, event.entity.source)) {
+      final bool documentId = switch (event.entity) {
+        PrismFeedItem(:final wallpaper) => wallpaper.firestoreDocumentId == event.entity.id,
+        _ => false,
+      };
       await _onLoadFromId(
         LoadFromId(
           wallId: event.entity.id,
           source: event.entity.source,
           thumbnailUrl: event.entity.thumbnailUrl,
           localFilePath: event.localFilePath,
+          origin: event.origin,
         ),
         emit,
-        allowDocumentIdFallback: switch (event.entity) {
-          PrismFeedItem(:final wallpaper) => wallpaper.firestoreDocumentId == event.entity.id,
-          _ => false,
-        },
+        allowDocumentIdFallback: documentId,
+        idKind: documentId ? WallIdKindValue.documentId : WallIdKindValue.id,
       );
       return;
     }
@@ -227,8 +233,10 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     LoadFromId event,
     Emitter<WallpaperDetailState> emit, {
     bool allowDocumentIdFallback = true,
+    WallIdKindValue idKind = WallIdKindValue.id,
   }) async {
     emit(WallpaperDetailLoading(thumbnailUrl: event.thumbnailUrl));
+    _documentIdFallbackRan = false;
 
     final result = await _fetchWallpaper(
       wallId: event.wallId,
@@ -239,6 +247,19 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     final failure = result.failure;
     if (failure != null) {
       emit(WallpaperDetailError(failure: _loadErrorKind(failure), thumbnailUrl: event.thumbnailUrl));
+      unawaited(
+        analytics.track(
+          WallOpenFailedEvent(
+            entry: event.origin.entry,
+            homeTab: event.origin.homeTab,
+            source: event.source.name,
+            wallId: event.wallId,
+            idKind: idKind,
+            error: _openError(failure),
+            fallbackRan: _documentIdFallbackRan,
+          ),
+        ),
+      );
       return;
     }
 
@@ -247,6 +268,16 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     _fetchAndUpdateViews(entity);
     await _loadPalette(entity, emit, event.localFilePath);
   }
+
+  static WallOpenErrorValue _openError(Failure failure) => switch (failure) {
+    UnknownFailure(message: notFoundMessage) => WallOpenErrorValue.notFound,
+    ServerFailure(message: ambiguousWallpaperIdentity) => WallOpenErrorValue.ambiguous,
+    NetworkFailure() => WallOpenErrorValue.network,
+    ServerFailure() => WallOpenErrorValue.server,
+    CacheFailure() => WallOpenErrorValue.cache,
+    ValidationFailure() => WallOpenErrorValue.validation,
+    _ => WallOpenErrorValue.unknown,
+  };
 
   /// Keep the server failure separate from its presentation so the view can localize it.
   WallpaperDetailLoadFailure _loadErrorKind(Failure failure) =>
@@ -425,6 +456,7 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     Future<Result<PrismWallpaper?>> fetchPrism() async {
       final canonical = await _prismRepository.fetchCanonicalById(wallId);
       if (canonical.isFailure || canonical.data != null || !allowDocumentIdFallback) return canonical;
+      _documentIdFallbackRan = true;
       return _prismRepository.fetchCanonicalByDocumentId(wallId);
     }
 

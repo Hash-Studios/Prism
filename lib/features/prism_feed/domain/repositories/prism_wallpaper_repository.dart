@@ -1,6 +1,9 @@
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 
+/// The lookup failure message when two documents share one wall id.
+const String ambiguousWallpaperIdentity = 'Ambiguous wallpaper identity';
+
 abstract class PrismWallpaperRepository {
   Future<Result<List<PrismWallpaper>>> fetchFeed({required bool refresh});
 
