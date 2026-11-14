@@ -21,7 +21,8 @@ const {PROJECT, load} = require('./weekly_challenge_qa/backend.cjs');
 const runtime = '/tmp/prism-weekly-qa-photo-wall';
 const REAL_FAL_LIMIT = 2;
 const VIEWER = 'qa-viewer';
-const FAL_PRICES = {'fal-ai/bria/expand': () => 0.04, 'fal-ai/seedvr/upscale/image': (w, h) => (w * h) / 1e6 * 0.001};
+const FAL_PRICES = {'fal-ai/bria/expand': () => 0.04, 'fal-ai/seedvr/upscale/image': (w, h) => (w * h) / 1e6 * 0.001,
+  'fal-ai/bytedance/seedream/v4/edit': () => 0.03};
 const file = (name) => path.join(runtime, name);
 const readJson = (name, fallback) => (fs.existsSync(file(name)) ? JSON.parse(fs.readFileSync(file(name))) : fallback);
 const writeJson = (name, value) => fs.writeFileSync(file(name), JSON.stringify(value, null, 2) + '\n');
@@ -228,11 +229,19 @@ exports.shareLinkImage = Object.assign((req, res) => {
   console.log(`Prepared ${runtime}. Next: serve, emulators, seed, photos.`);
 }
 
-/** A local stand-in for the model: a blurred fill around the placed photo, or a plain resize. Labelled as a stub. */
+/**
+ * A local stand-in for the model: a blurred fill around the placed photo, a plain resize, or a posterized square for
+ * Restyle (deliberately the wrong shape, so the server crop runs). Labelled as a stub.
+ */
 async function stubResult(model, body) {
   const sharp = require(path.join(__dirname, '../functions/node_modules/sharp'));
-  const input = Buffer.from(String(body.image_url).split(',')[1], 'base64');
+  const input = Buffer.from(String(body.image_url ?? body.image_urls?.[0]).split(',')[1], 'base64');
   let out;
+  if (model === 'fal-ai/bytedance/seedream/v4/edit') {
+    out = await sharp(input).resize(1024, 1024, {fit: 'cover'}).median(9).modulate({saturation: 1.8})
+      .jpeg({quality: 90}).toBuffer();
+    return {images: [{url: `data:image/jpeg;base64,${out.toString('base64')}`, width: 1024, height: 1024}]};
+  }
   if (model === 'fal-ai/bria/expand') {
     const [w, h] = body.canvas_size;
     const [pw, ph] = body.original_image_size;
@@ -291,7 +300,8 @@ async function relayFal(model, raw, res) {
     const requestId = response.headers.get('x-fal-request-id') || '';
     let size = null;
     try {
-      const image = JSON.parse(text).image;
+      const parsed = JSON.parse(text);
+      const image = parsed.image ?? parsed.images[0];
       size = {width: image.width, height: image.height};
     } catch {
       size = null;
