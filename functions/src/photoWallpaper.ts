@@ -6,12 +6,12 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import type {OutputInfo} from "sharp";
 import {isValidRequestId} from "./coinsCallables";
 import {CALLABLE_REGIONS, coinTransactionDoc, db, readDailyCount, REGION, utcDateString} from "./common";
-import {loadEconomy, proPrice} from "./economy";
+import {EconomyConfig, loadEconomy, proPrice} from "./economy";
 import {R2Storage, r2Env, r2Secrets} from "./r2Storage";
 import {likelihoodRank} from "./studio/gates";
 import {falKey} from "./wallDepth";
 
-export type PhotoJobMode = "extend" | "upscale";
+export type PhotoJobMode = "extend" | "upscale" | "restyle";
 export type PhotoJobTarget = "phone" | "desktop";
 export type PhotoJobFailure = "unsafe_input" | "unsafe_output" | "provider_error" | "storage_error" | "timeout";
 type Size = {width: number; height: number};
@@ -24,6 +24,8 @@ export interface PhotoJob {
   mode: PhotoJobMode;
   target: PhotoJobTarget;
   model: string;
+  /** Restyle only: a key of `PHOTO_STYLES`. */
+  styleId?: string;
   cost: number;
   chargeTxId: string;
   /** "closed": a lookup found no job, so a create that arrives later must not charge. */
@@ -61,7 +63,23 @@ export const MAX_PHOTO_INPUT_BYTES = 6 * 1024 * 1024;
 export const PHOTO_MODELS: Record<PhotoJobMode, string> = {
   extend: "fal-ai/bria/expand",
   upscale: "fal-ai/seedvr/upscale/image",
+  restyle: "fal-ai/bytedance/seedream/v4/edit",
 };
+const PHOTO_SPEND: Record<PhotoJobMode, keyof EconomyConfig["spend"]> = {
+  extend: "photoExtend",
+  upscale: "photoUpscale",
+  restyle: "photoRestyle",
+};
+/**
+ * The Restyle styles, keyed by the app's `AiStylePreset.apiValue`. The text is the same style text the worker adds to
+ * AI prompts (`stylePromptSuffix` in infra/cloudflare/worker/src/ai_style_prompt.ts).
+ */
+export const PHOTO_STYLES: ReadonlyMap<string, string> = new Map([
+  "anime", "minimal", "cyberpunk", "watercolor", "mesh gradient", "abstract", "nature", "space art", "synthwave",
+  "pixel art", "oil painting", "ukiyo-e",
+].map((id): [string, string] => [id, `${id} style`]).concat([
+  ["3d render", "stylized 3D render, smooth matte clay-like materials, soft global illumination, rendered CGI look"],
+]));
 export const DESKTOP_SIZE: Size = {width: 2560, height: 1600};
 /** A shape further than this from the target shape needs Extend. The app planner uses the same value. */
 export const ASPECT_TOLERANCE = 0.05;
@@ -167,6 +185,16 @@ export function parsePlacement(raw: unknown, photo: Size, canvas: Size): Placeme
   return {left, top, width, height};
 }
 
+/** Restyle needs a style from `PHOTO_STYLES`. The other modes take none. */
+export function parseStyleId(mode: PhotoJobMode, raw: unknown): string | undefined {
+  if (mode !== "restyle") {
+    if (raw !== undefined) throw bad(`${mode} takes no styleId.`);
+    return undefined;
+  }
+  if (typeof raw !== "string" || !PHOTO_STYLES.has(raw)) throw bad("styleId is invalid.");
+  return raw;
+}
+
 /** Decodes the photo, turns it upright and writes a new JPEG. The new JPEG has no EXIF, GPS or other metadata. */
 export async function normalizePhoto(raw: unknown): Promise<{jpeg: Buffer; size: Size}> {
   if (typeof raw !== "string" || raw.length === 0 || raw.length % 4 !== 0 || !BASE64.test(raw)) {
@@ -191,7 +219,26 @@ export async function normalizePhoto(raw: unknown): Promise<{jpeg: Buffer; size:
   return {jpeg, size: {width: info.width, height: info.height}};
 }
 
-function falBody(mode: PhotoJobMode, input: string, photo: Size, size: Size, placement: Placement | null) {
+export function restylePrompt(styleId: string): string {
+  const style = PHOTO_STYLES.get(styleId);
+  if (!style) throw new Error("unknown style");
+  return `Redraw this photo as a phone wallpaper in ${style}. Keep the same composition, the same people with the ` +
+    "same faces and poses, and the main shapes in the same places.";
+}
+
+function falBody(mode: PhotoJobMode, input: string, photo: Size, size: Size, placement: Placement | null,
+  styleId: string | undefined) {
+  if (mode === "restyle") {
+    return {
+      prompt: restylePrompt(styleId ?? ""),
+      image_urls: [input],
+      image_size: {width: size.width, height: size.height},
+      num_images: 1,
+      max_images: 1,
+      enable_safety_checker: true,
+      sync_mode: true,
+    };
+  }
   if (mode === "extend") {
     if (!placement) throw new Error("extend needs a placement");
     return {
@@ -218,11 +265,12 @@ function falBody(mode: PhotoJobMode, input: string, photo: Size, size: Size, pla
  * Runs the model with the photo inline as a data URI. `X-Fal-Store-IO: 0` asks fal not to store the request and
  * result, `sync_mode` requests the result inline, and failed payload deletes remain pending for the sweeper.
  */
-async function runFal(jobId: string, mode: PhotoJobMode, jpeg: Buffer, photo: Size, size: Size, placement: Placement | null,
+async function runFal(jobId: string, job: PhotoJob, jpeg: Buffer, photo: Size, size: Size, placement: Placement | null,
   deps: PhotoDeps): Promise<Buffer> {
+  const mode = job.mode;
   const key = deps.falKey().trim();
   if (key === "") throw new Error("FAL_API_KEY is empty");
-  const body = falBody(mode, `data:image/jpeg;base64,${jpeg.toString("base64")}`, photo, size, placement);
+  const body = falBody(mode, `data:image/jpeg;base64,${jpeg.toString("base64")}`, photo, size, placement, job.styleId);
   let requestId: string | null = null;
   try {
     const response = await deps.fetch(`https://fal.run/${PHOTO_MODELS[mode]}`, {
@@ -236,8 +284,9 @@ async function runFal(jobId: string, mode: PhotoJobMode, jpeg: Buffer, photo: Si
       await db.collection(PHOTO_JOBS).doc(jobId).update({falRequestId: requestId, falCleanupPending: true});
     }
     if (!response.ok) throw new Error(`fal request failed with ${response.status}`);
-    const payload = (await response.json()) as {image?: {url?: unknown}} | null;
-    const url = payload?.image?.url;
+    // Bria and SeedVR return `image`, Seedream returns `images`.
+    const payload = (await response.json()) as {image?: {url?: unknown}; images?: Array<{url?: unknown}>} | null;
+    const url = payload?.image?.url ?? (Array.isArray(payload?.images) ? payload.images[0]?.url : undefined);
     const inline = typeof url === "string" ? DATA_URI.exec(url) : null;
     if (inline) {
       if (inline[1].length > Math.ceil(MAX_RESULT_BYTES / 3) * 4) throw new Error("fal image is too large");
@@ -367,7 +416,8 @@ async function cleanupFailedPhotoJob(jobId: string, job: PhotoJob, deps: PhotoDe
   }
 }
 
-async function claimJob(uid: string, requestId: string, mode: PhotoJobMode, target: PhotoJobTarget, size: Size):
+async function claimJob(uid: string, requestId: string, mode: PhotoJobMode, target: PhotoJobTarget, size: Size,
+  styleId: string | undefined):
   Promise<{replay: PhotoJob} | {job: PhotoJob; isPro: boolean}> {
   const jobRef = db.collection(PHOTO_JOBS).doc(`pj_${uid}_${requestId}`);
   const economy = await loadEconomy();
@@ -399,18 +449,18 @@ async function claimJob(uid: string, requestId: string, mode: PhotoJobMode, targ
     if (!user.exists) throw new HttpsError("not-found", "User profile was not found.");
     const data = user.data() ?? {};
     const isPro = data.premium === true;
-    const base = mode === "extend" ? economy.spend.photoExtend : economy.spend.photoUpscale;
+    const base = economy.spend[PHOTO_SPEND[mode]];
     const cost = proPrice(base, isPro && economy.proDiscountActions.includes(ACTION));
     const balance = typeof data.coins === "number" ? Math.trunc(data.coins) : 0;
     if (balance < cost) throw new HttpsError("failed-precondition", "insufficient_coins", {cost, balance});
     const now = admin.firestore.Timestamp.now();
-    const job: PhotoJob = {userId: uid, requestId, mode, target, model: PHOTO_MODELS[mode], cost,
-      chargeTxId: chargeRef.id, state: "running", startedAt: now, width: size.width, height: size.height,
+    const job: PhotoJob = {userId: uid, requestId, mode, target, model: PHOTO_MODELS[mode], ...(styleId ? {styleId} : {}),
+      cost, chargeTxId: chargeRef.id, state: "running", startedAt: now, width: size.width, height: size.height,
       resultKey: `photo-walls/${randomBytes(16).toString("hex")}.jpg`, cleanupPending: true};
     tx.update(userRef, {coins: balance - cost});
     tx.set(chargeRef, coinTransactionDoc({
       id: chargeRef.id, userId: uid, at: now, delta: -cost, balanceBefore: balance, action: ACTION,
-      description: mode === "extend" ? "Photo wallpaper: extend" : "Photo wallpaper: upscale",
+      description: `Photo wallpaper: ${mode}`,
       sourceTag: "photo_wallpaper.charge", reason: `photo_job_${mode}`,
     }));
     tx.set(jobRef, job);
@@ -454,7 +504,7 @@ export async function runPhotoJob(jobId: string, job: PhotoJob, jpeg: Buffer, ph
   }
   let output: Buffer;
   try {
-    const generated = await withActiveJob(() => runFal(jobId, job.mode, jpeg, photo, size, placement, deps));
+    const generated = await withActiveJob(() => runFal(jobId, job, jpeg, photo, size, placement, deps));
     if (!generated) return fail("timeout");
     output = await finishImage(generated, size, !isPro);
   } catch (error) {
@@ -543,17 +593,23 @@ export const createPhotoWallpaper = onCall({
   }
   const data = (request.data ?? {}) as Record<string, unknown>;
   if (!isValidRequestId(data.requestId)) throw bad("requestId is invalid.");
-  if (data.mode !== "extend" && data.mode !== "upscale") throw bad("mode must be extend or upscale.");
-  const mode: PhotoJobMode = data.mode;
+  if (typeof data.mode !== "string" || !Object.prototype.hasOwnProperty.call(PHOTO_MODELS, data.mode)) {
+    throw bad("mode must be extend, upscale or restyle.");
+  }
+  const mode = data.mode as PhotoJobMode;
   const {target, size} = parseTarget(data);
-  if (mode === "upscale" && data.placement !== undefined) throw bad("upscale takes no placement.");
+  if (mode !== "extend" && data.placement !== undefined) throw bad(`${mode} takes no placement.`);
+  const styleId = parseStyleId(mode, data.styleId);
   const {jpeg, size: photo} = await normalizePhoto(data.image);
-  const plan = planPhotoJob(photo, size);
-  if (plan !== mode) throw new HttpsError("failed-precondition", "plan_mismatch", {plan});
+  // Restyle redraws any photo at the target size, so it has no plan to match.
+  if (mode !== "restyle") {
+    const plan = planPhotoJob(photo, size);
+    if (plan !== mode) throw new HttpsError("failed-precondition", "plan_mismatch", {plan});
+  }
   const placement = mode === "extend" ? parsePlacement(data.placement, photo, size) : null;
 
   const jobId = `pj_${uid}_${data.requestId}`;
-  const claim = await claimJob(uid, data.requestId, mode, target, size);
+  const claim = await claimJob(uid, data.requestId, mode, target, size, styleId);
   if ("replay" in claim) {
     const job = claim.replay;
     if (job.state !== "running") return withBalance(uid, jobResult(jobId, job));

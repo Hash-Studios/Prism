@@ -5,6 +5,7 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import sharp from "sharp";
 import {db} from "../common";
+import {ECONOMY_CONFIG_DOC, resetEconomyCache} from "../economy";
 import {
   createPhotoWallpaper,
   failPhotoJob,
@@ -22,6 +23,8 @@ import {
   getPhotoWallpaper,
   PHOTO_JOB_BUDGET,
   removePhotoJobsForAccount,
+  parseStyleId,
+  restylePrompt,
 } from "../photoWallpaper";
 import {installFakeDb} from "./fakeDb";
 
@@ -40,6 +43,7 @@ const REFUND = "coinTransactions/ctx_photoWallpaperRefund_u1_req-00000001";
 const OUT_URL = "https://cdn.test/photo-walls/x.jpg";
 const FAL_EXTEND = "https://fal.run/fal-ai/bria/expand";
 const FAL_UPSCALE = "https://fal.run/fal-ai/seedvr/upscale/image";
+const FAL_RESTYLE = "https://fal.run/fal-ai/bytedance/seedream/v4/edit";
 const FAL_DELETE = "https://api.fal.ai/v1/models/requests/req-abcdef12/payloads";
 const MINUTE = 60_000;
 
@@ -62,6 +66,10 @@ const extendData = async (patch: Record<string, unknown> = {}) => ({
 const upscaleData = async (patch: Record<string, unknown> = {}) => ({
   requestId: "req-00000001", mode: "upscale", target: "phone", targetWidth: 1080, targetHeight: 2340,
   image: await b64(540, 1170), ...patch,
+});
+const restyleData = async (patch: Record<string, unknown> = {}) => ({
+  requestId: "req-00000001", mode: "restyle", target: "phone", targetWidth: 1080, targetHeight: 2340,
+  styleId: "anime", image: await b64(1600, 1200), ...patch,
 });
 
 /** Mocks every outside dependency. The fal output is a 1080x2340 JPEG unless `falStatus` makes fal fail. */
@@ -1538,4 +1546,136 @@ test("the closure cap rolls over by the server UTC day, not client-supplied fiel
   assert.equal(store.get(`${PHOTO_JOB_CLOSURES}/u1`)?.count, 20);
   assert.equal(store.has(`${PHOTO_JOB_CLOSURES}/u2`), false);
   assert.equal(store.has(`${PHOTO_JOBS}/pj_u1_req-00000102`), false);
+});
+
+test("restyle with a missing, unknown or prototype styleId is refused before any charge", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  const deps = mockDeps(t);
+  const cases: Array<[string, Record<string, unknown>]> = [
+    ["missing styleId", {...await restyleData(), styleId: undefined}],
+    ["unknown styleId", await restyleData({styleId: "vaporwave"})],
+    ["prototype styleId", await restyleData({styleId: "toString"})],
+    ["numeric styleId", await restyleData({styleId: 42})],
+    ["extend with a styleId", await extendData({styleId: "anime"})],
+    ["restyle with a placement", await restyleData({placement: {left: 0, top: 0, width: 1080, height: 2340}})],
+  ];
+  for (const [name, data] of cases) {
+    await assert.rejects(() => run(data), {code: "invalid-argument"}, name);
+    assert.equal(store.get("usersv2/u1")?.coins, 200, name);
+    assert.equal(coinTxCount(store), 0, name);
+    assert.equal([...store.keys()].filter((k) => k.startsWith(`${PHOTO_JOBS}/`)).length, 0, name);
+  }
+  assert.equal(deps.fal().length, 0);
+});
+
+test("restyle sends the photo to Seedream edit with the style prompt, charges 75, and crops the result to the target size",
+  async (t) => {
+    const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+    const deps = mockDeps(t);
+    const fetch = photoDeps.fetch;
+    const seedream = (await jpegOf(1024, 1024)).toString("base64");
+    t.mock.method(photoDeps, "fetch", async (url: string, init: RequestInit) => {
+      const response = await fetch(url, init);
+      if (url !== FAL_RESTYLE) return response;
+      return Response.json({images: [{url: `data:image/jpeg;base64,${seedream}`}]},
+        {headers: {"x-fal-request-id": "req-abcdef12"}});
+    });
+    const result = await run(await restyleData()) as Succeeded;
+    assert.equal(result.state, "succeeded");
+    assert.equal(result.width, 1080);
+    assert.equal(result.height, 2340);
+    assert.deepEqual(await sizeOf(deps.stored[0]), {width: 1080, height: 2340});
+    const post = deps.fal()[0];
+    assert.ok(post);
+    assert.equal(post.url, FAL_RESTYLE);
+    assert.equal(post.method, "POST");
+    assert.equal(post.headers["X-Fal-Store-IO"], "0");
+    assert.ok((post.body.image_urls as string[])[0].startsWith("data:image/jpeg;base64,"));
+    assert.deepEqual(post.body.image_size, {width: 1080, height: 2340});
+    assert.equal(post.body.enable_safety_checker, true);
+    assert.equal(post.body.sync_mode, true);
+    assert.ok(String(post.body.prompt).includes("anime style"));
+    assert.equal(store.get("usersv2/u1")?.coins, 125);
+    assert.equal(store.get(CHARGE)?.delta, -75);
+    assert.equal(store.get(JOB)?.mode, "restyle");
+    assert.equal(store.get(JOB)?.styleId, "anime");
+    assert.equal(store.get(JOB)?.model, "fal-ai/bytedance/seedream/v4/edit");
+    const deletes = deps.calls.filter((c) => c.method === "DELETE");
+    assert.equal(deletes.length, 1);
+    assert.equal(deletes[0].url, FAL_DELETE);
+  });
+
+test("restyle price comes from the economy config, and Pro pays half rounded up", async (t) => {
+  resetEconomyCache();
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}, [ECONOMY_CONFIG_DOC]: {spend: {photoRestyle: 51}}});
+  mockDeps(t);
+  try {
+    assert.equal(((await run(await restyleData())) as Succeeded).cost, 51);
+    assert.equal(store.get("usersv2/u1")?.coins, 149);
+    store.set("usersv2/u1", {coins: 149, premium: true});
+    assert.equal(((await run(await restyleData({requestId: "req-00000002"}))) as Succeeded).cost, 26);
+    assert.equal(store.get("usersv2/u1")?.coins, 123);
+    store.set(ECONOMY_CONFIG_DOC, {spend: {photoRestyle: 51}, proDiscountActions: []});
+    resetEconomyCache();
+    assert.equal(((await run(await restyleData({requestId: "req-00000003"}))) as Succeeded).cost, 51);
+    assert.equal(store.get("usersv2/u1")?.coins, 72);
+    assert.equal(store.get("coinTransactions/ctx_photoWallpaper_u1_req-00000003")?.delta, -51);
+  } finally {
+    resetEconomyCache();
+  }
+});
+
+test("a restyle provider failure refunds once", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  const deps = mockDeps(t, {falStatus: 500});
+  const refundCount = () => [...store.keys()].filter((k) => k.startsWith("coinTransactions/ctx_photoWallpaperRefund_")).length;
+  const first = await run(await restyleData()) as Failed;
+  assert.equal(first.state, "failed");
+  assert.equal(first.reason, "provider_error");
+  assert.equal(first.refunded, true);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(store.get(REFUND)?.delta, 75);
+  assert.equal(refundCount(), 1);
+  const second = await run(await restyleData()) as Failed;
+  assert.equal(second.state, "failed");
+  assert.equal(second.reason, "provider_error");
+  assert.equal(second.refunded, true);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(refundCount(), 1);
+  assert.equal(coinTxCount(store), 2);
+  assert.equal(deps.fal().length, 1);
+});
+
+test("an unsafe restyle result fails as unsafe_output and refunds", async (t) => {
+  const store = installFakeDb(t, {"usersv2/u1": {coins: 200}});
+  const deps = mockDeps(t, {safe: (call) => call === 2 ? {...SAFE, racy: "VERY_LIKELY"} : SAFE});
+  const result = await run(await restyleData()) as Failed;
+  assert.equal(result.state, "failed");
+  assert.equal(result.reason, "unsafe_output");
+  assert.equal(result.refunded, true);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(store.get(REFUND)?.delta, 75);
+  assert.equal(deps.stored.length, 0);
+});
+
+test("the sweeper refunds a stale restyle job once", async (t) => {
+  const store = installFakeDb(t, {
+    "usersv2/u1": {coins: 125},
+    [CHARGE]: {delta: -75},
+    [JOB]: {...runningJob(admin.firestore.Timestamp.fromMillis(Date.now() - 11 * MINUTE)),
+      mode: "restyle", model: "fal-ai/bytedance/seedream/v4/edit", styleId: "anime"},
+  });
+  assert.equal(await sweepStalePhotoJobsOnce(), 1);
+  assert.equal(store.get(JOB)?.state, "failed");
+  assert.equal(store.get(JOB)?.reason, "timeout");
+  assert.equal(store.get(JOB)?.refunded, true);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+  assert.equal(store.get(REFUND)?.delta, 75);
+  assert.equal(await sweepStalePhotoJobsOnce(), 0);
+  assert.equal(store.get("usersv2/u1")?.coins, 200);
+});
+
+test("parseStyleId and restylePrompt read the Restyle style map", () => {
+  assert.equal(parseStyleId("restyle", "3d render"), "3d render");
+  assert.ok(restylePrompt("3d render").includes("clay-like"));
 });
