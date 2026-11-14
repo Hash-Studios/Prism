@@ -45,7 +45,7 @@ export async function createStudioRun(request: StudioRunRequest): Promise<Studio
   const day = utcDateString(new Date(nowMs));
   const requested = request.count ?? config.dailyCandidates;
   const series = request.seriesId ? STUDIO_SERIES.filter((s) => s.id === request.seriesId) : STUDIO_SERIES;
-  const weights = request.seriesId ? {} : config.seriesWeights;
+  const weights = request.seriesId ? {[request.seriesId]: 1} : config.seriesWeights;
   const runRef = db.collection("studioRuns").doc(runId);
   const dailyRef = db.collection("studioDaily").doc(day);
   const usesRef = db.collection("studioSubjectUse");

@@ -35,7 +35,7 @@ export interface StudioPlanInput {
   manualSeriesId?: string;
   series: StudioSeries[];
   count: number;
-  /** Series id -> weight. A series that is not in the map has weight 1; weight 0 leaves it out. */
+  /** Series id -> weight. A series that is not in the map has weight 1, or 0 when it has startsOff; weight 0 leaves it out. */
   weights: Record<string, number>;
   /** Subjects used within STUDIO_SUBJECT_COOLDOWN_DAYS. */
   recentSubjectIds: Set<string>;
@@ -122,8 +122,9 @@ export function requestPlanItem(pick: StudioRequestPick, rng: Rng): StudioPlanIt
 export function buildDailyPlan(input: StudioPlanInput): StudioPlanItem[] {
   const {recentSubjectIds, rng} = input;
   const count = Math.max(0, Math.trunc(input.count));
+  const weightOf = (s: StudioSeries) => input.weights[s.id] ?? (s.startsOff ? 0 : 1);
   const eligible = input.series.filter((s) => (!s.manualOnly || input.manualSeriesId === s.id) &&
-    (input.weights[s.id] ?? 1) > 0 && s.subjects.length > 0 &&
+    weightOf(s) > 0 && s.subjects.length > 0 &&
     s.palettes.length > 0);
   if (count === 0 || eligible.length === 0) return [];
 
@@ -159,7 +160,7 @@ export function buildDailyPlan(input: StudioPlanInput): StudioPlanItem[] {
     };
   };
 
-  const slots = apportion(eligible.map((s) => input.weights[s.id] ?? 1), count, rng);
+  const slots = apportion(eligible.map(weightOf), count, rng);
   const order = shuffle(eligible.flatMap((s, i) => Array<StudioSeries>(slots[i]).fill(s)), rng);
   const plan: StudioPlanItem[] = [];
   for (const series of order) {

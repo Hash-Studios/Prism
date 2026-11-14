@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import * as admin from "firebase-admin";
+import {logger} from "firebase-functions/v2";
 import * as notificationHelper from "../notificationHelper";
 import {
   dropOwnsGallery,
@@ -259,6 +260,109 @@ test("the planner uses a rename made after its initial reads", async (t) => {
   });
   await plan(t);
   assert.equal(store.get(`drops/${KEY}`)?.title, "Renamed before commit");
+});
+
+const themeWalls = (from: number, count: number, seriesId: string): Record<string, Doc> =>
+  Object.fromEntries(Array.from({length: count}, (_, i) => [`walls/W${from + i}`, wall(from + i, {seriesId})]));
+
+test("a themed week takes only reserves of its series, oldest first", async (t) => {
+  const store = installFakeDb(t, {
+    ...themeWalls(1, 3, "after-dark"),
+    ...themeWalls(4, 6, "winter-light"),
+    ...themeWalls(10, 2, "paper-worlds"),
+    "studioConfig/current": {dropSeries: {[KEY]: "winter-light", "2026-W01": "after-dark"}},
+  });
+  await plan(t);
+  assert.deepEqual(dropIds(store), ["W4", "W5", "W6", "W7", "W8", "W9"]);
+  assert.deepEqual([store.get("walls/W1")?.dropReserved, store.get("walls/W1")?.dropWeek], [true, undefined]);
+  assert.deepEqual([store.get("walls/W10")?.dropReserved, store.get("walls/W10")?.dropWeek], [true, undefined]);
+});
+
+test("a themed week with under four ready walls of its series falls back to the mixed pick", async (t) => {
+  const store = installFakeDb(t, {
+    ...themeWalls(1, 3, "winter-light"),
+    ...themeWalls(4, 3, "after-dark"),
+    "walls/W7": wall(7, {seriesId: "winter-light", review: true}),
+    "studioConfig/current": {dropSeries: {[KEY]: "winter-light"}},
+  });
+  await plan(t);
+  assert.deepEqual(dropIds(store), ["W1", "W4", "W2", "W5", "W3", "W6"]);
+});
+
+const mixedSeed = (): Record<string, Doc> => ({...themeWalls(1, 2, "winter-light"), ...themeWalls(3, 2, "after-dark")});
+
+test("a theme for another week leaves this week's mixed pick unchanged", async (t) => {
+  const store = installFakeDb(t, {...mixedSeed(), "studioConfig/current": {dropSeries: {"2026-W50": "winter-light"}}});
+  await plan(t);
+  assert.deepEqual(dropIds(store), ["W1", "W3", "W2", "W4"]);
+});
+
+test("a theme that names an unknown series leaves the mixed pick unchanged", async (t) => {
+  const store = installFakeDb(t, {...mixedSeed(), "studioConfig/current": {dropSeries: {[KEY]: "winter-lite"}}});
+  await plan(t);
+  assert.deepEqual(dropIds(store), ["W1", "W3", "W2", "W4"]);
+});
+
+test("a theme set after the initial reads fails the run so the retry picks again", async (t) => {
+  const store = installFakeDb(t, {...themeWalls(1, 4, "after-dark"), ...themeWalls(5, 4, "winter-light")});
+  const runTransaction = db.runTransaction.bind(db);
+  let raced = false;
+  t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    if (!raced) store.set("studioConfig/current", {dropSeries: {[KEY]: "winter-light"}});
+    raced = true;
+    return runTransaction(callback);
+  });
+  await assert.rejects(plan(t), /theme of .* changed while planning/);
+  assert.equal(store.has(`drops/${KEY}`), false);
+  assert.equal(store.get("walls/W1")?.dropReserved, true);
+
+  t.mock.timers.reset();
+  await plan(t);
+  assert.deepEqual(dropIds(store), ["W5", "W6", "W7", "W8"]);
+});
+
+test("a theme added during fallback planning rejects without writes; retry uses the theme", async (t) => {
+  const store = installFakeDb(t, {
+    ...themeWalls(1, 2, "after-dark"),
+    ...themeWalls(3, 4, "winter-light"),
+    "studioConfig/current": {dropSeries: {[KEY]: "after-dark"}},
+  });
+  const runTransaction = db.runTransaction.bind(db);
+  const fallbackLog = t.mock.method(logger, "info");
+  let raced = false;
+  t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    if (!raced) {
+      raced = true;
+      store.set("studioConfig/current", {dropSeries: {[KEY]: "winter-light"}});
+    }
+    return runTransaction(callback);
+  });
+  await assert.rejects(plan(t), /theme of .* changed while planning/);
+  assert.equal(fallbackLog.mock.calls.some(({arguments: [message]}) =>
+    message === "drops: the theme series has too few ready walls; using the mixed pick"), true);
+  assert.equal(store.has(`drops/${KEY}`), false);
+  assert.deepEqual([store.get("walls/W1")?.dropReserved, store.get("walls/W3")?.dropReserved], [true, true]);
+  assert.deepEqual([store.get("walls/W4")?.dropReserved, store.get("walls/W6")?.dropReserved], [true, true]);
+
+  t.mock.timers.reset();
+  await plan(t);
+  assert.deepEqual(dropIds(store), ["W3", "W4", "W5", "W6"]);
+  assert.deepEqual([store.get("walls/W1")?.dropReserved, store.get("walls/W2")?.dropReserved], [true, true]);
+});
+
+test("a themed reserve moved to another series before commit aborts without partial writes", async (t) => {
+  const store = installFakeDb(t, {...themeWalls(1, 4, "winter-light"),
+    "studioConfig/current": {dropSeries: {[KEY]: "winter-light"}}});
+  const runTransaction = db.runTransaction.bind(db);
+  t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
+    store.set("walls/W1", wall(1, {seriesId: "after-dark"}));
+    return runTransaction(callback);
+  });
+
+  await assert.rejects(plan(t), /themed reserve W1 changed while planning/);
+  assert.equal(store.has(`drops/${KEY}`), false);
+  assert.deepEqual([store.get("walls/W1")?.dropReserved, store.get("walls/W1")?.dropWeek], [true, undefined]);
+  assert.deepEqual([store.get("walls/W2")?.dropReserved, store.get("walls/W2")?.dropWeek], [true, undefined]);
 });
 
 const renameDrop = (data: Doc, auth: Doc = {uid: "admin", token: {admin: true}}) =>

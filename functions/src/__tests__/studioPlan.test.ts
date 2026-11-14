@@ -145,7 +145,30 @@ test("candidate ids keep to [A-Za-z0-9_-] and 8 to 64 characters", () => {
   assert.throws(() => studioCandidateId("d1", 0));
 });
 
+test("winter-light starts off: no weight and weight 0 both leave it out", () => {
+  const weightSets: Record<string, number>[] = [{}, {"winter-light": 0}];
+  for (const weights of weightSets) {
+    for (let seed = 1; seed <= 20; seed++) {
+      assert.ok(plan({weights, rng: seededRng(seed)}).every((i) => i.seriesId !== "winter-light"), `seed ${seed}`);
+    }
+  }
+});
+
+test("winter-light gets slots once it has a weight above 0, all in Nature", () => {
+  const items = plan({weights: {"winter-light": 2}, rng: seededRng(1)});
+  const winterItems = items.filter((i) => i.seriesId === "winter-light");
+  assert.ok(winterItems.length >= 1);
+  assert.ok(winterItems.every((i) => i.category === "Nature"));
+});
+
+test("a manual run of winter-light plans four of its items while it starts off", () => {
+  const winter = STUDIO_SERIES.filter((s) => s.id === "winter-light");
+  const items = plan({series: winter, manualSeriesId: "winter-light", weights: {"winter-light": 1}, count: 4});
+  assert.equal(items.filter((i) => i.seriesId === "winter-light").length, 4);
+});
+
 test("config is off without the flag or an identity email, and numbers are clamped", () => {
+  assert.equal(parseStudioConfig({}).generationEnabled, false);
   const off = parseStudioConfig(undefined);
   assert.equal(off.generationEnabled, false);
   assert.deepEqual([off.dailyCandidates, off.maxCandidatesPerDay, off.width, off.height], [10, 30, 1440, 3200]);

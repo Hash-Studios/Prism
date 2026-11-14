@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {db, str} from "../common";
+import {STUDIO_SERIES} from "./series";
 
 /** No day makes more candidates than this, counting manual runs. */
 export const STUDIO_MAX_CANDIDATES_PER_DAY = 30;
@@ -21,7 +22,7 @@ export interface StudioConfig {
   model: string;
   width: number;
   height: number;
-  /** Series id -> weight. A series that is not in the map has weight 1. */
+  /** Series id -> weight. Missing entries default to 1, except `startsOff` series which default to 0. */
   seriesWeights: Record<string, number>;
   identity: StudioIdentity | null;
   /** Make a desktop companion when a Studio wall is approved. Off unless the doc says true. */
@@ -78,6 +79,18 @@ function parseWeights(raw: unknown): Record<string, number> {
     if (typeof weight === "number" && Number.isFinite(weight) && weight >= 0) weights[id] = weight;
   }
   return weights;
+}
+
+/** Keeps entries with an ISO week key and the id of a Studio series, so a typo cannot stop the reserves of a week. */
+export function parseDropSeries(raw: unknown): Record<string, string> {
+  if (typeof raw !== "object" || raw === null) return {};
+  const themes: Record<string, string> = {};
+  for (const [key, seriesId] of Object.entries(raw as Record<string, unknown>)) {
+    if (!/^\d{4}-W\d{2}$/.test(key) || typeof seriesId !== "string") continue;
+    if (STUDIO_SERIES.some((s) => s.id === seriesId)) themes[key] = seriesId;
+    else logger.warn("studio: dropSeries names an unknown series; that week has no theme.", {weekKey: key, seriesId});
+  }
+  return themes;
 }
 
 /** Reads `studioConfig/current`. A missing doc, flag or identity turns generation off. */

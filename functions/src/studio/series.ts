@@ -27,6 +27,8 @@ export interface StudioPalette {
 
 export interface StudioSeries {
   manualOnly?: boolean;
+  /** Off until studioConfig/current.seriesWeights gives it a weight above 0: a missing weight means 0, not 1. */
+  startsOff?: boolean;
   duoReveal?: boolean;
   id: string;
   name: string;
@@ -385,6 +387,55 @@ export const STUDIO_SERIES: StudioSeries[] = [
       {id: "violet-dusk", name: "Violet Dusk", prompt: "dusk light under a smooth violet and rose sky", tags: ["purple"]},
       {id: "silver-haze", name: "Silver Haze", prompt: "soft diffuse light under a pale silver haze sky", tags: ["grey"]},
       {id: "teal-evening", name: "Teal Evening", prompt: "cool evening light under a smooth teal sky", tags: ["teal"]},
+    ],
+  },
+  {
+    id: "winter-light",
+    name: "Winter Light",
+    category: "Nature",
+    tags: ["winter", "snow"],
+    startsOff: true,
+    style:
+      "Quiet winter scene with soft, even light. Cool blues and whites with one small warm light source. Clean shapes, fine snow and frost detail, calm and still, no clutter.",
+    subjects: [
+      {id: "winter-frozen-lake", title: "Frozen Lake", prompt: "a wide frozen lake with fine cracks in the ice under a pale sky", tags: ["lake", "ice"]},
+      {id: "snow-cabin", title: "Snow Cabin", prompt: "a small wooden cabin half buried in snow, one window lit warm", tags: ["cabin", "snow"]},
+      {id: "pine-ridge", title: "Pine Ridge", prompt: "a ridge of snow covered pines fading into soft fog", tags: ["pines", "fog"]},
+      {id: "frost-leaf", title: "Frost Leaf", prompt: "a single leaf covered in fine frost crystals, close up", tags: ["leaf", "frost"]},
+      {id: "aurora-snowfield", title: "Aurora Snowfield", prompt: "a quiet aurora over an empty snowfield", tags: ["aurora", "snowfield"]},
+      {id: "ice-cave", title: "Ice Cave", prompt: "the blue glow inside an ice cave with smooth walls", tags: ["cave", "ice"]},
+      {id: "snow-bridge", title: "Snow Bridge", prompt: "a small stone bridge over a dark stream, snow on its rail", tags: ["bridge", "stream"]},
+      {id: "lamp-snow", title: "Lamp Snow", prompt: "soft snow falling through the light of one street lamp", tags: ["lamp", "snow"]},
+      {id: "mountain-dawn", title: "Mountain Dawn", prompt: "a snow peak catching the first pale light of dawn", tags: ["peak", "dawn"]},
+      {id: "snowflake-macro", title: "Snowflake", prompt: "one six sided snowflake in sharp detail on dark blue", tags: ["snowflake", "detail"]},
+      {id: "frozen-waterfall", title: "Frozen Waterfall", prompt: "a waterfall frozen into long blue icicles", tags: ["waterfall", "icicles"]},
+      {id: "winter-harbor", title: "Winter Harbor", prompt: "an empty harbor with snow on the jetty and still grey water", tags: ["harbor", "jetty"]},
+      {id: "fox-tracks", title: "Fox Tracks", prompt: "a line of small animal tracks across fresh snow", tags: ["tracks", "snow"]},
+      {id: "owl-branch", title: "Snow Owl", prompt: "a white owl on a snowy branch, seen from below", tags: ["owl", "branch"]},
+      {id: "string-lights", title: "Window Lights", prompt: "a row of warm string lights in a frosted window", tags: ["lights", "window"]},
+      {id: "snow-dunes", title: "Snow Dunes", prompt: "wind carved snow dunes with long blue shadows", tags: ["dunes", "shadows"]},
+      {id: "cocoa-steam", title: "Warm Cup", prompt: "steam rising from a plain mug on a snowy window sill", tags: ["steam", "mug"]},
+      {id: "ice-bubbles", title: "Ice Bubbles", prompt: "frozen air bubbles trapped in clear lake ice", tags: ["bubbles", "ice"]},
+      {id: "night-village", title: "Night Village", prompt: "a distant village of small lit windows in a snowy valley", tags: ["village", "valley"]},
+      {id: "birch-grove", title: "Birch Grove", prompt: "white birch trunks in deep snow under a flat grey sky", tags: ["birch", "trunks"]},
+      {id: "glacier-edge", title: "Glacier Edge", prompt: "the blue face of a glacier above dark water", tags: ["glacier", "water"]},
+      {id: "snow-train", title: "Snow Train", prompt: "a small red train crossing a snowy viaduct far away", tags: ["train", "viaduct"]},
+      {id: "frost-window", title: "Frost Window", prompt: "fern shaped frost patterns on a window pane", tags: ["frost", "pane"]},
+      {id: "deer-clearing", title: "Deer Clearing", prompt: "a deer standing still in a snowy forest clearing", tags: ["deer", "clearing"]},
+      {id: "moon-snow", title: "Moon Snow", prompt: "a full moon over snow covered hills", tags: ["moon", "hills"]},
+      {id: "icicle-row", title: "Icicles", prompt: "a row of icicles on a roof edge catching light", tags: ["icicles", "roof"]},
+      {id: "lantern-path", title: "Lantern Path", prompt: "a path of small lanterns through deep snow at dusk", tags: ["lanterns", "path"]},
+      {id: "polar-sea", title: "Polar Sea", prompt: "floating ice on a calm dark polar sea", tags: ["ice", "sea"]},
+      {id: "snow-garden", title: "Snow Garden", prompt: "a small garden under fresh snow with soft round shapes", tags: ["garden", "snow"]},
+      {id: "starry-pass", title: "Starry Pass", prompt: "a mountain pass under a clear winter star sky", tags: ["pass", "sky"]},
+    ],
+    palettes: [
+      {id: "glacier", name: "Glacier", prompt: "cold glacier blue and white", tags: ["blue"]},
+      {id: "midnight-snow", name: "Midnight Snow", prompt: "deep navy night with silver snow", tags: ["night"]},
+      {id: "dawn-frost", name: "Dawn Frost", prompt: "pale peach dawn over blue frost", tags: ["pastel"]},
+      {id: "evergreen", name: "Evergreen", prompt: "deep green pines with white snow", tags: ["green"]},
+      {id: "ember-window", name: "Ember Window", prompt: "cool blue scene with one warm amber light", tags: ["warm"]},
+      {id: "silver-mist", name: "Silver Mist", prompt: "soft silver grey mist, low contrast", tags: ["grey"]},
     ],
   },
   DUO_SERIES,

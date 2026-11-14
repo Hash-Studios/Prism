@@ -24,7 +24,7 @@ async function main(): Promise<void> {
   if (process.argv.includes("--dry-run")) {
     const config = parseStudioConfig(undefined);
     const plan = buildDailyPlan({series: STUDIO_SERIES.filter((s) => !series || s.id === series), count: input.count,
-      manualSeriesId: series, weights: {}, recentSubjectIds: new Set(), rng: Math.random});
+      manualSeriesId: series, weights: series ? {[series]: 1} : {}, recentSubjectIds: new Set(), rng: Math.random});
     console.log(JSON.stringify({dryRun: true, count: plan.length, model: config.model,
       candidates: plan.map((item) => ({...item, ...(item.duoPresetId ? DUO_PROVIDER_SIZE :
         {width: config.width, height: config.height})}))}));

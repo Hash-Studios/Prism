@@ -34,7 +34,7 @@ Backend only. The walls work on Android and iOS, for free and Pro users, like ot
 6. The publish transaction checks the current attempt and all Studio signatures again. It updates `studioState/signatureIndex` to serialize concurrent publishers, creates `walls/{id}` with `review: false` and `studioSignatures/{candidateId}`, and sets the candidate to `pending_review`.
 7. An admin approves or rejects in the swipe review screen.
 
-Subjects stay on cooldown while `lastUsedAt >= now - 21 days`; the exact 21-day cutoff is still blocked, and a subject becomes eligible just after it. When no eligible subjects remain, the plan is shorter or empty. The catalog has 246 subjects over 13 categories: 80 in each of After Dark, Quiet Architecture and Paper Worlds, and 6 in Depth Effect. At the same daily run time, 10 candidates need at least 220 subjects because the cutoff includes the exact timestamp 21 days later. Mixed-series plans of 10 or fewer candidates take at most 2 per category. A test runs 120 days with default equal series weights and checks that every day gets all 10 candidates. Add subjects before you raise `dailyCandidates`. An invalid stored daily count closes that day's cap instead of resetting it.
+Subjects stay on cooldown while `lastUsedAt >= now - 21 days`; the exact 21-day cutoff is still blocked, and a subject becomes eligible just after it. When no eligible subjects remain, the plan is shorter or empty. The catalog has 276 subjects over 13 categories: 80 in each of After Dark, Quiet Architecture and Paper Worlds, 6 in Depth Effect and 30 in Winter Light. At the same daily run time, 10 candidates need at least 220 subjects because the cutoff includes the exact timestamp 21 days later. Mixed-series plans of 10 or fewer candidates take at most 2 per category. A test runs 120 days with default equal series weights and checks that every day gets all 10 candidates. Winter Light starts off, so it is not in that test. Add subjects before you raise `dailyCandidates`. An invalid stored daily count closes that day's cap instead of resetting it.
 
 The `runStudioBatch` callable accepts an `admin: true` custom claim. Email-list admin access also requires `email_verified: true`. Manual callable runs use unique ids even when requests arrive in the same millisecond.
 
@@ -61,6 +61,16 @@ The daily plan still makes `dailyCandidates` (10) candidates. With equal weights
 
 A 64-bit dHash was tried first. It called different After Dark walls the same, because their black areas give the same bits. Correlation looks only at how each image varies, and the small thumbnail averages away the dark grain. On test images, near copies (JPEG, tint, 2% crop) scored 0.97 or higher. Different scenes scored 0.84 or lower.
 
+### Winter Light series
+
+The series `winter-light` has 30 winter scenes and 6 palettes, category `Nature`, tags `winter` and `snow`. No subject shows a person, ornaments, a gift, or a religious building or symbol. `studioSeries.test.ts` checks the ids, the fields and a list of banned words.
+
+The series has `startsOff: true`. A series with this flag has weight 0 when `seriesWeights` does not name it. A series without the flag has weight 1 when the map does not name it. So a deploy does not start Winter candidates. The daily plan takes the series only when an admin sets `seriesWeights["winter-light"]` above 0. A manual run with `seriesId: "winter-light"` always works, because it gives the series weight 1.
+
+All 30 subjects are `Nature`. A mixed plan takes at most 2 walls of one category, so the series gets at most 2 slots a day. On those days, `Nature` subjects of other series wait.
+
+See [winter-studio-plan.md](winter-studio-plan.md) for the season dates and the steps.
+
 ### Notifications and rewards
 
 - `onWallSubmitted` and `onWallApproved` send nothing for a Studio wall. There is no admin push, no "Your wallpaper is live" push and no follower push.
@@ -73,6 +83,7 @@ A 64-bit dHash was tried first. It called different After Dark walls the same, b
 
 - The first Studio wall that passes the checks each UTC day gets `dropReserved: true`. `planWeeklyDrop` puts reserved walls in the next Monday Drop, so about 7 walls a week go to the Drop with no admin step.
 - A series with 3 walls that wait for a Drop (`dropReserved: true`, `review: false`) gets no reserve (`STUDIO_DROP_SERIES_CAP`). The next wall from a different series that day gets the reserve. If no wall can get the reserve, that day has no reserve. This rule is necessary because all candidates start at the same time and After Dark always publishes first.
+- `studioConfig/current.dropSeries` can give a Drop a theme series, for example `{"2026-W50": "winter-light"}`. The key is the week key of the upcoming Drop. Studio finds it from the UTC time of publication; the boundary is Monday at 00:30 UTC, when `planWeeklyDrop` runs. While that Drop has a theme, only walls of the theme series get a reserve, and the series cap is 10 (`STUDIO_DROP_THEME_CAP`) instead of 3. Walls of other series get no reserve that week. A key that is not a week key, or a value that is not a Studio series id, is ignored.
 - `studioConfig/current.dailyDropReserves` (1) sets how many walls a day are reserved. 0 turns it off. `studioDropReserves/{yyyy-mm-dd}` counts them.
 - A reserved wall stays in the review queue with a "Reserved for the next Drop" line. Unreserve sends it back to normal review. Approval makes the wall public and removes the reserve, so the wall does not go to a Drop.
 
@@ -108,7 +119,7 @@ No visual test of the models was run yet. Compare the first week of candidates b
 
 | Collection | Holds |
 |---|---|
-| `studioConfig/current` | `generationEnabled`, `dailyCandidates` (10), `maxCandidatesPerDay` (30), `dailyDropReserves` (1), `model` (`openai/gpt-image-2.5/sunburst/text-to-image`), `width` (1440), `height` (3200), `seriesWeights`, `identity {by, email, userPhoto}` |
+| `studioConfig/current` | `generationEnabled`, `dailyCandidates` (10), `maxCandidatesPerDay` (30), `dailyDropReserves` (1), `model` (`openai/gpt-image-2.5/sunburst/text-to-image`), `width` (1440), `height` (3200), `seriesWeights`, `dropSeries` (Drop week key to theme series id), `dropTitles` (Drop week key to title), `identity {by, email, userPhoto}` |
 | `studioRuns/{runId}` | One run: source, day, count, model, size |
 | `studioRuns/{runId}/candidates/{id}` | Prompt, status (`queued`, `generating`, `rejected`, `failed`, `pending_review`), attempt ownership, worker answer, check results, wall id, `cleanupKeys`, `outputAssetKeys` |
 | `studioDaily/{yyyy-mm-dd}` | Candidates made that day |

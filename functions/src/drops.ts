@@ -15,6 +15,7 @@ import {sendNotification} from "./notificationHelper";
 import {notificationCopyPayload} from "./notificationCatalog";
 import {buildPushGallery, galleryWall, isPreviewUrl, tagsLine, type GalleryWall, type PushGallery} from "./pushGallery";
 import {r2Secrets} from "./r2Storage";
+import {parseDropSeries} from "./studio/config";
 
 const USERS = "usersv2";
 const TRANSACTIONS = "coinTransactions";
@@ -187,7 +188,15 @@ export const planWeeklyDrop = onSchedule(
       if (reserved.size < MAX_DROP_WALLS) break;
       query = query.startAfter(reserved.docs[reserved.docs.length - 1]);
     }
-    const docs = mixBySeries(ready).slice(0, MAX_DROP_WALLS);
+    const configRef = db.doc("studioConfig/current");
+    const theme = parseDropSeries((await configRef.get()).data()?.dropSeries)[key] ?? null;
+    const themed = theme === null ? [] : ready.filter((doc) => str(doc.data().seriesId) === theme).slice(0, MAX_DROP_WALLS);
+    if (theme !== null && themed.length < MIN_DROP_WALLS) {
+      logger.info("drops: the theme series has too few ready walls; using the mixed pick", {
+        weekKey: key, seriesId: theme, count: themed.length,
+      });
+    }
+    const docs = themed.length >= MIN_DROP_WALLS ? themed : mixBySeries(ready).slice(0, MAX_DROP_WALLS);
     if (docs.length < MIN_DROP_WALLS) {
       logger.info("drops: not enough reserved walls", {
         weekKey: key,
@@ -216,13 +225,15 @@ export const planWeeklyDrop = onSchedule(
       walls: docs.map(snapshotWall),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
-    const configRef = db.doc("studioConfig/current");
     const planned = await db.runTransaction(async (tx) => {
       const [currentDrop, currentConfig] = await Promise.all([
         tx.get(dropRef),
         tx.get(configRef),
       ]);
       if (currentDrop.exists) return false;
+      if ((parseDropSeries(currentConfig.data()?.dropSeries)[key] ?? null) !== theme) {
+        throw new Error(`drops: the theme of ${key} changed while planning; the retry picks again.`);
+      }
       const currentWalls = await Promise.all(docs.map((doc) => tx.get(doc.ref)));
       if (currentWalls.some((snapshot) => {
         const wall = snapshot.data();
@@ -230,6 +241,11 @@ export const planWeeklyDrop = onSchedule(
           !releaseTimeReached(wall, nowMs) ||
           wall.kind === "live" && wall.live?.verified !== true;
       })) return false;
+      if (themed.length >= MIN_DROP_WALLS && currentWalls.some((snapshot) =>
+        str(snapshot.data()?.seriesId) !== theme)) {
+        const moved = currentWalls.find((snapshot) => str(snapshot.data()?.seriesId) !== theme);
+        throw new Error(`drops: themed reserve ${moved?.id ?? "unknown"} changed while planning; the retry picks again.`);
+      }
       const titles = currentConfig.data()?.dropTitles;
       const configuredTitle =
         titles && typeof titles === "object" && !Array.isArray(titles) &&
@@ -243,7 +259,7 @@ export const planWeeklyDrop = onSchedule(
       return true;
     });
     if (planned) {
-      logger.info("drops: planned", {weekKey: key, count: docs.length});
+      logger.info("drops: planned", {weekKey: key, count: docs.length, seriesId: themed.length >= MIN_DROP_WALLS ? theme : null});
     }
   },
 );

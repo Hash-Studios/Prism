@@ -1,6 +1,8 @@
 # Winter Studio series and December Drop (plan)
 
-Status: plan only. Nothing is generated and no code in `functions/` changed. A paid run needs the owner's OK.
+Status: code is ready (series, `startsOff`, Drop theme). Nothing is generated or deployed. A paid run needs the owner's OK.
+
+The scheduled and unfiltered manual planners omit `winter-light` by default; ordinary series still default to weight 1. Giving a manual run `seriesId: "winter-light"` explicitly selects it. The dry run `npm run studio:run -- --dry-run --series winter-light` does the same and starts no run.
 
 ## Goal
 
@@ -8,7 +10,7 @@ Give the Winter theme (1 December to 6 January) fresh walls that match it: a "Wi
 
 ## Series entry for `functions/src/studio/series.ts`
 
-Add one object to `STUDIO_SERIES`. Do not add `depth`. The series uses `STUDIO_COMPOSITION`.
+The object is in `STUDIO_SERIES`. It has no `depth`, so it uses `STUDIO_COMPOSITION`. It has `startsOff: true`, so it makes no candidates until `seriesWeights["winter-light"]` is above 0.
 
 | Field | Value |
 |---|---|
@@ -20,11 +22,11 @@ Add one object to `STUDIO_SERIES`. Do not add `depth`. The series uses `STUDIO_C
 
 ### Subjects (30)
 
-Each subject has an `id`, a `title`, a `prompt` and 2 `tags`. No subject shows a person, a tree with ornaments, a gift, a religious building or a religious symbol.
+Each subject has an `id`, a `title`, a `prompt` and 2 `tags`. The first subject is `winter-frozen-lake`, not `frozen-lake`, because Paper Worlds already has `frozen-lake` and the 21-day cooldown is keyed by subject id. No subject shows a person, a tree with ornaments, a gift, a religious building or a religious symbol.
 
 | id | Title | Prompt |
 |---|---|---|
-| `frozen-lake` | Frozen Lake | a wide frozen lake with fine cracks in the ice under a pale sky |
+| `winter-frozen-lake` | Frozen Lake | a wide frozen lake with fine cracks in the ice under a pale sky |
 | `snow-cabin` | Snow Cabin | a small wooden cabin half buried in snow, one window lit warm |
 | `pine-ridge` | Pine Ridge | a ridge of snow covered pines fading into soft fog |
 | `frost-leaf` | Frost Leaf | a single leaf covered in fine frost crystals, close up |
@@ -75,12 +77,14 @@ Each subject has an `id`, a `title`, a `prompt` and 2 `tags`. No subject shows a
 
 ## December Drop
 
-- Week: Monday 7 December to Sunday 13 December 2026.
-- 6 walls from `winter-light`, one from each palette.
-- How a wall gets into a Drop: `processStudioCandidate` marks the first `dailyDropReserves` walls of each UTC day with `dropReserved: true` and keeps `review: false`. `planWeeklyDrop` picks only walls with `dropReserved: true` and `review: false`. So a Drop wall never goes through the admin approval. An approval makes it public and takes it out of the Drop.
-- The reserve is the first wall of the day from any series. To make the reserves Winter walls, run the Winter candidates first each day: from 30 November to 5 December, start one manual run with `seriesId: "winter-light"` and `count: 1` before the daily schedule. Keep `dailyDropReserves` at 1.
-- Review the reserved walls before Monday 7 December in the admin review list without approving them. If one is bad, delete it and run one more manual Winter candidate.
-- Use the normal Drop prices and pushes. The `live` push copy can say "Winter Drop".
+- Drop week: Monday 7 December to Sunday 13 December 2026, week key `2026-W50`.
+- Theme: `studioConfig/current.dropSeries = {"2026-W50": "winter-light"}`. The planner then takes only `winter-light` reserves, up to 10, oldest first.
+- Reserves: Studio publishes a wall at about 20:00 UTC each day. A wall published from Monday 30 November to Sunday 6 December goes to the `2026-W50` Drop. In those 7 days only `winter-light` walls get a reserve, and up to 10 can wait. Walls of other series get no reserve.
+- `dailyDropReserves` stays 1, so the week gives at most 7 Winter reserves. With weight 2 the series gets up to 2 candidates a day. If about half pass, the week gives about 7 (guess).
+- Fallback: with fewer than 4 ready Winter reserves on 7 December, the Drop uses the normal mixed pick, and the log says why.
+- A Drop wall never goes through the admin approval. An approval makes it public and takes it out of the Drop. Look at the reserved walls in the review list without approving them. Delete a bad one.
+- Title: call `setDropTitle` with `weekKey: "2026-W50"` and `title: "Winter Drop"`. The last call push shows the title. The live push title stays "A new Drop is live", because installed apps localize it from a fixed key.
+- Prices and pushes do not change.
 
 ## Cost per wall
 
@@ -104,8 +108,17 @@ If the pass rate is 30%, the season costs the same and gives about 18 walls, abo
 
 ## Steps after the OK
 
-1. Set `studioConfig/current.seriesWeights["winter-light"]` to 0. A series that is not in the map has weight 1, so without this the daily schedule starts Winter candidates as soon as the functions deploy.
-2. Add the series object to `functions/src/studio/series.ts` with a test that checks the ids are unique and no prompt has text or people.
-3. Deploy functions.
-4. Start one manual run with `seriesId: "winter-light"` and `count: 4`, and review the 4 candidates. Expected cost: about $0.30.
-5. If the walls look right, set the weight to 2 and do the Drop steps above.
+Do these in this order. Each date is UTC.
+
+1. Merge the PR and deploy functions (`processStudioCandidate`, `planStudioBatch`, `runStudioBatch`, `planWeeklyDrop`). Cost: none. `winter-light` has `startsOff: true`, so the daily plan does not take it after the deploy. Do not set its weight to 0 first: the flag does that.
+2. Start one manual run with `seriesId: "winter-light"` and `count: 4`. Review the 4 candidates. Cost: about $0.30.
+3. From 17 November, if the walls look right, set `studioConfig/current.seriesWeights["winter-light"]` to 2. Cost: about $0.15 a day, about $4.50 to 31 December (see the table above). These walls go to the normal review. A few get a reserve and go to the Drops of 23 and 30 November, at most 3 at a time.
+4. Before 20:00 UTC on 30 November, set `studioConfig/current.dropSeries` to `{"2026-W50": "winter-light"}`. Call `setDropTitle` with `2026-W50` and `Winter Drop`. Cost: none.
+5. On 4 December, count the ready Winter reserves in the review list. With fewer than 4, set `dailyDropReserves` to 2 for the rest of the week. Set it back to 1 on 7 December. Cost: none (the same candidates).
+6. On 7 December at 00:30 UTC, `planWeeklyDrop` plans the Winter Drop. Check `drops/2026-W50`. If the log says "too few ready walls", the Drop is mixed.
+7. On 1 January 2027, set `seriesWeights["winter-light"]` to 0. Cost: none after that.
+
+Steps from the first plan that no longer apply:
+
+- "Set the weight to 0 before deploy": `startsOff` does that now.
+- "Run Winter first each day so it takes the reserve": since PR #881, a series with 3 waiting reserves gets no more, so a Winter Drop of 4 or more could not fill. The `dropSeries` theme replaces this trick.
