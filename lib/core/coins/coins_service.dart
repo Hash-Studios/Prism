@@ -496,16 +496,19 @@ class CoinsService with WidgetsBindingObserver {
   bool get autoRotateUnlocked => app_state.prismUser.premium || currentPasses.autoRotatePassActive(DateTime.now());
 
   /// What the next rewarded ad pays: more for the first ad of the UTC day, times a live coin event.
-  int get adsRewardNow => _adsBaseReward * EconomyConfig.current.coinEvents.multiplierAt(DateTime.now());
+  int get adsRewardNow => adsRewardAt(DateTime.now());
 
-  int get _adsBaseReward {
+  /// [adsRewardNow] at [now], so a screen can show the reward and its event badge from one instant.
+  int adsRewardAt(DateTime now) => _adsBaseRewardAt(now) * EconomyConfig.current.coinEvents.multiplierAt(now);
+
+  int _adsBaseRewardAt(DateTime now) {
     final int? remaining = adsRemainingToday;
     if (remaining != null) {
       return remaining == EconomyConfig.current.award.rewardedAdMaxPerDay
           ? CoinPolicy.rewardedAdFirstOfDay
           : CoinPolicy.rewardedAd;
     }
-    return _ownsEconomyState && _adsTodayDay == _utcDayKey() && _adsTodayCount > 0
+    return _ownsEconomyState && _adsTodayDay == _offsetDayKey(now.toUtc(), 0) && _adsTodayCount > 0
         ? CoinPolicy.rewardedAd
         : CoinPolicy.rewardedAdFirstOfDay;
   }

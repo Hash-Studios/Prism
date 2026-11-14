@@ -98,6 +98,7 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
     final bool isPro = app_state.prismUser.premium;
     final String proMultiplier = '${EconomyConfig.current.award.proStreakMultiplier}';
     final CoinEventWindow? liveEvent = EconomyConfig.current.coinEvents.liveAt(now);
+    final int adsReward = CoinsService.instance.adsRewardAt(now);
     final List<Widget> rows = <Widget>[
       if (!DailyMomentConfig.enabled)
         _EarnRow(
@@ -127,9 +128,9 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
             ? context.l10n.economyLoadingVideo
             : CoinsService.instance.adsRemainingToday == 0
             ? context.l10n.economyAdDailyLimit
-            : context.l10n.economyWatchAdForCoins(CoinsService.instance.adsRewardNow),
-        reward: context.l10n.economyCoinReward(CoinsService.instance.adsRewardNow),
-        rewardLabel: context.l10n.economyCoinsEarned(CoinsService.instance.adsRewardNow),
+            : context.l10n.economyWatchAdForCoins(adsReward),
+        reward: context.l10n.economyCoinReward(adsReward),
+        rewardLabel: context.l10n.economyCoinsEarned(adsReward),
         badge: liveEvent == null ? null : context.l10n.coinEventAdBadge(liveEvent.multiplier),
         badgeLabel: liveEvent == null ? null : context.l10n.coinEventAdBadgeLabel(liveEvent.multiplier),
         loading: _loadingReward,

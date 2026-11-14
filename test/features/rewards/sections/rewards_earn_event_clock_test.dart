@@ -30,6 +30,7 @@ void main() {
       ),
     );
     expect(find.text('2x'), findsOneWidget);
+    expect(find.text('+40'), findsOneWidget);
     expect(find.byKey(const ValueKey<String>('coin-event-banner')), findsOneWidget);
 
     now = end;
@@ -37,6 +38,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('2x'), findsNothing);
+    expect(find.text('+20'), findsOneWidget);
     expect(find.byKey(const ValueKey<String>('coin-event-banner')), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
   });
