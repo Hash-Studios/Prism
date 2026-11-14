@@ -10,6 +10,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/photo_job.dart';
 import 'package:Prism/features/user_search/data/photo_search_service.dart';
 import 'package:Prism/logger/logger.dart';
@@ -19,7 +20,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-/// The usual Extend upload long side. Narrow photos keep a longer side so the short side stays at least 256 px.
+/// The usual Extend and Restyle upload long side. Narrow photos keep a longer side so the short side stays at least 256 px.
 const int photoExtendUploadSide = 2560;
 
 /// The long side the app sends for Upscale. An Upscale photo is smaller than the screen, so it is sent at full size.
@@ -189,7 +190,7 @@ class PhotoWallpaperRepository {
           .clamp(photoExtendUploadSide, photoUpscaleUploadSide);
       jpeg = await _toUploadJpeg(
         job.source.bytes,
-        job.mode == PhotoJobMode.extend ? extendSide : photoUpscaleUploadSide,
+        job.mode == PhotoJobMode.upscale ? photoUpscaleUploadSide : extendSide,
       );
     } catch (_) {
       return const PhotoJobFailed(reason: PhotoJobFailure.unreadable, charged: false, refunded: false);
@@ -203,6 +204,7 @@ class PhotoWallpaperRepository {
         'targetHeight': targetSize.height,
       },
       if (job.mode == PhotoJobMode.extend && placement != null) 'placement': placement.toJson(),
+      if (job.style case final AiStylePreset style) 'styleId': style.apiValue,
       'image': base64Encode(jpeg),
     };
     for (int attempt = 0; ; attempt++) {

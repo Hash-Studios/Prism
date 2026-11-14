@@ -296,10 +296,13 @@ class _Pill extends StatelessWidget {
 
 /// What Prism will do with the photo, or that the photo already fits.
 class PhotoPlanCard extends StatelessWidget {
-  const PhotoPlanCard({super.key, required this.mode, required this.target});
+  const PhotoPlanCard({super.key, required this.mode, required this.target, this.styleLabel});
 
   final PhotoJobMode? mode;
   final PhotoJobTarget target;
+
+  /// The style name for Restyle.
+  final String? styleLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -312,6 +315,11 @@ class PhotoPlanCard extends StatelessWidget {
         l10n.photoWallPlanExtendDetail,
       ),
       PhotoJobMode.upscale => (Icons.auto_awesome_rounded, l10n.photoWallPlanUpscale, l10n.photoWallPlanUpscaleDetail),
+      PhotoJobMode.restyle => (
+        Icons.palette_rounded,
+        l10n.photoWallPlanRestyle(styleLabel ?? ''),
+        l10n.photoWallPlanRestyleDetail,
+      ),
       null => (
         Icons.check_circle_rounded,
         desktop ? l10n.photoWallPlanFitsDesktop : l10n.photoWallPlanFits,

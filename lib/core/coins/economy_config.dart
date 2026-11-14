@@ -72,6 +72,7 @@ class EconomySpend {
     this.dailyChest = 8,
     this.photoExtend = 75,
     this.photoUpscale = 10,
+    this.photoRestyle = 75,
   });
 
   factory EconomySpend.fromMap(Map<String, dynamic> m) {
@@ -97,6 +98,7 @@ class EconomySpend {
       dailyChest: _int(m['dailyChest'], d.dailyChest),
       photoExtend: _photoPrice(m['photoExtend'], d.photoExtend),
       photoUpscale: _photoPrice(m['photoUpscale'], d.photoUpscale),
+      photoRestyle: _photoPrice(m['photoRestyle'], d.photoRestyle),
     );
   }
 
@@ -123,9 +125,10 @@ class EconomySpend {
   /// What the daily chest costs before today's quests are done.
   final int dailyChest;
 
-  /// What a photo wallpaper job costs: Extend to the screen shape, or Upscale.
+  /// What a photo wallpaper job costs: Extend to the screen shape, Upscale, or Restyle in an AI style.
   final int photoExtend;
   final int photoUpscale;
+  final int photoRestyle;
 }
 
 class SpinSegment {

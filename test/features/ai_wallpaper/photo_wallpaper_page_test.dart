@@ -17,9 +17,11 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/photo_wallpaper_repository.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/photo_job.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/photo_wallpaper_page.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_decoded_image.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_pickers.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widgets.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
@@ -27,6 +29,7 @@ import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/l10n/generated/app_localizations.dart';
+import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -193,6 +196,7 @@ Future<void> _pumpPage(
   Brightness brightness = Brightness.light,
   FoldersBloc? folders,
   ValueNotifier<PhotoSize>? screenSize,
+  TextDirection textDirection = TextDirection.ltr,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = devicePixelRatio;
@@ -223,9 +227,12 @@ Future<void> _pumpPage(
         locale: const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        builder: (BuildContext context, Widget? child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
-          child: child!,
+        builder: (BuildContext context, Widget? child) => Directionality(
+          textDirection: textDirection,
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+            child: child!,
+          ),
         ),
         home: screenSize == null
             ? PhotoWallpaperPage(repository: harness.repository, isPro: isPro, screenSize: const PhotoSize(1080, 2340))
@@ -247,6 +254,11 @@ Future<void> _dragFrameUp(WidgetTester tester) async {
   await tester.dragFrom(Offset(frame.center.dx, frame.top + frame.height * 0.2), const Offset(0, -2000));
   await _settle(tester);
 }
+
+/// The style tile is a Semantics node with no visible text, so it is found by its label.
+Finder _styleTile(AiStylePreset style) => find.byWidgetPredicate(
+  (Widget widget) => widget is Semantics && widget.properties.label == 'Style: ${style.label}',
+);
 
 Future<void> _pickPhoto(WidgetTester tester) async {
   // At 2x text the empty state list is taller than the screen. Scroll until the button is on screen.
@@ -671,6 +683,302 @@ void main() {
     expect(compare.hasAction(SemanticsAction.increase), isTrue);
     expect(compare.hasAction(SemanticsAction.decrease), isTrue);
     handle.dispose();
+  });
+
+  testWidgets('Restyle switches the plan, shows the style row and prices the run button', (tester) async {
+    await _pumpPage(tester, _Harness());
+    await _pickPhoto(tester);
+    expect(find.text('Extend · 75 coins'), findsOneWidget);
+
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    expect(find.text('Style'), findsOneWidget);
+    expect(find.byType(AiStylePicker), findsOneWidget);
+    final Rect pickerRect = tester.getRect(find.byType(AiStylePicker));
+    expect(pickerRect.left, 0);
+    expect(pickerRect.right, tester.view.physicalSize.width / tester.view.devicePixelRatio);
+    expect(tester.getRect(_styleTile(AiStylePreset.anime)).left, PrismSpace.page);
+    expect(_styleTile(AiStylePreset.anime), findsOneWidget);
+    expect(find.text('Restyle as Anime'), findsOneWidget);
+    expect(find.text('Restyle · 75 coins'), findsOneWidget);
+    expect(find.byKey(_placementKey), findsNothing);
+
+    await tester.tap(find.text('Fit to screen'));
+    await _settle(tester);
+
+    expect(find.text('Extend · 75 coins'), findsOneWidget);
+    expect(find.byKey(_placementKey), findsOneWidget);
+  });
+
+  testWidgets('picking a style sends its styleId and tracks restyle start and finish', (tester) async {
+    final _Harness harness = _Harness();
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    await tester.ensureVisible(_styleTile(AiStylePreset.watercolor));
+    await tester.pump();
+    await tester.tap(_styleTile(AiStylePreset.watercolor));
+    await _settle(tester);
+    expect(find.text('Restyle as Watercolor'), findsOneWidget);
+
+    await tester.tap(find.byKey(_runKey));
+    await _waitUntilGone(tester, find.byKey(_runKey));
+
+    expect(harness.payloads, hasLength(1));
+    expect(harness.payloads.single['mode'], 'restyle');
+    expect(harness.payloads.single['styleId'], 'watercolor');
+    expect(harness.payloads.single.containsKey('placement'), isFalse);
+    expect(harness.analytics.events.whereType<PhotoJobStartedEvent>().single.toWireParameters()['mode'], 'restyle');
+    expect(harness.analytics.events.whereType<PhotoRestyleStartedEvent>().single.toWireParameters(), <String, Object?>{
+      'style_id': 'watercolor',
+    });
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>().single.toWireParameters(), <String, Object?>{
+      'outcome': 'succeeded',
+    });
+  });
+
+  testWidgets('a failed restyle tracks the failed outcome', (tester) async {
+    final _Harness harness = _Harness()
+      ..onCall = (Map<String, Object?> _) async => <String, Object?>{
+        'state': 'failed',
+        'reason': 'provider_error',
+        'refunded': true,
+        'cost': 75,
+      };
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>().single.toWireParameters(), <String, Object?>{
+      'outcome': 'failed',
+    });
+  });
+
+  testWidgets('an uncertain restyle tracks no outcome until recovery resolves it', (tester) async {
+    final _Harness harness = _Harness();
+    harness.onCall = (Map<String, Object?> _) async =>
+        harness.payloads.length == 1 ? <String, Object?>{'state': 'running'} : _successMap;
+    harness.onLookup = (_) async => _successMap;
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    await tester.tap(find.byKey(_runKey));
+    await _waitUntilGone(tester, find.byKey(_runKey));
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>(), isEmpty);
+
+    await tester.tap(find.byKey(_runKey));
+    await _waitUntilGone(tester, find.byKey(_runKey));
+    expect(harness.lookups, 1);
+    expect(find.text('Before'), findsOneWidget);
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>().single.toWireParameters(), <String, Object?>{
+      'outcome': 'succeeded',
+    });
+  });
+
+  testWidgets('a dropped restyle connection reports only the recovered refund', (tester) async {
+    final _Harness harness = _Harness()..onCall = (_) async => throw StateError('connection dropped');
+    harness.onLookup = (_) async => <String, Object?>{'state': 'running'};
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+    expect(harness.payloads, hasLength(2));
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>(), isEmpty);
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>(), isEmpty);
+    harness.onLookup = (_) async => <String, Object?>{
+      'state': 'failed',
+      'reason': 'network',
+      'refunded': true,
+      'cost': 75,
+    };
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+    expect(harness.pendingJson, isNull);
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>().single.toWireParameters(), <String, Object?>{
+      'outcome': 'failed',
+    });
+  });
+
+  testWidgets('a stale restyle run cannot report after account switch; recovery reports once', (tester) async {
+    final _Harness harness = _Harness();
+    final Completer<Object?> result = Completer<Object?>();
+    final Completer<Object?> recovered = Completer<Object?>();
+    harness.onCall = (_) => result.future;
+    harness.onLookup = (_) => recovered.future;
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+    await tester.tap(find.byKey(_runKey));
+    await tester.pump();
+    expect(harness.payloads, hasLength(1));
+    harness.session.switchTo('user-2');
+    await _settle(tester);
+    harness.session.switchTo('user-1');
+    await tester.pump();
+    result.complete(_successMap);
+    await _settle(tester);
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>(), isEmpty);
+    recovered.complete(_successMap);
+    await _settle(tester);
+    expect(harness.pendingJson, isNull);
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>().single.toWireParameters(), <String, Object?>{
+      'outcome': 'succeeded',
+    });
+  });
+
+  for (final bool recovered in <bool>[false, true]) {
+    for (final bool succeeded in <bool>[false, true]) {
+      testWidgets('restyle outcome is emitted once after clear failure (recovered=$recovered, success=$succeeded)', (
+        tester,
+      ) async {
+        final Map<String, Object?> result = succeeded
+            ? _successMap
+            : <String, Object?>{'state': 'failed', 'reason': 'provider_error', 'refunded': true, 'cost': 75};
+        final _Harness harness = _Harness()..onLookup = (_) async => result;
+        if (recovered) {
+          harness.pendingJson = jsonEncode(
+            const PendingPhotoJob(
+              userId: 'user-1',
+              requestId: 'req-00000042',
+              mode: PhotoJobMode.restyle,
+              target: PhotoJobTarget.phone,
+            ).toJson(),
+          );
+        }
+        harness.onWrite = (json) async {
+          if (json == null) throw StateError('disk full');
+        };
+        await _pumpPage(tester, harness);
+        if (!recovered) {
+          await _pickPhoto(tester);
+          await tester.tap(find.text('Restyle'));
+          await _settle(tester);
+          harness.onCall = (_) async => result;
+        }
+        if (!recovered) await tester.tap(find.byKey(_runKey));
+        await _settle(tester);
+        expect(harness.pendingJson, isNotNull);
+        expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>(), hasLength(1));
+
+        // Both the same-page retry and returning to this account must not report it again.
+        if (succeeded) {
+          await tester.tap(find.text('Use another photo'));
+        } else if (recovered) {
+          await tester.tap(find.text('Choose a photo'));
+        } else {
+          await tester.tap(find.byKey(_runKey));
+        }
+        await _settle(tester);
+        expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>(), hasLength(1));
+        harness.session.switchTo('user-2');
+        await _settle(tester);
+        harness.onWrite = null;
+        harness.session.switchTo('user-1');
+        await _settle(tester);
+        expect(harness.pendingJson, isNull);
+        expect(
+          harness.analytics.events.whereType<PhotoRestyleFinishedEvent>().single.toWireParameters(),
+          <String, Object?>{'outcome': succeeded ? 'succeeded' : 'failed'},
+        );
+      });
+    }
+  }
+
+  testWidgets('a photo that already fits can still be restyled', (tester) async {
+    await _pumpPage(tester, _Harness(photo: const PhotoSize(1080, 2340)));
+    await _pickPhoto(tester);
+    expect(find.byKey(_runKey), findsNothing);
+
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    expect(find.text('Restyle · 75 coins'), findsOneWidget);
+    expect(find.byKey(_runKey), findsOneWidget);
+  });
+
+  testWidgets('Pro pays half for Restyle', (tester) async {
+    await _pumpPage(tester, _Harness(), isPro: true);
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    expect(find.text('Restyle · 38 coins'), findsOneWidget);
+  });
+
+  testWidgets('a short balance turns the Restyle button into Get coins', (tester) async {
+    await _pumpPage(tester, _Harness(), balance: 20);
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    expect(find.text('Get coins · need 55'), findsOneWidget);
+    expect(find.text('Restyle · 75 coins'), findsNothing);
+  });
+
+  testWidgets('Restyle lays out without overflow at large text on a small screen', (tester) async {
+    await _pumpPage(tester, _Harness(), size: const Size(750, 1334), devicePixelRatio: 2, textScale: 2);
+    await _pickPhoto(tester);
+    await tester.ensureVisible(find.text('Restyle'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(_runKey), findsOneWidget);
+  });
+
+  testWidgets('the full-bleed style row accepts drags and taps in the left margin', (tester) async {
+    await _pumpPage(tester, _Harness());
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+    await tester.ensureVisible(_styleTile(AiStylePreset.watercolor));
+    await tester.pumpAndSettle();
+
+    final Rect tileBefore = tester.getRect(_styleTile(AiStylePreset.watercolor));
+    await tester.dragFrom(Offset(4, tileBefore.center.dy), const Offset(-40, 0));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(_styleTile(AiStylePreset.watercolor)).left, isNot(tileBefore.left));
+
+    await tester.tapAt(Offset(4, tileBefore.center.dy));
+    await _settle(tester);
+    expect(find.text('Restyle as Watercolor'), findsOneWidget);
+  });
+
+  testWidgets('Restyle works right to left', (tester) async {
+    await _pumpPage(tester, _Harness(), textDirection: TextDirection.rtl);
+    await _pickPhoto(tester);
+    expect(Directionality.of(tester.element(find.byType(PhotoWallpaperPage))), TextDirection.rtl);
+
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+    await tester.ensureVisible(_styleTile(AiStylePreset.watercolor));
+    await tester.pumpAndSettle();
+    final Rect tileBefore = tester.getRect(_styleTile(AiStylePreset.watercolor));
+    final double width = tester.view.physicalSize.width / tester.view.devicePixelRatio;
+    await tester.dragFrom(Offset(width - 4, tileBefore.center.dy), const Offset(40, 0));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(_styleTile(AiStylePreset.watercolor)).left, isNot(tileBefore.left));
+    await tester.tapAt(Offset(width - 4, tileBefore.center.dy));
+    await _settle(tester);
+
+    expect(find.text('Restyle as Watercolor'), findsOneWidget);
+    expect(find.text('Restyle · 75 coins'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   group('recovery after the app closed during a job', () {

@@ -9,6 +9,7 @@ import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/ai_wallpaper/data/repositories/photo_wallpaper_repository.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/photo_job.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -166,6 +167,18 @@ void main() {
     });
   });
 
+  group('photoJobModeFor', () {
+    test('Restyle is a restyle job even when the photo already fits', () {
+      expect(photoJobModeFor(PhotoTool.restyle, _phone, _phone), PhotoJobMode.restyle);
+    });
+
+    test('Fit asks the planner, so a landscape photo needs Extend', () {
+      const PhotoSize landscape = PhotoSize(4000, 3000);
+      expect(photoJobModeFor(PhotoTool.fit, landscape, _phone), planPhotoJob(landscape, _phone));
+      expect(photoJobModeFor(PhotoTool.fit, landscape, _phone), PhotoJobMode.extend);
+    });
+  });
+
   group('phoneTargetSize', () {
     test('keeps a portrait phone size as it is', () {
       expect(phoneTargetSize(width: 1179, height: 2556), const PhotoSize(1179, 2556));
@@ -235,6 +248,21 @@ void main() {
 
       expect(config.proDiscountActions, <String>['aiGeneration']);
       expect(config.proBypassActions, EconomyConfig.defaults.proBypassActions);
+    });
+
+    test('Restyle costs 75 coins for a free user and 38 for Pro', () {
+      expect(photoJobCost(PhotoJobMode.restyle, isPro: false, config: EconomyConfig.defaults), 75);
+      expect(photoJobCost(PhotoJobMode.restyle, isPro: true, config: EconomyConfig.defaults), 38);
+    });
+
+    test('Restyle uses the remote photoRestyle price, with Pro half rounded up', () {
+      const EconomyConfig config = EconomyConfig(spend: EconomySpend(photoRestyle: 51));
+      expect(photoJobCost(PhotoJobMode.restyle, isPro: false, config: config), 51);
+      expect(photoJobCost(PhotoJobMode.restyle, isPro: true, config: config), 26);
+    });
+
+    test('a malformed photoRestyle price falls back to 75', () {
+      expect(EconomySpend.fromMap(<String, dynamic>{'photoRestyle': 12.5}).photoRestyle, 75);
     });
   });
 
@@ -425,6 +453,42 @@ void main() {
       expect(payload['targetHeight'], 2340);
       expect(payload['placement'], <String, int>{'left': 0, 'top': 765, 'width': 1080, 'height': 810});
       expect(payload['image'], 'AQID');
+    });
+
+    test('restyle job sends the style ID and no placement, and uploads at the Extend side', () async {
+      final List<Map<String, Object?>> payloads = <Map<String, Object?>>[];
+      final List<int> sides = <int>[];
+      final PhotoWallpaperRepository repo = PhotoWallpaperRepository(
+        null,
+        null,
+        (Uint8List bytes, int side) async {
+          sides.add(side);
+          return Uint8List.fromList(<int>[1, 2, 3]);
+        },
+        (Map<String, Object?> payload) async {
+          payloads.add(payload);
+          return _successMap;
+        },
+      );
+
+      final PhotoJobState result = await repo.run(
+        PhotoJob(
+          source: PhotoSource(bytes: Uint8List(4), size: const PhotoSize(4000, 3000)),
+          mode: PhotoJobMode.restyle,
+          target: PhotoJobTarget.phone,
+          cost: 75,
+          style: AiStylePreset.watercolor,
+        ),
+        requestId: 'req-00000003',
+        targetSize: _phone,
+        placement: PhotoPlacement.fit(canvas: _phone, photo: const PhotoSize(4000, 3000)),
+      );
+
+      expect(result, isA<PhotoJobSucceeded>());
+      expect(sides, <int>[photoExtendUploadSide]);
+      expect(payloads.single['mode'], 'restyle');
+      expect(payloads.single['styleId'], 'watercolor');
+      expect(payloads.single.containsKey('placement'), isFalse);
     });
 
     test('upscale job has no placement and uploads at side 4096', () async {
@@ -751,6 +815,23 @@ void main() {
       expect(PendingPhotoJob.fromJson(null), isNull);
       expect(PendingPhotoJob.fromJson(<String, Object?>{...job.toJson(), 'mode': 'paint'}), isNull);
       expect(PendingPhotoJob.fromJson(<String, Object?>{...job.toJson(), 'userId': ''}), isNull);
+    });
+
+    test('a restyle job round-trips through JSON', () {
+      const PendingPhotoJob job = PendingPhotoJob(
+        userId: 'u1',
+        requestId: 'req-00000043',
+        mode: PhotoJobMode.restyle,
+        target: PhotoJobTarget.phone,
+      );
+      final PendingPhotoJob? back = PendingPhotoJob.fromJson(job.toJson());
+      expect(back?.mode, PhotoJobMode.restyle);
+      expect(back?.toJson(), <String, String>{
+        'userId': 'u1',
+        'requestId': 'req-00000043',
+        'mode': 'restyle',
+        'target': 'phone',
+      });
     });
 
     test('a malformed saved request ID cannot trap recovery in permanent network failure', () {

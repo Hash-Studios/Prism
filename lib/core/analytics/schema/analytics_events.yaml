@@ -127,11 +127,17 @@ enums:
     values:
       - extend
       - upscale
+      - restyle
   - name: photo_job_target
     dart_type: PhotoJobTargetValue
     values:
       - phone
       - desktop
+  - name: photo_restyle_outcome
+    dart_type: PhotoRestyleOutcomeValue
+    values:
+      - succeeded
+      - failed
   - name: shared_item_kind
     dart_type: SharedItemKindValue
     values:
@@ -1399,6 +1405,17 @@ events:
       - name: platform
         key: platform
         type: string
+  - id: photo_restyle_started
+    fields:
+      - name: style_id
+        key: style_id
+        type: string
+  - id: photo_restyle_finished
+    fields:
+      - name: outcome
+        key: outcome
+        type: enum
+        enum: PhotoRestyleOutcomeValue
   - id: coin_preview_unlock_attempt
     fields:
       - name: collection

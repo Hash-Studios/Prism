@@ -224,10 +224,10 @@ export default function PrivacyPage() {
                 </li>
                 <li>
                   <strong className="text-black">Photo to wallpaper</strong> - a copy of the photo
-                  you pick, with no location or other metadata, goes to fal.ai to extend or upscale
+                  you pick, with no location or other metadata, goes to fal.ai to extend, upscale or restyle
                   it, and to Google Cloud Vision to check it. Prism does not keep the photo after the
                   job. Prism keeps the result at a random link that the app shows only to you, the
-                  job details (mode, target, cost, state) and a daily count of your jobs. Deleting
+                  job details (mode, target, style, cost, state) and a daily count of your jobs. Deleting
                   your account deletes the results and the job details
                 </li>
                 <li>

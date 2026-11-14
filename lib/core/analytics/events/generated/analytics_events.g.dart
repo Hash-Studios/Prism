@@ -39,6 +39,7 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'ai_style_pick_source': AiStylePickSource.values.map((value) => value.wireValue).toList(),
   'photo_job_mode': PhotoJobModeValue.values.map((value) => value.wireValue).toList(),
   'photo_job_target': PhotoJobTargetValue.values.map((value) => value.wireValue).toList(),
+  'photo_restyle_outcome': PhotoRestyleOutcomeValue.values.map((value) => value.wireValue).toList(),
   'shared_item_kind': SharedItemKindValue.values.map((value) => value.wireValue).toList(),
   'share_action': ShareActionValue.values.map((value) => value.wireValue).toList(),
   'rc_or_fallback': RcOrFallbackValue.values.map((value) => value.wireValue).toList(),
@@ -1155,6 +1156,34 @@ class PhotoJobResultSetEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return <String, Object?>{'mode': mode.wireValue, 'target': target.wireValue, 'platform': platform};
+  }
+}
+
+class PhotoRestyleStartedEvent extends AnalyticsEvent {
+  const PhotoRestyleStartedEvent({required this.styleId});
+
+  final String styleId;
+
+  @override
+  String get eventName => 'photo_restyle_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'style_id': styleId};
+  }
+}
+
+class PhotoRestyleFinishedEvent extends AnalyticsEvent {
+  const PhotoRestyleFinishedEvent({required this.outcome});
+
+  final PhotoRestyleOutcomeValue outcome;
+
+  @override
+  String get eventName => 'photo_restyle_finished';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'outcome': outcome.wireValue};
   }
 }
 

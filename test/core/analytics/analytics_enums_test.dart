@@ -40,6 +40,7 @@ void main() {
       'LinkDestinationValue': LinkDestinationValue.values.map((v) => v.wireValue).toList(),
       'PhotoJobModeValue': PhotoJobModeValue.values.map((v) => v.wireValue).toList(),
       'PhotoJobTargetValue': PhotoJobTargetValue.values.map((v) => v.wireValue).toList(),
+      'PhotoRestyleOutcomeValue': PhotoRestyleOutcomeValue.values.map((v) => v.wireValue).toList(),
     };
     expect(actual, <String, List<String>>{
       'WallpaperTarget': <String>['home', 'lock', 'both'],
@@ -206,8 +207,9 @@ void main() {
       ],
       'ScrollDepthPercentValue': <String>['p25', 'p50', 'p75', 'p100'],
       'LinkDestinationValue': <String>['github', 'play_store', 'twitter', 'instagram', 'telegram', 'email', 'external'],
-      'PhotoJobModeValue': <String>['extend', 'upscale'],
+      'PhotoJobModeValue': <String>['extend', 'upscale', 'restyle'],
       'PhotoJobTargetValue': <String>['phone', 'desktop'],
+      'PhotoRestyleOutcomeValue': <String>['succeeded', 'failed'],
     });
   });
 

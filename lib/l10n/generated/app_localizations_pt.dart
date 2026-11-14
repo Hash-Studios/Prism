@@ -15594,7 +15594,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get photoWallEntryTitle => 'A partir da sua foto';
 
   @override
-  String get photoWallEntrySubtitle => 'Ajuste qualquer foto à sua tela';
+  String get photoWallEntrySubtitle => 'Ajuste uma foto à sua tela ou mude o estilo dela';
 
   @override
   String get photoWallPickPhoto => 'Escolha uma foto';
@@ -15660,6 +15660,38 @@ class AppLocalizationsPt extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get photoWallToolFit => 'Ajustar à tela';
+
+  @override
+  String get photoWallToolRestyle => 'Mudar estilo';
+
+  @override
+  String get photoWallStyleTitle => 'Estilo';
+
+  @override
+  String photoWallPlanRestyle(String style) {
+    return 'Mudar para o estilo $style';
+  }
+
+  @override
+  String get photoWallPlanRestyleDetail =>
+      'A IA redesenha sua foto neste estilo e tenta manter a composição e os rostos.';
+
+  @override
+  String photoWallRunRestyle(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Mudar estilo · $coins moedas',
+      one: 'Mudar estilo · 1 moeda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photoWallWorkingRestyle => 'Mudando o estilo da sua foto';
 
   @override
   String photoWallGetCoins(int coins) {
@@ -31646,7 +31678,7 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get photoWallEntryTitle => 'A partir da sua foto';
 
   @override
-  String get photoWallEntrySubtitle => 'Ajuste qualquer foto à sua tela';
+  String get photoWallEntrySubtitle => 'Ajuste uma foto à sua tela ou mude o estilo dela';
 
   @override
   String get photoWallPickPhoto => 'Escolha uma foto';
@@ -31712,6 +31744,38 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
     );
     return '$_temp0';
   }
+
+  @override
+  String get photoWallToolFit => 'Ajustar à tela';
+
+  @override
+  String get photoWallToolRestyle => 'Mudar estilo';
+
+  @override
+  String get photoWallStyleTitle => 'Estilo';
+
+  @override
+  String photoWallPlanRestyle(String style) {
+    return 'Mudar para o estilo $style';
+  }
+
+  @override
+  String get photoWallPlanRestyleDetail =>
+      'A IA redesenha sua foto neste estilo e tenta manter a composição e os rostos.';
+
+  @override
+  String photoWallRunRestyle(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Mudar estilo · $coins moedas',
+      one: 'Mudar estilo · 1 moeda',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photoWallWorkingRestyle => 'Mudando o estilo da sua foto';
 
   @override
   String photoWallGetCoins(int coins) {

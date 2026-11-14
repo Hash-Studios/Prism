@@ -14,7 +14,7 @@ The AI tab. Code: `lib/features/ai_wallpaper/`. The worker side is in `docs/feat
 
 ## From your photo
 
-The AI tab has a "From your photo" card. It opens Photo to wallpaper: AI extends a photo to the screen shape or upscales a small photo, for a phone or a desktop. It runs on Cloud Functions, not on the worker. The callable takes the coins and returns them when the job fails. See [photo-wallpaper.md](photo-wallpaper.md).
+The AI tab has a "From your photo" card. It opens Photo to wallpaper: AI extends a photo to the screen shape, upscales a small photo, or redraws a photo in one of the styles below (Restyle), for a phone or a desktop. It runs on Cloud Functions, not on the worker. The callable takes the coins and returns them when the job fails. See [photo-wallpaper.md](photo-wallpaper.md).
 
 ## Platforms and plans
 

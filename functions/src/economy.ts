@@ -36,6 +36,7 @@ export interface EconomyConfig {
     dailyChest: number;
     photoExtend: number;
     photoUpscale: number;
+    photoRestyle: number;
   };
   proDiscountActions: string[];
   proBypassActions: string[];
@@ -112,6 +113,7 @@ export const DEFAULT_ECONOMY: EconomyConfig = {
     dailyChest: 8,
     photoExtend: 75,
     photoUpscale: 10,
+    photoRestyle: 75,
   },
   proDiscountActions: ["aiGeneration", "dropWall", "dropPack", "photoWallpaper"],
   proBypassActions: [
