@@ -24,8 +24,6 @@ export interface StudioConfig {
   height: number;
   /** Series id -> weight. Missing entries default to 1, except `startsOff` series which default to 0. */
   seriesWeights: Record<string, number>;
-  /** Drop week key (`2026-W50`) -> the only series that Drop takes. */
-  dropSeries: Record<string, string>;
   identity: StudioIdentity | null;
   /** Make a desktop companion when a Studio wall is approved. Off unless the doc says true. */
   desktopCompanions: boolean;
@@ -115,7 +113,6 @@ export function parseStudioConfig(data: admin.firestore.DocumentData | undefined
     width: dimensions.width,
     height: dimensions.height,
     seriesWeights: parseWeights(data?.seriesWeights),
-    dropSeries: parseDropSeries(data?.dropSeries),
     identity,
     desktopCompanions: data?.desktopCompanions === true,
   };

@@ -2,7 +2,7 @@
 
 Status: code is ready (series, `startsOff`, Drop theme). Nothing is generated or deployed. A paid run needs the owner's OK.
 
-The scheduled and unfiltered manual planners omit `winter-light` by default; ordinary series still default to weight 1. Giving a manual run `seriesId: "winter-light"` explicitly selects it. The `studio:run --series winter-light` dry-run script currently supplies an empty weights map, so it plans no winter candidates; this does not model a real selected-series manual run. The script is intentionally unchanged here.
+The scheduled and unfiltered manual planners omit `winter-light` by default; ordinary series still default to weight 1. Giving a manual run `seriesId: "winter-light"` explicitly selects it. The `studio:run --series winter-light` dry run does the same.
 
 ## Goal
 
