@@ -15545,7 +15545,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get photoWallPlanRestyleDetail =>
-      'KI gestaltet dein Foto in diesem Stil neu. Layout und Gesichter bleiben erhalten.';
+      'KI gestaltet dein Foto in diesem Stil neu und versucht, Layout und Gesichter zu erhalten.';
 
   @override
   String photoWallRunRestyle(int coins) {

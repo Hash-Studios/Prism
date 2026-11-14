@@ -15293,7 +15293,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get photoWallPlanRestyleDetail => 'AI redraws your photo in this style. It keeps the layout and the faces.';
+  String get photoWallPlanRestyleDetail =>
+      'AI redraws your photo in this style and aims to keep the layout and the faces.';
 
   @override
   String photoWallRunRestyle(int coins) {

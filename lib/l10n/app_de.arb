@@ -14769,7 +14769,7 @@
   "@photoWallStyleTitle": {"description": "Header above the Restyle style tiles."},
   "photoWallPlanRestyle": "Im Stil {style} umgestalten",
   "@photoWallPlanRestyle": {"description": "Plan card title for Restyle. style is the style name, for example Anime.", "placeholders": {"style": {"type": "String"}}},
-  "photoWallPlanRestyleDetail": "KI gestaltet dein Foto in diesem Stil neu. Layout und Gesichter bleiben erhalten.",
+  "photoWallPlanRestyleDetail": "KI gestaltet dein Foto in diesem Stil neu und versucht, Layout und Gesichter zu erhalten.",
   "@photoWallPlanRestyleDetail": {"description": "Plan card detail for Restyle."},
   "photoWallRunRestyle": "{coins, plural, =1{Umgestalten · 1 Coin} other{Umgestalten · {coins} Coins}}",
   "@photoWallRunRestyle": {"description": "Main button. Starts a Restyle job and shows its coin cost.", "placeholders": {"coins": {"type": "int"}}},

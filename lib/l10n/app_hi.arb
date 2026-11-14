@@ -15520,7 +15520,7 @@
   "@photoWallStyleTitle": {"description": "Header above the Restyle style tiles."},
   "photoWallPlanRestyle": "{style} स्टाइल में रीस्टाइल करें",
   "@photoWallPlanRestyle": {"description": "Plan card title for Restyle. style is the style name, for example Anime.", "placeholders": {"style": {"type": "String"}}},
-  "photoWallPlanRestyleDetail": "AI आपकी फ़ोटो को इस स्टाइल में नए सिरे से बनाता है। लेआउट और चेहरे वही रहते हैं।",
+  "photoWallPlanRestyleDetail": "AI आपकी फ़ोटो को इस स्टाइल में नए सिरे से बनाता है और लेआउट व चेहरे वही रखने की कोशिश करता है।",
   "@photoWallPlanRestyleDetail": {"description": "Plan card detail for Restyle."},
   "photoWallRunRestyle": "{coins, plural, =1{रीस्टाइल · 1 कॉइन} other{रीस्टाइल · {coins} कॉइन}}",
   "@photoWallRunRestyle": {"description": "Main button. Starts a Restyle job and shows its coin cost.", "placeholders": {"coins": {"type": "int"}}},

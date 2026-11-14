@@ -24286,7 +24286,7 @@ abstract class AppLocalizations {
   /// Plan card detail for Restyle.
   ///
   /// In en, this message translates to:
-  /// **'AI redraws your photo in this style. It keeps the layout and the faces.'**
+  /// **'AI redraws your photo in this style and aims to keep the layout and the faces.'**
   String get photoWallPlanRestyleDetail;
 
   /// Main button. Starts a Restyle job and shows its coin cost.

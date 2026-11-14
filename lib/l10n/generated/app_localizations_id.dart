@@ -15361,7 +15361,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get photoWallPlanRestyleDetail =>
-      'AI menggambar ulang fotomu dengan gaya ini. Tata letak dan wajah tetap sama.';
+      'AI menggambar ulang fotomu dengan gaya ini dan berusaha menjaga tata letak dan wajah tetap sama.';
 
   @override
   String photoWallRunRestyle(int coins) {

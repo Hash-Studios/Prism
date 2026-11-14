@@ -146,7 +146,7 @@ The app reads exact source dimensions from decoder metadata; its smaller preview
 | `photo_job_failed` | `mode`, `target`, `reason`, `refunded` |
 | `photo_job_result_set` | `mode`, `target`, `platform` |
 | `photo_restyle_started` | `style_id` (the style API value, for example `anime`) |
-| `photo_restyle_finished` | `outcome` (`succeeded` or `failed`) |
+| `photo_restyle_finished` | `outcome` (`succeeded` or `failed`). Sent only for a final outcome. When the result is uncertain (for example, a dropped connection), the event comes when the status lookup resolves the job. |
 
 `mode` can be `extend`, `upscale` or `restyle`.
 

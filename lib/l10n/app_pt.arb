@@ -4140,7 +4140,7 @@
   "@photoWallStyleTitle": {"description": "Header above the Restyle style tiles."},
   "photoWallPlanRestyle": "Mudar para o estilo {style}",
   "@photoWallPlanRestyle": {"description": "Plan card title for Restyle. style is the style name, for example Anime.", "placeholders": {"style": {"type": "String"}}},
-  "photoWallPlanRestyleDetail": "A IA redesenha sua foto neste estilo. Ela mantém a composição e os rostos.",
+  "photoWallPlanRestyleDetail": "A IA redesenha sua foto neste estilo e tenta manter a composição e os rostos.",
   "@photoWallPlanRestyleDetail": {"description": "Plan card detail for Restyle."},
   "photoWallRunRestyle": "{coins, plural, =1{Mudar estilo · 1 moeda} other{Mudar estilo · {coins} moedas}}",
   "@photoWallRunRestyle": {"description": "Main button. Starts a Restyle job and shows its coin cost.", "placeholders": {"coins": {"type": "int"}}},

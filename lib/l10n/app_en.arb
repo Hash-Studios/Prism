@@ -15582,7 +15582,7 @@
   "@photoWallStyleTitle": {"description": "Header above the Restyle style tiles."},
   "photoWallPlanRestyle": "Restyle as {style}",
   "@photoWallPlanRestyle": {"description": "Plan card title for Restyle. style is the style name, for example Anime.", "placeholders": {"style": {"type": "String"}}},
-  "photoWallPlanRestyleDetail": "AI redraws your photo in this style. It keeps the layout and the faces.",
+  "photoWallPlanRestyleDetail": "AI redraws your photo in this style and aims to keep the layout and the faces.",
   "@photoWallPlanRestyleDetail": {"description": "Plan card detail for Restyle."},
   "photoWallRunRestyle": "{coins, plural, =1{Restyle · 1 coin} other{Restyle · {coins} coins}}",
   "@photoWallRunRestyle": {"description": "Main button. Starts a Restyle job and shows its coin cost.", "placeholders": {"coins": {"type": "int"}}},

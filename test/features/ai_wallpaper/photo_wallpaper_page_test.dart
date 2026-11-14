@@ -761,6 +761,29 @@ void main() {
     });
   });
 
+  testWidgets('an uncertain restyle tracks no outcome until recovery resolves it', (tester) async {
+    final _Harness harness = _Harness();
+    harness.onCall = (Map<String, Object?> _) async =>
+        harness.payloads.length == 1 ? <String, Object?>{'state': 'running'} : _successMap;
+    harness.onLookup = (_) async => _successMap;
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    await tester.tap(find.byKey(_runKey));
+    await _waitUntilGone(tester, find.byKey(_runKey));
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>(), isEmpty);
+
+    await tester.tap(find.byKey(_runKey));
+    await _waitUntilGone(tester, find.byKey(_runKey));
+    expect(harness.lookups, 1);
+    expect(find.text('Before'), findsOneWidget);
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>().single.toWireParameters(), <String, Object?>{
+      'outcome': 'succeeded',
+    });
+  });
+
   testWidgets('a photo that already fits can still be restyled', (tester) async {
     await _pumpPage(tester, _Harness(photo: const PhotoSize(1080, 2340)));
     await _pickPhoto(tester);

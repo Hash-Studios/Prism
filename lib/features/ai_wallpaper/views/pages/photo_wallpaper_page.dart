@@ -138,6 +138,13 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
               ? result.refunded
               : result.reason != PhotoJobFailure.network && result.reason != PhotoJobFailure.inProgress));
 
+  /// Only for a final outcome. An uncertain job keeps its request id, and recovery reports it once it resolves.
+  static void _trackRestyleOutcome(PhotoJobState result) => analytics.track(
+    PhotoRestyleFinishedEvent(
+      outcome: result is PhotoJobSucceeded ? PhotoRestyleOutcomeValue.succeeded : PhotoRestyleOutcomeValue.failed,
+    ),
+  );
+
   Future<bool> _clearPending(String userId, String requestId) async {
     try {
       await widget.repository.clearPending(userId: userId, requestId: requestId);
@@ -185,6 +192,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
         PhotoJobRunning() => const PhotoJobFailed(reason: PhotoJobFailure.inProgress, charged: false, refunded: false),
         _ => result,
       };
+      if (pending.mode == PhotoJobMode.restyle && result != null && _isFinal(shown)) _trackRestyleOutcome(shown);
       final bool cleared = (result == null || _isFinal(shown)) && await _clearPending(userId, pending.requestId);
       if (!_isCurrent(revision)) return;
       setState(() {
@@ -371,9 +379,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
         await activity?.finish(imageUrl);
         if (!_isCurrent(revision)) return;
         analytics.track(PhotoJobDoneEvent(mode: mode.analytics, target: job.target.analytics, cost: job.cost));
-        if (style != null) {
-          analytics.track(const PhotoRestyleFinishedEvent(outcome: PhotoRestyleOutcomeValue.succeeded));
-        }
+        if (style != null) _trackRestyleOutcome(result);
       case PhotoJobFailed(:final PhotoJobFailure reason, :final bool refunded):
         await activity?.fail(_errorText(l10n, result));
         if (!_isCurrent(revision)) return;
@@ -385,7 +391,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
             refunded: refunded,
           ),
         );
-        if (style != null) analytics.track(const PhotoRestyleFinishedEvent(outcome: PhotoRestyleOutcomeValue.failed));
+        if (style != null && _isFinal(result)) _trackRestyleOutcome(result);
       case PhotoJobDraft() || PhotoJobRunning():
         await activity?.cancel();
     }

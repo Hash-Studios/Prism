@@ -15676,7 +15676,8 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get photoWallPlanRestyleDetail => 'A IA redesenha sua foto neste estilo. Ela mantém a composição e os rostos.';
+  String get photoWallPlanRestyleDetail =>
+      'A IA redesenha sua foto neste estilo e tenta manter a composição e os rostos.';
 
   @override
   String photoWallRunRestyle(int coins) {
@@ -31759,7 +31760,8 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   }
 
   @override
-  String get photoWallPlanRestyleDetail => 'A IA redesenha sua foto neste estilo. Ela mantém a composição e os rostos.';
+  String get photoWallPlanRestyleDetail =>
+      'A IA redesenha sua foto neste estilo e tenta manter a composição e os rostos.';
 
   @override
   String photoWallRunRestyle(int coins) {

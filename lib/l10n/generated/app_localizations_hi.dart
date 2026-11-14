@@ -15451,7 +15451,7 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get photoWallPlanRestyleDetail =>
-      'AI आपकी फ़ोटो को इस स्टाइल में नए सिरे से बनाता है। लेआउट और चेहरे वही रहते हैं।';
+      'AI आपकी फ़ोटो को इस स्टाइल में नए सिरे से बनाता है और लेआउट व चेहरे वही रखने की कोशिश करता है।';
 
   @override
   String photoWallRunRestyle(int coins) {
