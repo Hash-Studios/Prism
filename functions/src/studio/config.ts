@@ -1,6 +1,7 @@
 import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {db, str} from "../common";
+import {STUDIO_SERIES} from "./series";
 
 /** No day makes more candidates than this, counting manual runs. */
 export const STUDIO_MAX_CANDIDATES_PER_DAY = 30;
@@ -23,6 +24,8 @@ export interface StudioConfig {
   height: number;
   /** Series id -> weight. A series that is not in the map has weight 1. */
   seriesWeights: Record<string, number>;
+  /** Drop week key (`2026-W50`) -> the only series that Drop takes. */
+  dropSeries: Record<string, string>;
   identity: StudioIdentity | null;
   /** Make a desktop companion when a Studio wall is approved. Off unless the doc says true. */
   desktopCompanions: boolean;
@@ -80,6 +83,18 @@ function parseWeights(raw: unknown): Record<string, number> {
   return weights;
 }
 
+/** Keeps entries with an ISO week key and the id of a Studio series, so a typo cannot stop the reserves of a week. */
+export function parseDropSeries(raw: unknown): Record<string, string> {
+  if (typeof raw !== "object" || raw === null) return {};
+  const themes: Record<string, string> = {};
+  for (const [key, seriesId] of Object.entries(raw as Record<string, unknown>)) {
+    if (!/^\d{4}-W\d{2}$/.test(key) || typeof seriesId !== "string") continue;
+    if (STUDIO_SERIES.some((s) => s.id === seriesId)) themes[key] = seriesId;
+    else logger.warn("studio: dropSeries names an unknown series; that week has no theme.", {weekKey: key, seriesId});
+  }
+  return themes;
+}
+
 /** Reads `studioConfig/current`. A missing doc, flag or identity turns generation off. */
 export function parseStudioConfig(data: admin.firestore.DocumentData | undefined): StudioConfig {
   const identity = parseIdentity(data?.identity);
@@ -100,6 +115,7 @@ export function parseStudioConfig(data: admin.firestore.DocumentData | undefined
     width: dimensions.width,
     height: dimensions.height,
     seriesWeights: parseWeights(data?.seriesWeights),
+    dropSeries: parseDropSeries(data?.dropSeries),
     identity,
     desktopCompanions: data?.desktopCompanions === true,
   };

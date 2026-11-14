@@ -274,6 +274,34 @@ test("a series with three walls waiting for a Drop leaves the day's reserve to a
   assert.equal(newWall(notWaiting.store).dropReserved, true);
 });
 
+test("while the next Drop has a theme, only that series reserves, past the usual cap", async (t) => {
+  const nowMs = () => Date.parse("2026-10-19T21:00:00Z");
+  const config = (seriesId: string) => ({"studioConfig/current": {generationEnabled: true, identity: IDENTITY,
+    dropSeries: {"2026-W44": seriesId}}});
+  const waiting = (n: number): Record<string, Doc> => Object.fromEntries(Array.from({length: n}, (_, i) =>
+    [`walls/R${i}`, {origin: "studio", review: false, dropReserved: true, seriesId: "after-dark"}]));
+  const newWall = (store: Map<string, Doc>) => walls(store).filter(([path]) => !path.startsWith("walls/R"))[0][1];
+
+  const other = setup(t, {nowMs, seed: config("paper-worlds")});
+  await other.run();
+  assert.equal(newWall(other.store).dropReserved, undefined);
+  assert.equal(other.store.has("studioDropReserves/2026-10-19"), false);
+
+  const theme = setup(t, {nowMs, seed: {...config("after-dark"), ...waiting(3)}});
+  await theme.run();
+  assert.equal(newWall(theme.store).dropReserved, true);
+  assert.equal(theme.store.get("studioDropReserves/2026-10-19")?.count, 1);
+
+  const full = setup(t, {nowMs, seed: {...config("after-dark"), ...waiting(10)}});
+  await full.run();
+  assert.equal(newWall(full.store).dropReserved, undefined);
+
+  const thisWeek = setup(t, {nowMs, seed: {"studioConfig/current": {generationEnabled: true, identity: IDENTITY,
+    dropSeries: {"2026-W43": "paper-worlds"}}}});
+  await thisWeek.run();
+  assert.equal(newWall(thisWeek.store).dropReserved, true);
+});
+
 test("walls for separate requests in the same series share the waiting cap", async (t) => {
   const nowMs = () => Date.parse("2026-10-19T21:00:00Z");
   const requestWall = (id: string): Record<string, Doc> => ({[`walls/${id}`]: {

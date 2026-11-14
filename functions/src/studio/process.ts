@@ -3,6 +3,7 @@ import {defineSecret} from "firebase-functions/params";
 import {onDocumentCreated} from "firebase-functions/v2/firestore";
 import {logger} from "firebase-functions/v2";
 import {db, int, REGION, str, utcDateString} from "../common";
+import {weekBounds, weekKey} from "../economy";
 import {WALL_REQUESTS} from "../wallRequests";
 import {falKey, type WallDepth, wallDepthFor} from "../wallDepth";
 import {loadStudioConfig, type StudioIdentity} from "./config";
@@ -304,10 +305,13 @@ async function claimCandidate(ref: admin.firestore.DocumentReference, nowMs: num
  * Creates the pending wall, its signature doc and the candidate's pending_review state in one transaction. Null when the
  * candidate is no longer held by this attempt. The first `dropReserves` walls of the UTC day are reserved for the next
  * weekly Drop; `studioDropReserves/{day}` counts them. A series with STUDIO_DROP_SERIES_CAP walls waiting for a Drop
- * reserves nothing, so the fastest series cannot take every reserve.
+ * reserves nothing, so the fastest series cannot take every reserve. When the next Drop has a theme series, only that
+ * series reserves, up to STUDIO_DROP_THEME_CAP waiting walls.
  */
 /** Walls of one series that may wait for a Drop at once. */
 export const STUDIO_DROP_SERIES_CAP = 3;
+/** Walls of the theme series that may wait for its Drop: the most walls a Drop takes. */
+export const STUDIO_DROP_THEME_CAP = 10;
 
 async function publishWall(params: {
   ref: admin.firestore.DocumentReference;
@@ -319,6 +323,8 @@ async function publishWall(params: {
   rng: Rng;
   day: string;
   dropReserves: number;
+  /** The theme series of the next Drop, or null. */
+  dropSeries: string | null;
 }): Promise<string | null | "duplicate" | "request_unavailable"> {
   const {ref, attempts, wall, signature, rng} = params;
   const reservesRef = db.collection("studioDropReserves").doc(params.day);
@@ -351,9 +357,12 @@ async function publishWall(params: {
         signature: str(doc.data()?.signature), wallId: str(doc.data()?.wallId),
       }));
       const reserved = int((await tx.get(reservesRef)).data()?.count);
-      const seriesWaiting = reserved < params.dropReserves ? (await tx.get(db.collection("walls")
+      const seriesId = str(wall.seriesId);
+      const seriesCap = params.dropSeries === seriesId ? STUDIO_DROP_THEME_CAP : STUDIO_DROP_SERIES_CAP;
+      const mayReserve = reserved < params.dropReserves && (params.dropSeries === null || params.dropSeries === seriesId);
+      const seriesWaiting = mayReserve ? (await tx.get(db.collection("walls")
         .where("dropReserved", "==", true).where("review", "==", false)
-        .where("seriesId", "==", str(wall.seriesId)).limit(STUDIO_DROP_SERIES_CAP))).size : 0;
+        .where("seriesId", "==", seriesId).limit(seriesCap))).size : 0;
       const check = duplicateCheck(signature, known);
       if (check.reasons.length > 0) {
         const gates = params.candidateUpdate.gates as admin.firestore.DocumentData;
@@ -367,7 +376,7 @@ async function publishWall(params: {
         return "duplicate";
       }
       const now = admin.firestore.FieldValue.serverTimestamp();
-      const reserve = reserved < params.dropReserves && seriesWaiting < STUDIO_DROP_SERIES_CAP;
+      const reserve = mayReserve && seriesWaiting < seriesCap;
       tx.create(wallRef, {...wall, id: wallId, ...(reserve ? {dropReserved: true} : {})});
       if (reserve) tx.set(reservesRef, {day: params.day, count: reserved + 1, updatedAt: now});
       tx.create(db.collection("studioSignatures").doc(ref.id), {signature, wallId, candidateId: ref.id, createdAt: now});
@@ -502,6 +511,7 @@ export async function processCandidate(runId: string, candidateId: string, deps:
       rng: deps.rng,
       day: utcDateString(new Date(deps.nowMs())),
       dropReserves: isDuo ? 0 : config.dailyDropReserves,
+      dropSeries: config.dropSeries[weekKey(weekBounds(deps.nowMs()).end)] ?? null,
     });
     if (wallId === null) {
       logger.warn("studio: another attempt took this candidate over; not publishing.", {runId, candidateId});

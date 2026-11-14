@@ -184,3 +184,20 @@ test("manual run ids do not collide when calls share a millisecond", async (t) =
   assert.notEqual(first.runId, second.runId);
   assert.equal(store.get("studioDaily/2026-10-12")?.count, 2);
 });
+
+test("a scheduled run leaves out winter-light while it has no seriesWeights entry", async (t) => {
+  const store = setup(t);
+  await createStudioRun({runId: "d20261012", source: "schedule", count: 30, nowMs: NOW, rng: seededRng(1)});
+  assert.equal(candidates(store, "d20261012").length, 30);
+  assert.ok(candidates(store, "d20261012").every(([, c]) => c.seriesId !== "winter-light"));
+});
+
+test("a manual winter-light run plans four winter-light candidates", async (t) => {
+  const store = setup(t);
+  const result = await createStudioRun({runId: "m1760300000010", source: "manual", seriesId: "winter-light", count: 4,
+    nowMs: NOW, rng: seededRng(1)});
+  assert.equal(result.count, 4);
+  const items = candidates(store, "m1760300000010");
+  assert.equal(items.length, 4);
+  assert.ok(items.every(([, c]) => c.seriesId === "winter-light"));
+});
