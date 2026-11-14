@@ -16069,12 +16069,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String coinEventLiveBody(int multiplier, String time) {
-    return 'Os anúncios dão ${multiplier}x moedas até $time.';
+    return 'Anúncios dão ${multiplier}x moedas até $time.';
   }
 
   @override
   String coinEventNextBody(int multiplier, String time) {
-    return 'Começa $time. Os anúncios vão dar ${multiplier}x moedas.';
+    return 'Começa $time. Anúncios vão dar ${multiplier}x moedas.';
   }
 
   @override
