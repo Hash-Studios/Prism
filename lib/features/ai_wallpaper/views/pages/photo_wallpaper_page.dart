@@ -23,9 +23,11 @@ import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/photo_wallpaper_repository.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/photo_job.dart';
 import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_decoded_image.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_pickers.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widgets.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
@@ -60,6 +62,8 @@ class PhotoWallpaperPage extends StatefulWidget {
 class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
   PhotoSource? _source;
   PhotoJobTarget _target = PhotoJobTarget.phone;
+  PhotoTool _tool = PhotoTool.fit;
+  AiStylePreset _style = AiStylePreset.values.first;
   PhotoPlacement? _placement;
   PhotoJobState _state = const PhotoJobDraft();
 
@@ -223,7 +227,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
 
   PhotoSize get _canvas => targetSizeFor(_target, _phone);
 
-  PhotoJobMode? get _mode => _source == null ? null : planPhotoJob(_source!.size, _canvas);
+  PhotoJobMode? get _mode => _source == null ? null : photoJobModeFor(_tool, _source!.size, _canvas);
 
   int get _cost => _mode == null ? 0 : photoJobCost(_mode!, isPro: _isPro);
 
@@ -262,6 +266,16 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
     }
   }
 
+  void _setTool(PhotoTool tool) {
+    if (_running || _checkingPending || _pendingRequestId != null || tool == _tool) return;
+    setState(() {
+      _tool = tool;
+      _recoveredMode = null;
+      _state = const PhotoJobDraft();
+      _replan();
+    });
+  }
+
   void _setTarget(PhotoJobTarget target) {
     if (_running || _checkingPending || _pendingRequestId != null || target == _target) return;
     setState(() {
@@ -289,7 +303,8 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       });
       return;
     }
-    final PhotoJob job = PhotoJob(source: source, mode: mode, target: _target, cost: _cost);
+    final AiStylePreset? style = mode == PhotoJobMode.restyle ? _style : null;
+    final PhotoJob job = PhotoJob(source: source, mode: mode, target: _target, cost: _cost, style: style);
     final String requestId = AnalyticsCorrelation.newId();
     final String userId = _userId;
     final int revision = _sessionRevision;
@@ -318,12 +333,17 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
     }
     if (!_isCurrent(revision)) return;
     analytics.track(PhotoJobStartedEvent(mode: mode.analytics, target: job.target.analytics, cost: job.cost));
+    if (style != null) analytics.track(PhotoRestyleStartedEvent(styleId: style.apiValue));
     final AiGenerationActivity? activity = await LiveActivityChannel.startAiGeneration(
       AiActivityRequest(
-        prompt: mode == PhotoJobMode.extend ? l10n.photoWallWorkingExtend : l10n.photoWallWorkingUpscale,
-        style: _target == PhotoJobTarget.desktop ? l10n.photoWallTargetDesktop : l10n.photoWallTargetPhone,
+        prompt: _workingText(l10n, mode),
+        style: style != null
+            ? aiStyleLabel(l10n, style)
+            : _target == PhotoJobTarget.desktop
+            ? l10n.photoWallTargetDesktop
+            : l10n.photoWallTargetPhone,
         accentArgb: mounted ? Theme.of(context).colorScheme.primary.toARGB32() : 0xFF000000,
-        swatchArgb: const <int>[],
+        swatchArgb: <int>[...?style?.swatchColors.map((Color c) => c.toARGB32())],
         generatingTitle: l10n.aiLiveActivityGenerating,
         readyTitle: l10n.aiLiveActivityReady,
         failedTitle: l10n.aiLiveActivityFailed,
@@ -351,6 +371,8 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
         await activity?.finish(imageUrl);
         if (!_isCurrent(revision)) return;
         analytics.track(PhotoJobDoneEvent(mode: mode.analytics, target: job.target.analytics, cost: job.cost));
+        if (style != null)
+          analytics.track(const PhotoRestyleFinishedEvent(outcome: PhotoRestyleOutcomeValue.succeeded));
       case PhotoJobFailed(:final PhotoJobFailure reason, :final bool refunded):
         await activity?.fail(_errorText(l10n, result));
         if (!_isCurrent(revision)) return;
@@ -362,6 +384,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
             refunded: refunded,
           ),
         );
+        if (style != null) analytics.track(const PhotoRestyleFinishedEvent(outcome: PhotoRestyleOutcomeValue.failed));
       case PhotoJobDraft() || PhotoJobRunning():
         await activity?.cancel();
     }
@@ -373,6 +396,12 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
       if (cleared) _pendingRequestId = null;
     });
   }
+
+  static String _workingText(AppLocalizations l10n, PhotoJobMode? mode) => switch (mode) {
+    PhotoJobMode.upscale => l10n.photoWallWorkingUpscale,
+    PhotoJobMode.restyle => l10n.photoWallWorkingRestyle,
+    PhotoJobMode.extend || null => l10n.photoWallWorkingExtend,
+  };
 
   String _errorText(AppLocalizations l10n, PhotoJobFailed failed) {
     final String message = switch (failed.reason) {
@@ -562,6 +591,16 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
     final int revision = _sessionRevision;
     bool canEdit() => _isCurrent(revision) && _state is PhotoJobDraft && identical(_source, source);
     return <Widget>[
+      PrismSegmented<PhotoTool>(
+        values: PhotoTool.values,
+        selected: _tool,
+        labelOf: (PhotoTool t) => t == PhotoTool.fit ? l10n.photoWallToolFit : l10n.photoWallToolRestyle,
+        iconOf: (PhotoTool t) => t == PhotoTool.fit ? Icons.fit_screen_rounded : Icons.palette_rounded,
+        onChanged: (PhotoTool tool) {
+          if (canEdit()) _setTool(tool);
+        },
+      ),
+      const SizedBox(height: PrismSpace.md),
       Text(l10n.photoWallTargetLabel, style: PrismTextStyles.rowTitle(context)),
       const SizedBox(height: PrismSpace.xs),
       PrismSegmented<PhotoJobTarget>(
@@ -576,7 +615,19 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
         },
       ),
       const SizedBox(height: PrismSpace.md),
-      PhotoPlanCard(mode: _mode, target: _target),
+      if (_tool == PhotoTool.restyle) ...<Widget>[
+        Text(l10n.photoWallStyleTitle, style: PrismTextStyles.rowTitle(context)),
+        const SizedBox(height: PrismSpace.xs),
+        AiStylePicker(
+          selected: _style,
+          padding: EdgeInsets.zero,
+          onSelected: (AiStylePreset style) {
+            if (canEdit()) setState(() => _style = style);
+          },
+        ),
+        const SizedBox(height: PrismSpace.md),
+      ],
+      PhotoPlanCard(mode: _mode, target: _target, styleLabel: aiStyleLabel(l10n, _style)),
       const SizedBox(height: PrismSpace.xl),
       if (placement != null) ...<Widget>[
         Row(
@@ -623,7 +674,7 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
     Semantics(
       liveRegion: true,
       child: Text(
-        _jobMode == PhotoJobMode.upscale ? l10n.photoWallWorkingUpscale : l10n.photoWallWorkingExtend,
+        _workingText(l10n, _jobMode),
         style: PrismTextStyles.sectionTitle(context),
         textAlign: TextAlign.center,
       ),
@@ -730,9 +781,11 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
                 key: const ValueKey<String>('photo-run'),
                 label: short
                     ? l10n.photoWallGetCoins(cost - balance)
-                    : mode == PhotoJobMode.extend
-                    ? l10n.photoWallRunExtend(cost)
-                    : l10n.photoWallRunUpscale(cost),
+                    : switch (mode) {
+                        PhotoJobMode.extend => l10n.photoWallRunExtend(cost),
+                        PhotoJobMode.upscale => l10n.photoWallRunUpscale(cost),
+                        PhotoJobMode.restyle => l10n.photoWallRunRestyle(cost),
+                      },
                 icon: short ? Icons.toll_rounded : Icons.auto_awesome_rounded,
                 expand: true,
                 maxLines: 2,

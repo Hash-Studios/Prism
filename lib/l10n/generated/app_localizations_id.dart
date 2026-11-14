@@ -15278,7 +15278,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get photoWallEntryTitle => 'Dari fotomu';
 
   @override
-  String get photoWallEntrySubtitle => 'Sesuaikan foto apa pun dengan layarmu';
+  String get photoWallEntrySubtitle => 'Sesuaikan foto dengan layarmu, atau ubah gayanya';
 
   @override
   String get photoWallPickPhoto => 'Pilih foto';
@@ -15344,6 +15344,38 @@ class AppLocalizationsId extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get photoWallToolFit => 'Sesuaikan dengan layar';
+
+  @override
+  String get photoWallToolRestyle => 'Ubah gaya';
+
+  @override
+  String get photoWallStyleTitle => 'Gaya';
+
+  @override
+  String photoWallPlanRestyle(String style) {
+    return 'Ubah gaya menjadi $style';
+  }
+
+  @override
+  String get photoWallPlanRestyleDetail =>
+      'AI menggambar ulang fotomu dengan gaya ini. Tata letak dan wajah tetap sama.';
+
+  @override
+  String photoWallRunRestyle(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Ubah gaya · $coins koin',
+      one: 'Ubah gaya · 1 koin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photoWallWorkingRestyle => 'Mengubah gaya fotomu';
 
   @override
   String photoWallGetCoins(int coins) {

@@ -123,7 +123,15 @@ enum AiStylePickSource {
 
 enum PhotoJobModeValue {
   extend,
-  upscale;
+  upscale,
+  restyle;
+
+  String get wireValue => _snakeCase(name);
+}
+
+enum PhotoRestyleOutcomeValue {
+  succeeded,
+  failed;
 
   String get wireValue => _snakeCase(name);
 }

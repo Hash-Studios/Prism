@@ -15462,7 +15462,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get photoWallEntryTitle => 'Aus deinem Foto';
 
   @override
-  String get photoWallEntrySubtitle => 'Passe jedes Foto an deinen Bildschirm an';
+  String get photoWallEntrySubtitle => 'Passe ein Foto an deinen Bildschirm an oder gestalte es um';
 
   @override
   String get photoWallPickPhoto => 'Foto auswählen';
@@ -15528,6 +15528,38 @@ class AppLocalizationsDe extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get photoWallToolFit => 'Auf Bildschirm anpassen';
+
+  @override
+  String get photoWallToolRestyle => 'Umgestalten';
+
+  @override
+  String get photoWallStyleTitle => 'Stil';
+
+  @override
+  String photoWallPlanRestyle(String style) {
+    return 'Im Stil $style umgestalten';
+  }
+
+  @override
+  String get photoWallPlanRestyleDetail =>
+      'KI gestaltet dein Foto in diesem Stil neu. Layout und Gesichter bleiben erhalten.';
+
+  @override
+  String photoWallRunRestyle(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Umgestalten · $coins Coins',
+      one: 'Umgestalten · 1 Coin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photoWallWorkingRestyle => 'Dein Foto wird umgestaltet';
 
   @override
   String photoWallGetCoins(int coins) {

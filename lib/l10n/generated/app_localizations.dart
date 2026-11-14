@@ -24160,7 +24160,7 @@ abstract class AppLocalizations {
   /// Subtitle of the From your photo entry card.
   ///
   /// In en, this message translates to:
-  /// **'Fit any photo to your screen'**
+  /// **'Fit a photo to your screen, or restyle it'**
   String get photoWallEntrySubtitle;
 
   /// Button that opens the photo gallery.
@@ -24258,6 +24258,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{coins, plural, =1{Upscale · 1 coin} other{Upscale · {coins} coins}}'**
   String photoWallRunUpscale(int coins);
+
+  /// Segment on Photo to wallpaper. Extends or upscales the photo to fit the screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Fit to screen'**
+  String get photoWallToolFit;
+
+  /// Segment on Photo to wallpaper. Redraws the photo in an AI style.
+  ///
+  /// In en, this message translates to:
+  /// **'Restyle'**
+  String get photoWallToolRestyle;
+
+  /// Header above the Restyle style tiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Style'**
+  String get photoWallStyleTitle;
+
+  /// Plan card title for Restyle. style is the style name, for example Anime.
+  ///
+  /// In en, this message translates to:
+  /// **'Restyle as {style}'**
+  String photoWallPlanRestyle(String style);
+
+  /// Plan card detail for Restyle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI redraws your photo in this style. It keeps the layout and the faces.'**
+  String get photoWallPlanRestyleDetail;
+
+  /// Main button. Starts a Restyle job and shows its coin cost.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins, plural, =1{Restyle · 1 coin} other{Restyle · {coins} coins}}'**
+  String photoWallRunRestyle(int coins);
+
+  /// Shown while a Restyle job runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Restyling your photo'**
+  String get photoWallWorkingRestyle;
 
   /// Main button when the balance is too low. Opens Rewards.
   ///

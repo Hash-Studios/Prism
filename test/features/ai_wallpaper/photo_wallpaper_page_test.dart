@@ -17,9 +17,11 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/photo_wallpaper_repository.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/photo_job.dart';
 import 'package:Prism/features/ai_wallpaper/views/pages/photo_wallpaper_page.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_decoded_image.dart';
+import 'package:Prism/features/ai_wallpaper/views/widgets/ai_pickers.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widgets.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/bloc/folders_bloc.j.dart';
@@ -193,6 +195,7 @@ Future<void> _pumpPage(
   Brightness brightness = Brightness.light,
   FoldersBloc? folders,
   ValueNotifier<PhotoSize>? screenSize,
+  TextDirection textDirection = TextDirection.ltr,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = devicePixelRatio;
@@ -223,9 +226,12 @@ Future<void> _pumpPage(
         locale: const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        builder: (BuildContext context, Widget? child) => MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
-          child: child!,
+        builder: (BuildContext context, Widget? child) => Directionality(
+          textDirection: textDirection,
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+            child: child!,
+          ),
         ),
         home: screenSize == null
             ? PhotoWallpaperPage(repository: harness.repository, isPro: isPro, screenSize: const PhotoSize(1080, 2340))
@@ -247,6 +253,11 @@ Future<void> _dragFrameUp(WidgetTester tester) async {
   await tester.dragFrom(Offset(frame.center.dx, frame.top + frame.height * 0.2), const Offset(0, -2000));
   await _settle(tester);
 }
+
+/// The style tile is a Semantics node with no visible text, so it is found by its label.
+Finder _styleTile(AiStylePreset style) => find.byWidgetPredicate(
+  (Widget widget) => widget is Semantics && widget.properties.label == 'Style: ${style.label}',
+);
 
 Future<void> _pickPhoto(WidgetTester tester) async {
   // At 2x text the empty state list is taller than the screen. Scroll until the button is on screen.
@@ -671,6 +682,138 @@ void main() {
     expect(compare.hasAction(SemanticsAction.increase), isTrue);
     expect(compare.hasAction(SemanticsAction.decrease), isTrue);
     handle.dispose();
+  });
+
+  testWidgets('Restyle switches the plan, shows the style row and prices the run button', (tester) async {
+    await _pumpPage(tester, _Harness());
+    await _pickPhoto(tester);
+    expect(find.text('Extend · 75 coins'), findsOneWidget);
+
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    expect(find.text('Style'), findsOneWidget);
+    expect(find.byType(AiStylePicker), findsOneWidget);
+    expect(_styleTile(AiStylePreset.anime), findsOneWidget);
+    expect(find.text('Restyle as Anime'), findsOneWidget);
+    expect(find.text('Restyle · 75 coins'), findsOneWidget);
+    expect(find.byKey(_placementKey), findsNothing);
+
+    await tester.tap(find.text('Fit to screen'));
+    await _settle(tester);
+
+    expect(find.text('Extend · 75 coins'), findsOneWidget);
+    expect(find.byKey(_placementKey), findsOneWidget);
+  });
+
+  testWidgets('picking a style sends its styleId and tracks restyle start and finish', (tester) async {
+    final _Harness harness = _Harness();
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    await tester.ensureVisible(_styleTile(AiStylePreset.watercolor));
+    await tester.pump();
+    await tester.tap(_styleTile(AiStylePreset.watercolor));
+    await _settle(tester);
+    expect(find.text('Restyle as Watercolor'), findsOneWidget);
+
+    await tester.tap(find.byKey(_runKey));
+    await _waitUntilGone(tester, find.byKey(_runKey));
+
+    expect(harness.payloads, hasLength(1));
+    expect(harness.payloads.single['mode'], 'restyle');
+    expect(harness.payloads.single['styleId'], 'watercolor');
+    expect(harness.payloads.single.containsKey('placement'), isFalse);
+    expect(harness.analytics.events.whereType<PhotoJobStartedEvent>().single.toWireParameters()['mode'], 'restyle');
+    expect(harness.analytics.events.whereType<PhotoRestyleStartedEvent>().single.toWireParameters(), <String, Object?>{
+      'style_id': 'watercolor',
+    });
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>().single.toWireParameters(), <String, Object?>{
+      'outcome': 'succeeded',
+    });
+  });
+
+  testWidgets('a failed restyle tracks the failed outcome', (tester) async {
+    final _Harness harness = _Harness()
+      ..onCall = (Map<String, Object?> _) async => <String, Object?>{
+        'state': 'failed',
+        'reason': 'provider_error',
+        'refunded': true,
+        'cost': 75,
+      };
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+
+    expect(harness.analytics.events.whereType<PhotoRestyleFinishedEvent>().single.toWireParameters(), <String, Object?>{
+      'outcome': 'failed',
+    });
+  });
+
+  testWidgets('a photo that already fits can still be restyled', (tester) async {
+    await _pumpPage(tester, _Harness(photo: const PhotoSize(1080, 2340)));
+    await _pickPhoto(tester);
+    expect(find.byKey(_runKey), findsNothing);
+
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    expect(find.text('Restyle · 75 coins'), findsOneWidget);
+    expect(find.byKey(_runKey), findsOneWidget);
+  });
+
+  testWidgets('Pro pays half for Restyle', (tester) async {
+    await _pumpPage(tester, _Harness(), isPro: true);
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    expect(find.text('Restyle · 38 coins'), findsOneWidget);
+  });
+
+  testWidgets('a short balance turns the Restyle button into Get coins', (tester) async {
+    await _pumpPage(tester, _Harness(), balance: 20);
+    await _pickPhoto(tester);
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    expect(find.text('Get coins · need 55'), findsOneWidget);
+    expect(find.text('Restyle · 75 coins'), findsNothing);
+  });
+
+  testWidgets('Restyle lays out without overflow at large text on a small screen', (tester) async {
+    await _pumpPage(tester, _Harness(), size: const Size(750, 1334), devicePixelRatio: 2, textScale: 2);
+    await _pickPhoto(tester);
+    await tester.ensureVisible(find.text('Restyle'));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(_runKey), findsOneWidget);
+  });
+
+  testWidgets('Restyle works right to left', (tester) async {
+    await _pumpPage(tester, _Harness(), textDirection: TextDirection.rtl);
+    await _pickPhoto(tester);
+    expect(Directionality.of(tester.element(find.byType(PhotoWallpaperPage))), TextDirection.rtl);
+
+    await tester.tap(find.text('Restyle'));
+    await _settle(tester);
+    await tester.ensureVisible(_styleTile(AiStylePreset.watercolor));
+    await tester.pump();
+    await tester.tap(_styleTile(AiStylePreset.watercolor));
+    await _settle(tester);
+
+    expect(find.text('Restyle as Watercolor'), findsOneWidget);
+    expect(find.text('Restyle · 75 coins'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   group('recovery after the app closed during a job', () {

@@ -15211,7 +15211,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get photoWallEntryTitle => 'From your photo';
 
   @override
-  String get photoWallEntrySubtitle => 'Fit any photo to your screen';
+  String get photoWallEntrySubtitle => 'Fit a photo to your screen, or restyle it';
 
   @override
   String get photoWallPickPhoto => 'Choose a photo';
@@ -15277,6 +15277,37 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get photoWallToolFit => 'Fit to screen';
+
+  @override
+  String get photoWallToolRestyle => 'Restyle';
+
+  @override
+  String get photoWallStyleTitle => 'Style';
+
+  @override
+  String photoWallPlanRestyle(String style) {
+    return 'Restyle as $style';
+  }
+
+  @override
+  String get photoWallPlanRestyleDetail => 'AI redraws your photo in this style. It keeps the layout and the faces.';
+
+  @override
+  String photoWallRunRestyle(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Restyle · $coins coins',
+      one: 'Restyle · 1 coin',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photoWallWorkingRestyle => 'Restyling your photo';
 
   @override
   String photoWallGetCoins(int coins) {

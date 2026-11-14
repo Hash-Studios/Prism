@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:Prism/core/analytics/events/analytics_enums.dart';
 import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
 
 /// What AI does to the photo.
 enum PhotoJobMode {
@@ -10,7 +11,10 @@ enum PhotoJobMode {
   extend('fal-ai/bria/expand'),
 
   /// Adds detail so a small photo is sharp at the target size.
-  upscale('fal-ai/seedvr/upscale/image');
+  upscale('fal-ai/seedvr/upscale/image'),
+
+  /// Redraws the photo in an AI style at the target size.
+  restyle('fal-ai/bytedance/seedream/v4/edit');
 
   const PhotoJobMode(this.model);
 
@@ -20,8 +24,12 @@ enum PhotoJobMode {
   PhotoJobModeValue get analytics => switch (this) {
     PhotoJobMode.extend => PhotoJobModeValue.extend,
     PhotoJobMode.upscale => PhotoJobModeValue.upscale,
+    PhotoJobMode.restyle => PhotoJobModeValue.restyle,
   };
 }
+
+/// What the user asks for. Fit lets the planner pick Extend or Upscale; Restyle always runs.
+enum PhotoTool { fit, restyle }
 
 enum PhotoJobTarget {
   phone,
@@ -81,10 +89,18 @@ PhotoJobMode? planPhotoJob(PhotoSize photo, PhotoSize target) {
   return photo.shortSide < target.shortSide ? PhotoJobMode.upscale : null;
 }
 
+/// The job for [tool]. Null means Fit has nothing to do because the photo already fits.
+PhotoJobMode? photoJobModeFor(PhotoTool tool, PhotoSize photo, PhotoSize target) =>
+    tool == PhotoTool.restyle ? PhotoJobMode.restyle : planPhotoJob(photo, target);
+
 /// Coins for one job. Pro pays half, rounded up, while the economy config gives Pro the discount.
 int photoJobCost(PhotoJobMode mode, {required bool isPro, EconomyConfig? config}) {
   final EconomyConfig economy = config ?? EconomyConfig.current;
-  final int base = mode == PhotoJobMode.extend ? economy.spend.photoExtend : economy.spend.photoUpscale;
+  final int base = switch (mode) {
+    PhotoJobMode.extend => economy.spend.photoExtend,
+    PhotoJobMode.upscale => economy.spend.photoUpscale,
+    PhotoJobMode.restyle => economy.spend.photoRestyle,
+  };
   return proPrice(base, isPro && economy.proDiscountActions.contains('photoWallpaper'));
 }
 
@@ -243,26 +259,28 @@ class PhotoJobFailed extends PhotoJobState {
   final int? cost;
 }
 
-/// One photo to wallpaper job.
+/// One photo to wallpaper job. A Restyle job has a [style]; the other modes have none.
 class PhotoJob {
   const PhotoJob({
     required this.source,
     required this.mode,
     required this.target,
     required this.cost,
+    this.style,
     this.state = const PhotoJobDraft(),
-  });
+  }) : assert((mode == PhotoJobMode.restyle) == (style != null), 'Only Restyle takes a style.');
 
   final PhotoSource source;
   final PhotoJobMode mode;
   final PhotoJobTarget target;
   final int cost;
+  final AiStylePreset? style;
   final PhotoJobState state;
 
   String get model => mode.model;
 
   PhotoJob withState(PhotoJobState next) =>
-      PhotoJob(source: source, mode: mode, target: target, cost: cost, state: next);
+      PhotoJob(source: source, mode: mode, target: target, cost: cost, style: style, state: next);
 }
 
 /// The job that was running when the app last ran. Kept on the device, so a result the user paid for is not lost when

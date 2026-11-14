@@ -15368,7 +15368,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get photoWallEntryTitle => 'आपकी फ़ोटो से';
 
   @override
-  String get photoWallEntrySubtitle => 'कोई भी फ़ोटो अपनी स्क्रीन के हिसाब से सेट करें';
+  String get photoWallEntrySubtitle => 'कोई भी फ़ोटो अपनी स्क्रीन के हिसाब से सेट करें या उसका स्टाइल बदलें';
 
   @override
   String get photoWallPickPhoto => 'कोई फ़ोटो चुनें';
@@ -15434,6 +15434,38 @@ class AppLocalizationsHi extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get photoWallToolFit => 'स्क्रीन पर फ़िट करें';
+
+  @override
+  String get photoWallToolRestyle => 'रीस्टाइल करें';
+
+  @override
+  String get photoWallStyleTitle => 'स्टाइल';
+
+  @override
+  String photoWallPlanRestyle(String style) {
+    return '$style स्टाइल में रीस्टाइल करें';
+  }
+
+  @override
+  String get photoWallPlanRestyleDetail =>
+      'AI आपकी फ़ोटो को इस स्टाइल में नए सिरे से बनाता है। लेआउट और चेहरे वही रहते हैं।';
+
+  @override
+  String photoWallRunRestyle(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'रीस्टाइल · $coins कॉइन',
+      one: 'रीस्टाइल · 1 कॉइन',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get photoWallWorkingRestyle => 'आपकी फ़ोटो रीस्टाइल की जा रही है';
 
   @override
   String photoWallGetCoins(int coins) {
