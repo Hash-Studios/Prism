@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:Prism/core/coins/coin_events.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
@@ -16,6 +19,7 @@ import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/navigation/views/widgets/upload_bottom_panel.dart';
 import 'package:Prism/features/promo_codes/domain/entities/promo_code.dart';
 import 'package:Prism/features/promo_codes/views/redeem_code_sheet.dart';
+import 'package:Prism/features/rewards/views/widgets/coin_event_banner.dart';
 import 'package:Prism/features/spin_wheel/domain/wheel_prizes.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
@@ -33,6 +37,22 @@ class RewardsEarnSection extends StatefulWidget {
 
 class _RewardsEarnSectionState extends State<RewardsEarnSection> {
   bool _loadingReward = false;
+  DateTime _now = DateTime.now();
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() => _now = DateTime.now());
+    });
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
 
   Future<void> _onWatchAdTapped() async {
     if (_loadingReward) return;
@@ -67,7 +87,7 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
   Widget build(BuildContext context) {
     final coins = CoinsService.instance;
     return ListenableBuilder(
-      listenable: Listenable.merge([coins.earnFlagsNotifier, coins.adsRemainingNotifier]),
+      listenable: Listenable.merge([coins.earnFlagsNotifier, coins.adsRemainingNotifier, EconomyConfig.notifier]),
       builder: (context, _) => _buildRows(context, coins.earnFlagsNotifier.value),
     );
   }
@@ -75,6 +95,7 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
   Widget _buildRows(BuildContext context, CoinEarnFlags flags) {
     final bool isPro = app_state.prismUser.premium;
     final String proMultiplier = '${EconomyConfig.current.award.proStreakMultiplier}';
+    final CoinEventWindow? liveEvent = EconomyConfig.current.coinEvents.liveAt(_now);
     final List<Widget> rows = <Widget>[
       if (!DailyMomentConfig.enabled)
         _EarnRow(
@@ -107,6 +128,8 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
             : context.l10n.economyWatchAdForCoins(CoinsService.instance.adsRewardNow),
         reward: context.l10n.economyCoinReward(CoinsService.instance.adsRewardNow),
         rewardLabel: context.l10n.economyCoinsEarned(CoinsService.instance.adsRewardNow),
+        badge: liveEvent == null ? null : context.l10n.coinEventAdBadge(liveEvent.multiplier),
+        badgeLabel: liveEvent == null ? null : context.l10n.coinEventAdBadgeLabel(liveEvent.multiplier),
         loading: _loadingReward,
         onTap: CoinsService.instance.adsRemainingToday == 0 ? null : _onWatchAdTapped,
       ),
@@ -150,6 +173,7 @@ class _RewardsEarnSectionState extends State<RewardsEarnSection> {
           title: context.l10n.economyEarnCoins,
           padding: const EdgeInsets.only(top: PrismSpace.xxl, bottom: PrismSpace.sm),
         ),
+        CoinEventBanner(schedule: EconomyConfig.current.coinEvents, now: _now),
         PrismGroup(children: rows),
       ],
     );
@@ -166,6 +190,8 @@ class _EarnRow extends StatelessWidget {
     this.onTap,
     this.loading = false,
     this.done = false,
+    this.badge,
+    this.badgeLabel,
   });
 
   final IconData icon;
@@ -181,6 +207,12 @@ class _EarnRow extends StatelessWidget {
   final bool loading;
   final bool done;
 
+  /// Short event badge on the reward pill, like "2x". Null when no event is live.
+  final String? badge;
+
+  /// What a screen reader says for [badge].
+  final String? badgeLabel;
+
   @override
   Widget build(BuildContext context) {
     final bool tappable = onTap != null && !done && !loading;
@@ -192,7 +224,13 @@ class _EarnRow extends StatelessWidget {
     } else if (reward == null) {
       trailing = const SizedBox.shrink(key: ValueKey<String>('no-reward'));
     } else {
-      trailing = _RewardPill(key: const ValueKey<String>('reward'), reward: reward!, label: rewardLabel);
+      trailing = _RewardPill(
+        key: const ValueKey<String>('reward'),
+        reward: reward!,
+        label: rewardLabel,
+        badge: badge,
+        badgeLabel: badgeLabel,
+      );
     }
     return LayoutBuilder(
       builder: (context, constraints) => PrismRow(
@@ -214,21 +252,36 @@ class _EarnRow extends StatelessWidget {
 }
 
 class _RewardPill extends StatelessWidget {
-  const _RewardPill({super.key, required this.reward, this.label});
+  const _RewardPill({super.key, required this.reward, this.label, this.badge, this.badgeLabel});
 
   final String reward;
   final String? label;
+  final String? badge;
+  final String? badgeLabel;
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final String? eventBadge = badge;
     return Semantics(
-      label: label ?? reward,
+      label: badgeLabel == null ? (label ?? reward) : '$badgeLabel, ${label ?? reward}',
       excludeSemantics: true,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: PrismSpace.xxs),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
+            if (eventBadge != null) ...<Widget>[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xs, vertical: 2),
+                decoration: BoxDecoration(color: cs.primary, borderRadius: BorderRadius.circular(PrismRadius.pill)),
+                child: Text(
+                  eventBadge,
+                  style: PrismTextStyles.caption(context).copyWith(color: cs.onPrimary, fontWeight: FontWeight.w700),
+                ),
+              ),
+              const SizedBox(width: PrismSpace.xxs),
+            ],
             Flexible(
               child: Text(reward, style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: FontWeight.w700)),
             ),
