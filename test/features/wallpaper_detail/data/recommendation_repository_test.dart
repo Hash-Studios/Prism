@@ -40,7 +40,9 @@ class _Firestore extends Fake implements FirestoreClient {
     queryEntered?.complete();
     await queryGate?.future;
     if (fail) throw StateError('offline');
-    return rows.map((row) => map(row, 'doc-${row['id']}')).toList();
+    // Like the real client: start after the cursor document when it exists, else from the top.
+    final after = rows.indexWhere((row) => 'doc-${row['id']}' == spec.startAfterDocId);
+    return rows.skip(after + 1).take(spec.limit ?? rows.length).map((row) => map(row, 'doc-${row['id']}')).toList();
   }
 }
 
@@ -55,12 +57,13 @@ FeedItemEntity _item(
   WallpaperSource source = WallpaperSource.prism,
   List<String>? tags,
   String category = 'Nature',
+  String? documentId,
 }) {
   final core = WallpaperCore(id: id, source: source, fullUrl: '', thumbnailUrl: '', category: category);
   return switch (source) {
     WallpaperSource.prism => PrismFeedItem(
       id: id,
-      wallpaper: PrismWallpaper(core: core, tags: tags),
+      wallpaper: PrismWallpaper(core: core, tags: tags, firestoreDocumentId: documentId),
     ),
     WallpaperSource.wallhaven => WallhavenFeedItem(
       id: id,
@@ -124,6 +127,29 @@ void main() {
       ('category', 'Nature'),
       ('review', true),
     ]);
+  });
+
+  test('each Prism wall gets its own neighbours, then the newer walls, and stops at itself', () async {
+    firestore.rows = [
+      for (var i = 0; i < 30; i++) {'id': 'w$i', 'category': 'Nature', 'review': true},
+    ];
+    Future<List<String>> visit(String id) async {
+      final ids = <String>[];
+      RecommendationCursor? cursor;
+      do {
+        final page = await repository.load(
+          current: _item(id, documentId: 'doc-$id'),
+          sessionKey: id,
+          cursor: cursor,
+        );
+        ids.addAll(page.items.map((item) => item.id));
+        cursor = page.nextCursor;
+      } while (cursor != null);
+      return ids;
+    }
+
+    expect(await visit('w10'), [for (var i = 11; i < 30; i++) 'w$i', for (var i = 0; i < 10; i++) 'w$i']);
+    expect((await visit('w20')).take(3), ['w21', 'w22', 'w23']);
   });
 
   test('AI recommendations hide walls with metadata even when the legacy flag is absent', () async {
