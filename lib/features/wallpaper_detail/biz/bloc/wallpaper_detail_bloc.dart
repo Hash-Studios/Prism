@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/error/failure.dart';
+import 'package:Prism/core/monitoring/field_diagnostics.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/view_stats/view_stats_repository.dart';
 import 'package:Prism/core/wallpaper/original_access_service.dart';
@@ -245,17 +245,15 @@ class WallpaperDetailBloc extends Bloc<WallpaperDetailEvent, WallpaperDetailStat
     );
     final failure = result.failure;
     if (failure != null) {
-      unawaited(
-        analytics.track(
-          WallOpenFailedEvent(
-            entry: event.origin.entry,
-            homeTab: event.origin.homeTab,
-            source: event.source.name,
-            wallId: event.origin.entry == WallOpenEntryValue.link ? null : event.wallId,
-            idKind: idKind,
-            error: _openError(failure),
-            fallbackRan: documentIdFallbackRan,
-          ),
+      FieldDiagnostics.track(
+        WallOpenFailedEvent(
+          entry: event.origin.entry,
+          homeTab: event.origin.homeTab,
+          source: event.source.name,
+          wallId: event.origin.entry == WallOpenEntryValue.link ? null : event.wallId,
+          idKind: idKind,
+          error: _openError(failure),
+          fallbackRan: documentIdFallbackRan,
         ),
       );
       if (!_closing) {
