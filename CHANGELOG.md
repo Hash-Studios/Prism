@@ -1,5 +1,11 @@
 ## Changelog
 
+### v3.30.0
+- Followers and Following lists now show everyone, not only the newest 500. More people load as you scroll
+- People you blocked do not show in those lists or in their search
+- Pull down to refresh a Followers or Following list
+- Security and stability fixes
+
 ### v3.29.0
 - Filter search by live walls, desktop sets and light and dark pairs. Discover has a Live walls row
 - The weekly Drop mixes walls from different series
