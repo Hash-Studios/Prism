@@ -502,7 +502,7 @@ class CoinsService with WidgetsBindingObserver {
   int adsRewardAt(DateTime now) => _adsBaseRewardAt(now) * EconomyConfig.current.coinEvents.multiplierAt(now);
 
   int _adsBaseRewardAt(DateTime now) {
-    final int? remaining = adsRemainingToday;
+    final int? remaining = _adsRemainingAt(now);
     if (remaining != null) {
       return remaining == EconomyConfig.current.award.rewardedAdMaxPerDay
           ? CoinPolicy.rewardedAdFirstOfDay
@@ -1411,8 +1411,12 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   /// Rewarded ads left today, as the last `rewardedAd` reply told. Null when unknown or from an earlier UTC day.
-  int? get adsRemainingToday =>
-      _canMutateCoins() && _adsRemainingOwner == app_state.prismUser.id && _adsRemainingDay == _utcDayKey()
+  int? get adsRemainingToday => _adsRemainingAt(DateTime.now());
+
+  int? _adsRemainingAt(DateTime now) =>
+      _canMutateCoins() &&
+          _adsRemainingOwner == app_state.prismUser.id &&
+          _adsRemainingDay == _offsetDayKey(now.toUtc(), 0)
       ? adsRemainingNotifier.value
       : null;
 
