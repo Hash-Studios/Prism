@@ -107,6 +107,17 @@ Uri? safeProfileLinkUri(String raw) {
   return null;
 }
 
+/// Link types whose host must match exactly, because a short or legacy domain cannot be matched as text.
+const Map<ProfileLinkType, Set<String>> _exactHosts = <ProfileLinkType, Set<String>>{
+  ProfileLinkType.buyMeACoffee: <String>{
+    'buymeacoffee.com',
+    'www.buymeacoffee.com',
+    'buymeacoff.ee',
+    'www.buymeacoff.ee',
+  },
+  ProfileLinkType.telegram: <String>{'t.me', 'www.t.me', 'telegram.me', 'www.telegram.me', 'telegram.dog'},
+};
+
 /// The value to store for a profile link of [kind], or null when [raw] is not a valid link for it.
 /// Email links stay a bare address so builds that already shipped can still open them.
 String? sanitizeProfileLink(ProfileLinkKind kind, String raw) {
@@ -118,13 +129,8 @@ String? sanitizeProfileLink(ProfileLinkKind kind, String raw) {
   final Uri? uri = safeProfileLinkUri(value);
   if (uri == null) return null;
   if (uri.scheme == 'mailto' && kind.name != customLinkName) return null;
-  if (kind.type == ProfileLinkType.buyMeACoffee) {
-    const Set<String> hosts = <String>{
-      'buymeacoffee.com',
-      'www.buymeacoffee.com',
-      'buymeacoff.ee',
-      'www.buymeacoff.ee',
-    };
+  final Set<String>? hosts = _exactHosts[kind.type];
+  if (hosts != null) {
     if (!hosts.contains(uri.host.toLowerCase())) return null;
   } else if (!value.toLowerCase().contains(kind.validator.toLowerCase())) {
     return null;

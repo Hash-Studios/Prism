@@ -83,6 +83,27 @@ void main() {
       }
     });
 
+    test('accepts every Telegram host', () {
+      for (final String host in <String>['t.me', 'telegram.me', 'telegram.dog', 'www.t.me', 'www.telegram.me']) {
+        for (final String scheme in <String>['https', 'http']) {
+          final String url = '$scheme://$host/prism';
+          expect(sanitizeProfileLink(_kind('telegram'), url), url, reason: url);
+        }
+      }
+      expect(sanitizeProfileLink(_kind('telegram'), 'telegram.me/prism'), 'https://telegram.me/prism');
+    });
+
+    test('Telegram matches the host rather than text elsewhere in the URL', () {
+      for (final String raw in <String>[
+        'https://example.com/t.me/prism',
+        'https://chat.me/prism',
+        'https://t.me.example.com/prism',
+        'https://example.com/prism?ref=telegram.me',
+      ]) {
+        expect(sanitizeProfileLink(_kind('telegram'), raw), isNull, reason: raw);
+      }
+    });
+
     test('empty text is not a link', () {
       expect(sanitizeProfileLink(_kind('custom link'), '   '), isNull);
     });
