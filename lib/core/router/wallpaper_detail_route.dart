@@ -17,7 +17,7 @@ Route<T> wallpaperDetailRouteBuilder<T>(BuildContext context, Widget child, Auto
     );
 
 /// How long the card takes to grow out of its tile, and to shrink back. Long enough to read the growth.
-const Duration wallpaperDetailZoomDuration = Duration(milliseconds: 260);
+const Duration wallpaperDetailZoomDuration = Duration(milliseconds: 300);
 
 /// The card Hero flies, and the page grows, on this curve. Sharing it keeps the page under the picture. It is the
 /// Pinterest closeup's shape (fast start, long settle), stretched over [wallpaperDetailZoomDuration].
@@ -25,6 +25,10 @@ const Curve _zoomCurve = Cubic(0.45, 0.3, 0.1, 1);
 
 /// Going back, the card Hero flies home on the flipped curve, so the page shrinks with the same timing it grew with.
 const Curve _zoomOutCurve = FlippedCurve(_zoomCurve);
+
+/// Over a zoom the page fades in on this part of the card's travel, so at first only the picture grows out of the tile.
+/// Going back it fades out on the same part, before the picture lands.
+const Interval _zoomPageFade = Interval(0.4, 1);
 
 /// How dark the page behind gets while the detail grows over it.
 const double _zoomDim = 0.3;
@@ -305,7 +309,7 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
 }
 
 /// Fades the page in or, when the card Hero flies between a tile and the card, grows the page out of that tile or
-/// shrinks it back. The page scales and moves with the flight's left edge, top edge and width, so its card sits under
+/// shrinks it back, fading it in late in the growth (and out early in the shrink) so the picture leads. The page scales and moves with the flight's left edge, top edge and width, so its card sits under
 /// the flying picture, and shows through a rounded window between the tile and the screen while the page behind dims.
 /// Without a zoom every transform here is the identity.
 class _DetailTransition extends AnimatedWidget {
@@ -354,9 +358,12 @@ class _DetailTransition extends AnimatedWidget {
                 child: Transform.scale(
                   scale: scale,
                   alignment: Alignment.topLeft,
-                  child: PrismEased(
-                    animation: fade,
-                    builder: (eased) => FadeTransition(opacity: eased, child: child),
+                  child: Opacity(
+                    opacity: zoom == null ? 1 : _zoomPageFade.transform(t),
+                    child: PrismEased(
+                      animation: fade,
+                      builder: (eased) => FadeTransition(opacity: eased, child: child),
+                    ),
                   ),
                 ),
               ),

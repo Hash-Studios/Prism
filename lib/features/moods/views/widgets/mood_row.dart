@@ -34,7 +34,6 @@ class _MoodRowState extends State<MoodRow> {
   static const int _loadLimit = 30;
   static const int _stripLimit = 10;
   int get _minWalls => widget.list.mood == WallMood.duoReveal ? 1 : 3;
-  static const double _visibleCards = 2.4;
 
   late final MoodWallsCubit _cubit;
   late WallpaperImpressionSession _impressionSession;
@@ -101,7 +100,10 @@ class _MoodRowState extends State<MoodRow> {
   }
 
   Widget _section(BuildContext context, Widget strip) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[_header(context), strip]);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: PrismSpace.md),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[_header(context), strip]),
+    );
   }
 
   Widget _header(BuildContext context) {
@@ -153,8 +155,13 @@ class _MoodRowState extends State<MoodRow> {
     );
   }
 
-  double _cardWidth(BuildContext context) =>
-      (MediaQuery.sizeOf(context).width - PrismFeedLayout.gridSpacing * 3) / _visibleCards;
+  /// One For you grid column, so the strip's cards line up with the tiles above and below. The next card peeks in
+  /// the page margin.
+  double _cardWidth(BuildContext context) {
+    final int columns = PrismWallGrid.columns(context);
+    final double content = MediaQuery.sizeOf(context).width - PrismWallGrid.margin * 2;
+    return (content - PrismWallGrid.spacing * (columns - 1)) / columns;
+  }
 
   Widget _strip(BuildContext context, {required int itemCount, required IndexedWidgetBuilder itemBuilder}) {
     final double cardHeight = _cardWidth(context) / PrismFeedLayout.gridTileAspectRatio;
@@ -187,7 +194,8 @@ class _MoodRowState extends State<MoodRow> {
       for (final PrismWallpaper wall in walls.take(_stripLimit)) PrismFeedItem(id: wall.id, wallpaper: wall),
     ];
     final double cardWidth = _cardWidth(context);
-    final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: 2);
+    final int columns = PrismWallGrid.columns(context);
+    final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns);
     return _strip(
       context,
       itemCount: math.min(_stripLimit, walls.length),
@@ -197,7 +205,7 @@ class _MoodRowState extends State<MoodRow> {
         child: WallpaperTile(
           item: items[index],
           index: index,
-          crossAxisCount: 2,
+          crossAxisCount: columns,
           memCacheHeight: decodeHeight,
           impressionSession: _impressionSession,
           sourceContext: 'home_mood_row',

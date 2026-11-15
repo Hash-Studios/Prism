@@ -169,8 +169,10 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
       if (state.error != null && !state.failed) toasts.error(_error(state.error));
       final challenge = state.detail?.challenge;
       _closeTimer?.cancel();
-      if (challenge != null && challenge.isOpenAt(DateTime.now().toUtc())) {
-        _closeTimer = Timer(challenge.closesAt.difference(DateTime.now().toUtc()), () {
+      final now = DateTime.now().toUtc();
+      final deadline = challenge != null && challenge.isOpenAt(now) ? challenge : state.current;
+      if (deadline != null && deadline.isOpenAt(now)) {
+        _closeTimer = Timer(deadline.closesAt.difference(now), () {
           if (mounted) unawaited(_cubit.load(widget.challengeId));
         });
       }
@@ -209,6 +211,7 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
             final challenge = detail.challenge;
             final open = challenge.isOpenAt(DateTime.now().toUtc());
             final l10n = context.l10n;
+            final pastRows = state.past.where((row) => row.id != challenge.id).toList(growable: false);
             return PrismRefresh(
               onRefresh: () => _cubit.load(widget.challengeId),
               child: ListView(
@@ -267,28 +270,44 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
                     _entry(winner, [winner], 0, false),
                   ],
                   const SizedBox(height: PrismSpace.sm),
-                  PrismSegmented<ChallengeSort>(
-                    values: const [ChallengeSort.top, ChallengeSort.newest],
-                    selected: state.sort,
-                    labelOf: (sort) => sort == ChallengeSort.top ? l10n.challengeTop : l10n.challengeNew,
-                    onChanged: (sort) => _cubit.load(widget.challengeId, sort: sort),
-                  ),
-                  const SizedBox(height: PrismSpace.md),
-                  if (detail.entries.isEmpty) ...[
-                    if (_lastWeek(state.past, challenge.id) case final last?)
-                      _LastWeek(
-                        key: ValueKey(last.id),
-                        challenge: last,
-                        load: () => _cubit.topEntries(last.id),
-                        onOpen: _open,
-                      ),
-                    SizedBox(
-                      height: 240,
-                      child: GlintState(kind: GlintStateKind.empty, title: l10n.challengeEmpty),
+                  if (detail.entries.isNotEmpty) ...[
+                    PrismSegmented<ChallengeSort>(
+                      values: const [ChallengeSort.top, ChallengeSort.newest],
+                      selected: state.sort,
+                      labelOf: (sort) => sort == ChallengeSort.top ? l10n.challengeTop : l10n.challengeNew,
+                      onChanged: (sort) => _cubit.load(widget.challengeId, sort: sort),
                     ),
+                    const SizedBox(height: PrismSpace.md),
+                  ],
+                  if (detail.entries.isEmpty) ...[
+                    // An ended challenge with no entries points to the open one, so the page is not a dead end.
+                    if (!open && state.current != null)
+                      PrismGroup(
+                        children: [
+                          PrismRow(
+                            icon: Icons.emoji_events_rounded,
+                            title: state.current!.theme,
+                            subtitle: l10n.challengeUpload,
+                            onTap: () => context.router.push(WeeklyChallengeRoute(challengeId: state.current!.id)),
+                          ),
+                        ],
+                      )
+                    else ...[
+                      if (_lastWeek(state.past, challenge.id) case final last?)
+                        _LastWeek(
+                          key: ValueKey(last.id),
+                          challenge: last,
+                          load: () => _cubit.topEntries(last.id),
+                          onOpen: _open,
+                        ),
+                      SizedBox(
+                        height: 240,
+                        child: GlintState(kind: GlintStateKind.empty, title: l10n.challengeEmpty),
+                      ),
+                    ],
                   ],
                   for (final (i, entry) in detail.entries.indexed) _entry(entry, detail.entries, i, open),
-                  if (state.past.isNotEmpty) ...[
+                  if (pastRows.isNotEmpty) ...[
                     const SizedBox(height: PrismSpace.xl),
                     PrismSectionHeader(
                       title: l10n.challengePast,
@@ -296,7 +315,7 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
                     ),
                     PrismGroup(
                       children: [
-                        for (final past in state.past)
+                        for (final past in pastRows)
                           PrismRow(
                             title: past.theme,
                             subtitle: past.winner == null

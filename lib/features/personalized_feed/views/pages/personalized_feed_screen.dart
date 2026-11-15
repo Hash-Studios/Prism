@@ -61,12 +61,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// twelfth.
 const List<int> _moodRowGridRows = <int>[4, 12];
 
-/// How long a tab change takes. The old content leaves and the new content arrives at the same time. Long enough that
-/// the direction reads: a strong ease-out over a shorter span finishes in a frame or two.
+/// How long a tab change takes. Both contents slide together, but the old one fades out over the first 40 % and the new
+/// one fades in over the last 70 %, so the two grids never show through each other. Long enough that the direction
+/// reads: a strong ease-out over a shorter span finishes in a frame or two.
 const Duration _tabSwitchDuration = Duration(milliseconds: 320);
 
 /// How far the old and the new tab's content move sideways during a tab change.
-const double _tabShift = 48;
+const double _tabShift = 96;
 
 /// Grid rows before the "Pick up where you left off" row.
 const int _pickUpGridRows = 2;
@@ -145,6 +146,14 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
   late final AnimationController _tabSwitch = AnimationController(vsync: this, duration: _tabSwitchDuration, value: 1)
     ..addStatusListener(_onTabSwitchStatus);
   late final CurvedAnimation _tabSwitchCurve = CurvedAnimation(parent: _tabSwitch, curve: Curves.easeOutCubic);
+  late final CurvedAnimation _incomingFade = CurvedAnimation(
+    parent: _tabSwitch,
+    curve: const Interval(0.3, 1, curve: PrismCurves.enter),
+  );
+  late final CurvedAnimation _outgoingFade = CurvedAnimation(
+    parent: _tabSwitch,
+    curve: const Interval(0, 0.4, curve: Curves.easeOut),
+  );
 
   /// +1 when the new tab is to the right of the old one, -1 when it is to the left.
   double _tabDirection = 1;
@@ -242,6 +251,8 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     _scrollController.dispose();
     _outgoing?.image.dispose();
     _tabSwitchCurve.dispose();
+    _incomingFade.dispose();
+    _outgoingFade.dispose();
     _tabSwitch.dispose();
     _carouselHeld.dispose();
     _tabs.dispose();
@@ -278,7 +289,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
     if (content is _RenderSliverSnapshot && stack is RenderBox) {
       _outgoing = content.capture(stack, View.of(context).devicePixelRatio);
     }
-    _tabDirection = direction;
+    _tabDirection = Directionality.of(context) == TextDirection.rtl ? -direction : direction;
     _showChip(to);
     _tabSwitch.forward(from: 0);
   }
@@ -578,7 +589,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                                         sliver: sliver!,
                                       ),
                                       child: SliverFadeTransition(
-                                        opacity: _tabSwitchCurve,
+                                        opacity: _incomingFade,
                                         sliver: _SliverSnapshot(
                                           key: _contentKey,
                                           sliver: SliverMainAxisGroup(
@@ -632,7 +643,7 @@ class _PersonalizedFeedScreenState extends State<PersonalizedFeedScreen>
                   child: Transform.translate(
                     key: const ValueKey<String>('home-tab-outgoing'),
                     offset: Offset(-_tabShift * _tabDirection * _tabSwitchCurve.value, 0),
-                    child: Opacity(opacity: 1 - _tabSwitchCurve.value, child: image),
+                    child: Opacity(opacity: 1 - _outgoingFade.value, child: image),
                   ),
                 ),
               ],

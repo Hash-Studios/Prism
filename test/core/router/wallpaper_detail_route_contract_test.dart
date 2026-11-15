@@ -128,7 +128,7 @@ void main() {
   }
 
   for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
-    testWidgets('$platform controller runs 260 ms each way', (tester) async {
+    testWidgets('$platform controller runs 300 ms each way', (tester) async {
       final router = await _pumpRouter(tester);
       final result = router.push<int>(const PageRouteInfo<void>('Detail'));
       await tester.pump();
@@ -136,17 +136,17 @@ void main() {
       final detail = router.builtRoutes['Detail']!;
       expect(detail.transitionDuration, wallpaperDetailZoomDuration);
       expect(detail.reverseTransitionDuration, wallpaperDetailZoomDuration);
-      expect(wallpaperDetailZoomDuration, const Duration(milliseconds: 260));
-      await tester.pump(const Duration(milliseconds: 130));
+      expect(wallpaperDetailZoomDuration, const Duration(milliseconds: 300));
+      await tester.pump(const Duration(milliseconds: 150));
       expect(detail.animation!.value, closeTo(0.5, 0.02));
-      await tester.pump(const Duration(milliseconds: 131));
+      await tester.pump(const Duration(milliseconds: 151));
       expect(detail.animation!.isCompleted, isTrue);
 
       await router.maybePop<int>(42);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 130));
+      await tester.pump(const Duration(milliseconds: 150));
       expect(detail.animation!.value, closeTo(0.5, 0.02));
-      await tester.pump(const Duration(milliseconds: 131));
+      await tester.pump(const Duration(milliseconds: 151));
       expect(await result, 42);
       expect(router.current.name, 'Grid');
     }, variant: TargetPlatformVariant({platform}));

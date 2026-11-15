@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/core/widgets/prism_image_tile.dart';
@@ -24,19 +26,14 @@ class WallIdsGrid extends StatelessWidget {
     final List<FeedItemEntity> items = <FeedItemEntity>[
       for (final PrismWallpaper wall in walls) PrismFeedItem(id: wall.id, wallpaper: wall),
     ];
-    final int columns = PrismWallGrid.columns(context);
+    final int columns = math.min(PrismWallGrid.columns(context), math.max(2, walls.length));
     final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns);
     return CustomScrollView(
       slivers: <Widget>[
         if (header != null)
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                PrismSpace.xs + 44 + PrismSpace.xxs,
-                0,
-                PrismSpace.page,
-                PrismSpace.md,
-              ),
+              padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.md),
               child: Text(header!, style: PrismTextStyles.body(context)),
             ),
           ),

@@ -124,7 +124,12 @@ class _TrendingList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<WallhavenWallpaper> items = walls.take(_trendingCount).toList(growable: false);
-    return _trendingGrid(
+    // Under six walls two rows leave a gap, so one row.
+    final Widget Function({required int count, required IndexedWidgetBuilder builder}) layout = items.length < 6
+        ? ({required int count, required IndexedWidgetBuilder builder}) =>
+              _hRow(height: _trendingHeight, count: count, builder: builder)
+        : _trendingGrid;
+    return layout(
       count: items.length,
       builder: (context, index) {
         final WallhavenWallpaper wall = items[index];

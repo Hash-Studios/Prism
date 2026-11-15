@@ -56,9 +56,7 @@ class CreatorProgressView extends StatelessWidget {
               progress == null ? context.l10n.economyCreatorUnavailable : context.l10n.economyCreatorSavedUnavailable,
               style: PrismTextStyles.caption(context),
             ),
-          if (progress == null) ...<Widget>[
-            Text(context.l10n.economyCreatorIntro, style: PrismTextStyles.body(context)),
-          ] else ...<Widget>[
+          if (progress != null) ...<Widget>[
             Text(
               context.l10n.economyCreatorNewMembersThisWeek(current!.newMembers),
               style: PrismTextStyles.rowTitle(context),
@@ -101,6 +99,10 @@ class CreatorProgressView extends StatelessWidget {
                     progress: progress,
                   ),
                   const SizedBox(height: PrismSpace.sm),
+                ],
+                if (progress == null) ...<Widget>[
+                  Text(context.l10n.economyCreatorIntro, style: PrismTextStyles.body(context)),
+                  const SizedBox(height: PrismSpace.xs),
                 ],
                 Text(context.l10n.economyCreatorRules, style: PrismTextStyles.body(context)),
               ],

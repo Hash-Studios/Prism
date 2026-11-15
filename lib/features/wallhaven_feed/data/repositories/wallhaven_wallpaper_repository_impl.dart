@@ -44,7 +44,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository, 
   static const String _host = 'wallhaven.cc';
   static const String _searchPath = '/api/v1/search';
   static const String _toplistKey = 'toplist';
-  static const String _toplistScope = 'toplist.3d.portrait';
+  static const String _toplistScope = 'toplist.1M.portrait';
   static const Duration _requestTimeout = Duration(seconds: 10);
 
   @override
@@ -161,7 +161,7 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository, 
   Future<Result<List<WallhavenWallpaper>>> fetchToplist({int page = 1}) async {
     final Uri uri = Uri.https(_host, _searchPath, <String, String>{
       'sorting': 'toplist',
-      'topRange': '3d',
+      'topRange': '1M',
       'purity': '100',
       'categories': '100',
       'ratios': 'portrait',

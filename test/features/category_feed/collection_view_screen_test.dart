@@ -7,8 +7,7 @@ import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
-import 'package:Prism/core/widgets/glint/glint_state.dart';
-import 'package:Prism/core/widgets/home/wallpapers/loading.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/data/categories/category_definition.dart';
 import 'package:Prism/data/collections/provider/collections_without_provider.dart' as c_data;
 import 'package:Prism/features/category_feed/biz/bloc/category_feed_bloc.j.dart';
@@ -199,7 +198,7 @@ void main() {
     await pumpScreen(tester, 'category:Desktop');
     await tester.pump();
 
-    verify(() => bloc.add(CategoryFeedEvent.categorySelected(category: _space))).called(1);
+    verify(() => bloc.add(const CategoryFeedEvent.categorySelected(category: _space))).called(1);
   });
 
   testWidgets('a collection shows its name as the title, then an empty state when it has no wallpapers', (
@@ -234,7 +233,7 @@ void main() {
     expect(find.byType(CollectionViewGrid), findsOneWidget);
   });
 
-  testWidgets('a category with a cover shows it as the header with tinted blocks while loading', (tester) async {
+  testWidgets('a category with a cover shows tinted blocks on the loaded grid while loading', (tester) async {
     const CategoryEntity covered = CategoryEntity(
       name: 'Dark',
       source: WallpaperSource.prism,
@@ -252,9 +251,11 @@ void main() {
 
     await pumpScreen(tester);
 
-    expect(find.byType(LoadingCards), findsNothing, reason: 'the cover header replaces the grey skeleton');
-    expect(find.byType(Image), findsOneWidget);
-    expect(find.byType(GridView), findsOneWidget);
+    expect(find.byType(LoadingCards), findsNothing, reason: 'tinted blocks replace the grey skeleton');
+    expect(find.byType(Image), findsNothing, reason: 'no cover hero that the loaded page lacks');
+    expect(find.byType(AspectRatio), findsNothing);
+    final GridView grid = tester.widget<GridView>(find.byType(GridView));
+    expect(grid.padding, PrismWallGrid.padding.copyWith(top: PrismSpace.xxs), reason: 'the loaded grid starts here');
 
     states.add(current.copyWith(selectedCategory: covered));
     await tester.pump(const Duration(seconds: 31));
@@ -262,7 +263,7 @@ void main() {
 
   group('a collection opened from the Collections tab', () {
     const String cover = 'https://images.pexels.com/photos/1616403/x.jpeg';
-    Finder header() => find.byType(AspectRatio);
+    Finder header() => find.byKey(const ValueKey<String>(cover));
 
     setUp(() {
       c_data.collections = <Map<String, dynamic>>[
@@ -278,12 +279,19 @@ void main() {
       expect(find.byType(CollectionViewGrid), findsOneWidget);
     }
 
-    testWidgets('opens on its cover header, though the route lowercases the name', (tester) async {
+    testWidgets('opens on blocks in its cover colour, though the route lowercases the name', (tester) async {
       await pumpScreen(tester, 'abstract');
 
       expect(find.byType(LoadingCards), findsNothing, reason: 'no grey skeleton before the cover');
       expect(header(), findsOneWidget);
-      expect(find.byType(Image), findsOneWidget);
+      expect(find.byType(Image), findsNothing, reason: 'no cover hero that the loaded page lacks');
+    });
+
+    testWidgets('the blocks sit where the collection walls land', (tester) async {
+      await pumpScreen(tester, 'abstract');
+      final Rect block = tester.getRect(find.descendant(of: header(), matching: find.byType(DecoratedBox)).first);
+      expect(block.top - tester.getTopLeft(header()).dy, PrismSpace.xxs);
+      expect(block.width / block.height, closeTo(0.6625, 0.001), reason: 'the collection grid tile shape');
     });
 
     testWidgets('the placeholder crossfades into the walls', (tester) async {
@@ -296,7 +304,7 @@ void main() {
       expect(header(), findsNothing);
     });
 
-    testWidgets('the header and the blocks share one colour that eases into the cover tint', (tester) async {
+    testWidgets('the blocks ease from one neutral into the muted cover tint', (tester) async {
       const CategoryEntity covered = CategoryEntity(
         name: 'Dark',
         source: WallpaperSource.prism,
@@ -312,8 +320,6 @@ void main() {
       );
       when(() => bloc.add(any())).thenAnswer((_) {});
       await pumpScreen(tester);
-      Color headerColour() =>
-          tester.widget<ColoredBox>(find.descendant(of: header(), matching: find.byType(ColoredBox)).first).color;
       Color? blockColour() =>
           (tester
                       .widget<DecoratedBox>(
@@ -322,26 +328,26 @@ void main() {
                       .decoration
                   as BoxDecoration)
               .color;
-      final Color neutral = headerColour();
-      expect(blockColour(), neutral);
+      final Color neutral = blockColour()!;
 
       // Decodes the bundled cover for real, so the dominant colour resolves.
-      for (int i = 0; i < 20 && headerColour() == neutral; i++) {
+      for (int i = 0; i < 20 && blockColour() == neutral; i++) {
         await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
         await tester.pump();
       }
       await tester.pump(const Duration(milliseconds: 60));
-      expect(headerColour(), isNot(neutral), reason: 'the tint has started');
-      expect(headerColour(), blockColour(), reason: 'the header does not jump ahead of the blocks');
+      expect(blockColour(), isNot(neutral), reason: 'the tint has started');
 
       await tester.pump(const Duration(milliseconds: 200));
-      final Color tint = headerColour();
-      expect(blockColour(), tint);
+      final Color tint = blockColour()!;
+      // Muted far toward the page, like a tile placeholder.
+      final Color surface = Theme.of(tester.element(find.byType(GridView))).colorScheme.surface;
+      final double distance = (tint.r - surface.r).abs() + (tint.g - surface.g).abs() + (tint.b - surface.b).abs();
+      expect(distance, lessThan(0.3 * 3), reason: 'at most a quarter of the cover colour shows');
 
       // A second visit knows the colour, so it opens on the tint with no neutral frame.
       await tester.pumpWidget(const SizedBox());
       await pumpScreen(tester);
-      expect(headerColour(), tint);
       expect(blockColour(), tint);
 
       states.add(current.copyWith(selectedCategory: covered));

@@ -6,6 +6,7 @@ import 'package:Prism/core/analytics/trackers/wallpaper_impression.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_skeleton.dart';
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/moods/biz/mood_walls_cubit.dart';
@@ -110,6 +111,21 @@ void main() {
     expect(find.text('Soft skies and pastel light.'), findsOneWidget);
     expect(find.text('See all'), findsOneWidget);
     expect(find.byType(WallpaperTile), findsWidgets);
+  });
+
+  testWidgets('a card is one For you grid column wide', (tester) async {
+    _registerRepository(FakeMoodRepository(moods: const [_dreamy], walls: mockMoodWalls(5)));
+
+    await _pumpRow(tester);
+
+    final BuildContext context = tester.element(find.byType(MoodRow));
+    final int columns = PrismWallGrid.columns(context);
+    final double column =
+        (tester.view.physicalSize.width / tester.view.devicePixelRatio -
+            PrismWallGrid.margin * 2 -
+            PrismWallGrid.spacing * (columns - 1)) /
+        columns;
+    expect(tester.getSize(find.byType(WallpaperTile).first).width, closeTo(column, 0.01));
   });
 
   testWidgets('loads the supplied wall ids without rereading the mood document', (tester) async {

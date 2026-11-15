@@ -33,11 +33,13 @@ class Repository implements WeeklyChallengesRepository {
   Future<List<WeeklyChallenge>>? pendingList;
   Future<({bool voted, int voteCount})>? pendingVote;
   bool fail = false;
+  Future<List<WeeklyChallenge>> Function()? openList;
   final List<bool> votes = [];
   final List<String> requestedIds = [];
   @override
-  Future<List<WeeklyChallenge>> list({required bool past}) async =>
-      pendingList ?? (past ? [challenge(state: ChallengeState.archived)] : [challenge()]);
+  Future<List<WeeklyChallenge>> list({required bool past}) async => past
+      ? (pendingList ?? [challenge(state: ChallengeState.archived)])
+      : (openList?.call() ?? pendingList ?? [challenge()]);
   @override
   Future<ChallengeDetail> get(String id, ChallengeSort sort) async {
     requestedIds.add(id);
@@ -181,6 +183,123 @@ void main() {
     expect(c.isOpenAt(c.closesAt), isFalse);
     expect(challenge(state: ChallengeState.votingClosed).isOpenAt(DateTime.utc(2026)), isFalse);
   });
+  test('an ended challenge points to the open one; an open challenge does not', () async {
+    final ended = WeeklyChallenge(
+      id: '2026-10-19',
+      theme: 'Morning light',
+      state: ChallengeState.archived,
+      opensAt: DateTime.utc(2026, 10, 19),
+      closesAt: DateTime.utc(2026, 10, 26),
+    );
+    repo.detail = ChallengeDetail(challenge: ended, entries: const [], myEntryCount: 0);
+    await cubit.load(ended.id);
+    expect(cubit.state.current?.id, '2026-10-26');
+
+    repo.detail = ChallengeDetail(challenge: challenge(), entries: const [], myEntryCount: 0);
+    await cubit.load('2026-10-26');
+    expect(cubit.state.current, isNull);
+  });
+
+  test('the optional list checks the open window when its response arrives', () async {
+    repo.detail = ChallengeDetail(
+      challenge: challenge(state: ChallengeState.archived),
+      entries: [],
+      myEntryCount: 0,
+    );
+    repo.openList = () async {
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      return [
+        WeeklyChallenge(
+          id: 'just-opened',
+          theme: 'Just opened',
+          state: ChallengeState.open,
+          opensAt: DateTime.now().toUtc(),
+          closesAt: DateTime.utc(2100),
+        ),
+      ];
+    };
+    await cubit.load('2026-10-26');
+    expect(cubit.state.current?.id, 'just-opened');
+  });
+
+  test('a failed optional open list keeps the ended detail and past list', () async {
+    repo.detail = ChallengeDetail(
+      challenge: challenge(state: ChallengeState.archived),
+      entries: [],
+      myEntryCount: 0,
+    );
+    repo.openList = () async => throw Exception('offline');
+    await cubit.load('2026-10-26');
+    expect(cubit.state.failed, isFalse);
+    expect(cubit.state.detail, isNotNull);
+    expect(cubit.state.past, hasLength(1));
+    expect(cubit.state.current, isNull);
+  });
+
+  for (final fail in [false, true]) {
+    test('replacement ignores a pending optional list (failure=$fail)', () async {
+      final analytics = FakeAppAnalytics();
+      AnalyticsRuntime.instance = analytics;
+      final pending = Completer<List<WeeklyChallenge>>();
+      final started = Completer<void>();
+      repo.detail = ChallengeDetail(
+        challenge: challenge(state: ChallengeState.archived),
+        entries: [],
+        myEntryCount: 0,
+      );
+      repo.openList = () {
+        started.complete();
+        return pending.future;
+      };
+      final old = cubit.load('ended');
+      await started.future;
+      repo.detail = ChallengeDetail(challenge: challenge(), entries: [entry()], myEntryCount: 0);
+      await cubit.load('2026-10-26');
+      if (fail) {
+        pending.completeError(Exception('offline'));
+      } else {
+        pending.complete([challenge()]);
+      }
+      await old;
+      expect(cubit.state.detail!.challenge.state, ChallengeState.open);
+      expect(cubit.state.current, isNull);
+      expect(cubit.state.failed, isFalse);
+      expect(analytics.events.where((e) => e.eventName == 'challenge_viewed'), hasLength(1));
+    });
+  }
+
+  for (final fail in [false, true]) {
+    test('a pending vote preserves the open link after an ended refresh (failure=$fail)', () async {
+      await cubit.load('2026-10-26');
+      final pending = Completer<({bool voted, int voteCount})>();
+      repo.pendingVote = pending.future;
+      final voting = cubit.toggleVote(entry());
+      repo.detail = ChallengeDetail(
+        challenge: challenge(state: ChallengeState.archived),
+        entries: [entry()],
+        myEntryCount: 0,
+      );
+      final other = WeeklyChallenge(
+        id: 'other',
+        theme: 'Other',
+        state: ChallengeState.open,
+        opensAt: DateTime.utc(2020),
+        closesAt: DateTime.utc(2100),
+      );
+      repo.openList = () async => [challenge(), other];
+      await cubit.load('2026-10-26');
+      expect(cubit.state.current, same(other));
+      if (fail) {
+        pending.completeError(const ChallengeException(ChallengeError.dailyLimit));
+      } else {
+        pending.complete((voted: true, voteCount: 9));
+      }
+      await voting;
+      expect(cubit.state.current, same(other));
+      expect(cubit.state.detail!.entries.single.voteCount, fail ? 4 : 9);
+    });
+  }
+
   test('loads approved entries and past challenges', () async {
     await cubit.load('2026-10-26');
     expect(cubit.state.detail!.entries.single.creatorName, 'Maya');

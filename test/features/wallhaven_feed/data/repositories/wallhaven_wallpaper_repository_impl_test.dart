@@ -366,6 +366,7 @@ void main() {
     expect(queries[1]['topRange'], '1y', reason: 'the default one month toplist leaves most searches empty');
     expect(queries[0].containsKey('topRange'), isFalse);
     expect(queries[2]['ratios'], 'portrait');
+    expect(queries[2]['topRange'], '1M', reason: 'three days left Trending with four walls');
     expect(cache.scopes.toSet(), hasLength(3), reason: 'portrait, filters and toplist use different scopes');
     expect(cache.scopes.first, contains('portrait'));
   });

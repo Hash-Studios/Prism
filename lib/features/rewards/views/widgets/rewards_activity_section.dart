@@ -167,7 +167,7 @@ class _ActivityRow extends StatelessWidget {
       label: l10n.economyCoinActivitySemantics(label, date, amount, entry.delta.abs()),
       excludeSemantics: true,
       child: PrismRow(
-        icon: entry.isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+        icon: entry.isCredit ? Icons.add_rounded : Icons.remove_rounded,
         title: label,
         subtitle: date,
         trailing: Text(

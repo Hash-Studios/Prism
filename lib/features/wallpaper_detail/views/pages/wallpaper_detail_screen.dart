@@ -125,6 +125,7 @@ import 'package:Prism/features/wallpaper_upload/views/pages/wall_metadata_editor
 import 'package:Prism/features/watch_set/views/watch_set_row.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -2390,16 +2391,35 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
       height: WallpaperActionBar.height,
       child: Padding(
         padding: const EdgeInsetsDirectional.only(start: 4, top: 6, end: _sheetHPad),
-        child: PrismSkeleton(
-          child: Row(
-            children: [
-              SizedBox.square(dimension: 53, child: Icon(Icons.favorite_border_rounded, size: 28, color: muted)),
-              ..._favouriteCount(context, entity),
-              for (int i = 0; i < 2; i++)
-                const SizedBox.square(dimension: 50, child: Center(child: PrismBone.circle(size: 24))),
-              const Spacer(),
-              const PrismBone(width: 88, height: 40, radius: PrismRadius.md),
-            ],
+        // The icons are known from the tile, so they show muted where the real ones land. Only Save waits.
+        child: LayoutBuilder(
+          builder: (context, constraints) => FittedBox(
+            fit: BoxFit.scaleDown,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox.square(
+                        dimension: 53,
+                        child: Icon(Icons.favorite_border_rounded, size: 28, color: muted),
+                      ),
+                      ..._favouriteCount(context, entity),
+                      if (_commentsWall(entity) != null)
+                        SizedBox.square(
+                          dimension: 50,
+                          child: Icon(Icons.chat_bubble_outline_rounded, size: 24, color: muted),
+                        ),
+                      SizedBox.square(dimension: 50, child: Icon(JamIcons.share_alt, size: 24, color: muted)),
+                    ],
+                  ),
+                  const PrismSkeleton(child: PrismBone(width: 88, height: 40, radius: PrismRadius.md)),
+                ],
+              ),
+            ),
           ),
         ),
       ),
@@ -2515,7 +2535,14 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
                         ),
                         const SizedBox(width: PrismSpace.xs),
                       ],
-                      Text(provider, maxLines: 1, style: PrismTextStyles.body(context)),
+                      Flexible(
+                        child: Text(
+                          provider,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: PrismTextStyles.body(context),
+                        ),
+                      ),
                     ],
                   ),
                   if (showTitle) ...[

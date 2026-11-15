@@ -61,6 +61,9 @@ void main() {
 
   testWidgets('unknown is distinct from a real loaded zero', (tester) async {
     await pump(tester, const CreatorProgressState());
+    expect(find.textContaining('Progress appears after your first qualifying contribution.'), findsNothing);
+    await tester.tap(find.text(AppLocalizationsEn().economyCreatorWhatCounts));
+    await tester.pumpAndSettle();
     expect(find.textContaining('Progress appears after your first qualifying contribution.'), findsOneWidget);
     expect(find.textContaining('0 new members'), findsNothing);
     await pump(

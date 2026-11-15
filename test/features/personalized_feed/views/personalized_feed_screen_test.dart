@@ -281,6 +281,7 @@ void main() {
   Future<void> pumpScreen(
     WidgetTester tester, {
     bool disableAnimations = false,
+    TextDirection textDirection = TextDirection.ltr,
     ValueListenable<bool>? reduceMotionSignal,
     bool tickersEnabled = true,
     WallOfTheDayEntity? wotdEntity,
@@ -317,7 +318,7 @@ void main() {
         builder: (context, child) {
           Widget withMotion(bool reduceMotion) => MediaQuery(
             data: MediaQuery.of(context).copyWith(size: mediaSize, disableAnimations: reduceMotion),
-            child: favouriteTestBuilder(context, child),
+            child: Directionality(textDirection: textDirection, child: favouriteTestBuilder(context, child)),
           );
           final ValueListenable<bool>? signal = reduceMotionSignal;
           return signal == null
@@ -658,7 +659,7 @@ void main() {
         );
       }
       pageTwoCalls++;
-      return Result.success(PersonalizedFeedPage(items: <FeedItemEntity>[], hasMore: true));
+      return Result.success(const PersonalizedFeedPage(items: <FeedItemEntity>[], hasMore: true));
     });
 
     await pumpScreen(tester);
@@ -790,7 +791,7 @@ void main() {
     expect(find.byType(FeedCarousel), findsNothing);
   });
 
-  testWidgets('a tab change slides the old content out and the new content in at the same time', (tester) async {
+  testWidgets('a tab change slides both contents one way, the old fading out before the new fades in', (tester) async {
     await pumpScreen(tester);
     final Finder outgoing = find.byKey(const ValueKey<String>('home-tab-outgoing'));
     double incomingOpacity() => tester.widget<SliverFadeTransition>(find.byType(SliverFadeTransition)).opacity.value;
@@ -806,23 +807,35 @@ void main() {
     expect(outgoing, findsOneWidget, reason: 'a picture of the old content stays over it');
 
     final List<double> lastDx = <double>[];
+    double lastOutgoing = 1;
     for (int frame = 0; frame < 5; frame++) {
       await tester.pump(const Duration(milliseconds: 16));
-      expect(incomingOpacity(), inExclusiveRange(0, 1));
-      expect(outgoingOpacity(), inExclusiveRange(0, 1));
-      expect(incomingOpacity() + outgoingOpacity(), closeTo(1, 0.001), reason: 'no near-blank frame');
-      expect(outgoingDx(), inInclusiveRange(-48, 0), reason: 'Latest is to the right, so the old content goes left');
+      expect(incomingOpacity(), 0, reason: 'the new grid waits until the old one is mostly gone: no double exposure');
+      expect(outgoingOpacity(), inExclusiveRange(0, lastOutgoing));
+      lastOutgoing = outgoingOpacity();
+      expect(outgoingDx(), inInclusiveRange(-96, 0), reason: 'Latest is to the right, so the old content goes left');
       lastDx.add(outgoingDx());
     }
     expect(lastDx.last, lessThan(lastDx.first));
     await tester.pump();
     final double movingX = tester.getTopLeft(latestTile()).dx;
 
+    // 30 % to 40 % of 320 ms: the only overlap.
+    await tester.pump(const Duration(milliseconds: 40));
+    expect(outgoingOpacity(), lessThan(0.1));
+    await tester.pump(const Duration(milliseconds: 40));
+    expect(outgoingOpacity(), 0, reason: 'the old grid is gone by 40 %');
+    expect(incomingOpacity(), inExclusiveRange(0, 1));
+
     await _settle(tester);
     expect(outgoing, findsNothing);
     expect(incomingOpacity(), 1);
     final double restX = tester.getTopLeft(latestTile()).dx;
-    expect(movingX - restX, inExclusiveRange(0, 48), reason: 'the new content came in from the right');
+    expect(
+      movingX - restX,
+      inExclusiveRange(24, 96),
+      reason: 'the new content came in from the right, far enough to read',
+    );
 
     await tapTab(tester, 'Following');
     await tester.pump();
@@ -840,13 +853,28 @@ void main() {
     expect(outgoing, findsOneWidget);
     // Halfway, the slide must still be under way: a curve that front-loads nearly all of it reads as a cut on a
     // 60 Hz screen.
-    expect(tester.widget<Transform>(outgoing).transform.getTranslation().x.abs(), lessThan(46));
+    expect(tester.widget<Transform>(outgoing).transform.getTranslation().x.abs(), lessThan(92));
     await tester.pump(const Duration(milliseconds: 140));
     expect(outgoing, findsOneWidget);
     await tester.pump(const Duration(milliseconds: 30));
     await tester.pump();
     expect(find.byKey(const ValueKey<String>('home-tab-outgoing')), findsNothing);
     expect(tester.widget<SliverFadeTransition>(find.byType(SliverFadeTransition)).opacity.value, 1);
+  });
+
+  testWidgets('RTL tab content follows the visual chip direction', (tester) async {
+    await pumpScreen(tester, textDirection: TextDirection.rtl);
+    await tapTab(tester, 'Latest');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 40));
+    final outgoing = find.byKey(const ValueKey<String>('home-tab-outgoing'));
+    expect(tester.widget<Transform>(outgoing).transform.getTranslation().x, greaterThan(0));
+    await _settle(tester);
+    await tapTab(tester, 'Following');
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 40));
+    expect(tester.widget<Transform>(outgoing).transform.getTranslation().x, lessThan(0));
+    await _settle(tester);
   });
 
   testWidgets('with reduce motion on, a tab change swaps the content at once', (tester) async {

@@ -174,8 +174,8 @@ void main() {
     expectFlight();
     await tester.pump(const Duration(milliseconds: 40));
     expectFlight();
-    // Past the rest of the 260 ms flight.
-    await tester.pump(const Duration(milliseconds: 220));
+    // Past the rest of the 300 ms flight.
+    await tester.pump(const Duration(milliseconds: 260));
     expect(flying, findsNothing);
     expect(tester.getRect(destination), target);
     expect(tester.takeException(), isNull);

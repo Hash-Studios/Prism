@@ -223,6 +223,17 @@ Future<_TestRouter> _pumpRouter(
   return router;
 }
 
+/// The page under the flying picture fades in late in the growth, and out early in the shrink.
+void _expectPageOpacity(WidgetTester tester, _TestRouter router, {required bool reverse, required String reason}) {
+  final Curve curve = reverse ? const FlippedCurve(_testZoomCurve) : _testZoomCurve;
+  final double t = curve.transform(router.detailRoute!.animation!.value);
+  final Opacity page = tester.widget<Opacity>(
+    find.ancestor(of: find.byKey(_bodyKey), matching: find.byType(Opacity)).first,
+  );
+  expect(page.opacity, closeTo(const Interval(0.4, 1).transform(t), 0.001), reason: reason);
+  if (t <= 0.4) expect(page.opacity, 0, reason: '$reason: only the picture shows early on');
+}
+
 void _expectScrimAlpha(WidgetTester tester, _TestRouter router, {required bool reverse}) {
   final Animation<double> animation = router.detailRoute!.animation!;
   final Curve curve = reverse ? const FlippedCurve(_testZoomCurve) : _testZoomCurve;
@@ -278,7 +289,7 @@ void main() {
         final fade = tester.widget<FadeTransition>(
           find.ancestor(of: find.byKey(_bodyKey), matching: find.byType(FadeTransition)).first,
         );
-        expect(fade.opacity.value, closeTo(PrismCurves.enter.transform(((i + 1) * 40 + 1) / 260), 0.001));
+        expect(fade.opacity.value, closeTo(PrismCurves.enter.transform(((i + 1) * 40 + 1) / 300), 0.001));
         lastWidth = flying.width;
       }
       await tester.pumpAndSettle();
@@ -344,6 +355,7 @@ void main() {
         expect(body.top, closeTo(art.top + art.width * 300 / 800, 0.01), reason: 'frame $frames');
         expect(body.top, lessThanOrEqualTo(art.bottom + 0.01), reason: 'frame $frames');
         _expectScrimAlpha(tester, router, reverse: false);
+        _expectPageOpacity(tester, router, reverse: false, reason: 'frame $frames');
         // The grid behind steps back around the tile while the card grows out of it.
         if (find.byKey(_otherTileKey).evaluate().isNotEmpty) {
           _expectBehindSteppedBack(tester, router, tile, reverse: false, reason: 'frame $frames');
@@ -357,6 +369,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.getRect(find.byKey(_artKey)), const Rect.fromLTWH(0, 0, 800, 300));
       expect(tester.getRect(find.byKey(_bodyKey)), const Rect.fromLTWH(0, 300, 800, 100));
+      expect(
+        tester.widget<Opacity>(find.ancestor(of: find.byKey(_bodyKey), matching: find.byType(Opacity)).first).opacity,
+        1,
+      );
       // The card flies on the curve measured from the reference closeup, set on the Hero itself.
       final Hero card = tester.widget<Hero>(
         find.descendant(of: find.byType(WallpaperDetailHero), matching: find.byType(Hero)),
@@ -377,6 +393,7 @@ void main() {
           expect(body.top, closeTo(art.top + art.width * 300 / 800, 0.01), reason: 'pop frame $popFrames');
           expect(body.width, lessThanOrEqualTo(lastWidth + 0.01), reason: 'pop frame $popFrames');
           _expectScrimAlpha(tester, router, reverse: true);
+          _expectPageOpacity(tester, router, reverse: true, reason: 'pop frame $popFrames');
           lastWidth = body.width;
           if (find.byKey(_otherTileKey).evaluate().isNotEmpty) {
             _expectBehindSteppedBack(tester, router, tile, reverse: true, reason: 'pop frame $popFrames');

@@ -1,5 +1,6 @@
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/prism/prism_wall_grid.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_tile.dart';
 import 'package:Prism/features/editors_choice/biz/editors_choice_cubit.dart';
 import 'package:Prism/features/editors_choice/views/widgets/editors_choice_row.dart';
@@ -61,6 +62,19 @@ void main() {
         tester.widget<ListView>(find.byType(ListView)).childrenDelegate as SliverChildBuilderDelegate;
     expect(strip.estimatedChildCount, 7); // 4 tiles and 3 separators
     expect(find.byType(WallpaperTile), findsWidgets);
+  });
+
+  testWidgets('a pick is one For you grid column wide', (tester) async {
+    await _pumpRow(tester, pickWalls(5));
+
+    final BuildContext context = tester.element(find.byType(EditorsChoiceRow));
+    final int columns = PrismWallGrid.columns(context);
+    final double column =
+        (tester.view.physicalSize.width / tester.view.devicePixelRatio -
+            PrismWallGrid.margin * 2 -
+            PrismWallGrid.spacing * (columns - 1)) /
+        columns;
+    expect(tester.getSize(find.byType(WallpaperTile).first).width, closeTo(column, 0.01));
   });
 
   testWidgets('lays out at large text without an exception', (tester) async {

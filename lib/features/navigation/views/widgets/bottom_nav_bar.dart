@@ -1,6 +1,7 @@
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/motion/prism_motion.dart';
 import 'package:Prism/core/utils/side_safe_column.dart';
+import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
 import 'package:Prism/features/layout_prefs/views/layout_prefs_scope.dart';
 import 'package:Prism/features/navigation/views/widgets/account_controls.dart';
 import 'package:Prism/features/navigation/views/widgets/nav_glass.dart';
@@ -179,7 +180,8 @@ class _BottomBarState extends State<BottomBar> {
           iconWidth: _scrollTopSize,
           iconHeight: _scrollTopSize,
         ),
-        showIcon: _deep && !keyboardUp,
+        // Rewards is a card page, not a wall grid: the button would cover its text.
+        showIcon: _deep && !keyboardUp && activeTabIndex != NavTab.rewards.index,
         iconTooltip: context.l10n.navigationScrollToTop,
         icon: (width, height) => TweenAnimationBuilder<double>(
           tween: Tween<double>(begin: 0, end: 1),

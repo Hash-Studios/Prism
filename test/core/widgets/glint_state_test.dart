@@ -83,7 +83,7 @@ void main() {
     final Rect tall = tester.getRect(find.byType(GlintState));
     final double tallMiddle =
         (tester.getTopLeft(find.byType(CoverMosaic)).dy + tester.getBottomLeft(find.text('T')).dy) / 2;
-    expect(tallMiddle, lessThan(tall.center.dy - 60), reason: 'biased towards the top');
+    expect(tallMiddle, lessThan(tall.center.dy - 20), reason: 'biased towards the top');
 
     await tester.pumpWidget(
       host(

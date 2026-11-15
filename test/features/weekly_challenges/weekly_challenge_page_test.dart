@@ -34,11 +34,16 @@ Widget app(Widget home) => MaterialApp(
 );
 
 class ChallengeTestRouter extends RootStackRouter {
+  ChallengeTestRouter({this.home = const SizedBox()});
+  final Widget home;
+  @override
+  RouteType get defaultRouteType => AppRouter().defaultRouteType;
+
   @override
   List<AutoRoute> get routes => [
     AutoRoute(
       path: '/',
-      page: PageInfo('Blank', builder: (_) => const SizedBox()),
+      page: PageInfo('Blank', builder: (_) => home),
     ),
     AutoRoute(path: '/challenges/:challengeId', page: WeeklyChallengeRoute.page),
   ];
@@ -115,6 +120,70 @@ void main() {
       });
     }
   }
+
+  testWidgets('the open link pushes a new page without changing Home, in RTL with reduced motion', (tester) async {
+    AnalyticsRuntime.instance = FakeAppAnalytics();
+    addTearDown(AnalyticsRuntime.reset);
+    final repo = Repository();
+    final ended = challenge(state: ChallengeState.archived);
+    final open = WeeklyChallenge(
+      id: 'other',
+      theme: 'Open theme',
+      state: ChallengeState.open,
+      opensAt: DateTime.utc(2020),
+      closesAt: DateTime.utc(2100),
+    );
+    repo.detail = ChallengeDetail(challenge: ended, entries: [], myEntryCount: 0);
+    repo.openList = () async => [open];
+    final cubits = <WeeklyChallengesCubit>[];
+    getIt.registerFactory<WeeklyChallengesCubit>(() {
+      final cubit = WeeklyChallengesCubit(repo);
+      cubits.add(cubit);
+      return cubit;
+    });
+    addTearDown(getIt.reset);
+    final router = ChallengeTestRouter(home: const Scaffold(body: WeeklyChallengeCard()));
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      MaterialApp.router(
+        routerConfig: router.config(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(disableAnimations: true),
+          child: Directionality(textDirection: TextDirection.rtl, child: child!),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(cubits, hasLength(1));
+    unawaited(router.push(WeeklyChallengeRoute(challengeId: ended.id)));
+    await tester.pumpAndSettle();
+    expect(cubits, hasLength(2));
+    expect(cubits.first.state.current, same(open));
+    final link = find.widgetWithText(PrismRow, open.theme);
+    expect(link, findsOneWidget);
+    final leading = find.descendant(of: link, matching: find.byIcon(Icons.emoji_events_rounded));
+    final chevron = find.descendant(of: link, matching: find.byIcon(Icons.chevron_right_rounded));
+    expect(tester.getCenter(leading).dx, greaterThan(tester.getCenter(chevron).dx));
+    expect(Icons.chevron_right_rounded.matchTextDirection, isTrue);
+    repo.detail = ChallengeDetail(challenge: open, entries: [], myEntryCount: 0);
+    await tester.tap(link);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 40));
+    expect(tester.getTopLeft(find.byType(WeeklyChallengePage).last).dx, 0);
+    await tester.pumpAndSettle();
+    expect(router.stack.where((r) => r.name == WeeklyChallengeRoute.name), hasLength(2));
+    expect(tester.widget<WeeklyChallengePage>(find.byType(WeeklyChallengePage)).challengeId, open.id);
+    expect(cubits, hasLength(3));
+    expect(cubits.first.state.current, same(open));
+    expect(cubits[1].state.detail!.challenge, same(ended));
+    expect(cubits.last.state.detail!.challenge, same(open));
+    await router.maybePop();
+    await tester.pumpAndSettle();
+    expect(tester.widget<WeeklyChallengePage>(find.byType(WeeklyChallengePage)).challengeId, ended.id);
+    await tester.pumpWidget(const SizedBox());
+  });
 
   testWidgets('warm navigate replaces challenge ID on the same page state', (tester) async {
     final cubit = MockChallengeCubit();
@@ -221,6 +290,84 @@ void main() {
     expect(find.text('Morning light'), findsWidgets);
     expect(find.byType(GridView), findsOneWidget);
     expect(find.text('Approved entries will appear here.', skipOffstage: false), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('an empty week hides Top/New and keeps the current challenge out of Past', (tester) async {
+    final cubit = MockChallengeCubit();
+    final current = challenge();
+    when(() => cubit.state).thenReturn(
+      WeeklyChallengesState(
+        loading: false,
+        detail: ChallengeDetail(challenge: current, entries: [], myEntryCount: 0),
+        past: [current],
+      ),
+    );
+    when(() => cubit.load(any(), sort: any(named: 'sort'))).thenAnswer((_) async {});
+    await tester.pumpWidget(app(WeeklyChallengePage(challengeId: current.id, cubit: cubit)));
+    await tester.pump();
+    expect(find.byType(PrismSegmented<ChallengeSort>), findsNothing);
+    expect(find.byType(PrismGroup, skipOffstage: false), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('an ended challenge with no entries links to the open challenge instead of an empty state', (
+    tester,
+  ) async {
+    final cubit = MockChallengeCubit();
+    final ended = WeeklyChallenge(
+      id: '2026-10-19',
+      theme: 'Morning light',
+      state: ChallengeState.archived,
+      opensAt: DateTime.utc(2026, 10, 19),
+      closesAt: DateTime.utc(2026, 10, 26),
+    );
+    when(() => cubit.state).thenReturn(
+      WeeklyChallengesState(
+        loading: false,
+        detail: ChallengeDetail(challenge: ended, entries: [], myEntryCount: 0),
+        current: challenge(),
+        past: [ended],
+      ),
+    );
+    when(() => cubit.load(any(), sort: any(named: 'sort'))).thenAnswer((_) async {});
+    await tester.pumpWidget(app(WeeklyChallengePage(challengeId: ended.id, cubit: cubit)));
+    await tester.pump();
+    expect(find.widgetWithText(PrismRow, 'Quiet oceans'), findsOneWidget);
+    expect(find.text('Upload an entry'), findsOneWidget);
+    expect(find.text('Approved entries will appear here.', skipOffstage: false), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('an ended page refreshes when its linked open challenge closes', (tester) async {
+    final cubit = MockChallengeCubit();
+    final states = StreamController<WeeklyChallengesState>();
+    addTearDown(states.close);
+    whenListen(cubit, states.stream, initialState: const WeeklyChallengesState());
+    when(() => cubit.load(any(), sort: any(named: 'sort'))).thenAnswer((_) async {});
+    await tester.pumpWidget(app(WeeklyChallengePage(challengeId: 'ended', cubit: cubit)));
+    states.add(
+      WeeklyChallengesState(
+        loading: false,
+        detail: ChallengeDetail(
+          challenge: challenge(state: ChallengeState.archived),
+          entries: [],
+          myEntryCount: 0,
+        ),
+        current: WeeklyChallenge(
+          id: 'closing',
+          theme: 'Closing soon',
+          state: ChallengeState.open,
+          opensAt: DateTime.utc(2020),
+          closesAt: DateTime.now().toUtc().add(const Duration(seconds: 10)),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.widgetWithText(PrismRow, 'Closing soon'), findsOneWidget);
+    verify(() => cubit.load('ended')).called(1);
+    await tester.pump(const Duration(seconds: 11));
+    verify(() => cubit.load('ended')).called(1);
     await tester.pumpWidget(const SizedBox());
   });
 

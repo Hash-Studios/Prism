@@ -103,7 +103,9 @@ class _CollectionViewScreenState extends State<CollectionViewScreen> {
       future: _collectionFuture,
       builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return _Settle(child: _coverLoading(_collectionCoverUrl(widget.collectionName)));
+          return _Settle(
+            child: _coverLoading(_collectionCoverUrl(widget.collectionName), aspectRatio: _collectionTileAspect),
+          );
         }
         if (snapshot.hasError) {
           return _Settle(
@@ -195,8 +197,12 @@ String _categoryCoverUrl(List<CategoryEntity> categories, String name) {
   return '';
 }
 
+/// The tile shape of [CollectionViewGrid]. A category grid uses the default wall tile.
+const double _collectionTileAspect = 0.6625;
+
 /// The loading placeholder for a cover. Keyed by the cover, so a cover that arrives late starts its own tint.
-Widget _coverLoading(String url) => _CoverLoading(key: ValueKey<String>(url), url: url);
+Widget _coverLoading(String url, {double? aspectRatio}) =>
+    _CoverLoading(key: ValueKey<String>(url), url: url, aspectRatio: aspectRatio);
 
 /// How long the blocks take to ease from the neutral into the cover's colour.
 const Duration _tintEase = Duration(milliseconds: 200);
@@ -223,13 +229,16 @@ class _Settle extends StatelessWidget {
   }
 }
 
-/// First paint while a collection loads: its cover as a full-width header (the Collections tab already warmed it) and
-/// still blocks in the cover's dominant colour where the walls will land. Until that colour is known the header and the
-/// blocks share one neutral that eases into the tint. Without a cover it is the plain skeleton.
+/// First paint while a collection loads: still blocks in the cover's muted dominant colour, laid out exactly like the
+/// loaded grid, so each wall lands on its block. Until that colour is known the blocks are one neutral that eases into
+/// the tint. Without a cover it is the plain skeleton, on the same grid.
 class _CoverLoading extends StatefulWidget {
-  const _CoverLoading({super.key, required this.url});
+  const _CoverLoading({super.key, required this.url, this.aspectRatio});
 
   final String url;
+
+  /// The loaded grid's tile shape. Null is the default wall tile.
+  final double? aspectRatio;
 
   @override
   State<_CoverLoading> createState() => _CoverLoadingState();
@@ -259,10 +268,16 @@ class _CoverLoadingState extends State<_CoverLoading> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.url.isEmpty) return const LoadingCards();
+    if (widget.url.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: PrismSpace.xxs),
+        child: LoadingCards(childAspectRatio: widget.aspectRatio),
+      );
+    }
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final Color rest = Color.alphaBlend(scheme.onSurface.withValues(alpha: 0.07), scheme.surface);
-    final Color tint = _dominant == null ? rest : Color.lerp(_dominant, scheme.surface, 0.55)!;
+    // Muted far toward the page, so the blocks read as quiet tile placeholders, not a colour field.
+    final Color tint = _dominant == null ? rest : Color.lerp(_dominant, scheme.surface, 0.75)!;
     return Semantics(
       label: context.l10n.coreLoading,
       child: ExcludeSemantics(
@@ -270,43 +285,16 @@ class _CoverLoadingState extends State<_CoverLoading> {
           tween: ColorTween(end: tint),
           duration: context.motion(_tintEase),
           curve: PrismCurves.enter,
-          builder: (context, color, _) => Column(
-            children: <Widget>[
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: ColoredBox(
-                  color: color!,
-                  child: Image(
-                    image: ResizeImage(coverImageProvider(widget.url), width: 1080),
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                    frameBuilder: (context, child, frame, sync) => sync
-                        ? child
-                        : AnimatedOpacity(
-                            opacity: frame == null ? 0 : 1,
-                            duration: context.motion(PrismDurations.fast),
-                            curve: PrismCurves.enter,
-                            child: child,
-                          ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: ClipRect(
-                  child: GridView.builder(
-                    primary: false,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: PrismWallGrid.padding,
-                    itemCount: 12,
-                    gridDelegate: PrismWallGrid.delegate(context),
-                    itemBuilder: (context, index) => DecoratedBox(
-                      decoration: BoxDecoration(color: color, borderRadius: PrismWallGrid.tileRadius),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          builder: (context, color, _) => GridView.builder(
+            primary: false,
+            physics: const NeverScrollableScrollPhysics(),
+            // The loaded grids' padding, so the walls land on the blocks.
+            padding: PrismWallGrid.padding.copyWith(top: PrismSpace.xxs),
+            itemCount: 24,
+            gridDelegate: PrismWallGrid.delegate(context, aspectRatio: widget.aspectRatio),
+            itemBuilder: (context, index) => DecoratedBox(
+              decoration: BoxDecoration(color: color, borderRadius: PrismWallGrid.tileRadius),
+            ),
           ),
         ),
       ),

@@ -89,6 +89,7 @@ class WeeklyChallengesCubit extends Cubit<WeeklyChallengesState> {
     try {
       final detail = await _repository.get(id, selected);
       final past = await _repository.list(past: true);
+      final WeeklyChallenge? next = detail.challenge.isOpenAt(DateTime.now().toUtc()) ? null : await _openOther(id);
       if (isClosed || version != _load) return;
       final entries = detail.entries
           .map((entry) {
@@ -101,6 +102,7 @@ class WeeklyChallengesCubit extends Cubit<WeeklyChallengesState> {
       emit(
         WeeklyChallengesState(
           detail: ChallengeDetail(challenge: detail.challenge, entries: entries, myEntryCount: detail.myEntryCount),
+          current: next,
           past: past,
           loading: false,
           sort: selected,
@@ -118,6 +120,17 @@ class WeeklyChallengesCubit extends Cubit<WeeklyChallengesState> {
       if (!isClosed && version == _load) {
         emit(WeeklyChallengesState(loading: false, failed: true, error: ChallengeError.unknown, sort: selected));
       }
+    }
+  }
+
+  /// The open challenge other than [id], so a page for an ended one can point to it. A failure gives null.
+  Future<WeeklyChallenge?> _openOther(String id) async {
+    try {
+      final rows = await _repository.list(past: false);
+      final now = DateTime.now().toUtc();
+      return rows.where((row) => row.id != id && row.isOpenAt(now)).firstOrNull;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -186,6 +199,7 @@ class WeeklyChallengesCubit extends Cubit<WeeklyChallengesState> {
               .toList(growable: false),
           myEntryCount: detail.myEntryCount,
         ),
+        current: state.current,
         past: state.past,
         loading: state.loading,
         sort: state.sort,
