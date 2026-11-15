@@ -688,6 +688,8 @@ class _ProfileChildState extends State<_ProfileChild> {
         screen.width / 2 + (Directionality.of(context) == TextDirection.rtl ? slotOffset : -slotOffset);
     final double expandedAvatarY = coverHeight - 56 + _headerAvatarSize / 2;
     final String handle = '@${_profile.username}';
+    // The header name's scaler. The app bar clamps its title's scaling, so the bar context would fade too early.
+    final TextScaler headerTextScaler = MediaQuery.textScalerOf(context);
     final TextStyle handleStyle = PrismTextStyles.caption(
       context,
     ).copyWith(fontSize: 14, fontWeight: FontWeight.normal, letterSpacing: 0.2);
@@ -752,7 +754,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                           child: ListenableBuilder(
                             listenable: position,
                             builder: (BuildContext context, Widget? name) =>
-                                Opacity(opacity: _barNameOpacity(context, position), child: name),
+                                Opacity(opacity: _barNameOpacity(context, position, headerTextScaler), child: name),
                             child: SizedBox(
                               width: titleNameWidth,
                               child: Text(displayName, maxLines: 1, overflow: TextOverflow.ellipsis, style: titleStyle),
@@ -1371,12 +1373,11 @@ const double _headerNameHeight = 28;
 
 /// The bar name's opacity: 0 until the header has collapsed and the header name starts to pass under the bar, 1 once
 /// it has gone. The header name sits [PrismSpace.xxs] below the collapsed header.
-double _barNameOpacity(BuildContext context, ScrollPosition position) {
+double _barNameOpacity(BuildContext context, ScrollPosition position, TextScaler headerTextScaler) {
   final FlexibleSpaceBarSettings? settings = context.dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
   if (settings == null || !position.hasPixels) return _collapsedTitleOpacity(context);
   final double collapsedAt = settings.maxExtent - settings.minExtent;
-  return ((position.pixels - collapsedAt - PrismSpace.xxs) /
-          (_headerNameHeight * MediaQuery.textScalerOf(context).scale(22) / 22))
+  return ((position.pixels - collapsedAt - PrismSpace.xxs) / (_headerNameHeight * headerTextScaler.scale(22) / 22))
       .clamp(0.0, 1.0);
 }
 

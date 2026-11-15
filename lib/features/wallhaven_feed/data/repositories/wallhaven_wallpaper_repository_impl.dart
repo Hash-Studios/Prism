@@ -45,6 +45,9 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository, 
   static const String _searchPath = '/api/v1/search';
   static const String _toplistKey = 'toplist';
   static const String _toplistScope = 'toplist.1M.portrait';
+
+  /// The scope builds before the one month toplist cached under. Read only as an offline fallback.
+  static const String _legacyToplistScope = 'toplist.3d.portrait';
   static const Duration _requestTimeout = Duration(seconds: 10);
 
   @override
@@ -230,8 +233,9 @@ class WallhavenWallpaperRepositoryImpl implements WallhavenWallpaperRepository, 
     return Result.error(failure);
   }
 
-  Future<List<WallhavenWallpaper>?> _readCachedToplist() =>
-      _cache.read(_toplistKey, scope: _toplistScope, decode: _decodeWalls);
+  Future<List<WallhavenWallpaper>?> _readCachedToplist() async =>
+      await _cache.read(_toplistKey, scope: _toplistScope, decode: _decodeWalls) ??
+      await _cache.read(_toplistKey, scope: _legacyToplistScope, decode: _decodeWalls);
 
   @override
   Future<Result<WallhavenWallpaper?>> fetchById(String id) async {

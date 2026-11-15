@@ -371,6 +371,38 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('an ended challenge hides a linked challenge that has also closed', (tester) async {
+    final cubit = MockChallengeCubit();
+    final ended = WeeklyChallenge(
+      id: '2026-10-19',
+      theme: 'Morning light',
+      state: ChallengeState.archived,
+      opensAt: DateTime.utc(2026, 10, 19),
+      closesAt: DateTime.utc(2026, 10, 26),
+    );
+    final expired = WeeklyChallenge(
+      id: '2026-10-26',
+      theme: 'Quiet oceans',
+      state: ChallengeState.open,
+      opensAt: DateTime.utc(2026, 10, 26),
+      closesAt: DateTime.utc(2026, 11, 2),
+    );
+    when(() => cubit.state).thenReturn(
+      WeeklyChallengesState(
+        loading: false,
+        detail: ChallengeDetail(challenge: ended, entries: [], myEntryCount: 0),
+        current: expired,
+        past: [ended],
+      ),
+    );
+    when(() => cubit.load(any(), sort: any(named: 'sort'))).thenAnswer((_) async {});
+    await tester.pumpWidget(app(WeeklyChallengePage(challengeId: ended.id, cubit: cubit)));
+    await tester.pump();
+    expect(find.widgetWithText(PrismRow, 'Quiet oceans'), findsNothing);
+    expect(find.text('Approved entries will appear here.', skipOffstage: false), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('last-week thumbnail failures show a themed fallback without an image error', (tester) async {
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();

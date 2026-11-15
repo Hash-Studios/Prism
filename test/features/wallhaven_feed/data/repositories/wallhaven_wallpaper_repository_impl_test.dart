@@ -143,6 +143,24 @@ void main() {
     );
   });
 
+  test('offline toplist falls back to the snapshot an older build cached under the 3 day scope', () async {
+    final cache = FakeFeedCacheLocalDataSource();
+    cache.snapshots['wallhaven/toplist.3d.portrait'] = FeedSnapshot(
+      payload: <String, Object?>{
+        'pages': <Object?>[jsonDecode(_page(9).body)],
+        'nextPage': 2,
+        'hasMore': true,
+      },
+      cachedAtUtc: DateTime.now().toUtc(),
+      ttlHours: 6,
+    );
+    final result = await http.runWithClient(
+      () => WallhavenWallpaperRepositoryImpl(cache).fetchToplist(),
+      () => MockClient((_) async => throw const SocketException('offline')),
+    );
+    expect(result.data!.single.id, 'wall-9');
+  });
+
   test('feed transport failure restores a durable snapshot after repository restart', () async {
     final cache = FakeFeedCacheLocalDataSource();
     await http.runWithClient(() async {

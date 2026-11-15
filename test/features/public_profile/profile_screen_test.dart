@@ -740,6 +740,23 @@ void main() {
     });
   }
 
+  testWidgets('at 3x text the bar name is still fading past the app bar title clamp', (tester) async {
+    await pumpPhone(tester, identifier: 'u2', textScale: 3);
+    final ScrollPosition position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+    final double expanded = tester.getRect(find.byType(AppBar)).height;
+    position.jumpTo(10000);
+    await tester.pump();
+    final double collapsedAt = expanded - tester.getRect(find.byType(AppBar)).height;
+    // The app bar clamps its title to 1.34x, which would finish the fade at 28 * 1.34 = 37.5 points.
+    position.jumpTo(collapsedAt + PrismSpace.xxs + 40);
+    await tester.pump();
+    final Finder barName = find.descendant(of: find.byType(AppBar), matching: find.text('Ana Rivera'));
+    final double opacity = tester
+        .widget<Opacity>(find.ancestor(of: barName, matching: find.byType(Opacity)).first)
+        .opacity;
+    expect(opacity, inExclusiveRange(0, 1));
+  });
+
   testWidgets('a short bio shares the handle line; a long one keeps its own line', (tester) async {
     final Finder line = find.byKey(const ValueKey<String>('profile-handle-bio-line'));
     // The test font draws every glyph a full em wide, so "short" here is very short.

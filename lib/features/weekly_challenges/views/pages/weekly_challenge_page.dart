@@ -281,7 +281,7 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> with WidgetsB
                   ],
                   if (detail.entries.isEmpty) ...[
                     // An ended challenge with no entries points to the open one, so the page is not a dead end.
-                    if (!open && state.current != null)
+                    if (!open && (state.current?.isOpenAt(DateTime.now().toUtc()) ?? false))
                       PrismGroup(
                         children: [
                           PrismRow(
