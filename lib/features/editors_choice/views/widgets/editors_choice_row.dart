@@ -32,7 +32,6 @@ class EditorsChoiceRow extends StatefulWidget {
 class _EditorsChoiceRowState extends State<EditorsChoiceRow> {
   static const int _loadLimit = 30;
   static const int _stripLimit = 10;
-  static const double _visibleCards = 2.4;
 
   late final EditorsChoiceCubit _cubit;
   late final bool _ownsCubit;
@@ -72,9 +71,12 @@ class _EditorsChoiceRowState extends State<EditorsChoiceRow> {
   }
 
   Widget _section(BuildContext context, List<PrismWallpaper> walls) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[_header(context), _wallStrip(context, walls)],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: PrismSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[_header(context), _wallStrip(context, walls)],
+      ),
     );
   }
 
@@ -127,15 +129,21 @@ class _EditorsChoiceRowState extends State<EditorsChoiceRow> {
     );
   }
 
-  double _cardWidth(BuildContext context) =>
-      (MediaQuery.sizeOf(context).width - PrismFeedLayout.gridSpacing * 3) / _visibleCards;
+  /// One For you grid column, so the strip's cards line up with the tiles above and below. The next card peeks in
+  /// the page margin.
+  double _cardWidth(BuildContext context) {
+    final int columns = PrismWallGrid.columns(context);
+    final double content = MediaQuery.sizeOf(context).width - PrismWallGrid.margin * 2;
+    return (content - PrismWallGrid.spacing * (columns - 1)) / columns;
+  }
 
   Widget _wallStrip(BuildContext context, List<PrismWallpaper> walls) {
     final List<PrismFeedItem> items = <PrismFeedItem>[
       for (final PrismWallpaper wall in walls.take(_stripLimit)) PrismFeedItem(id: wall.id, wallpaper: wall),
     ];
     final double cardWidth = _cardWidth(context);
-    final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: 2);
+    final int columns = PrismWallGrid.columns(context);
+    final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns);
     final double cardHeight = cardWidth / PrismFeedLayout.gridTileAspectRatio;
     return SizedBox(
       height: cardHeight,
@@ -150,7 +158,7 @@ class _EditorsChoiceRowState extends State<EditorsChoiceRow> {
           child: WallpaperTile(
             item: items[index],
             index: index,
-            crossAxisCount: 2,
+            crossAxisCount: columns,
             memCacheHeight: decodeHeight,
             impressionSession: _impressionSession,
             sourceContext: 'home_editors_choice_row',

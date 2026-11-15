@@ -160,7 +160,7 @@ class GlintState extends StatelessWidget {
                 ),
                 child: body,
               );
-        Widget centered = tall ? Align(alignment: const Alignment(0, -0.5), child: animated) : Center(child: animated);
+        Widget centered = tall ? Align(alignment: const Alignment(0, -0.2), child: animated) : Center(child: animated);
         if (kind == GlintStateKind.error || kind == GlintStateKind.offline) {
           centered = Semantics(liveRegion: true, container: true, child: centered);
         }

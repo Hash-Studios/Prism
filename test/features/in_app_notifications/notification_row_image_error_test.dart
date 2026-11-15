@@ -78,7 +78,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a gallery strip shows at most three phone-ratio thumbnails', (tester) async {
+  testWidgets('a gallery strip shows at most two phone-ratio thumbnails', (tester) async {
     await tester.pumpWidget(
       host(
         const Center(
@@ -94,9 +94,33 @@ void main() {
       ),
     );
 
-    expect(find.byType(CachedNetworkImage), findsNWidgets(3));
+    expect(find.byType(CachedNetworkImage), findsNWidgets(2));
     expect(tester.getSize(find.byType(CachedNetworkImage).first), const Size(30, 54));
+    expect(tester.getSize(find.byType(NotificationThumbs)).width, NotificationThumbs.slotWidth);
   });
+
+  for (final direction in TextDirection.values) {
+    testWidgets('compact row aligns its text with the full row in $direction', (tester) async {
+      tester.view.physicalSize = const Size(320, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        host(
+          Directionality(
+            textDirection: direction,
+            child: NotificationRow(
+              notification: notification('compact').copyWith(read: true),
+              compactInGroup: true,
+              compactBodyOverride: 'Body',
+            ),
+          ),
+        ),
+      );
+      final rect = tester.getRect(find.text('Body'));
+      expect(direction == TextDirection.ltr ? rect.left : 320 - rect.right, notificationTextInset);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('a notification without an image has no media slot', (tester) async {
     await tester.pumpWidget(host(NotificationRow(notification: notification('no-image').copyWith(imageUrl: ''))));

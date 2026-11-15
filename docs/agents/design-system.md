@@ -196,7 +196,7 @@ what to do. Sentence case everywhere. No "Oops", no exclamation marks on errors.
   pull, with a selection haptic per step and an impact at the trigger, and the gap is held on the scroll position so
   headers never move. Android keeps a styled `RefreshIndicator` inside it. `PrismLoader` is the one loading mark.
 - Sheets open in 280 ms and close in 240 ms; the dim is driven by the same animation as the sheet.
-- Grid to detail zooms over 260 ms with the grid stepping back to 0.94 behind the growing tile; the detail's chrome
+- Grid to detail zooms over 300 ms with the grid stepping back to 0.94 behind the growing tile; the detail's chrome
   lands last. On the detail, a swipe up past 18 % (or a fling) snaps to "More like this" with one spring from the
   release speed; the wall docks as a 28 point thumbnail beside Back, and a glass "^" button returns.
 - The tile hold menu opens after a 300 ms hold; a ring under the finger fills over the hold.

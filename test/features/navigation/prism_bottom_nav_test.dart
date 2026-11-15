@@ -4,6 +4,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/side_safe_column.dart';
+import 'package:Prism/features/layout_prefs/domain/entities/layout_prefs.dart';
 import 'package:Prism/features/navigation/views/widgets/bottom_nav_bar.dart';
 import 'package:Prism/features/navigation/views/widgets/nav_glass.dart';
 import 'package:Prism/features/navigation/views/widgets/prism_bottom_nav.dart';
@@ -317,6 +318,27 @@ void main() {
     await tester.tap(find.byIcon(Icons.arrow_upward_rounded));
     await tester.pumpAndSettle();
     expect(controller.offset, 0);
+    handle.dispose();
+  });
+
+  testWidgets('the scroll to top button stays away on the Rewards tab', (tester) async {
+    final SemanticsHandle handle = tester.ensureSemantics();
+    final _FakeTabsRouter router = _FakeTabsRouter()..setActiveIndex(NavTab.rewards.index);
+    await tester.pumpWidget(
+      _host(
+        router,
+        BottomBar(
+          child: ListView.builder(
+            itemCount: 100,
+            itemBuilder: (_, int i) => SizedBox(height: 80, child: Text('row $i')),
+          ),
+        ),
+        reduceMotion: true,
+      ),
+    );
+    await _dragList(tester, const Offset(0, -1500));
+    await _dragList(tester, const Offset(0, -1500));
+    expect(find.byIcon(Icons.arrow_upward_rounded), findsNothing);
     handle.dispose();
   });
 

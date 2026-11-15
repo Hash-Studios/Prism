@@ -134,7 +134,12 @@ class NotificationRow extends StatelessWidget {
               ? notification.title.trim()
               : localizedNotificationCopy(notification, context.l10n).body.trim());
     return Padding(
-      padding: const EdgeInsets.fromLTRB(notificationTextInset, PrismSpace.xs, PrismSpace.page, PrismSpace.xs),
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        notificationTextInset,
+        PrismSpace.xs,
+        PrismSpace.page,
+        PrismSpace.xs,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -199,7 +204,8 @@ class NotificationRow extends StatelessWidget {
   }
 }
 
-/// The title of a notification with its time, and a reserved end slot, on one line.
+/// The title of a notification, a fixed end slot for [trailing] (for example an expand chevron), and the time on a
+/// caption line under the title.
 class NotificationTitleLine extends StatelessWidget {
   const NotificationTitleLine({
     super.key,
@@ -212,46 +218,31 @@ class NotificationTitleLine extends StatelessWidget {
   final String title;
   final String time;
   final bool unread;
-
-  /// Shown after the time, for example an expand chevron.
   final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
-    final Widget heading = Text(
-      title,
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-      style: PrismTextStyles.rowTitle(context).copyWith(fontWeight: unread ? FontWeight.w700 : FontWeight.w500),
-    );
-    final Widget timestamp = Text(time, style: PrismTextStyles.caption(context));
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth < MediaQuery.textScalerOf(context).scale(220)) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              heading,
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Expanded(child: timestamp),
-                  if (trailing != null) SizedBox(width: 24, child: trailing),
-                ],
-              ),
-            ],
-          );
-        }
-        return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Expanded(child: heading),
-            const SizedBox(width: PrismSpace.xs),
-            Padding(padding: const EdgeInsets.only(top: 2), child: timestamp),
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: PrismTextStyles.rowTitle(
+                  context,
+                ).copyWith(fontWeight: unread ? FontWeight.w700 : FontWeight.w500),
+              ),
+            ),
             SizedBox(width: 24, child: trailing),
           ],
-        );
-      },
+        ),
+        Text(time, style: PrismTextStyles.caption(context)),
+      ],
     );
   }
 }

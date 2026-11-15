@@ -7,6 +7,7 @@ import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc.dart';
 import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_event.dart';
@@ -14,6 +15,7 @@ import 'package:Prism/features/wallpaper_detail/biz/bloc/wallpaper_detail_state.
 import 'package:Prism/features/wallpaper_detail/views/pages/wallpaper_detail_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/widgets/wallpaper_action_bar.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:Prism/theme/jam_icons_icons.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -75,6 +77,11 @@ void main() {
     expect(find.text('Wallhaven'), findsOneWidget);
     expect(find.text('136'), findsOneWidget);
     expect(find.byType(WallpaperActionBar), findsNothing, reason: 'actions wait for the confirmed wall');
+    // The pending row draws the real icons muted. Only Save is a bone. A Wallhaven wall has no comments.
+    final Finder pending = find.byKey(const ValueKey<String>('detail-pending-actions'));
+    expect(find.descendant(of: pending, matching: find.byIcon(JamIcons.share_alt)), findsOneWidget);
+    expect(find.descendant(of: pending, matching: find.byIcon(Icons.chat_bubble_outline_rounded)), findsNothing);
+    expect(find.descendant(of: pending, matching: find.byType(PrismBone)), findsOneWidget);
     final double nameTop = tester.getRect(find.text('Ana')).top;
 
     states.add(const WallpaperDetailLoaded(entity: _wall, paletteLoading: false));
@@ -90,6 +97,74 @@ void main() {
     expect(find.text('136'), findsOneWidget);
     expect(tester.getRect(find.text('Ana')).top, nameTop);
   });
+  for (final direction in TextDirection.values) {
+    testWidgets('pending actions fit a narrow screen at large text scale $direction', (tester) async {
+      tester.view.physicalSize = const Size(280, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final bloc = _DetailBloc();
+      whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: const WallpaperDetailLoading());
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1)),
+            child: Directionality(textDirection: direction, child: favouriteTestBuilder(context, child)),
+          ),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: BlocProvider<WallpaperDetailBloc>.value(
+            value: bloc,
+            child: const WallpaperDetailScreen(entity: _wall),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      final pending = tester.widget(find.byKey(const ValueKey<String>('detail-pending-actions')));
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: MediaQuery(
+              data: const MediaQueryData(textScaler: TextScaler.linear(3)),
+              child: Directionality(textDirection: direction, child: pending),
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const ValueKey<String>('detail-pending-actions')), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
+
+  for (final direction in TextDirection.values) {
+    testWidgets('detail summary fits a narrow screen at large text scale $direction', (tester) async {
+      tester.view.physicalSize = const Size(280, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final bloc = _DetailBloc();
+      whenListen(bloc, const Stream<WallpaperDetailState>.empty(), initialState: const WallpaperDetailLoading());
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(3)),
+            child: Directionality(textDirection: direction, child: favouriteTestBuilder(context, child)),
+          ),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: BlocProvider<WallpaperDetailBloc>.value(
+            value: bloc,
+            child: const WallpaperDetailScreen(entity: _wall),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.text('Wallhaven'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
+
   testWidgets('opening chrome cannot take taps before the route lands', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;

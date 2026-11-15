@@ -201,6 +201,17 @@ const PublicProfileEntity _ana = PublicProfileEntity(
   coverPhoto: '',
 );
 
+PublicProfileEntity _anaWithBio(String bio) => PublicProfileEntity(
+  id: _ana.id,
+  name: _ana.name,
+  email: _ana.email,
+  username: _ana.username,
+  profilePhoto: _ana.profilePhoto,
+  bio: bio,
+  links: _ana.links,
+  coverPhoto: _ana.coverPhoto,
+);
+
 void main() {
   setUpFavouriteCounts();
   setUp(() => getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore())));
@@ -295,7 +306,7 @@ void main() {
     expect(find.text('@signed_in'), findsNothing);
   });
 
-  testWidgets('a guest sees another user\'s profile, not the sign-in prompt', (tester) async {
+  testWidgets("a guest sees another user's profile, not the sign-in prompt", (tester) async {
     app_state.prismUser = profileUser(loggedIn: false);
 
     await pumpScreen(tester, identifier: 'u2');
@@ -614,17 +625,13 @@ void main() {
       ),
     );
     await tester.pump(const Duration(milliseconds: 400));
-    bool glass(String tooltip) => tester
-        .widget<PrismIconButton>(find.ancestor(of: find.byTooltip(tooltip), matching: find.byType(PrismIconButton)))
-        .glass;
-
-    expect(glass('Menu'), isTrue);
+    expect(glassAlpha(tester, 'Menu'), closeTo(0.92, 0.001));
     expect(find.byTooltip('Stats').hitTestable(), findsOneWidget);
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(glass('Menu'), isFalse);
+    expect(glassAlpha(tester, 'Menu'), 0);
     expect(find.byTooltip('Menu').hitTestable(), findsOneWidget);
     expect(find.byTooltip('Stats').hitTestable(), findsNothing);
     // The collapsed title (avatar slot, then the name) is centred between Back and the menu.
@@ -633,7 +640,13 @@ void main() {
     expect((slot.left + tester.getRect(title).right) / 2, closeTo(195, 1));
   });
 
-  Future<void> pumpPhone(WidgetTester tester, {String? identifier, bool reduceMotion = false}) async {
+  Future<void> pumpPhone(
+    WidgetTester tester, {
+    String? identifier,
+    bool reduceMotion = false,
+    double textScale = 1,
+    PublicProfileEntity profile = _ana,
+  }) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -645,7 +658,9 @@ void main() {
         builder: (BuildContext context, Widget? child) => favouriteTestBuilder(
           context,
           MediaQuery(
-            data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
+            data: MediaQuery.of(
+              context,
+            ).copyWith(disableAnimations: reduceMotion, textScaler: TextScaler.linear(textScale)),
             child: child!,
           ),
         ),
@@ -653,7 +668,7 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 400));
     if (identifier != null) {
-      repository.profiles.add(_ana);
+      repository.profiles.add(profile);
       await tester.pump(const Duration(milliseconds: 400));
     }
   }
@@ -661,6 +676,103 @@ void main() {
   Rect carriedAvatar(WidgetTester tester) => tester.getRect(
     find.descendant(of: find.byKey(const ValueKey<String>('profile-carried-avatar')), matching: find.byType(ClipOval)),
   );
+
+  testWidgets('mid-collapse, the header glass fades instead of switching off', (tester) async {
+    await pumpPhone(tester, identifier: 'u2');
+    final ScrollPosition position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+    final double expanded = tester.getRect(find.byType(AppBar)).height;
+    position.jumpTo(10000);
+    await tester.pump();
+    final double range = expanded - tester.getRect(find.byType(AppBar)).height;
+    // 7/8 of the way: inside the last quarter, where the glass fades.
+    position.jumpTo(range * 7 / 8);
+    await tester.pump();
+
+    final double alpha = glassAlpha(tester, 'Back');
+    expect(alpha, greaterThan(0));
+    expect(alpha, lessThan(0.92));
+    expect(glassAlpha(tester, 'More options'), closeTo(alpha, 0.001));
+  });
+
+  testWidgets('the bar name shows only once the header name has passed under the bar', (tester) async {
+    await pumpPhone(tester, identifier: 'u2');
+    final ScrollPosition position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+    final Finder barName = find.descendant(of: find.byType(AppBar), matching: find.text('Ana Rivera'));
+    double barNameOpacity() =>
+        tester.widget<Opacity>(find.ancestor(of: barName, matching: find.byType(Opacity)).first).opacity;
+    final double expanded = tester.getRect(find.byType(AppBar)).height;
+    position.jumpTo(10000);
+    await tester.pump();
+    final double collapsedAt = expanded - tester.getRect(find.byType(AppBar)).height;
+
+    // Just collapsed: the header name is still under the bar, so the bar does not repeat it.
+    position.jumpTo(collapsedAt);
+    await tester.pump();
+    expect(barNameOpacity(), 0);
+    final Finder headerName = find.text('Ana Rivera').last;
+    expect(tester.getRect(headerName).top, greaterThanOrEqualTo(tester.getRect(find.byType(AppBar)).bottom));
+
+    // Half way under the bar: half shown.
+    position.jumpTo(collapsedAt + PrismSpace.xxs + 14);
+    await tester.pump();
+    expect(barNameOpacity(), closeTo(0.5, 0.01));
+
+    position.jumpTo(collapsedAt + 200);
+    await tester.pump();
+    expect(barNameOpacity(), 1);
+  });
+
+  for (final scale in [2.0, 3.0]) {
+    testWidgets('large text keeps the bar name fading until the header name has passed at $scale', (tester) async {
+      await pumpPhone(tester, identifier: 'u2', textScale: scale);
+      final ScrollPosition position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+      final double expanded = tester.getRect(find.byType(AppBar)).height;
+      position.jumpTo(10000);
+      await tester.pump();
+      final double collapsedAt = expanded - tester.getRect(find.byType(AppBar)).height;
+      position.jumpTo(collapsedAt + PrismSpace.xxs + 28);
+      await tester.pump();
+      final Finder barName = find.descendant(of: find.byType(AppBar), matching: find.text('Ana Rivera'));
+      final double opacity = tester
+          .widget<Opacity>(find.ancestor(of: barName, matching: find.byType(Opacity)).first)
+          .opacity;
+      expect(opacity, lessThan(1));
+      expect(
+        tester.getRect(find.text('Ana Rivera').last).bottom,
+        greaterThan(tester.getRect(find.byType(AppBar)).bottom),
+      );
+    });
+  }
+
+  testWidgets('at 3x text the bar name is still fading past the app bar title clamp', (tester) async {
+    await pumpPhone(tester, identifier: 'u2', textScale: 3);
+    final ScrollPosition position = tester.state<ScrollableState>(find.byType(Scrollable).first).position;
+    final double expanded = tester.getRect(find.byType(AppBar)).height;
+    position.jumpTo(10000);
+    await tester.pump();
+    final double collapsedAt = expanded - tester.getRect(find.byType(AppBar)).height;
+    // The app bar clamps its title to 1.34x, which would finish the fade at 28 * 1.34 = 37.5 points.
+    position.jumpTo(collapsedAt + PrismSpace.xxs + 40);
+    await tester.pump();
+    final Finder barName = find.descendant(of: find.byType(AppBar), matching: find.text('Ana Rivera'));
+    final double opacity = tester
+        .widget<Opacity>(find.ancestor(of: barName, matching: find.byType(Opacity)).first)
+        .opacity;
+    expect(opacity, inExclusiveRange(0, 1));
+  });
+
+  testWidgets('a short bio shares the handle line; a long one keeps its own line', (tester) async {
+    final Finder line = find.byKey(const ValueKey<String>('profile-handle-bio-line'));
+    // The test font draws every glyph a full em wide, so "short" here is very short.
+    await pumpPhone(tester, identifier: 'u2', profile: _anaWithBio('Hi.'));
+    expect(line, findsOneWidget);
+    expect(find.descendant(of: line, matching: find.text('@ana_rivera')), findsOneWidget);
+    expect(find.descendant(of: line, matching: find.textContaining('Hi.', findRichText: true)), findsWidgets);
+
+    await pumpPhone(tester, identifier: 'u2');
+    expect(line, findsNothing);
+    expect(find.textContaining('Makes calm gradients.', findRichText: true), findsWidgets);
+  });
 
   for (final String? identifier in <String?>[null, 'u2']) {
     final String who = identifier == null ? 'own' : 'creator';
@@ -1038,8 +1150,8 @@ void main() {
     expect(find.byTooltip('Edit profile'), findsNothing);
     expect(find.text('Upload your first wallpaper to start your gallery.'), findsNothing);
     // Header buttons over the cover use the glass look, readable on a light cover.
-    for (final IconData icon in <IconData>[Icons.arrow_back_rounded, Icons.card_giftcard_rounded]) {
-      expect(tester.widget<PrismIconButton>(find.widgetWithIcon(PrismIconButton, icon)).glass, isTrue);
+    for (final String tooltip in <String>['Back', 'Gift a 24 h pass', 'More options']) {
+      expect(glassAlpha(tester, tooltip), closeTo(0.92, 0.001), reason: tooltip);
     }
   });
 
@@ -1382,4 +1494,14 @@ void main() {
       expect(send.onPressed, isNull);
     });
   });
+}
+
+double glassAlpha(WidgetTester tester, String tooltip) {
+  final Finder button = find.ancestor(of: find.byTooltip(tooltip), matching: find.byType(Stack)).first;
+  final Finder glass = find.descendant(
+    of: button,
+    matching: find.byKey(const ValueKey<String>('profile-header-glass')),
+  );
+  final DecoratedBox box = tester.widget<DecoratedBox>(find.descendant(of: glass, matching: find.byType(DecoratedBox)));
+  return (box.decoration as BoxDecoration).color!.a;
 }

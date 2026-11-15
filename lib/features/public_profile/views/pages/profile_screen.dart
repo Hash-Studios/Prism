@@ -687,6 +687,27 @@ class _ProfileChildState extends State<_ProfileChild> {
     final double collapsedAvatarX =
         screen.width / 2 + (Directionality.of(context) == TextDirection.rtl ? slotOffset : -slotOffset);
     final double expandedAvatarY = coverHeight - 56 + _headerAvatarSize / 2;
+    final String handle = '@${_profile.username}';
+    // The header name's scaler. The app bar clamps its title's scaling, so the bar context would fade too early.
+    final TextScaler headerTextScaler = MediaQuery.textScalerOf(context);
+    final TextStyle handleStyle = PrismTextStyles.caption(
+      context,
+    ).copyWith(fontSize: 14, fontWeight: FontWeight.normal, letterSpacing: 0.2);
+    final TextStyle bioStyle = PrismTextStyles.caption(context).copyWith(fontWeight: FontWeight.normal, height: 1.45);
+    final Widget bioText = ProfileBioText(bio: _profile.bio, style: bioStyle, onOpenLink: _openBioLink);
+    // A short bio shares the handle line, so the gallery starts higher.
+    final bool bioOnHandleLine =
+        _profile.bio.isNotEmpty &&
+        !_profile.bio.contains('\n') &&
+        _fitsOneLine(
+          context,
+          TextSpan(
+            style: handleStyle,
+            text: '$handle \u00B7 ',
+            children: <TextSpan>[TextSpan(text: _profile.bio, style: bioStyle)],
+          ),
+          headerWidth * 0.7,
+        );
 
     return Scaffold(
       key: _scaffoldKey,
@@ -709,6 +730,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                 builder: (BuildContext context) {
                   final double opacity = _collapsedTitleOpacity(context);
                   if (opacity == 0) return const SizedBox.shrink();
+                  final ScrollPosition position = Scrollable.of(context).position;
                   // The name is already read out in the header below, so this copy is visual only.
                   return ExcludeSemantics(
                     child: Row(
@@ -728,8 +750,11 @@ class _ProfileChildState extends State<_ProfileChild> {
                         const SizedBox(width: PrismSpace.xs),
                         // Flexible: mid-collapse, the fading actions can still take some of the bar.
                         Flexible(
-                          child: Opacity(
-                            opacity: opacity,
+                          // The name fades in while the header name passes under the bar, so it never shows twice.
+                          child: ListenableBuilder(
+                            listenable: position,
+                            builder: (BuildContext context, Widget? name) =>
+                                Opacity(opacity: _barNameOpacity(context, position, headerTextScaler), child: name),
                             child: SizedBox(
                               width: titleNameWidth,
                               child: Text(displayName, maxLines: 1, overflow: TextOverflow.ellipsis, style: titleStyle),
@@ -788,33 +813,19 @@ class _ProfileChildState extends State<_ProfileChild> {
                     onPressed: () => unawaited(_openGiftSheet()),
                   ),
                   const SizedBox(width: PrismSpace.xxs),
-                  // The same glass look as PrismIconButton(glass: true) while the cover shows: the shadow sits under
-                  // the 44 point circle. Collapsed, it is a plain icon like the rest of the bar.
+                  // The same glass circle as the other header buttons, fading out as the header collapses.
                   Builder(
                     builder: (BuildContext context) {
-                      final bool glass = _collapsedTitleOpacity(context) < 1;
                       return Stack(
                         alignment: Alignment.center,
                         children: <Widget>[
-                          if (glass)
-                            const SizedBox.square(
-                              dimension: 44,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  boxShadow: <BoxShadow>[
-                                    BoxShadow(color: Color(0x1F000000), blurRadius: 6, offset: Offset(0, 1)),
-                                  ],
-                                ),
-                              ),
-                            ),
+                          _GlassCircle(amount: 1 - _collapsedTitleOpacity(context)),
                           PopupMenuButton<_ProfileMenuAction>(
                             tooltip: context.l10n.accountMoreOptions,
                             icon: const Icon(Icons.more_vert_rounded, size: 22),
                             iconColor: cs.onSurface,
                             padding: EdgeInsets.zero,
                             style: IconButton.styleFrom(
-                              backgroundColor: glass ? cs.surface.withValues(alpha: 0.92) : null,
                               minimumSize: const Size.square(44),
                               fixedSize: const Size.square(44),
                               padding: EdgeInsets.zero,
@@ -956,26 +967,27 @@ class _ProfileChildState extends State<_ProfileChild> {
                     const SizedBox(height: 3),
                     SizedBox(
                       width: headerWidth * 0.7,
-                      child: Text(
-                        '@${_profile.username}',
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: PrismTextStyles.caption(
-                          context,
-                        ).copyWith(fontSize: 14, fontWeight: FontWeight.normal, letterSpacing: 0.2),
-                      ),
+                      child: bioOnHandleLine
+                          ? Row(
+                              key: const ValueKey<String>('profile-handle-bio-line'),
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: <Widget>[
+                                Text(handle, maxLines: 1, style: handleStyle),
+                                Text(' \u00B7 ', style: handleStyle),
+                                Flexible(child: bioText),
+                              ],
+                            )
+                          : Text(
+                              handle,
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: handleStyle,
+                            ),
                     ),
-                    if (_profile.bio.isNotEmpty) ...<Widget>[
+                    if (_profile.bio.isNotEmpty && !bioOnHandleLine) ...<Widget>[
                       const SizedBox(height: PrismSpace.xs),
-                      SizedBox(
-                        width: headerWidth * 0.72,
-                        child: ProfileBioText(
-                          bio: _profile.bio,
-                          style: PrismTextStyles.caption(context).copyWith(fontWeight: FontWeight.normal, height: 1.45),
-                          onOpenLink: _openBioLink,
-                        ),
-                      ),
+                      SizedBox(width: headerWidth * 0.72, child: bioText),
                     ],
                     // One meta row: the Pro pill, then the badges.
                     ProfileBadgeRow(
@@ -1030,7 +1042,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                           creatorUid: _profile.id,
                         ),
                       ),
-                      const SizedBox(height: PrismSpace.md),
+                      const SizedBox(height: PrismSpace.sm),
                       BlocConsumer<PublicProfileBloc, PublicProfileState>(
                         listenWhen: (prev, curr) =>
                             curr.followOutcome != null && prev.followOutcome != curr.followOutcome,
@@ -1115,9 +1127,55 @@ class _HeaderButton extends StatelessWidget {
   final String tooltip;
   final VoidCallback onPressed;
 
+  // Built like PrismIconButton(glass: true), but the glass circle fades with the collapse instead of switching off.
   @override
-  Widget build(BuildContext context) =>
-      PrismIconButton(icon: icon, tooltip: tooltip, glass: _collapsedTitleOpacity(context) < 1, onPressed: onPressed);
+  Widget build(BuildContext context) => PressScale(
+    child: Stack(
+      alignment: Alignment.center,
+      children: <Widget>[
+        _GlassCircle(amount: 1 - _collapsedTitleOpacity(context)),
+        IconButton(
+          tooltip: tooltip,
+          onPressed: onPressed,
+          icon: Icon(icon, size: 22),
+          color: Theme.of(context).colorScheme.onSurface,
+          style: IconButton.styleFrom(
+            minimumSize: const Size.square(44),
+            fixedSize: const Size.square(44),
+            padding: EdgeInsets.zero,
+            shape: const CircleBorder(),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// The glass look of PrismIconButton: a near-opaque page-colour circle with a soft shadow. [amount] fades it from
+/// full glass (1) to nothing (0).
+class _GlassCircle extends StatelessWidget {
+  const _GlassCircle({required this.amount});
+
+  final double amount;
+
+  @override
+  Widget build(BuildContext context) => SizedBox.square(
+    key: const ValueKey<String>('profile-header-glass'),
+    dimension: 44,
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.92 * amount),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12 * amount),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 /// Header actions that fade out and shrink to no width as the header collapses, in step with the collapsed title.
@@ -1309,6 +1367,31 @@ double _headerExpansion(BuildContext context) {
 /// How far the pinned header has collapsed, as the opacity of what shows only when it is collapsed: 0 while the
 /// cover shows, rising to 1 over the last quarter of the collapse.
 double _collapsedTitleOpacity(BuildContext context) => (1 - _headerExpansion(context) / 0.25).clamp(0.0, 1.0);
+
+/// The height of the header name, over which the bar name fades in as the header name scrolls under the bar.
+const double _headerNameHeight = 28;
+
+/// The bar name's opacity: 0 until the header has collapsed and the header name starts to pass under the bar, 1 once
+/// it has gone. The header name sits [PrismSpace.xxs] below the collapsed header.
+double _barNameOpacity(BuildContext context, ScrollPosition position, TextScaler headerTextScaler) {
+  final FlexibleSpaceBarSettings? settings = context.dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
+  if (settings == null || !position.hasPixels) return _collapsedTitleOpacity(context);
+  final double collapsedAt = settings.maxExtent - settings.minExtent;
+  return ((position.pixels - collapsedAt - PrismSpace.xxs) / (_headerNameHeight * headerTextScaler.scale(22) / 22))
+      .clamp(0.0, 1.0);
+}
+
+bool _fitsOneLine(BuildContext context, InlineSpan text, double maxWidth) {
+  final TextPainter painter = TextPainter(
+    text: text,
+    maxLines: 1,
+    textDirection: Directionality.of(context),
+    textScaler: MediaQuery.textScalerOf(context),
+  )..layout(maxWidth: maxWidth);
+  final bool fits = !painter.didExceedMaxLines;
+  painter.dispose();
+  return fits;
+}
 
 String _compactCount(BuildContext context, int count) =>
     NumberFormat.compact(locale: Localizations.localeOf(context).toString()).format(count);
