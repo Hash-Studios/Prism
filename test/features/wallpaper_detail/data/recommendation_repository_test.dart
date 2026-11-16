@@ -117,15 +117,16 @@ class _Firestore extends Fake implements FirestoreClient {
         after = orders.map((order) => field(document, order.field)).toList();
       }
     }
-    final ordered = rows
-        .where(
-          (row) => spec.orderBy.every(
-            (order) => order.field == firestoreDocumentIdField || row.containsKey(order.field),
-          ),
-        )
-        .where((row) => spec.filters.every((filter) => row[filter.field] == filter.value))
-        .toList()
-      ..sort((left, right) => compare(left, orders.map((order) => field(right, order.field)).toList()));
+    final ordered =
+        rows
+            .where(
+              (row) => spec.orderBy.every(
+                (order) => order.field == firestoreDocumentIdField || row.containsKey(order.field),
+              ),
+            )
+            .where((row) => spec.filters.every((filter) => row[filter.field] == filter.value))
+            .toList()
+          ..sort((left, right) => compare(left, orders.map((order) => field(right, order.field)).toList()));
     return ordered
         .where((row) => after == null || compare(row, after) > 0)
         .take(spec.limit ?? rows.length)
@@ -402,12 +403,7 @@ void main() {
     final timestamp = Timestamp(1800000000, 987654321);
     firestore.rows = [
       for (var i = 0; i < 26; i++)
-        {
-          'id': 'w${i.toString().padLeft(2, '0')}',
-          'category': 'Nature',
-          'review': true,
-          'createdAt': timestamp,
-        },
+        {'id': 'w${i.toString().padLeft(2, '0')}', 'category': 'Nature', 'review': true, 'createdAt': timestamp},
       {'id': 'older', 'category': 'Nature', 'review': true, 'createdAt': Timestamp(timestamp.seconds, 987654320)},
     ];
     final current = _item('current');
