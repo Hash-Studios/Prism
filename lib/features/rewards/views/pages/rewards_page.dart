@@ -155,7 +155,7 @@ class _RewardsPageState extends State<RewardsPage> with WidgetsBindingObserver {
         body: SignInPrompt(feature: context.l10n.economyRewardsTitle),
       );
     }
-    const SizedBox gap = SizedBox(height: PrismSpace.lg);
+    const SizedBox gap = SizedBox(height: PrismSpace.sm);
     final double bottom = widget.showBack
         ? PrismSpace.xxl + MediaQuery.paddingOf(context).bottom
         : PrismSpace.bottomBarClearance;

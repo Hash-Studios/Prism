@@ -485,8 +485,9 @@ void main() {
       await tester.pump();
       expect(find.text(AppLocalizationsEn().economyCollectionUnlockedAtDays(7)), findsOneWidget);
       expect(tester.takeException(), isNull);
-      await tester.scrollUntilVisible(find.text('See all'), 200, scrollable: find.byType(Scrollable).first);
+      await tester.scrollUntilVisible(find.text('Show more'), 200, scrollable: find.byType(Scrollable).first);
       await tester.pump();
+      expect(find.text('Show more'), findsOneWidget);
       expect(find.text('See all'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
