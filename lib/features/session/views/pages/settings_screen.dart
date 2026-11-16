@@ -6,6 +6,7 @@ import 'package:Prism/auth/google_auth.dart' show WrongAccountException;
 import 'package:Prism/core/account/delete_account_service.dart';
 import 'package:Prism/core/account/reauth_cancelled.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/authenticated_user.dart';
 import 'package:Prism/core/auth/require_signed_in_action.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
@@ -19,6 +20,7 @@ import 'package:Prism/core/purchases/manage_subscription.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/purchases/purchases_service.dart';
 import 'package:Prism/core/router/app_router.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/core/utils/url_launcher_compat.dart';
@@ -45,6 +47,7 @@ import 'package:Prism/features/promo_codes/views/store_code_redemption.dart';
 import 'package:Prism/features/public_profile/views/widgets/show_pro_badge_row.dart';
 import 'package:Prism/features/quick_tiles/data/quick_tile_defaults.dart';
 import 'package:Prism/features/readability/views/readability_views.dart';
+import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:Prism/features/session/data/low_data_mode.dart';
 import 'package:Prism/features/session/data/report_problem_service.dart' show ReportTrigger;
 import 'package:Prism/features/session/data/shake_to_report.dart';
@@ -60,6 +63,7 @@ import 'package:Prism/logger/logger.dart';
 import 'package:Prism/main.dart' as main;
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, visibleForTesting;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -161,10 +165,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   int? _imageCacheSize;
   int? _downloads;
   int? _savedOfflineSize;
+  StreamSubscription<Object?>? _sessionSubscription;
+  StreamSubscription<User?>? _authSubscription;
+
+  void _onAccountChanged(Object? _) {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _watchAuth() async {
+    if (!await FirebaseInit.defaultAppReady() || !mounted) return;
+    _authSubscription = FirebaseAuth.instance.authStateChanges().listen(_onAccountChanged);
+  }
 
   @override
   void initState() {
     super.initState();
+    _sessionSubscription = context.read<SessionBloc?>()?.stream.listen(_onAccountChanged);
+    unawaited(_watchAuth());
     _viewedStore.addListener(_onViewedStoreChanged);
     personalizedFeedSettingsRevision.addListener(_onAiSettingsChanged);
     _showAnime = animeEnabledFromCategories(_settingsLocal.get<int>('WHcategories', defaultValue: 100));
@@ -604,6 +621,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void dispose() {
     _viewedStore.removeListener(_onViewedStoreChanged);
     personalizedFeedSettingsRevision.removeListener(_onAiSettingsChanged);
+    unawaited(_sessionSubscription?.cancel());
+    unawaited(_authSubscription?.cancel());
     super.dispose();
   }
 
@@ -982,13 +1001,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       showChevron: false,
       onTap: _tap(_confirmLogOut),
     ),
-    PrismRow(
-      icon: Icons.delete_forever_rounded,
-      title: context.l10n.accountDeleteAccount,
-      destructive: true,
-      showChevron: false,
-      onTap: _tap(_confirmDeleteAccount),
-    ),
+    if (authenticatedUserId != null)
+      PrismRow(
+        icon: Icons.delete_forever_rounded,
+        title: context.l10n.accountDeleteAccount,
+        destructive: true,
+        showChevron: false,
+        onTap: _tap(_confirmDeleteAccount),
+      ),
   ];
 
   Future<void> _confirmLogOut() async {
@@ -1032,6 +1052,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _confirmDeleteAccount() async {
+    final String? userId = authenticatedUserId;
+    if (userId == null) return;
     final bool premium = app_state.prismUser.premium;
     final bool? ok = await showPrismSheet<bool>(
       context,
@@ -1079,11 +1101,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
-    if (ok != true || !mounted) return;
-    await _deleteAccount();
+    if (ok != true || !mounted || authenticatedUserId != userId) return;
+    await _deleteAccount(userId);
   }
 
-  Future<void> _deleteAccount() async {
+  Future<void> _deleteAccount(String userId) async {
     final AppLocalizations l10n = context.l10n;
     final NavigatorState rootNavigator = Navigator.of(context, rootNavigator: true);
     unawaited(
@@ -1105,9 +1127,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
     try {
-      await DeleteAccountService.instance.deleteAccount();
+      final bool deleted = await DeleteAccountService.instance.deleteAccount(expectedUserId: userId);
       rootNavigator.pop();
-      if (rootNavigator.mounted) main.RestartWidget.restartApp(rootNavigator.context);
+      if (deleted && rootNavigator.mounted) main.RestartWidget.restartApp(rootNavigator.context);
     } catch (error) {
       rootNavigator.pop();
       if (isReauthCancelled(error)) return;

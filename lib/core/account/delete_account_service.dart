@@ -1,11 +1,11 @@
 import 'package:Prism/auth/google_auth.dart';
 import 'package:Prism/core/account/local_account_data_cleaner.dart';
+import 'package:Prism/core/auth/authenticated_user.dart';
 import 'package:Prism/core/constants/app_functions.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/session_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
-import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/state/auth_runtime.dart';
 import 'package:Prism/features/onboarding_v2/src/common/onboarding_v2_keys.dart';
 import 'package:Prism/logger/logger.dart';
@@ -41,14 +41,15 @@ class DeleteAccountService {
   ///   2. Calls the `deleteAccount` callable, which deletes all user data and the
   ///      Firebase Auth user server-side
   ///   3. Signs out of the Google SDK and clears local persistence
-  Future<void> deleteAccount() async {
-    final userId = app_state.prismUser.id;
-    if (userId.isEmpty) throw StateError('No signed-in user to delete.');
+  Future<bool> deleteAccount({String? expectedUserId}) async {
+    final String? userId = authenticatedUserId;
+    if (userId == null || (expectedUserId != null && expectedUserId != userId)) return false;
 
     logger.i('[DeleteAccount] Starting deletion for userId=$userId', tag: 'DeleteAccount');
 
     // If the user cancels re-authentication this throws and we never reach the server.
     await _reauthenticate();
+    if (authenticatedUserId != userId) return false;
     await _deleteOnServer();
 
     // Sign out from Google SDK so silent re-auth doesn't recreate the account.
@@ -56,6 +57,7 @@ class DeleteAccountService {
     await _clearLocalData(userId);
 
     logger.i('[DeleteAccount] Done', tag: 'DeleteAccount');
+    return true;
   }
 
   static Future<void> _reauthenticateWithProvider() async {

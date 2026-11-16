@@ -6,6 +6,7 @@ import 'dart:math';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/auth/authenticated_user.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coin_events.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
@@ -634,10 +635,8 @@ class CoinsService with WidgetsBindingObserver {
   }
 
   Future<void> bootstrapForCurrentUser() async {
-    if (!_canMutateCoins()) {
-      return;
-    }
-    final String userId = app_state.prismUser.id;
+    final String? userId = await waitForAuthenticatedUserId();
+    if (userId == null) return;
     _ensureEconomyUser(userId);
     _watchSessionForSpinWheel();
     final int generation = _economySessionGeneration;
@@ -645,12 +644,12 @@ class CoinsService with WidgetsBindingObserver {
     final int balanceGeneration = _balanceMutationGeneration;
     final int xpGeneration = _xpMutationGeneration;
     final Map<String, dynamic>? rootSnapshot = await _readRootEconomySnapshot(userId);
-    if (!_isCurrentOwner(userId, generation)) return;
+    if (!_isCurrentOwner(userId, generation) || authenticatedUserId != userId) return;
     if (rootSnapshot != null && _economyMutationGeneration == mutationGeneration) {
       _syncRootProjection(userId, rootSnapshot, syncXp: _xpMutationGeneration == xpGeneration);
     }
     final EconomySnapshot? saved = await _readEconomySnapshot(userId);
-    if (!_isCurrentOwner(userId, generation)) return;
+    if (!_isCurrentOwner(userId, generation) || authenticatedUserId != userId) return;
     if (saved != null && _economyMutationGeneration == mutationGeneration && saved.revision >= _economyRev) {
       _syncPrivateEconomy(userId, <String, dynamic>{...saved.data, 'rev': saved.revision}, fromCache: true);
     }
@@ -670,21 +669,21 @@ class CoinsService with WidgetsBindingObserver {
         .timeout(const Duration(seconds: 8), onTimeout: () => null);
     final _PrivateEconomyRead privateRead = await privateEconomy;
     final Map<String, dynamic>? privateData = privateRead.data;
-    if (!_isCurrentOwner(userId, generation)) return;
+    if (!_isCurrentOwner(userId, generation) || authenticatedUserId != userId) return;
     if (privateData != null &&
         _economyMutationGeneration == mutationGeneration &&
         parseIntOr(privateData['rev']) >= max(saved?.revision ?? -1, _economyRev)) {
       _syncPrivateEconomy(userId, privateData);
-      if (!_isCurrentOwner(userId, generation)) return;
+      if (!_isCurrentOwner(userId, generation) || authenticatedUserId != userId) return;
       await _persistEconomy(userId, privateData, authoritative: true);
-      if (!_isCurrentOwner(userId, generation)) return;
+      if (!_isCurrentOwner(userId, generation) || authenticatedUserId != userId) return;
     } else if (privateRead.authoritativeMissing && _economyMutationGeneration == mutationGeneration) {
       _resetEconomy(userId, resetXp: false);
       if (rootSnapshot != null) {
         _syncRootProjection(userId, rootSnapshot, syncXp: _xpMutationGeneration == xpGeneration);
       }
       await _invalidateEconomySnapshot(userId);
-      if (!_isCurrentOwner(userId, generation)) return;
+      if (!_isCurrentOwner(userId, generation) || authenticatedUserId != userId) return;
     }
     if (_pendingClaimUserId != userId) consumeLastClaim();
     if (data == null) {
@@ -698,10 +697,10 @@ class CoinsService with WidgetsBindingObserver {
       final bool syncXp = _xpMutationGeneration == xpGeneration;
       _syncStreakFromUserData(data, syncXp: syncXp);
       await _persistRootEconomySnapshot(userId, data, includeXp: syncXp, merge: !syncXp);
-      if (!_isCurrentOwner(userId, generation)) return;
+      if (!_isCurrentOwner(userId, generation) || authenticatedUserId != userId) return;
     }
     await retryPendingRefunds();
-    if (!_isCurrentOwner(userId, generation)) return;
+    if (!_isCurrentOwner(userId, generation) || authenticatedUserId != userId) return;
     await reconcileRankRewards();
   }
 

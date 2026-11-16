@@ -11,6 +11,7 @@ class TestFirebaseAuth extends FirebaseAuthPlatform {
   final StreamController<UserPlatform?> _changes = StreamController<UserPlatform?>.broadcast(sync: true);
   String? uid;
   bool anonymous = false;
+  Completer<void>? restoration;
 
   Future<void> install(String? userId) async {
     FirebaseAuthPlatform.instance = this;
@@ -20,6 +21,7 @@ class TestFirebaseAuth extends FirebaseAuthPlatform {
     }
     uid = userId;
     anonymous = false;
+    restoration = null;
   }
 
   void emit(String? userId) {
@@ -47,6 +49,7 @@ class TestFirebaseAuth extends FirebaseAuthPlatform {
 
   @override
   Stream<UserPlatform?> authStateChanges() async* {
+    await restoration?.future;
     yield currentUser;
     yield* _changes.stream;
   }

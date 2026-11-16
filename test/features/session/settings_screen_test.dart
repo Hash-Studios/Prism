@@ -51,8 +51,8 @@ import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/fake_firestore_client.dart';
 import '../../support/in_memory_local_store.dart';
-import '../../support/wait_for_real_io.dart';
 import '../../support/test_firebase_auth.dart';
+import '../../support/wait_for_real_io.dart';
 import '../creator_directory/creator_directory_test_support.dart';
 
 class _MockCacheMaintenanceService extends Mock implements CacheMaintenanceService {}
@@ -174,7 +174,6 @@ void main() {
     when(cacheMaintenance.retainedAssetBytes).thenAnswer((_) async => 0);
     getIt.registerSingleton<CacheMaintenanceService>(cacheMaintenance);
     sessionRepository = _MockSessionRepository();
-    when(() => sessionRepository.watchCurrentUser()).thenAnswer((_) => const Stream.empty());
     when(() => sessionRepository.currentUser).thenReturn(testUser());
     getIt.registerSingleton<SessionRepository>(sessionRepository);
     registerCreatorDirectoryFakes(profileBloc: false);
@@ -749,6 +748,18 @@ void main() {
         expect(find.text('Delete account'), findsNothing);
       });
     }
+
+    testWidgets('the delete row follows Firebase auth changes while Settings stays open', (tester) async {
+      TestFirebaseAuth.instance.uid = null;
+      await pumpSettings(tester);
+      expect(find.text('Delete account'), findsNothing);
+      TestFirebaseAuth.instance.emit('user-1');
+      await tester.pump();
+      expect(find.text('Delete account'), findsOneWidget);
+      TestFirebaseAuth.instance.emit(null);
+      await tester.pump();
+      expect(find.text('Delete account'), findsNothing);
+    });
 
     testWidgets('sign-out during confirmation does not start deletion', (tester) async {
       final calls = <String>[];

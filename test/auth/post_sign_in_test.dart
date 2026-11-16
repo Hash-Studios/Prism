@@ -26,6 +26,7 @@ import '../support/fake_app_analytics.dart';
 import '../support/fake_firestore_client.dart';
 import '../support/in_memory_local_store.dart';
 import '../support/profile_user_fixture.dart';
+import '../support/test_firebase_auth.dart';
 
 class _DelayedWriteFirestore extends FakeFirestoreClient {
   final Completer<void> writeStarted = Completer<void>();
@@ -469,6 +470,7 @@ void main() {
   });
 
   test('sign-in reads the user document once for coins, not twice', () async {
+    await TestFirebaseAuth.instance.install('u1');
     final GoogleAuth auth = GoogleAuth(auth: _Auth(), googleSignIn: _GoogleSignIn(), messaging: _Messaging());
     final Future<Object?> signIn = auth.signInWithGoogle();
     await firestore.writeStarted.future;
