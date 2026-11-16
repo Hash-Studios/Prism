@@ -1,5 +1,13 @@
 ## Changelog
 
+### v3.31.0
+- Restyle a photo in one of 13 AI styles with Photo to wallpaper
+- During a coin event, a rewarded ad pays double or triple coins. Rewards shows when the next event starts
+- More like this shows walls that match the wall you opened
+- Telegram links from telegram.me work on Edit profile
+- A smoother zoom from the grid into a wall, and cleaner profile, rewards and notification screens
+- Security and stability fixes
+
 ### v3.30.0
 - Followers and Following lists now show everyone, not only the newest 500. More people load as you scroll
 - People you blocked do not show in those lists or in their search
