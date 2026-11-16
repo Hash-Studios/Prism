@@ -63,8 +63,16 @@ FeedItemEntity _item(
   List<String>? tags,
   String category = 'Nature',
   String? documentId,
+  bool undated = false,
 }) {
-  final core = WallpaperCore(id: id, source: source, fullUrl: '', thumbnailUrl: '', category: category);
+  final core = WallpaperCore(
+    id: id,
+    source: source,
+    fullUrl: '',
+    thumbnailUrl: '',
+    category: category,
+    createdAt: undated ? null : DateTime.utc(2026),
+  );
   return switch (source) {
     WallpaperSource.prism => PrismFeedItem(
       id: id,
@@ -216,6 +224,19 @@ void main() {
     expect(first.items.first.id, 'w0');
     expect(next.items, isEmpty);
     expect(next.nextCursor, isNull);
+  });
+
+  test('an open wall without createdAt is not used as a cursor anchor', () async {
+    firestore.rows = [
+      for (var i = 0; i < 5; i++) {'id': 'w$i', 'category': 'Nature', 'review': true},
+    ];
+    final page = await repository.load(
+      current: _item('current', documentId: 'doc-w2', undated: true),
+      sessionKey: 'undated',
+    );
+    expect(firestore.specs.first.startAfterDocId, isNull);
+    expect(page.items.map((item) => item.id), [for (var i = 0; i < 5; i++) 'w$i']);
+    expect(page.nextCursor, isNull);
   });
 
   test('empty document IDs use finite unanchored discovery and retries keep the same page', () async {

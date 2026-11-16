@@ -98,7 +98,8 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
       final page = switch (current) {
         PrismFeedItem(:final wallpaper) => await _prism(
           query,
-          wallpaper.firestoreDocumentId,
+          // Firestore cannot start after a document that lacks the orderBy field.
+          wallpaper.core.createdAt == null ? null : wallpaper.firestoreDocumentId,
           cursor as PrismRecommendationCursor?,
           kind,
         ),
