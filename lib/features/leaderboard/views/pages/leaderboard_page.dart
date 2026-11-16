@@ -269,7 +269,8 @@ class _EntryRow extends StatelessWidget {
     final String name = entry.name.trim().isEmpty ? entry.username : entry.name.trim();
     final String rank = entry.rank.isEmpty ? '' : shopRankName(entry.rank, context.l10n);
     final bool tappable = entry.username.isNotEmpty;
-    final bool largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
+    final bool stackedMetrics =
+        MediaQuery.textScalerOf(context).scale(14) > 21 || MediaQuery.sizeOf(context).width < 360;
     final Widget nameLabel = Text(
       name,
       maxLines: 1,
@@ -316,7 +317,7 @@ class _EntryRow extends StatelessWidget {
                     PrismAvatar(url: entry.photo, name: name, size: 40, frameId: entry.frameId, premium: entry.premium),
                     const SizedBox(width: PrismSpace.sm),
                     Expanded(
-                      child: largeText
+                      child: stackedMetrics
                           ? Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
@@ -340,7 +341,7 @@ class _EntryRow extends StatelessWidget {
                               ],
                             ),
                     ),
-                    if (!largeText) ...<Widget>[
+                    if (!stackedMetrics) ...<Widget>[
                       const SizedBox(width: PrismSpace.sm),
                       ConstrainedBox(
                         constraints: const BoxConstraints(minWidth: 64),

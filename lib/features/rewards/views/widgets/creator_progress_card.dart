@@ -33,7 +33,6 @@ class CreatorProgressView extends StatelessWidget {
     final CreatorWeek? current = progress?.week(now);
     final bool hasStatus =
         state.status == CreatorProgressStatus.loading || state.status == CreatorProgressStatus.cached || stale;
-    final double statsShift = prismTapTarget(context) / 2 - 12;
     return PrismCard(
       padding: const EdgeInsets.fromLTRB(18, PrismSpace.xs, 18, PrismSpace.xs),
       child: Column(
@@ -47,11 +46,7 @@ class CreatorProgressView extends StatelessWidget {
                   child: Text(context.l10n.economyCreatorMilestones, style: PrismTextStyles.cardTitle(context)),
                 ),
               ),
-              // Moves the glyph centre onto the chevron centre below.
-              Transform.translate(
-                offset: Offset(Directionality.of(context) == TextDirection.rtl ? -statsShift : statsShift, 0),
-                child: const StatsEntryButton(source: 'rewards'),
-              ),
+              const StatsEntryButton(source: 'rewards'),
             ],
           ),
           if (hasStatus || progress != null) const SizedBox(height: PrismSpace.xxs),
