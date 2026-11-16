@@ -10,6 +10,7 @@ import 'package:Prism/core/analytics/providers/composite_analytics_provider.dart
 import 'package:Prism/core/analytics/providers/firebase_analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/mixpanel_analytics_provider.dart';
 import 'package:Prism/core/analytics/providers/noop_analytics_provider.dart';
+import 'package:Prism/core/auth/authenticated_user.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/debug/bloc_debug_observer.dart';
 import 'package:Prism/core/debug/creator_stats_emulator.dart';
@@ -711,14 +712,15 @@ class _MyAppState extends State<_MyApp> with WidgetsBindingObserver {
     if (!app_state.prismUser.loggedIn || app_state.prismUser.id.trim().isEmpty) {
       return;
     }
-    final now = DateTime.now();
-    if (_lastCoinSyncAt != null && now.difference(_lastCoinSyncAt!) < _coinSyncCooldown) {
-      return;
-    }
     _coinSyncInFlight = true;
-    _lastCoinSyncAt = now;
     try {
+      final String? userId = await waitForAuthenticatedUserId();
+      if (userId == null) return;
+      final now = DateTime.now();
+      if (_lastCoinSyncAt != null && now.difference(_lastCoinSyncAt!) < _coinSyncCooldown) return;
       await CoinsService.instance.bootstrapForCurrentUser();
+      if (authenticatedUserId != userId) return;
+      _lastCoinSyncAt = now;
       // Skip redundant refreshBalance: bootstrap already reads usersv2 and applies balance locally.
       await CoinsService.instance.claimDailyLoginAndStreakIfEligible();
       await CoinsService.instance.processPendingReferralIfEligible();

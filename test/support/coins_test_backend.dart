@@ -16,6 +16,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'in_memory_local_store.dart';
+import 'test_firebase_auth.dart';
 
 class CoinsTestBackend {
   Future<dynamic> Function(String name, Map<String, dynamic> parameters) onCall = (_, _) async => claimPayload;
@@ -175,6 +176,7 @@ class CoinsTestBackend {
       getIt.registerSingleton<SettingsLocalDataSource>(SettingsLocalDataSource(InMemoryLocalStore()));
     }
     userId = 'user-${++_installs}';
+    await TestFirebaseAuth.instance.install(userId);
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = userId
       ..loggedIn = true

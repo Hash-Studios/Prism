@@ -4,6 +4,7 @@ import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_action.dart';
 import 'package:Prism/core/coins/coins_service.dart';
+import 'package:Prism/core/coins/economy_snapshot_store.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
@@ -17,6 +18,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
+import '../../support/test_firebase_auth.dart';
 
 class _ReminderFirestore extends CoinsTestFirestore {
   final Map<String, dynamic> updates = <String, dynamic>{};
@@ -50,10 +52,69 @@ class _FakeConnectivity extends Fake implements ConnectivityService {
   Stream<bool> get onConnectionChange => changes.stream;
 }
 
+class _HeldSnapshotStore extends EconomySnapshotStore {
+  final started = Completer<void>();
+  final release = Completer<void>();
+
+  @override
+  Future<Map<String, dynamic>?> readRoot(String ownerId) async {
+    started.complete();
+    await release.future;
+    return null;
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final backend = CoinsTestBackend();
   final service = CoinsService.instance;
+
+  for (final uid in <String?>[null, 'different-user']) {
+    test('bootstrap does not read private data with Firebase uid $uid', () async {
+      final firestore = CoinsTestFirestore();
+      getIt.registerSingleton<FirestoreClient>(firestore);
+      TestFirebaseAuth.instance.uid = uid;
+
+      await service.bootstrapForCurrentUser();
+
+      expect(firestore.userDocReads, 0);
+      expect(firestore.privateEconomyServerReads, 0);
+    });
+  }
+
+  test('bootstrap waits for restored Firebase auth before reading and can retry after sign-out', () async {
+    final firestore = CoinsTestFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    final auth = TestFirebaseAuth.instance;
+    auth.uid = null;
+    await service.bootstrapForCurrentUser();
+    expect(firestore.userDocReads, 0);
+    final restored = Completer<void>();
+    auth.restoration = restored;
+    final bootstrap = service.bootstrapForCurrentUser();
+    await pumpEventQueue();
+    expect(firestore.userDocReads, 0);
+    expect(firestore.privateEconomyServerReads, 0);
+    auth.uid = backend.userId;
+    restored.complete();
+    await bootstrap;
+    expect(firestore.userDocReads, 1);
+    expect(firestore.privateEconomyServerReads, 1);
+  });
+
+  test('bootstrap rechecks Firebase ownership after the local cache read', () async {
+    final firestore = CoinsTestFirestore();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    final snapshots = _HeldSnapshotStore();
+    service.setEconomySnapshotStoreForTest(snapshots);
+    final bootstrap = service.bootstrapForCurrentUser();
+    await snapshots.started.future;
+    TestFirebaseAuth.instance.uid = null;
+    snapshots.release.complete();
+    await bootstrap;
+    expect(firestore.userDocReads, 0);
+    expect(firestore.privateEconomyServerReads, 0);
+  });
 
   Map<String, Object> currentClaimPayload() => <String, Object>{
     ...CoinsTestBackend.claimPayload,

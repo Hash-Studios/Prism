@@ -51,6 +51,7 @@ import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
 import '../../support/fake_firestore_client.dart';
 import '../../support/in_memory_local_store.dart';
+import '../../support/test_firebase_auth.dart';
 import '../../support/wait_for_real_io.dart';
 import '../creator_directory/creator_directory_test_support.dart';
 
@@ -153,6 +154,7 @@ void main() {
   }
 
   setUp(() async {
+    await TestFirebaseAuth.instance.install('user-1');
     haptics.clear();
     messages.clear();
     PrismHaptics.enabled = true;
@@ -733,6 +735,52 @@ void main() {
   }
 
   group('account deletion', () {
+    testWidgets('a user without a loaded id has no Delete account row', (tester) async {
+      when(() => sessionRepository.currentUser).thenReturn(testUser()..id = '');
+      await pumpSettings(tester);
+      expect(find.text('Delete account'), findsNothing);
+    });
+
+    for (final uid in <String?>[null, 'different-user']) {
+      testWidgets('Firebase uid $uid cannot offer account deletion', (tester) async {
+        TestFirebaseAuth.instance.uid = uid;
+        await pumpSettings(tester);
+        expect(find.text('Delete account'), findsNothing);
+      });
+    }
+
+    testWidgets('the delete row follows Firebase auth changes while Settings stays open', (tester) async {
+      TestFirebaseAuth.instance.uid = null;
+      await pumpSettings(tester);
+      expect(find.text('Delete account'), findsNothing);
+      TestFirebaseAuth.instance.emit('user-1');
+      await tester.pump();
+      expect(find.text('Delete account'), findsOneWidget);
+      TestFirebaseAuth.instance.emit(null);
+      await tester.pump();
+      expect(find.text('Delete account'), findsNothing);
+    });
+
+    testWidgets('sign-out during confirmation does not start deletion', (tester) async {
+      final calls = <String>[];
+      DeleteAccountService.instance = DeleteAccountService(
+        reauthenticate: () async => calls.add('reauth'),
+        deleteOnServer: () async => calls.add('server'),
+        signOut: () async => true,
+        clearLocalData: (_) async {},
+      );
+      await pumpSettings(tester);
+      await openDeleteDialog(tester);
+      signInAs(loggedIn: false);
+      TestFirebaseAuth.instance.uid = null;
+      await tester.tap(find.widgetWithText(PrismButton, 'Delete account'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(calls, isEmpty);
+      expect(messages, isEmpty);
+      expect(find.text('Deleting your account'), findsNothing);
+    });
+
     testWidgets('the dialog keeps the wallpaper promise and says a Google or Apple prompt follows', (tester) async {
       await pumpSettings(tester);
       await openDeleteDialog(tester);

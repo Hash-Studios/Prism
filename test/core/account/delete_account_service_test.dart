@@ -10,6 +10,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../support/profile_user_fixture.dart';
+import '../../support/test_firebase_auth.dart';
 
 class _ProviderInfo extends Fake implements UserInfo {
   _ProviderInfo(this.providerId);
@@ -42,9 +43,35 @@ void main() {
     );
   }
 
-  setUp(() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() async {
+    await TestFirebaseAuth.instance.install('user-1');
     calls = <String>[];
     app_state.prismUser = profileUser(id: 'user-1');
+  });
+
+  for (final state in <String>['empty', 'signed out', 'auth missing', 'wrong uid']) {
+    test('does not start deletion when $state', () async {
+      if (state == 'empty') app_state.prismUser.id = '';
+      if (state == 'signed out') app_state.prismUser.loggedIn = false;
+      if (state == 'auth missing') TestFirebaseAuth.instance.uid = null;
+      if (state == 'wrong uid') TestFirebaseAuth.instance.uid = 'other';
+
+      await build().deleteAccount();
+
+      expect(calls, isEmpty);
+    });
+  }
+
+  test('does not delete a different account after reauthentication', () async {
+    await build(
+      reauthenticate: () async {
+        TestFirebaseAuth.instance.uid = 'other';
+      },
+    ).deleteAccount();
+
+    expect(calls, isEmpty);
   });
 
   test('re-authenticates, deletes on the server, signs out, then clears this device', () async {
