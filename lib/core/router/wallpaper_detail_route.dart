@@ -6,6 +6,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart' as cupertino;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show Ticker, TickerCallback;
 
 /// Matches [CustomRouteBuilder] without depending on the generated detail route or its arguments.
 Route<T> wallpaperDetailRouteBuilder<T>(BuildContext context, Widget child, AutoRoutePage<T> page) =>
@@ -152,6 +153,15 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
 
   @override
   Duration get reverseTransitionDuration => duration;
+
+  /// The frame that builds the detail page can be slow. Its time does not count, so the zoom never ends in one frame.
+  @override
+  AnimationController createAnimationController() => AnimationController(
+    duration: transitionDuration,
+    reverseDuration: reverseTransitionDuration,
+    debugLabel: debugLabel,
+    vsync: _FirstStepVsync(navigator!),
+  );
 
   @override
   bool get maintainState => _page.maintainState;
@@ -312,6 +322,28 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
 /// shrinks it back, fading it in late in the growth (and out early in the shrink) so the picture leads. The page scales and moves with the flight's left edge, top edge and width, so its card sits under
 /// the flying picture, and shows through a rounded window between the tile and the screen while the page behind dims.
 /// Without a zoom every transform here is the identity.
+/// Gives each run of a ticker at most one 60 Hz frame of time for its first step, then real time.
+class _FirstStepVsync implements TickerProvider {
+  const _FirstStepVsync(this._vsync);
+
+  final TickerProvider _vsync;
+
+  static const Duration _maxFirstStep = Duration(microseconds: 16667);
+
+  @override
+  Ticker createTicker(TickerCallback onTick) {
+    Duration? skipped;
+    return _vsync.createTicker((Duration elapsed) {
+      if (elapsed == Duration.zero) {
+        skipped = null;
+      } else {
+        skipped ??= elapsed > _maxFirstStep ? elapsed - _maxFirstStep : Duration.zero;
+      }
+      onTick(elapsed - (skipped ?? Duration.zero));
+    });
+  }
+}
+
 class _DetailTransition extends AnimatedWidget {
   const _DetailTransition({
     required Animation<double> animation,

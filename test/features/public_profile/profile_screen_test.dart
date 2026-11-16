@@ -18,7 +18,6 @@ import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.d
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/widgets/profile_folders_row.dart';
-import 'package:Prism/features/profile_completeness/views/widgets/profile_completeness_card.dart';
 import 'package:Prism/features/public_profile/biz/bloc/public_profile_bloc.j.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_entity.dart';
 import 'package:Prism/features/public_profile/domain/entities/public_profile_wall_entity.dart';
@@ -562,21 +561,22 @@ void main() {
     expect(repository.watchedIdentifiers, <String>['me']);
   });
 
-  testWidgets('own profile: the gallery follows the header, and the XP card comes after it', (tester) async {
+  testWidgets('own profile: the gallery follows the header, and rank is a tag in the stats, not a card', (
+    tester,
+  ) async {
     await pumpScreen(tester);
 
     final double statsBottom = tester.getRect(find.textContaining('Followers', findRichText: true)).bottom;
     final Rect prompt = tester.getRect(find.text('No wallpapers yet'));
-    expect(prompt.top - statsBottom, lessThan(48));
-    expect(tester.getRect(find.byType(RankProgressCard)).top, greaterThan(prompt.bottom));
+    // The rank tag keeps a 48 pt tap target, so the stats row is a little taller than its text.
+    expect(prompt.top - statsBottom, lessThan(60));
+    expect(find.byType(RankProgressCard), findsNothing);
+    expect(find.byType(RankInfoChip), findsOneWidget);
   });
 
   testWidgets('own profile: tight gaps around the cards, so the gallery starts higher', (tester) async {
     await pumpScreen(tester);
 
-    final Rect rank = tester.getRect(find.byType(RankProgressCard));
-    final Rect completeness = tester.getRect(find.byType(ProfileCompletenessCard));
-    expect(completeness.top - rank.bottom, lessThanOrEqualTo(PrismSpace.xs));
     // The folders row is empty (zero height) while it loads, so the finder must look offstage too.
     final double foldersBottom = tester.getRect(find.byType(ProfileFoldersRow, skipOffstage: false)).bottom;
     expect(
@@ -1296,17 +1296,17 @@ void main() {
       CoinsService.instance.xpNotifier.value = XpStatus.empty();
     });
 
-    testWidgets('own profile shows full lifetime XP progress and confirmed reward state', (tester) async {
+    testWidgets('own profile shows the rank tag that explains XP, and leaves the XP card to Rewards', (tester) async {
       CoinsService.instance.xpNotifier.value = XpStatus.fromUserData(<String, dynamic>{'xp': 1240});
       CoinsService.instance.inventoryNotifier.value = const Inventory(owned: <String>{'glow_aurora'});
       await pumpScreen(tester);
 
-      expect(find.byType(RankProgressCard), findsOneWidget);
-      final AppLocalizationsEn l10n = AppLocalizationsEn();
-      expect(find.textContaining(l10n.economyLifetimeXp('1,240')), findsOneWidget);
-      expect(find.textContaining(l10n.economyXpToRank('760', l10n.economyRankGold)), findsOneWidget);
-      expect(find.text(l10n.economyNextReward('Gold frame')), findsOneWidget);
-      expect(find.byType(RankInfoChip), findsNothing);
+      expect(find.byType(RankProgressCard), findsNothing);
+      expect(find.byType(RankInfoChip), findsOneWidget);
+      await tester.tap(find.byType(RankInfoChip));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text('XP, ranks & rewards'), findsOneWidget);
     });
 
     testWidgets('another profile shows the rank tag, the frame and the glowing name', (tester) async {

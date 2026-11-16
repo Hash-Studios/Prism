@@ -48,7 +48,7 @@ class XpProgressCard extends StatelessWidget {
         .where((RankRewardProgress reward) => reward.owned)
         .lastOrNull;
     return PrismCard(
-      padding: const EdgeInsets.all(PrismSpace.md),
+      padding: const EdgeInsets.fromLTRB(PrismSpace.md, PrismSpace.xs, PrismSpace.md, PrismSpace.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -87,7 +87,7 @@ class XpProgressCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(PrismRadius.pill),
               child: LinearProgressIndicator(
                 value: progress.rank.progress,
-                minHeight: 5,
+                minHeight: 6,
                 color: cs.primary,
                 backgroundColor: cs.onSurface.withValues(alpha: 0.08),
               ),
@@ -189,6 +189,11 @@ class RankInfoChip extends StatelessWidget {
     builder: (context, config, _) {
       final String title = rankTitle(config.rankFor(xp).id, context.l10n);
       return TextButton(
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.zero,
+          minimumSize: Size.square(prismTapTarget(context)),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
         onPressed: () => showXpExplanation(context),
         child: Semantics(
           label: context.l10n.economyRankInfoSemantics(title),

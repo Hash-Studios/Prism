@@ -111,7 +111,7 @@ void main() {
     expect(firestore.dedupeWindowMs, 0);
   });
 
-  testWidgets('activity shows 8 rows, and Show more and See all open the coin history', (tester) async {
+  testWidgets('activity shows 5 rows, and See all opens the coin history', (tester) async {
     app_state.prismUser = app_constants.createGuestPrismUser()
       ..id = 'user-1'
       ..loggedIn = true;
@@ -133,11 +133,11 @@ void main() {
     await tester.pumpWidget(_host(RewardsActivitySection(onSeeAll: () => opened++), Brightness.dark));
     await tester.pump();
     await tester.pump();
-    expect(find.text('-50'), findsNWidgets(8));
-    await tester.tap(find.text('Show more'));
+    expect(find.text('-50'), findsNWidgets(5));
+    expect(find.text('Show more'), findsNothing);
     await tester.tap(find.text('See all'));
-    expect(opened, 2);
-    expect(find.text('-50'), findsNWidgets(8));
+    expect(opened, 1);
+    expect(find.text('-50'), findsNWidgets(5));
     expect(find.text('Show less'), findsNothing);
   });
 

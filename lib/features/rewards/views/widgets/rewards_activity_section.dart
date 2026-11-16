@@ -5,7 +5,6 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_bits.dart';
-import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_row.dart';
 import 'package:Prism/core/widgets/prism/prism_section.dart';
@@ -17,7 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 const int _kActivityLimit = 30;
-const int _kActivityCollapsed = 8;
+const int _kActivityCollapsed = 5;
 
 /// "Activity": the latest coin transactions. "See all" opens the full coin history.
 class RewardsActivitySection extends StatefulWidget {
@@ -118,20 +117,17 @@ class _RewardsActivitySectionState extends State<RewardsActivitySection> {
       );
     } else {
       final int shown = _items.length.clamp(0, _kActivityCollapsed);
-      body = Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          PrismGroup(children: <Widget>[for (int i = 0; i < shown; i++) _ActivityRow(entry: _items[i])]),
-          if (_items.length > _kActivityCollapsed)
-            Center(
-              child: PrismButton(
-                label: l10n.economyShowMore,
-                variant: PrismButtonVariant.ghost,
-                size: PrismButtonSize.compact,
-                onPressed: _openHistory,
-              ),
-            ),
-        ],
+      final ColorScheme cs = Theme.of(context).colorScheme;
+      body = PrismCard(
+        padding: EdgeInsets.zero,
+        child: Column(
+          children: <Widget>[
+            for (int i = 0; i < shown; i++) ...<Widget>[
+              if (i > 0) Divider(height: 1, indent: PrismSpace.md, color: cs.onSurface.withValues(alpha: 0.06)),
+              _ActivityRow(entry: _items[i]),
+            ],
+          ],
+        ),
       );
     }
     return Column(
@@ -167,7 +163,6 @@ class _ActivityRow extends StatelessWidget {
       label: l10n.economyCoinActivitySemantics(label, date, amount, entry.delta.abs()),
       excludeSemantics: true,
       child: PrismRow(
-        icon: entry.isCredit ? Icons.add_rounded : Icons.remove_rounded,
         title: label,
         subtitle: date,
         trailing: Text(
@@ -210,8 +205,6 @@ class _ActivitySkeleton extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: PrismSpace.sm),
                 child: Row(
                   children: <Widget>[
-                    const PrismBone(width: 32, height: 32, radius: PrismRadius.xs + 2),
-                    const SizedBox(width: PrismSpace.sm),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

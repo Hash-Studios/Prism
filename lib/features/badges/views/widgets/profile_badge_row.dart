@@ -70,7 +70,7 @@ class ProfileBadgeRow extends StatelessWidget {
                       // The same pill as the Pro badge, so the two read as one row.
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          color: cs.primaryContainer,
+                          color: cs.onSurface.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(PrismRadius.pill),
                         ),
                         child: Padding(
@@ -78,14 +78,14 @@ class ProfileBadgeRow extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: <Widget>[
-                              Icon(Icons.military_tech_rounded, size: 14, color: cs.onPrimaryContainer),
+                              Icon(Icons.military_tech_rounded, size: 14, color: cs.onSurface),
                               const SizedBox(width: PrismSpace.xxs),
                               Flexible(
                                 child: Text(
                                   label,
                                   style: PrismTextStyles.caption(
                                     context,
-                                  ).copyWith(color: cs.onPrimaryContainer, fontWeight: FontWeight.w700),
+                                  ).copyWith(color: cs.onSurface, fontWeight: FontWeight.w700),
                                 ),
                               ),
                             ],

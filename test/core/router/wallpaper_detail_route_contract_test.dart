@@ -128,7 +128,9 @@ void main() {
   }
 
   for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
-    testWidgets('$platform controller runs 300 ms each way', (tester) async {
+    testWidgets('$platform controller runs 300 ms each way, and a slow first frame counts as one frame', (
+      tester,
+    ) async {
       final router = await _pumpRouter(tester);
       final result = router.push<int>(const PageRouteInfo<void>('Detail'));
       await tester.pump();
@@ -137,7 +139,10 @@ void main() {
       expect(detail.transitionDuration, wallpaperDetailZoomDuration);
       expect(detail.reverseTransitionDuration, wallpaperDetailZoomDuration);
       expect(wallpaperDetailZoomDuration, const Duration(milliseconds: 300));
+      // A 150 ms frame (the one that builds the page) moves the zoom by one 60 Hz frame only.
       await tester.pump(const Duration(milliseconds: 150));
+      expect(detail.animation!.value, closeTo(1 / 18, 0.01));
+      await tester.pump(const Duration(microseconds: 133333));
       expect(detail.animation!.value, closeTo(0.5, 0.02));
       await tester.pump(const Duration(milliseconds: 151));
       expect(detail.animation!.isCompleted, isTrue);
@@ -145,6 +150,8 @@ void main() {
       await router.maybePop<int>(42);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
+      expect(detail.animation!.value, closeTo(1 - 1 / 18, 0.01));
+      await tester.pump(const Duration(microseconds: 133333));
       expect(detail.animation!.value, closeTo(0.5, 0.02));
       await tester.pump(const Duration(milliseconds: 151));
       expect(await result, 42);
