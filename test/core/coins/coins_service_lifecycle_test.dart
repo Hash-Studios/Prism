@@ -17,6 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/coins_test_backend.dart';
 import '../../support/fake_app_analytics.dart';
+import '../../support/test_firebase_auth.dart';
 
 class _ReminderFirestore extends CoinsTestFirestore {
   final Map<String, dynamic> updates = <String, dynamic>{};
@@ -54,6 +55,19 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final backend = CoinsTestBackend();
   final service = CoinsService.instance;
+
+  for (final uid in <String?>[null, 'different-user']) {
+    test('bootstrap does not read private data with Firebase uid $uid', () async {
+      final firestore = CoinsTestFirestore();
+      getIt.registerSingleton<FirestoreClient>(firestore);
+      TestFirebaseAuth.instance.uid = uid;
+
+      await service.bootstrapForCurrentUser();
+
+      expect(firestore.userDocReads, 0);
+      expect(firestore.privateEconomyServerReads, 0);
+    });
+  }
 
   Map<String, Object> currentClaimPayload() => <String, Object>{
     ...CoinsTestBackend.claimPayload,
