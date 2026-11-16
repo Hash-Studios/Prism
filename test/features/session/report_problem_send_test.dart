@@ -103,11 +103,13 @@ void main() {
   ReportProblemService service({bool canSend = true, Transport? feedbackTransport}) => ReportProblemService(
     readConfig: () => _config,
     canSend: () => canSend,
+    readDevice: () async => 'Google Pixel 9',
+    readOs: () => 'android 16',
     feedbackTransport: feedbackTransport ?? transport,
   );
 
   test(
-    'sends feedback tagged with release, environment, topic, trigger and screenshot, linked to the last error',
+    'sends feedback tagged with release, environment, topic, trigger, screenshot, device and os, linked to the last error',
     () async {
       final SentryId crash = await Sentry.captureMessage('boom');
       transport.envelopes.clear();
@@ -133,6 +135,8 @@ void main() {
         'topic': 'wallpaper_wont_set',
         'trigger': 'shake',
         'hasScreenshot': 'true',
+        'device': 'Google Pixel 9',
+        'os': 'android 16',
         'reference': reference,
       });
       expect(event['release'], 'Prism@3.14.0+353');
@@ -167,11 +171,73 @@ void main() {
     final List<_Item> items = await _items(transport.envelopes.single);
     final Map<String, dynamic> event = items.singleWhere((_Item i) => i.header['type'] == 'feedback').json;
     expect((event['tags'] as Map<String, dynamic>)['hasScreenshot'], 'false');
+    expect((event['tags'] as Map<String, dynamic>).containsKey('device'), isFalse);
+    expect((event['tags'] as Map<String, dynamic>).containsKey('os'), isFalse);
     final Map<String, dynamic> feedback =
         (event['contexts'] as Map<String, dynamic>)['feedback'] as Map<String, dynamic>;
     expect(feedback['message'], '[slow]');
     expect(feedback.containsKey('associated_event_id'), isFalse);
     expect(items.where((_Item i) => i.header['type'] == 'attachment'), isEmpty);
+  });
+
+  test('diagnostics off never reads device or OS labels', () async {
+    final ReportProblemService reports = ReportProblemService(
+      readConfig: () => _config,
+      canSend: () => true,
+      readDevice: () => throw StateError('device must not be read'),
+      readOs: () => throw StateError('OS must not be read'),
+      feedbackTransport: transport,
+    );
+
+    await reports.send(const ProblemReportDraft(topic: ReportTopic.other, trigger: ReportTrigger.menu));
+
+    final List<_Item> items = await _items(transport.envelopes.single);
+    final Map<String, dynamic> tags =
+        items.singleWhere((_Item i) => i.header['type'] == 'feedback').json['tags'] as Map<String, dynamic>;
+    expect(tags.containsKey('device'), isFalse);
+    expect(tags.containsKey('os'), isFalse);
+  });
+
+  test('device and OS tags collapse whitespace and stay within 200 characters', () async {
+    final ReportProblemService reports = ReportProblemService(
+      readConfig: () => _config,
+      canSend: () => true,
+      readDevice: () async => '  Google\nPixel\t9  ',
+      readOs: () => ' android\r\n${List<String>.filled(220, 'x').join()} ',
+      feedbackTransport: transport,
+    );
+
+    await reports.send(
+      const ProblemReportDraft(topic: ReportTopic.other, trigger: ReportTrigger.menu, diagnostics: ''),
+    );
+
+    final List<_Item> items = await _items(transport.envelopes.single);
+    final Map<String, dynamic> tags =
+        items.singleWhere((_Item i) => i.header['type'] == 'feedback').json['tags'] as Map<String, dynamic>;
+    expect(tags['device'], 'Google Pixel 9');
+    expect(tags['os'], 'android ${List<String>.filled(192, 'x').join()}');
+    expect((tags['os'] as String).length, 200);
+  });
+
+  test('a later report with diagnostics off does not reuse earlier device tags or attachments', () async {
+    final ReportProblemService reports = service();
+    await reports.send(
+      const ProblemReportDraft(topic: ReportTopic.other, trigger: ReportTrigger.menu, diagnostics: 'logs'),
+    );
+    await reports.send(const ProblemReportDraft(topic: ReportTopic.other, trigger: ReportTrigger.menu));
+
+    expect(transport.envelopes, hasLength(2));
+    final List<_Item> first = await _items(transport.envelopes.first);
+    final Map<String, dynamic> firstTags =
+        first.singleWhere((_Item i) => i.header['type'] == 'feedback').json['tags'] as Map<String, dynamic>;
+    expect(firstTags['device'], 'Google Pixel 9');
+    expect(firstTags['os'], 'android 16');
+    final List<_Item> second = await _items(transport.envelopes.last);
+    final Map<String, dynamic> secondTags =
+        second.singleWhere((_Item i) => i.header['type'] == 'feedback').json['tags'] as Map<String, dynamic>;
+    expect(secondTags.containsKey('device'), isFalse);
+    expect(secondTags.containsKey('os'), isFalse);
+    expect(second.where((_Item i) => i.header['type'] == 'attachment'), isEmpty);
   });
 
   test('with monitoring off, throws and sends nothing', () async {

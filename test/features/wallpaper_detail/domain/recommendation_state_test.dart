@@ -24,6 +24,21 @@ FeedItemEntity _wall(String id, {String picture = ''}) => FeedItemEntity.wallhav
 );
 
 void main() {
+  test('cursor wrap phase and visited boundaries participate in state equality', () {
+    final wall = _wall('a');
+    RecommendationState state(PrismRecommendationCursor cursor) => const RecommendationState.initial().append(
+      RecommendationPage(items: [wall], kind: RecommendationKind.related, nextCursor: cursor),
+      _wall('open'),
+    );
+    final first = state(const PrismRecommendationCursor('doc-a', visitedDocumentIds: {'doc-a', 'doc-b'}));
+    expect(first, state(const PrismRecommendationCursor('doc-a', visitedDocumentIds: {'doc-b', 'doc-a'})));
+    expect(
+      first,
+      isNot(state(const PrismRecommendationCursor('doc-a', wrapped: true, visitedDocumentIds: {'doc-a', 'doc-b'}))),
+    );
+    expect(first, isNot(state(const PrismRecommendationCursor('doc-a', visitedDocumentIds: {'doc-a'}))));
+  });
+
   test('More like this drops the open ID and repeated IDs, but keeps distinct uploads', () {
     final FeedItemEntity current = _wall('open', picture: 'samurai');
     final RecommendationState first = const RecommendationState.initial().append(

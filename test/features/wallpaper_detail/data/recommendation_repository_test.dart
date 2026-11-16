@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:Prism/core/coins/economy_state.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
@@ -13,13 +14,18 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/data/feed_cache/pagination_session.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
+import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
 import 'package:Prism/features/pexels_feed/data/repositories/pexels_wallpaper_repository_impl.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
+import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
+import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
 import 'package:Prism/features/user_blocks/domain/repositories/user_block_repository.dart';
 import 'package:Prism/features/wallhaven_feed/data/repositories/wallhaven_wallpaper_repository_impl.dart';
 import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wallpaper_repository.dart';
 import 'package:Prism/features/wallpaper_detail/data/repositories/wallpaper_recommendation_repository_impl.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -30,17 +36,102 @@ import '../../../support/in_memory_local_store.dart';
 
 class _Firestore extends Fake implements FirestoreClient {
   final specs = <FirestoreQuerySpec>[];
-  List<Map<String, dynamic>> rows = [];
+  final getErrors = <String, Object>{};
+  List<Map<String, dynamic>> _rows = [];
+  List<Map<String, dynamic>> get rows => _rows;
+  set rows(List<Map<String, dynamic>> value) {
+    // Existing fixtures describe newest-first dated documents. Explicit nulls stay null;
+    // missing-field cases remove the field after assigning the fixture.
+    _rows = [
+      for (var i = 0; i < value.length; i++) {'createdAt': Timestamp(1800000000 - i, 0), ...value[i]},
+    ];
+  }
+
   bool fail = false;
   Completer<void>? queryEntered;
   Completer<void>? queryGate;
+
+  Map<String, dynamic>? _document(String id) {
+    if (fail) throw StateError('offline');
+    if (getErrors.containsKey(id)) throw getErrors[id]!;
+    final index = rows.indexWhere((row) => 'doc-${row['id']}' == id);
+    return index < 0 ? null : rows[index];
+  }
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic>, String) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async {
+    final data = _document(id);
+    return data == null ? null : map(data, id);
+  }
+
+  int _compare(Object? left, Object? right) {
+    if (left == right) return 0;
+    if (left == null) return -1;
+    if (right == null) return 1;
+    if (left is Timestamp && right is Timestamp) {
+      final seconds = left.seconds.compareTo(right.seconds);
+      return seconds == 0 ? left.nanoseconds.compareTo(right.nanoseconds) : seconds;
+    }
+    if (left is Timestamp && right is String) return -1;
+    if (left is String && right is Timestamp) return 1;
+    if (left is String && right is String) return left.compareTo(right);
+    throw StateError('Unsupported fake Firestore comparison: $left, $right');
+  }
+
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic>, String) map) async {
     specs.add(spec);
     queryEntered?.complete();
     await queryGate?.future;
     if (fail) throw StateError('offline');
-    return rows.map((row) => map(row, 'doc-${row['id']}')).toList();
+    final orders = [
+      ...spec.orderBy,
+      if (!spec.orderBy.any((order) => order.field == firestoreDocumentIdField))
+        FirestoreOrderBy(field: firestoreDocumentIdField, descending: spec.orderBy.lastOrNull?.descending ?? false),
+    ];
+    Object? field(Map<String, dynamic> row, String name) =>
+        name == firestoreDocumentIdField ? 'doc-${row['id']}' : row[name];
+    int compare(Map<String, dynamic> row, List<Object?> values) {
+      for (var i = 0; i < values.length; i++) {
+        final result = _compare(field(row, orders[i].field), values[i]);
+        if (result != 0) return orders[i].descending ? -result : result;
+      }
+      return 0;
+    }
+
+    List<Object?>? after = spec.startAfterFieldValues;
+    if (spec.startAfterDocId case final String id) {
+      final document = _document(id);
+      if (document != null) {
+        if (spec.orderBy.any(
+          (order) => order.field != firestoreDocumentIdField && !document.containsKey(order.field),
+        )) {
+          throw StateError('Cursor document is missing an ordered field');
+        }
+        after = orders.map((order) => field(document, order.field)).toList();
+      }
+    }
+    final ordered =
+        rows
+            .where(
+              (row) => spec.orderBy.every(
+                (order) => order.field == firestoreDocumentIdField || row.containsKey(order.field),
+              ),
+            )
+            .where((row) => spec.filters.every((filter) => row[filter.field] == filter.value))
+            .toList()
+          ..sort((left, right) => compare(left, orders.map((order) => field(right, order.field)).toList()));
+    return ordered
+        .where((row) => after == null || compare(row, after) > 0)
+        .take(spec.limit ?? rows.length)
+        .map((row) => map(row, 'doc-${row['id']}'))
+        .toList();
   }
 }
 
@@ -55,12 +146,21 @@ FeedItemEntity _item(
   WallpaperSource source = WallpaperSource.prism,
   List<String>? tags,
   String category = 'Nature',
+  String? documentId,
+  bool undated = false,
 }) {
-  final core = WallpaperCore(id: id, source: source, fullUrl: '', thumbnailUrl: '', category: category);
+  final core = WallpaperCore(
+    id: id,
+    source: source,
+    fullUrl: '',
+    thumbnailUrl: '',
+    category: category,
+    createdAt: undated ? null : DateTime.utc(2026),
+  );
   return switch (source) {
     WallpaperSource.prism => PrismFeedItem(
       id: id,
-      wallpaper: PrismWallpaper(core: core, tags: tags),
+      wallpaper: PrismWallpaper(core: core, tags: tags, firestoreDocumentId: documentId),
     ),
     WallpaperSource.wallhaven => WallhavenFeedItem(
       id: id,
@@ -72,6 +172,11 @@ FeedItemEntity _item(
     ),
   };
 }
+
+PrismFeedItem _dropItem(String documentId) => dropWallFeedItem(
+  DropWall(id: documentId, title: '', thumb: '', resolution: '', by: '', seriesId: ''),
+  DropUnlock(wallId: documentId, weekKey: '2026-W46', url: 'https://example.test/unlocked.jpg'),
+);
 
 void main() {
   late _Firestore firestore;
@@ -112,18 +217,248 @@ void main() {
     ];
     final page = await repository.load(current: _item('current'), sessionKey: 'a');
     expect(page.items.map((item) => item.id), [for (var i = 0; i < 22; i++) '$i']);
-    expect(page.nextCursor, const PrismRecommendationCursor('doc-23'));
+    expect(
+      page.nextCursor,
+      PrismRecommendationCursor('doc-23', visitedDocumentIds: {for (var i = 0; i < 24; i++) 'doc-$i'}),
+    );
     firestore.rows = [
       {'id': 'next', 'category': 'Nature', 'review': true},
     ];
     final next = await repository.load(current: _item('current'), sessionKey: 'a', cursor: page.nextCursor);
     expect(next.items.map((item) => item.id), ['next']);
     expect(next.nextCursor, isNull);
-    expect(firestore.specs.last.startAfterDocId, 'doc-23');
     expect(firestore.specs.first.filters.map((filter) => (filter.field, filter.value)), [
       ('category', 'Nature'),
       ('review', true),
     ]);
+  });
+
+  test('each Prism wall gets its own neighbours, then the newer walls, and stops at itself', () async {
+    firestore.rows = [
+      for (var i = 0; i < 30; i++) {'id': 'w$i', 'category': 'Nature', 'review': true},
+    ];
+    Future<List<String>> visit(String id) async {
+      final ids = <String>[];
+      RecommendationCursor? cursor;
+      do {
+        final page = await repository.load(
+          current: _item(id, documentId: 'doc-$id'),
+          sessionKey: id,
+          cursor: cursor,
+        );
+        ids.addAll(page.items.map((item) => item.id));
+        cursor = page.nextCursor;
+      } while (cursor != null);
+      return ids;
+    }
+
+    expect(await visit('w10'), [for (var i = 11; i < 30; i++) 'w$i', for (var i = 0; i < 10; i++) 'w$i']);
+    expect((await visit('w20')).take(3), ['w21', 'w22', 'w23']);
+  });
+
+  for (final anchor in ['doc-missing', 'doc-w10']) {
+    test('missing or recategorised anchor $anchor does not repeat walls on wrap', () async {
+      firestore.rows = [
+        for (var i = 0; i < 30; i++) {'id': 'w$i', 'category': i == 10 ? 'Other' : 'Nature', 'review': true},
+      ];
+      final ids = <String>[];
+      RecommendationCursor? cursor;
+      var calls = 0;
+      do {
+        final page = await repository.load(
+          current: _item('current', documentId: anchor),
+          sessionKey: anchor,
+          cursor: cursor,
+        );
+        ids.addAll(page.items.map((item) => item.id));
+        cursor = page.nextCursor;
+        expect(++calls, lessThan(6));
+      } while (cursor != null);
+      expect(ids.toSet(), {
+        for (var i = 0; i < 30; i++)
+          if (i != 10) 'w$i',
+      });
+      expect(ids, hasLength(29));
+    });
+  }
+
+  test('deleting the open wall and first returned wall mid-visit still stops before duplicates', () async {
+    firestore.rows = [
+      for (var i = 0; i < 60; i++) {'id': 'w$i', 'category': 'Nature', 'review': true},
+    ];
+    final current = _item('w10', documentId: 'doc-w10');
+    final first = await repository.load(current: current, sessionKey: 'deleted-anchor');
+    firestore.rows.removeWhere((row) => ['w10', 'w11'].contains(row['id']));
+    final ids = first.items.map((item) => item.id).toList();
+    var cursor = first.nextCursor;
+    var calls = 0;
+    do {
+      final page = await repository.load(current: current, sessionKey: 'deleted-anchor', cursor: cursor);
+      ids.addAll(page.items.map((item) => item.id));
+      cursor = page.nextCursor;
+      expect(++calls, lessThan(6));
+    } while (cursor != null);
+    expect(ids, [for (var i = 11; i < 60; i++) 'w$i', for (var i = 0; i < 10; i++) 'w$i']);
+  });
+
+  test('deleted later cursor cannot restart the same full page forever', () async {
+    firestore.rows = [
+      for (var i = 0; i < 50; i++) {'id': 'w$i', 'category': 'Nature', 'review': true},
+    ];
+    final current = _item('current', documentId: 'doc-missing');
+    final first = await repository.load(current: current, sessionKey: 'deleted-cursor');
+    firestore.rows.removeAt(23);
+    final next = await repository.load(current: current, sessionKey: 'deleted-cursor', cursor: first.nextCursor);
+    expect(first.items.first.id, 'w0');
+    expect(next.items, isEmpty);
+    expect(next.nextCursor, isNull);
+  });
+
+  for (final undated in [false, true]) {
+    test('a missing stored createdAt starts newest whether the domain date is null: $undated', () async {
+      firestore.rows = [
+        for (var i = 0; i < 5; i++) {'id': 'w$i', 'category': 'Nature', 'review': true},
+      ];
+      firestore.rows[2].remove('createdAt');
+      final page = await repository.load(
+        current: _item('w2', documentId: 'doc-w2', undated: undated),
+        sessionKey: 'missing-date-$undated',
+      );
+      expect(firestore.specs.first.startAfterDocId, isNull);
+      expect(firestore.specs.first.startAfterFieldValues, isNull);
+      expect(page.items.map((item) => item.id), ['w0', 'w1', 'w3', 'w4']);
+      expect(page.nextCursor, isNull);
+    });
+  }
+
+  test('an unlocked released Drop keeps its own stored timestamp anchor despite an undated domain item', () async {
+    firestore.rows = [
+      for (var i = 0; i < 5; i++) {'id': 'w$i', 'category': 'Nature', 'review': true},
+    ];
+    final current = _dropItem('doc-w2');
+    expect(current.wallpaperCore.createdAt, isNull);
+    final first = await repository.load(current: current, sessionKey: 'released-drop');
+    expect(first.items.map((item) => item.id), ['w3', 'w4']);
+    expect(
+      first.nextCursor,
+      const PrismRecommendationCursor(null, wrapped: true, visitedDocumentIds: {'doc-w3', 'doc-w4'}),
+    );
+    final wrapped = await repository.load(current: current, sessionKey: 'released-drop', cursor: first.nextCursor);
+    expect(wrapped.items.map((item) => item.id), ['w0', 'w1']);
+    expect(wrapped.nextCursor, isNull);
+  });
+
+  for (final rawDate in <Object?>[null, 'not-a-date']) {
+    test('a stored $rawDate createdAt remains a valid anchor even when the DTO date is null', () async {
+      firestore.rows = [
+        for (final id in ['c', 'b', 'a']) {'id': id, 'category': 'Nature', 'review': true, 'createdAt': rawDate},
+      ];
+      final wall = PrismWallDocDto.fromJson(firestore.rows[1]).toDomain(docId: 'doc-b');
+      final current = PrismFeedItem(id: wall.id, wallpaper: wall);
+      expect(current.wallpaperCore.createdAt, isNull);
+      final first = await repository.load(current: current, sessionKey: 'raw-anchor-$rawDate');
+      expect(first.items.map((item) => item.id), ['a']);
+      final wrapped = await repository.load(
+        current: current,
+        sessionKey: 'raw-anchor-$rawDate',
+        cursor: first.nextCursor,
+      );
+      expect(wrapped.items.map((item) => item.id), ['c']);
+      expect(wrapped.nextCursor, isNull);
+    });
+  }
+
+  test('removing createdAt from a later cursor stops safely without duplicating a full page', () async {
+    firestore.rows = [
+      for (var i = 0; i < 50; i++) {'id': 'w$i', 'category': 'Nature', 'review': true},
+    ];
+    final current = _item('current');
+    final first = await repository.load(current: current, sessionKey: 'removed-cursor-field');
+    expect(first.items.map((item) => item.id), [for (var i = 0; i < 24; i++) 'w$i']);
+    firestore.rows[23].remove('createdAt');
+    final next = await repository.load(current: current, sessionKey: 'removed-cursor-field', cursor: first.nextCursor);
+    expect(next.items, isEmpty);
+    expect(next.nextCursor, isNull);
+  });
+
+  for (final rawDate in <Object?>[null, 'not-a-date']) {
+    test('a later cursor with stored $rawDate createdAt advances by raw value and document ID', () async {
+      firestore.rows = [
+        for (var i = 29; i >= 0; i--)
+          {'id': 'w${i.toString().padLeft(2, '0')}', 'category': 'Nature', 'review': true, 'createdAt': rawDate},
+      ];
+      final current = _item('current');
+      final first = await repository.load(current: current, sessionKey: 'raw-cursor-$rawDate');
+      final next = await repository.load(current: current, sessionKey: 'raw-cursor-$rawDate', cursor: first.nextCursor);
+      expect([...first.items, ...next.items].map((item) => item.id), [
+        for (var i = 29; i >= 0; i--) 'w${i.toString().padLeft(2, '0')}',
+      ]);
+      expect(next.items, hasLength(6));
+      expect(next.nextCursor, isNull);
+      expect(firestore.specs.last.startAfterFieldValues, [rawDate, 'doc-w06']);
+    });
+  }
+
+  test('timestamp cursor preserves nanoseconds and descending document ID ties', () async {
+    final timestamp = Timestamp(1800000000, 987654321);
+    firestore.rows = [
+      for (var i = 0; i < 26; i++)
+        {'id': 'w${i.toString().padLeft(2, '0')}', 'category': 'Nature', 'review': true, 'createdAt': timestamp},
+      {'id': 'older', 'category': 'Nature', 'review': true, 'createdAt': Timestamp(timestamp.seconds, 987654320)},
+    ];
+    final current = _item('current');
+    final first = await repository.load(current: current, sessionKey: 'precision');
+    final next = await repository.load(current: current, sessionKey: 'precision', cursor: first.nextCursor);
+    expect(first.items.map((item) => item.id), [for (var i = 25; i >= 2; i--) 'w${i.toString().padLeft(2, '0')}']);
+    expect(next.items.map((item) => item.id), ['w01', 'w00', 'older']);
+    expect(next.nextCursor, isNull);
+    expect(firestore.specs.last.startAfterFieldValues, [timestamp, 'doc-w02']);
+    expect(firestore.specs.last.orderBy.map((order) => (order.field, order.descending)), [
+      ('createdAt', true),
+      (firestoreDocumentIdField, true),
+    ]);
+  });
+
+  test('an unreadable active Drop discovers public newest walls without using a denied anchor', () async {
+    firestore.rows = [
+      {'id': 'newest', 'review': true},
+      {'id': 'private', 'review': false},
+      {'id': 'older', 'review': true},
+    ];
+    firestore.getErrors['doc-private'] = FirebaseException(plugin: 'cloud_firestore', code: 'permission-denied');
+    final page = await repository.load(current: _dropItem('doc-private'), sessionKey: 'private-drop');
+    expect(page.items.map((item) => item.id), ['newest', 'older']);
+    expect(page.kind, RecommendationKind.discovery);
+    expect(page.nextCursor, isNull);
+  });
+
+  test('a failed Drop anchor lookup remains retryable instead of silently changing the neighbours', () async {
+    firestore.rows = [
+      for (var i = 0; i < 5; i++) {'id': 'w$i', 'review': true},
+    ];
+    final current = _dropItem('doc-w2');
+    firestore.getErrors['doc-w2'] = FirebaseException(plugin: 'cloud_firestore', code: 'unavailable');
+    await expectLater(repository.load(current: current, sessionKey: 'drop-network'), throwsA(isA<FirebaseException>()));
+    firestore.getErrors.clear();
+    final page = await repository.load(current: current, sessionKey: 'drop-network');
+    expect(page.items.map((item) => item.id), ['w3', 'w4']);
+    expect(page.kind, RecommendationKind.discovery);
+  });
+
+  test('empty document IDs use finite unanchored discovery and retries keep the same page', () async {
+    firestore.rows = [
+      for (var i = 0; i < 30; i++) {'id': 'w$i', 'category': 'Nature', 'review': true},
+    ];
+    final current = _item('current', documentId: '', category: '');
+    final first = await repository.load(current: current, sessionKey: 'empty-id');
+    final next = await repository.load(current: current, sessionKey: 'empty-id', cursor: first.nextCursor);
+    final retry = await repository.load(current: current, sessionKey: 'empty-id', cursor: first.nextCursor);
+    expect(first.kind, RecommendationKind.discovery);
+    expect([...first.items, ...next.items].map((item) => item.id), [for (var i = 0; i < 30; i++) 'w$i']);
+    expect(next.nextCursor, isNull);
+    expect(retry.items.map((item) => item.id), [for (var i = 24; i < 30; i++) 'w$i']);
+    expect(retry.nextCursor, isNull);
+    expect(firestore.specs.first.startAfterDocId, isNull);
   });
 
   test('AI recommendations hide walls with metadata even when the legacy flag is absent', () async {

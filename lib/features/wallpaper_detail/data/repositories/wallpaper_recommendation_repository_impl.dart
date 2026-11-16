@@ -1,6 +1,7 @@
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
@@ -96,7 +97,12 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
     try {
       visit.ensureActive();
       final page = switch (current) {
-        PrismFeedItem() => await _prism(query, cursor as PrismRecommendationCursor?, kind),
+        PrismFeedItem(:final wallpaper) => await _prism(
+          query,
+          wallpaper.firestoreDocumentId,
+          cursor as PrismRecommendationCursor?,
+          kind,
+        ),
         WallhavenFeedItem() => await _external(sessionKey, visit, cursor as ExternalRecommendationCursor?),
         PexelsFeedItem() => await _pexels(sessionKey, visit, cursor as ExternalRecommendationCursor?),
       };
@@ -114,7 +120,38 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
     }
   }
 
-  Future<RecommendationPage> _prism(String category, PrismRecommendationCursor? cursor, RecommendationKind kind) async {
+  /// Starts after [anchor], the open wall, so each wall gets its own neighbours instead of the same newest page.
+  /// When the older walls run out, it goes back to the newest ones and stops at [anchor].
+  Future<RecommendationPage> _prism(
+    String category,
+    String? anchor,
+    PrismRecommendationCursor? cursor,
+    RecommendationKind kind,
+  ) async {
+    var start = (anchor?.isEmpty ?? true) ? null : anchor;
+    final cursorDocumentId = cursor == null ? start : cursor.documentId;
+    List<Object?>? startAfterFieldValues;
+    if (cursorDocumentId != null) {
+      try {
+        final data = await firestore().getById<Map<String, dynamic>>(
+          FirebaseCollections.walls,
+          cursorDocumentId,
+          (data, _) => data,
+          sourceTag: 'wallpaper_detail.recommendations.cursor',
+        );
+        // Field presence matters: null and legacy values are still valid Firestore ordering values.
+        if (data != null && data.containsKey('createdAt')) {
+          startAfterFieldValues = [data['createdAt'], cursorDocumentId];
+        } else if (cursor == null) {
+          start = null;
+        }
+      } catch (error) {
+        // An active unreviewed Drop can be readable only through its public Drop document.
+        if (mapFirestoreError(error).code != 'permission-denied') rethrow;
+        if (cursor == null) start = null;
+      }
+    }
+    final wrapped = cursor?.wrapped ?? false;
     final rows = await firestore().query<_PrismRow>(
       FirestoreQuerySpec(
         collection: FirebaseCollections.walls,
@@ -123,8 +160,11 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
           if (category.isNotEmpty) FirestoreFilter(field: 'category', op: FirestoreFilterOp.isEqualTo, value: category),
           const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
         ],
-        orderBy: const [FirestoreOrderBy(field: 'createdAt', descending: true)],
-        startAfterDocId: cursor?.documentId,
+        orderBy: const [
+          FirestoreOrderBy(field: 'createdAt', descending: true),
+          FirestoreOrderBy(field: firestoreDocumentIdField, descending: true),
+        ],
+        startAfterFieldValues: startAfterFieldValues,
         limit: pageSize,
         cachePolicy: FirestoreCachePolicy.memoryFirst,
       ),
@@ -133,12 +173,27 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
         return _PrismRow(docId, PrismFeedItem(id: wall.id, wallpaper: wall));
       },
     );
+    final visited = cursor?.visitedDocumentIds ?? const <String>{};
+    final stop = rows.indexWhere((row) => (wrapped && row.documentId == start) || visited.contains(row.documentId));
+    final kept = stop < 0 ? rows : rows.sublist(0, stop);
     // Advance from the raw last document, even when every item is blocked, anime, or a duplicate.
-    return RecommendationPage(
-      items: rows.map((row) => row.item).toList(growable: false),
-      kind: kind,
-      nextCursor: rows.length < pageSize ? null : PrismRecommendationCursor(rows.last.documentId),
-    );
+    final PrismRecommendationCursor? next = switch ((stop >= 0, rows.length < pageSize)) {
+      (true, _) => null,
+      (false, false) => PrismRecommendationCursor(
+        rows.last.documentId,
+        wrapped: wrapped,
+        visitedDocumentIds: Set.unmodifiable({...visited, ...rows.map((row) => row.documentId)}),
+      ),
+      (false, true) =>
+        wrapped || start == null
+            ? null
+            : PrismRecommendationCursor(
+                null,
+                wrapped: true,
+                visitedDocumentIds: Set.unmodifiable({...visited, ...rows.map((row) => row.documentId)}),
+              ),
+    };
+    return RecommendationPage(items: kept.map((row) => row.item).toList(growable: false), kind: kind, nextCursor: next);
   }
 
   Future<RecommendationPage> _wallhaven(
