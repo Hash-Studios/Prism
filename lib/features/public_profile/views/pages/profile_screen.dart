@@ -998,7 +998,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                     SizedBox(
                       width: headerWidth * 0.9,
                       child: _StatsLine(
-                        gaps: const <double>[PrismSpace.md, PrismSpace.xs],
+                        gaps: const <double>[PrismSpace.md, PrismSpace.md],
                         dividerColor: cs.onSurface.withValues(alpha: 0.2),
                         children: <Widget>[
                           Semantics(
@@ -1030,7 +1030,7 @@ class _ProfileChildState extends State<_ProfileChild> {
                               ),
                             ),
                           ),
-                          if (!ownProfile) RankInfoChip(xp: cosmetics.xp),
+                          RankInfoChip(xp: cosmetics.xp),
                         ],
                       ),
                     ),
@@ -1091,13 +1091,6 @@ class _ProfileChildState extends State<_ProfileChild> {
               userId: _profile.id,
               ownProfile: ownProfile,
             ),
-            if (ownProfile)
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.lg, PrismSpace.page, PrismSpace.xxs),
-                  child: RankProgressCard(onOpenShop: () => context.router.root.push(const ShopRoute())),
-                ),
-              ),
             if (showProfileCompletenessCard)
               SliverToBoxAdapter(
                 child: Padding(

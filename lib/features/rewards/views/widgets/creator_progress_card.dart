@@ -31,7 +31,10 @@ class CreatorProgressView extends StatelessWidget {
     final CreatorProgress? progress = state.progress;
     final bool stale = state.status == CreatorProgressStatus.unavailable;
     final CreatorWeek? current = progress?.week(now);
+    final bool hasStatus =
+        state.status == CreatorProgressStatus.loading || state.status == CreatorProgressStatus.cached || stale;
     return PrismCard(
+      padding: const EdgeInsets.fromLTRB(18, PrismSpace.xs, 18, PrismSpace.xs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -46,7 +49,7 @@ class CreatorProgressView extends StatelessWidget {
               const StatsEntryButton(source: 'rewards'),
             ],
           ),
-          const SizedBox(height: PrismSpace.xxs),
+          if (hasStatus || progress != null) const SizedBox(height: PrismSpace.xxs),
           if (state.status == CreatorProgressStatus.loading)
             Text(context.l10n.economyCreatorRefreshing, style: PrismTextStyles.caption(context)),
           if (state.status == CreatorProgressStatus.cached)
@@ -79,6 +82,7 @@ class CreatorProgressView extends StatelessWidget {
               shape: const Border(),
               collapsedShape: const Border(),
               tilePadding: EdgeInsets.zero,
+              minTileHeight: prismTapTarget(context),
               childrenPadding: const EdgeInsets.only(bottom: PrismSpace.xs),
               title: Text(context.l10n.economyCreatorWhatCounts, style: PrismTextStyles.rowTitle(context)),
               children: <Widget>[
@@ -154,10 +158,14 @@ class _Milestone extends StatelessWidget {
             Semantics(
               label: context.l10n.economyCreatorMilestoneSemantics(label),
               value: context.l10n.economyCreatorProgressSemantics(progress.countFor(metric), next.target),
-              child: LinearProgressIndicator(
-                value: (progress.countFor(metric) / next.target).clamp(0, 1),
-                color: Theme.of(context).colorScheme.primary,
-                backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(PrismRadius.pill),
+                child: LinearProgressIndicator(
+                  value: (progress.countFor(metric) / next.target).clamp(0, 1),
+                  minHeight: 6,
+                  color: Theme.of(context).colorScheme.primary,
+                  backgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+                ),
               ),
             ),
           ],

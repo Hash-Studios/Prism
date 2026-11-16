@@ -241,40 +241,17 @@ class _FollowTipCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xl, PrismSpace.page, 0),
-      child: PrismCard(
-        padding: const EdgeInsets.all(PrismSpace.md),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: cs.primaryContainer,
-                borderRadius: BorderRadius.circular(PrismRadius.sm),
-              ),
-              child: Icon(Icons.group_add_rounded, size: 22, color: cs.onPrimaryContainer),
-            ),
-            const SizedBox(width: PrismSpace.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(context.l10n.economyLeaderboardFollowTip, style: PrismTextStyles.rowTitle(context)),
-                  const SizedBox(height: PrismSpace.sm),
-                  PrismButton(
-                    label: context.l10n.accountFindCreators,
-                    size: PrismButtonSize.compact,
-                    onPressed: onFind,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.md, PrismSpace.page, 0),
+      child: PrismGroup(
+        children: <Widget>[
+          PrismRow(
+            icon: Icons.group_add_rounded,
+            title: context.l10n.accountFindCreators,
+            subtitle: context.l10n.economyLeaderboardFollowTip,
+            onTap: onFind,
+          ),
+        ],
       ),
     );
   }
@@ -292,7 +269,8 @@ class _EntryRow extends StatelessWidget {
     final String name = entry.name.trim().isEmpty ? entry.username : entry.name.trim();
     final String rank = entry.rank.isEmpty ? '' : shopRankName(entry.rank, context.l10n);
     final bool tappable = entry.username.isNotEmpty;
-    final bool largeText = MediaQuery.textScalerOf(context).scale(14) > 21;
+    final bool stackedMetrics =
+        MediaQuery.textScalerOf(context).scale(14) > 21 || MediaQuery.sizeOf(context).width < 360;
     final Widget nameLabel = Text(
       name,
       maxLines: 1,
@@ -339,7 +317,7 @@ class _EntryRow extends StatelessWidget {
                     PrismAvatar(url: entry.photo, name: name, size: 40, frameId: entry.frameId, premium: entry.premium),
                     const SizedBox(width: PrismSpace.sm),
                     Expanded(
-                      child: largeText
+                      child: stackedMetrics
                           ? Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
@@ -358,14 +336,23 @@ class _EntryRow extends StatelessWidget {
                             )
                           : Row(
                               children: <Widget>[
-                                Flexible(child: nameLabel),
+                                Expanded(child: nameLabel),
                                 if (rank.isNotEmpty) ...<Widget>[const SizedBox(width: PrismSpace.xs), rankLabel],
                               ],
                             ),
                     ),
-                    if (!largeText) ...<Widget>[
+                    if (!stackedMetrics) ...<Widget>[
                       const SizedBox(width: PrismSpace.sm),
-                      Text(context.l10n.economyXp(entry.xp), style: PrismTextStyles.rowTitle(context)),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(minWidth: 64),
+                        child: Text(
+                          context.l10n.economyXp(entry.xp),
+                          textAlign: TextAlign.end,
+                          style: PrismTextStyles.rowTitle(
+                            context,
+                          ).copyWith(fontFeatures: const <FontFeature>[FontFeature.tabularFigures()]),
+                        ),
+                      ),
                     ],
                   ],
                 ),

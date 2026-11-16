@@ -276,11 +276,11 @@ class _DailyMomentContentState extends State<DailyMomentContent> {
                             minHeight: (constraints.maxHeight - padding.vertical).clamp(0, double.infinity),
                           ),
                           child: Align(
-                            alignment: const Alignment(0, -0.5),
+                            alignment: const Alignment(0, -0.2),
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
-                                _MomentHero(mood: mood, seed: title, height: 220),
+                                _MomentHero(mood: mood, seed: title, height: 260, width: 280),
                                 const SizedBox(height: PrismSpace.xl),
                                 headline,
                                 const SizedBox(height: PrismSpace.xs),
@@ -303,15 +303,16 @@ class _DailyMomentContentState extends State<DailyMomentContent> {
 
 /// Wallpaper covers with Glint on the corner, in the step's mood. Seeded by the title so each step has its own art.
 class _MomentHero extends StatelessWidget {
-  const _MomentHero({required this.mood, required this.seed, required this.height});
+  const _MomentHero({required this.mood, required this.seed, required this.height, this.width = 240});
 
   final GlintMood mood;
   final String seed;
   final double height;
+  final double width;
 
   @override
   Widget build(BuildContext context) => SizedBox(
-    width: 240,
+    width: width,
     height: height,
     child: CoverMosaic(
       seed: seed,

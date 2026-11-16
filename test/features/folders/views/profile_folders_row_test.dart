@@ -4,6 +4,7 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/utils/result.dart';
+import 'package:Prism/core/widgets/prism/prism_row.dart';
 import 'package:Prism/features/folders/domain/entities/discover_folder.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
@@ -12,6 +13,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -161,6 +163,7 @@ void main() {
   });
 
   testWidgets('returning from a folder keeps the row height while it reloads', (tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
     registerFallbackValue(FolderRoute(folderId: 'x'));
     final _MockStackRouter router = _MockStackRouter();
     when(() => router.push(any())).thenAnswer((_) async => null);
@@ -180,6 +183,13 @@ void main() {
     await _settle(tester);
     final double height = tester.getSize(find.byType(ProfileFoldersRow)).height;
     expect(height, greaterThan(0));
+    expect(find.text('Folders'), findsNothing, reason: 'a single folder is the profile row, not a card carousel');
+    expect(find.textContaining('Public'), findsOneWidget);
+    final SemanticsData folderRow = tester.getSemantics(find.byType(PrismRow)).getSemanticsData();
+    expect(folderRow.hasAction(SemanticsAction.tap), isTrue);
+    expect(folderRow.label, contains('Night Owl'));
+    expect(folderRow.label, contains('Public'));
+    expect(folderRow.label, contains('2 wallpapers'));
 
     final Completer<Result<List<PublicFolderEntity>>> pending = Completer<Result<List<PublicFolderEntity>>>();
     repo.ownerFoldersHandler = (_) => pending.future;
@@ -189,5 +199,17 @@ void main() {
 
     expect(find.text('Night Owl'), findsOneWidget);
     expect(tester.getSize(find.byType(ProfileFoldersRow)).height, height);
+    verify(() => router.push(FolderRoute(folderId: 'a'))).called(1);
+    semantics.dispose();
+  });
+
+  testWidgets('a visitor single-folder row has no public marker', (tester) async {
+    repo.ownerFolders = <PublicFolderEntity>[_folder('a', 'Night Owl')];
+    await tester.pumpWidget(_host(const ProfileFoldersRow(ownerId: 'owner', ownProfile: false)));
+    await _settle(tester);
+
+    expect(find.text('Night Owl'), findsOneWidget);
+    expect(find.textContaining('Public'), findsNothing);
+    expect(find.text('2 wallpapers'), findsOneWidget);
   });
 }

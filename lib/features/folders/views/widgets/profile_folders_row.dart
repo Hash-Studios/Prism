@@ -8,6 +8,7 @@ import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/folders/domain/entities/public_folder_entity.dart';
 import 'package:Prism/features/folders/domain/repositories/public_folders_repository.dart';
 import 'package:Prism/features/folders/views/widgets/folder_card.dart';
+import 'package:Prism/features/folders/views/widgets/folder_cover.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -77,6 +78,17 @@ class _ProfileFoldersRowState extends State<ProfileFoldersRow> {
   }
 
   Widget _row(BuildContext context, List<PublicFolderEntity> folders) {
+    if (folders.length == 1) {
+      final PublicFolderEntity folder = folders.single;
+      final String count = context.l10n.foldersItemCount(folder.itemCount);
+      return PrismRow(
+        padding: const EdgeInsets.symmetric(horizontal: PrismSpace.page, vertical: PrismSpace.xs),
+        leading: FolderCover(covers: folder.covers, size: 44),
+        title: folder.name,
+        subtitle: widget.ownProfile ? '$count · ${context.l10n.foldersPublic}' : count,
+        onTap: () => unawaited(_open(folder)),
+      );
+    }
     final TextScaler scaler = MediaQuery.textScalerOf(context);
     final double textHeight = scaler.scale(22) + scaler.scale(18);
     return Column(

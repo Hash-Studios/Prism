@@ -66,6 +66,7 @@ void main() {
     LeaderboardState state, {
     Stream<LeaderboardState> states = const Stream<LeaderboardState>.empty(),
     double textScale = 1,
+    TextDirection textDirection = TextDirection.ltr,
   }) {
     whenListen(bloc, states, initialState: state);
     return tester.pumpWidget(
@@ -74,7 +75,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
-          child: child!,
+          child: Directionality(textDirection: textDirection, child: child!),
         ),
         home: StackRouterScope(
           controller: router,
@@ -113,6 +114,34 @@ void main() {
     expect(find.text('1'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
     expect(find.byType(PrismSegmented<LeaderboardTab>), findsOneWidget);
+  });
+
+  testWidgets('keeps leaderboard names visible beside long XP values on a narrow screen', (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    const LeaderboardEntry narrow = LeaderboardEntry(
+      uid: 'narrow',
+      name: 'A very long creator display name',
+      username: 'narrow_creator',
+      photo: '',
+      xp: 1234567890,
+      rank: 'prism',
+    );
+    await pumpPage(tester, loaded(global: const <LeaderboardEntry>[narrow]));
+
+    expect(tester.takeException(), isNull);
+    final RenderBox nameBox = tester.renderObject<RenderBox>(find.text(narrow.name));
+    expect(nameBox.size.width, greaterThan(0));
+    expect(find.text('Prism'), findsOneWidget);
+    expect(find.text(AppLocalizationsEn().economyXp(narrow.xp)), findsOneWidget);
+    await pumpPage(
+      tester,
+      loaded(global: const <LeaderboardEntry>[narrow]),
+      textScale: 1.5,
+      textDirection: TextDirection.rtl,
+    );
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('a row passes the frame and the premium flag to the avatar', (tester) async {

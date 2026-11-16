@@ -328,8 +328,10 @@ class _OwnEmptyGalleryState extends State<_OwnEmptyGallery> {
           matchesAccount ? state.items : const <FavouriteWallEntity>[],
           sort: state.sort,
         ).where((wall) => wall is! LegacyFavouriteWall).toList(growable: false);
-        final int shown = walls.length.clamp(0, _OwnEmptyGallery._maxFavourites);
-        final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: PrismWallGrid.columns(context));
+        final int columns = PrismWallGrid.columns(context);
+        int shown = walls.length.clamp(0, _OwnEmptyGallery._maxFavourites);
+        if (shown > columns) shown -= shown % columns;
+        final int decodeHeight = gridTileDecodeHeight(context, crossAxisCount: columns);
         return SliverMainAxisGroup(
           slivers: <Widget>[
             SliverToBoxAdapter(

@@ -1,9 +1,14 @@
+import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/features/rewards/domain/creator_progress.dart';
 import 'package:Prism/features/rewards/views/widgets/creator_progress_card.dart';
 import 'package:Prism/l10n/generated/app_localizations_en.dart';
 import 'package:Prism/l10n/l10n.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+class _MockStackRouter extends Mock implements StackRouter {}
 
 CreatorProgress creatorFixture({int approved = 2, int members = 7}) => CreatorProgress.fromMap(<String, dynamic>{
   'version': 1,
@@ -23,6 +28,43 @@ CreatorProgress creatorFixture({int approved = 2, int members = 7}) => CreatorPr
 })!;
 
 void main() {
+  setUpAll(() => registerFallbackValue(CreatorStatsRoute()));
+  for (final TextDirection direction in TextDirection.values) {
+    testWidgets('Stats trailing target remains tappable in $direction', (tester) async {
+      final _MockStackRouter router = _MockStackRouter();
+      when(() => router.push(any())).thenAnswer((_) async => null);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Directionality(
+            textDirection: direction,
+            child: StackRouterScope(
+              controller: router,
+              stateHash: 0,
+              child: Scaffold(
+                body: CreatorProgressView(
+                  state: const CreatorProgressState(status: CreatorProgressStatus.unavailable),
+                  now: DateTime.utc(2026, 10, 11),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final Rect button = tester.getRect(find.byTooltip('Stats'));
+      final Offset trailingEdge = direction == TextDirection.ltr
+          ? Offset(button.right - 1, button.center.dy)
+          : Offset(button.left + 1, button.center.dy);
+      await tester.tapAt(trailingEdge);
+      verify(
+        () =>
+            router.push(any(that: isA<CreatorStatsRoute>().having((route) => route.args?.source, 'source', 'rewards'))),
+      ).called(1);
+    });
+  }
+
   test('uses exact current/previous ISO weeks across year rollover', () {
     final CreatorProgress progress = creatorFixture();
     expect(progress.week(DateTime.utc(2026, 10, 18)).newMembers, 7);

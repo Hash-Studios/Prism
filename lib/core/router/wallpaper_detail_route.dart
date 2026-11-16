@@ -6,6 +6,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/cupertino.dart' as cupertino;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart' show Ticker, TickerCallback;
 
 /// Matches [CustomRouteBuilder] without depending on the generated detail route or its arguments.
 Route<T> wallpaperDetailRouteBuilder<T>(BuildContext context, Widget child, AutoRoutePage<T> page) =>
@@ -152,6 +153,15 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
 
   @override
   Duration get reverseTransitionDuration => duration;
+
+  /// The frame that builds the detail page can be slow. Its time does not count, so the zoom never ends in one frame.
+  @override
+  AnimationController createAnimationController() => _FirstStepAnimationController(
+    duration: transitionDuration,
+    reverseDuration: reverseTransitionDuration,
+    debugLabel: debugLabel,
+    vsync: _FirstStepVsync(navigator!),
+  );
 
   @override
   bool get maintainState => _page.maintainState;
@@ -308,9 +318,52 @@ class _WallpaperDetailPageRoute<T> extends PageRoute<T> with MaterialRouteTransi
   }
 }
 
+/// Gives each run of a ticker at most one 60 Hz frame of time for its first step, then real time.
+class _FirstStepVsync implements TickerProvider {
+  _FirstStepVsync(this._vsync);
+
+  final TickerProvider _vsync;
+  Duration? skipped;
+
+  static const Duration _maxFirstStep = Duration(microseconds: 16667);
+
+  @override
+  Ticker createTicker(TickerCallback onTick) {
+    return _vsync.createTicker((Duration elapsed) {
+      if (elapsed == Duration.zero) {
+        skipped = null;
+      } else {
+        skipped ??= elapsed > _maxFirstStep ? elapsed - _maxFirstStep : Duration.zero;
+      }
+      onTick(elapsed - (skipped ?? Duration.zero));
+    });
+  }
+}
+
+/// Every simulation starts by stopping the controller. Reset here, not on a zero elapsed tick: a ticker started
+/// during a frame can deliver a nonzero first tick, including when it starts muted.
+class _FirstStepAnimationController extends AnimationController {
+  _FirstStepAnimationController({
+    required _FirstStepVsync vsync,
+    required super.duration,
+    super.reverseDuration,
+    super.debugLabel,
+  }) : _vsync = vsync,
+       super(vsync: vsync);
+
+  final _FirstStepVsync _vsync;
+
+  @override
+  void stop({bool canceled = true}) {
+    _vsync.skipped = null;
+    super.stop(canceled: canceled);
+  }
+}
+
 /// Fades the page in or, when the card Hero flies between a tile and the card, grows the page out of that tile or
-/// shrinks it back, fading it in late in the growth (and out early in the shrink) so the picture leads. The page scales and moves with the flight's left edge, top edge and width, so its card sits under
-/// the flying picture, and shows through a rounded window between the tile and the screen while the page behind dims.
+/// shrinks it back, fading it in late in the growth (and out early in the shrink) so the picture leads. The page scales
+/// and moves with the flight's left edge, top edge and width, so its card sits under the flying picture, and shows
+/// through a rounded window between the tile and the screen while the page behind dims.
 /// Without a zoom every transform here is the identity.
 class _DetailTransition extends AnimatedWidget {
   const _DetailTransition({

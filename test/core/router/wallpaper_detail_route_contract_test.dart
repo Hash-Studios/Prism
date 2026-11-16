@@ -5,6 +5,7 @@ import 'package:Prism/core/widgets/prism_sheet/prism_sheet_route.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -58,20 +59,31 @@ class _ContractRouter extends RootStackRouter {
   ];
 }
 
-Future<_ContractRouter> _pumpRouter(WidgetTester tester, {bool reduceMotion = false}) async {
+Future<_ContractRouter> _pumpRouter(
+  WidgetTester tester, {
+  bool reduceMotion = false,
+  ValueNotifier<bool>? tickerEnabled,
+}) async {
   final router = _ContractRouter();
   addTearDown(() async {
     await tester.pumpWidget(const SizedBox.shrink());
     router.dispose();
   });
-  await tester.pumpWidget(
-    MaterialApp.router(
-      routerConfig: router.config(),
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
-        child: child!,
-      ),
+  final app = MaterialApp.router(
+    routerConfig: router.config(),
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(context).copyWith(disableAnimations: reduceMotion),
+      child: child!,
     ),
+  );
+  await tester.pumpWidget(
+    tickerEnabled == null
+        ? app
+        : ValueListenableBuilder<bool>(
+            valueListenable: tickerEnabled,
+            child: app,
+            builder: (_, enabled, child) => TickerMode(enabled: enabled, child: child!),
+          ),
   );
   await tester.pumpAndSettle();
   return router;
@@ -128,7 +140,9 @@ void main() {
   }
 
   for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
-    testWidgets('$platform controller runs 300 ms each way', (tester) async {
+    testWidgets('$platform controller runs 300 ms each way, and a slow first frame counts as one frame', (
+      tester,
+    ) async {
       final router = await _pumpRouter(tester);
       final result = router.push<int>(const PageRouteInfo<void>('Detail'));
       await tester.pump();
@@ -137,7 +151,10 @@ void main() {
       expect(detail.transitionDuration, wallpaperDetailZoomDuration);
       expect(detail.reverseTransitionDuration, wallpaperDetailZoomDuration);
       expect(wallpaperDetailZoomDuration, const Duration(milliseconds: 300));
+      // A 150 ms frame (the one that builds the page) moves the zoom by one 60 Hz frame only.
       await tester.pump(const Duration(milliseconds: 150));
+      expect(detail.animation!.value, closeTo(1 / 18, 0.01));
+      await tester.pump(const Duration(microseconds: 133333));
       expect(detail.animation!.value, closeTo(0.5, 0.02));
       await tester.pump(const Duration(milliseconds: 151));
       expect(detail.animation!.isCompleted, isTrue);
@@ -145,10 +162,105 @@ void main() {
       await router.maybePop<int>(42);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 150));
+      expect(detail.animation!.value, closeTo(1 - 1 / 18, 0.01));
+      await tester.pump(const Duration(microseconds: 133333));
       expect(detail.animation!.value, closeTo(0.5, 0.02));
       await tester.pump(const Duration(milliseconds: 151));
       expect(await result, 42);
       expect(router.current.name, 'Grid');
+    }, variant: TargetPlatformVariant({platform}));
+
+    testWidgets('$platform frame-phase restarts reset the slow-first-step clock in both directions', (tester) async {
+      final router = await _pumpRouter(tester);
+      final detail = await _openDetail(tester, router);
+      final controller = detail.createAnimationController();
+      addTearDown(controller.dispose);
+
+      unawaited(controller.forward());
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(controller.value, closeTo(1 / 18, 0.001));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(controller.isCompleted, isTrue);
+
+      SchedulerBinding.instance.scheduleFrameCallback((_) => unawaited(controller.reverse()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(tester.takeException(), isNull);
+      expect(controller.value, closeTo(1 - 16 / 300, 0.001));
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(controller.value, closeTo(1 - 32 / 300, 0.001));
+      await tester.pumpAndSettle();
+      expect(controller.isDismissed, isTrue);
+
+      // Leave a nonzero skipped interval in the reverse run, then restart forward during a frame too.
+      unawaited(controller.reverse(from: 1));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(controller.value, closeTo(1 - 1 / 18, 0.001));
+      SchedulerBinding.instance.scheduleFrameCallback((_) => unawaited(controller.forward(from: 0)));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(tester.takeException(), isNull);
+      expect(controller.value, closeTo(16 / 300, 0.001));
+      await tester.pumpAndSettle();
+      expect(controller.isCompleted, isTrue);
+    }, variant: TargetPlatformVariant({platform}));
+
+    testWidgets('$platform initially muted starts cap the first step and keep navigator TickerMode', (tester) async {
+      final tickerEnabled = ValueNotifier<bool>(true);
+      addTearDown(tickerEnabled.dispose);
+      final router = await _pumpRouter(tester, tickerEnabled: tickerEnabled);
+      final detail = await _openDetail(tester, router);
+      final controller = detail.createAnimationController();
+      addTearDown(controller.dispose);
+      tickerEnabled.value = false;
+      await tester.pump();
+      SchedulerBinding.instance.scheduleFrameCallback((_) => unawaited(controller.forward()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(controller.value, 0);
+      expect(controller.isAnimating, isTrue);
+
+      tickerEnabled.value = true;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(controller.value, closeTo(1 / 18, 0.001));
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(controller.value, closeTo((16.667 + 16) / 300, 0.001));
+
+      tickerEnabled.value = false;
+      await tester.pump();
+      final beforeMute = controller.value;
+      await tester.pump(const Duration(milliseconds: 150));
+      expect(controller.value, beforeMute);
+      tickerEnabled.value = true;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(
+        controller.value,
+        closeTo(beforeMute + 166 / 300, 0.001),
+        reason: 'unmuting the same run must not reset its elapsed time',
+      );
+      await tester.pumpAndSettle();
+      expect(controller.isCompleted, isTrue);
+    }, variant: TargetPlatformVariant({platform}));
+
+    testWidgets('$platform zero-duration controllers settle even when the navigator is muted', (tester) async {
+      final tickerEnabled = ValueNotifier<bool>(true);
+      addTearDown(tickerEnabled.dispose);
+      final router = await _pumpRouter(tester, reduceMotion: true, tickerEnabled: tickerEnabled);
+      final detail = await _openDetail(tester, router);
+      final controller = detail.createAnimationController();
+      addTearDown(controller.dispose);
+      tickerEnabled.value = false;
+      await tester.pump();
+      await controller.forward();
+      expect(controller.isCompleted, isTrue);
+      await controller.reverse();
+      expect(controller.isDismissed, isTrue);
+      expect(controller.isAnimating, isFalse);
+      expect(tester.takeException(), isNull);
     }, variant: TargetPlatformVariant({platform}));
 
     testWidgets('$platform reduced motion completes the controller immediately in both directions', (tester) async {

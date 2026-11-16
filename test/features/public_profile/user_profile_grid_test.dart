@@ -219,6 +219,18 @@ void main() {
       expect(find.text('See all'), findsOneWidget);
     });
 
+    testWidgets('See all includes favourites beyond the last complete row', (tester) async {
+      tester.view.physicalSize = const Size(400, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await pumpOwn(tester, PublicProfileState.initial().copyWith(status: LoadStatus.success), <FavouriteWallEntity>[
+        for (int i = 0; i < 3; i++) favourite('fav-$i'),
+      ]);
+
+      expect(find.byType(PrismWallTile), findsNWidgets(2));
+      expect(find.text('See all'), findsOneWidget);
+    });
+
     testWidgets('does not show favourites cached for another account', (tester) async {
       await pumpOwn(tester, PublicProfileState.initial().copyWith(status: LoadStatus.success), <FavouriteWallEntity>[
         favourite('private'),

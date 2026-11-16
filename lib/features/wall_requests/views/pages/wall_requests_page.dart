@@ -300,28 +300,32 @@ class _TabBody extends StatelessWidget {
             child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(PrismSpace.page, PrismSpace.xs, PrismSpace.page, PrismSpace.xl),
-              // A short list opens with the intro and ends with the Request button, so the page does not look empty.
-              itemCount: requests.length + (short(requests) ? (filled.isEmpty ? 2 : 3) : 0),
+              // A short list opens with the intro and its Request button, so the page does not look empty.
+              itemCount: requests.length + (short(requests) ? (filled.isEmpty ? 1 : 2) : 0),
               itemBuilder: (BuildContext context, int index) {
                 final bool isShort = short(requests);
                 if (isShort && index == 0) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: PrismSpace.xs),
-                    child: Text(l10n.wallRequestsEmptyTopBody, style: PrismTextStyles.caption(context)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(l10n.wallRequestsEmptyTopBody, style: PrismTextStyles.caption(context)),
+                        const SizedBox(height: PrismSpace.sm),
+                        PrismButton(
+                          label: l10n.wallRequestsAsk,
+                          icon: Icons.add_rounded,
+                          size: PrismButtonSize.compact,
+                          onPressed: onAsk,
+                        ),
+                      ],
+                    ),
                   );
-                }
-                if (isShort && index == requests.length + 2) {
-                  return _FilledWalls(walls: filled, onSeeAll: onSeeAllFilled);
                 }
                 if (isShort && index == requests.length + 1) {
                   return Padding(
                     padding: const EdgeInsets.only(top: PrismSpace.lg),
-                    child: PrismButton(
-                      label: l10n.wallRequestsAsk,
-                      icon: Icons.add_rounded,
-                      expand: true,
-                      onPressed: onAsk,
-                    ),
+                    child: _FilledWalls(walls: filled, onSeeAll: onSeeAllFilled),
                   );
                 }
                 final int rowIndex = isShort ? index - 1 : index;
