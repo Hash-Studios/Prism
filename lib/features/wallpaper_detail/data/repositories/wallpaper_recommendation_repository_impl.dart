@@ -1,6 +1,7 @@
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_collections.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
@@ -98,8 +99,7 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
       final page = switch (current) {
         PrismFeedItem(:final wallpaper) => await _prism(
           query,
-          // Firestore cannot start after a document that lacks the orderBy field.
-          wallpaper.core.createdAt == null ? null : wallpaper.firestoreDocumentId,
+          wallpaper.firestoreDocumentId,
           cursor as PrismRecommendationCursor?,
           kind,
         ),
@@ -128,7 +128,29 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
     PrismRecommendationCursor? cursor,
     RecommendationKind kind,
   ) async {
-    final start = (anchor?.isEmpty ?? true) ? null : anchor;
+    var start = (anchor?.isEmpty ?? true) ? null : anchor;
+    final cursorDocumentId = cursor == null ? start : cursor.documentId;
+    List<Object?>? startAfterFieldValues;
+    if (cursorDocumentId != null) {
+      try {
+        final data = await firestore().getById<Map<String, dynamic>>(
+          FirebaseCollections.walls,
+          cursorDocumentId,
+          (data, _) => data,
+          sourceTag: 'wallpaper_detail.recommendations.cursor',
+        );
+        // Field presence matters: null and legacy values are still valid Firestore ordering values.
+        if (data != null && data.containsKey('createdAt')) {
+          startAfterFieldValues = [data['createdAt'], cursorDocumentId];
+        } else if (cursor == null) {
+          start = null;
+        }
+      } catch (error) {
+        // An active unreviewed Drop can be readable only through its public Drop document.
+        if (mapFirestoreError(error).code != 'permission-denied') rethrow;
+        if (cursor == null) start = null;
+      }
+    }
     final wrapped = cursor?.wrapped ?? false;
     final rows = await firestore().query<_PrismRow>(
       FirestoreQuerySpec(
@@ -138,8 +160,11 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
           if (category.isNotEmpty) FirestoreFilter(field: 'category', op: FirestoreFilterOp.isEqualTo, value: category),
           const FirestoreFilter(field: 'review', op: FirestoreFilterOp.isEqualTo, value: true),
         ],
-        orderBy: const [FirestoreOrderBy(field: 'createdAt', descending: true)],
-        startAfterDocId: cursor == null ? start : cursor.documentId,
+        orderBy: const [
+          FirestoreOrderBy(field: 'createdAt', descending: true),
+          FirestoreOrderBy(field: firestoreDocumentIdField, descending: true),
+        ],
+        startAfterFieldValues: startAfterFieldValues,
         limit: pageSize,
         cachePolicy: FirestoreCachePolicy.memoryFirst,
       ),
