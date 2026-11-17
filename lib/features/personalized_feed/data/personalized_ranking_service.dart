@@ -102,9 +102,11 @@ class PersonalizedRankingService {
     required DateTime now,
     int limit = 24,
     RankingRules rules = RankingRules.legacy,
+    Set<String> excludedVariantGroups = const <String>{},
   }) {
     final Map<String, _Scored> byKey = <String, _Scored>{};
     final Set<String> usedGroups = <String>{
+      if (rules.dedupeVariants) ...excludedVariantGroups,
       if (rules.dedupeVariants)
         for (final RankingCandidate candidate in candidates)
           if (candidate.variantGroup != null && excludedKeys.contains(candidate.key)) candidate.variantGroup!,

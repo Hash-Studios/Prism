@@ -138,6 +138,23 @@ class _OneWallFirestore extends Fake implements FirestoreClient {
   }) async => failUserDoc ? throw StateError('offline') : null;
 }
 
+class _VariantWallFirestore extends _OneWallFirestore {
+  bool original = false;
+  @override
+  Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async =>
+      <T>[
+        map(<String, dynamic>{
+          ..._OneWallFirestore._wall,
+          'wallpaper_url': original ? 'https://example.com/original.jpg' : 'https://example.com/partner.jpg',
+          'variantGroupId': 'pair',
+        }, original ? 'original' : 'partner'),
+        map(<String, dynamic>{
+          ..._OneWallFirestore._wall,
+          'wallpaper_url': 'https://example.com/unrelated.jpg',
+        }, 'unrelated'),
+      ];
+}
+
 class _AnimeWallFirestore extends _OneWallFirestore {
   @override
   Future<List<T>> query<T>(FirestoreQuerySpec spec, T Function(Map<String, dynamic> data, String docId) map) async =>
@@ -629,6 +646,18 @@ class _PendingFavourites extends Fake implements FavouriteWallsRepository {
   }
 }
 
+class _FailingScrolledPastImpressions extends FeedImpressionStore {
+  _FailingScrolledPastImpressions(super.settingsLocal);
+
+  @override
+  Future<void> recordScrolledPast(
+    Iterable<String> keys,
+    DateTime now, {
+    required int expectedRevision,
+    bool Function()? isCurrent,
+  }) async => throw StateError('disk full');
+}
+
 class _PendingRecordTasteSignalStore extends TasteSignalStore {
   _PendingRecordTasteSignalStore(super.settingsLocal);
 
@@ -766,6 +795,140 @@ void main() {
     expect(FeedImpressionStore(settings).recentShows(DateTime.now().toUtc()), <String, int>{
       'https://example.com/wall.jpg': 99,
     });
+  });
+
+  test('next page excludes variants of existing walls absent from its candidate pools', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final repository = _repository(
+      favourites: _CountingFavourites(),
+      firestore: _VariantWallFirestore(),
+      settings: SettingsLocalDataSource(InMemoryLocalStore()),
+    );
+    const original = FeedItemEntity.prism(
+      id: 'original',
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(
+          id: 'original',
+          source: WallpaperSource.prism,
+          fullUrl: 'https://example.com/original.jpg',
+          thumbnailUrl: 't',
+        ),
+        variantGroupId: 'pair',
+      ),
+    );
+    final result = await repository.fetch(
+      const FetchPersonalizedFeedRequest(
+        page: 2,
+        refresh: false,
+        seenKeys: <String>['https://example.com/original.jpg'],
+        existingItems: <FeedItemEntity>[original],
+      ),
+    );
+    expect(result.isSuccess, isTrue);
+    expect(result.data!.items.map((item) => item.id), <String>['unrelated']);
+  });
+
+  test('variants stay excluded when the earlier wall was removed but its session key remains', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final firestore = _VariantWallFirestore()..original = true;
+    final repository = _repository(
+      favourites: _CountingFavourites(),
+      firestore: firestore,
+      settings: SettingsLocalDataSource(InMemoryLocalStore()),
+    );
+    final first = await repository.fetch(_firstPage);
+    expect(first.isSuccess, isTrue);
+    firestore.original = false;
+    final next = await repository.fetch(
+      FetchPersonalizedFeedRequest(
+        page: 2,
+        refresh: false,
+        seenKeys: first.data!.usedKeys,
+        existingItems: const <FeedItemEntity>[],
+      ),
+    );
+    expect(next.isSuccess, isTrue);
+    expect(next.data!.items, isEmpty);
+  });
+
+  test('a failed scrolled-past marker write does not discard the first page', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final settings = SettingsLocalDataSource(InMemoryLocalStore());
+    final signals = TasteSignalStore(settings);
+    final impressions = _FailingScrolledPastImpressions(settings);
+    await impressions.recordShown(<String>['https://example.com/wall.jpg'], DateTime.now().toUtc());
+    final repository = _repository(
+      favourites: _CountingFavourites(),
+      firestore: _OneWallFirestore(),
+      settings: settings,
+      tasteSignals: signals,
+      impressions: impressions,
+    );
+    expect(await repository.primeFirstPage(), isNotNull);
+    expect(signals.signaledKeys(), contains('https://example.com/wall.jpg'));
+  });
+
+  test('scrolled-past learning does not invalidate its own first page or prime', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final settings = SettingsLocalDataSource(InMemoryLocalStore());
+    final signals = TasteSignalStore(settings);
+    final impressions = FeedImpressionStore(settings);
+    await impressions.recordShown(<String>['https://example.com/wall.jpg'], DateTime.now().toUtc());
+    final repository = _repository(
+      favourites: _CountingFavourites(),
+      firestore: _OneWallFirestore(),
+      settings: settings,
+      tasteSignals: signals,
+      impressions: impressions,
+    );
+    final primed = await repository.primeFirstPage();
+    expect(primed, isNotNull);
+    expect(primed!.items, isNotEmpty);
+    expect(signals.read().where((signal) => signal.action == TasteAction.scrolledPast), hasLength(1));
+    final result = await repository.fetch(_firstPage);
+    expect(result.isSuccess, isTrue);
+    expect(result.data!.usedKeys, primed.usedKeys);
+    expect(signals.read().where((signal) => signal.action == TasteAction.scrolledPast), hasLength(1));
+  });
+
+  test('evicting old scrolled-past signals does not learn the same retained impression twice', () async {
+    app_state.prismUser = app_constants.createGuestPrismUser();
+    final settings = SettingsLocalDataSource(InMemoryLocalStore());
+    final signals = TasteSignalStore(settings);
+    final impressions = FeedImpressionStore(settings);
+    final now = DateTime.now().toUtc();
+    await impressions.recordShown(<String>['https://example.com/wall.jpg'], now);
+    final repository = _repository(
+      favourites: _CountingFavourites(),
+      firestore: _OneWallFirestore(),
+      settings: settings,
+      tasteSignals: signals,
+      impressions: impressions,
+    );
+    expect((await repository.fetch(_firstPage)).isSuccess, isTrue);
+    expect(signals.signaledKeys(), contains('https://example.com/wall.jpg'));
+    await signals.recordAll(<TasteSignal>[
+      for (int i = 0; i < 60; i++)
+        TasteSignal(
+          action: TasteAction.scrolledPast,
+          at: now.add(Duration(minutes: i + 1)),
+          terms: const <String>['city'],
+          wallKey: 'newer-$i',
+        ),
+    ]);
+    expect(signals.signaledKeys(), isNot(contains('https://example.com/wall.jpg')));
+    expect(
+      (await repository.fetch(
+        const FetchPersonalizedFeedRequest(
+          page: 2,
+          refresh: false,
+          seenKeys: <String>[],
+          existingItems: <FeedItemEntity>[],
+        ),
+      )).isSuccess,
+      isTrue,
+    );
+    expect(signals.signaledKeys(), isNot(contains('https://example.com/wall.jpg')));
   });
 
   test('less-like-this does not hide a wall after sign-out clears its pending signal', () async {
@@ -2305,6 +2468,44 @@ void main() {
       await repository.readCached();
 
       expect(cache.scopes, <String>['feed-test-user', 'guest']);
+    });
+
+    test('cached paint and offline fallback dedupe variants within and across pages', () async {
+      app_state.prismUser = app_constants.createGuestPrismUser();
+      FeedItemEntity variant(String id) => FeedItemEntity.prism(
+        id: id,
+        wallpaper: PrismWallpaper(
+          core: WallpaperCore(
+            id: id,
+            source: WallpaperSource.prism,
+            fullUrl: 'https://example.com/$id.jpg',
+            thumbnailUrl: 't',
+          ),
+          variantGroupId: 'pair',
+        ),
+      );
+      final original = variant('original');
+      final cache = _MemoryFeedCache()
+        ..snapshot = snapshot(<FeedItemEntity>[original, variant('partner'), _prismItem('unrelated')]);
+      final repository = _repository(
+        favourites: _CountingFavourites(),
+        firestore: _OneWallFirestore()..fail = true,
+        cache: cache,
+        settings: SettingsLocalDataSource(InMemoryLocalStore()),
+        wallhaven: _OfflineWallhaven(),
+        pexels: _OfflinePexels(),
+      );
+      expect(_itemIds((await repository.readCached())!.items), <String>['original', 'unrelated']);
+      final next = await repository.fetch(
+        FetchPersonalizedFeedRequest(
+          page: 2,
+          refresh: false,
+          seenKeys: <String>[original.canonicalKey],
+          existingItems: <FeedItemEntity>[original],
+        ),
+      );
+      expect(next.isSuccess, isTrue);
+      expect(_itemIds(next.data!.items), <String>['unrelated']);
     });
 
     test('a warm page cannot restore a wallpaper hidden since warming', () async {

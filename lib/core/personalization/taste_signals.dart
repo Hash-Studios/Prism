@@ -137,6 +137,7 @@ class TasteSignalStore {
   /// [TasteAction.scrolledPast] comes in bulk, so it may fill at most this many of the [_cap] places.
   static const int scrolledPastCap = 60;
   int _revision = 0;
+  late Future<void> _pendingWrite = Future<void>.value();
 
   int get revision => _revision;
 
@@ -162,16 +163,44 @@ class TasteSignalStore {
 
   Future<void> record(TasteSignal signal) => recordAll(<TasteSignal>[signal]);
 
-  Future<void> recordAll(List<TasteSignal> signals) {
-    final List<TasteSignal> all = <TasteSignal>[
-      ...read(),
-      ...signals.where((s) => s.terms.isNotEmpty || s.creator != null),
-    ]..sort((a, b) => a.at.compareTo(b.at));
-    final int excess = all.where((s) => s.action == TasteAction.scrolledPast).length - scrolledPastCap;
-    int dropped = 0;
-    all.removeWhere((s) => s.action == TasteAction.scrolledPast && dropped++ < excess);
-    final List<TasteSignal> kept = all.length > _cap ? all.sublist(all.length - _cap) : all;
-    return _settingsLocal.set(_key, json.encode(kept.map((s) => s.toJson()).toList(growable: false)));
+  Future<void> recordAll(List<TasteSignal> signals, {int? expectedRevision}) {
+    final int revision = expectedRevision ?? _revision;
+    return _enqueue(() {
+      if (revision != _revision) return Future<void>.value();
+      final List<TasteSignal> existing = read();
+      final Set<String> signaled = <String>{
+        for (final TasteSignal signal in existing)
+          if (signal.wallKey case final String key) key,
+      };
+      final List<TasteSignal> all = <TasteSignal>[
+        ...existing,
+        for (final TasteSignal signal in signals)
+          if ((signal.terms.isNotEmpty || signal.creator != null) &&
+              (signal.action != TasteAction.scrolledPast || signal.wallKey == null || signaled.add(signal.wallKey!)))
+            signal,
+      ];
+      final List<(int, TasteSignal)> ordered = all.indexed.toList()
+        ..sort((a, b) {
+          final int byTime = a.$2.at.compareTo(b.$2.at);
+          return byTime == 0 ? a.$1.compareTo(b.$1) : byTime;
+        });
+      final int skippedCount = all.where((s) => s.action == TasteAction.scrolledPast).length;
+      int skipDrops = skippedCount > scrolledPastCap ? skippedCount - scrolledPastCap : 0;
+      final int overflow = all.length - _cap;
+      if (overflow > skipDrops) skipDrops = overflow < skippedCount ? overflow : skippedCount;
+      final List<TasteSignal> trimmed = <TasteSignal>[
+        for (final (int, TasteSignal) entry in ordered)
+          if (entry.$2.action != TasteAction.scrolledPast || skipDrops-- <= 0) entry.$2,
+      ];
+      final List<TasteSignal> kept = trimmed.length > _cap ? trimmed.sublist(trimmed.length - _cap) : trimmed;
+      return _settingsLocal.set(_key, json.encode(kept.map((s) => s.toJson()).toList(growable: false)));
+    });
+  }
+
+  Future<void> _enqueue(Future<void> Function() write) {
+    final Future<void> result = _pendingWrite.then((_) => write());
+    _pendingWrite = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    return result;
   }
 
   /// Walls with any signal: opened, saved, set, shared, hidden or already scrolled past.
@@ -183,13 +212,19 @@ class TasteSignalStore {
   /// Seeding from older data (for example favourites) runs once per install.
   bool get isSeeded => _settingsLocal.get<bool>(_seededKey, defaultValue: false);
 
-  Future<void> markSeeded() => _settingsLocal.set(_seededKey, true);
+  Future<void> markSeeded() {
+    final int revision = _revision;
+    return _enqueue(() => revision == _revision ? _settingsLocal.set(_seededKey, true) : Future<void>.value());
+  }
 
   /// [allowReseed] lets the next user seed from their own favourites (sign-out).
   /// Without it, a user who cleared their history is not re-learned from favourites.
-  Future<void> clear({bool allowReseed = false}) async {
+  Future<void> clear({bool allowReseed = false}) {
     _revision++;
     _feedTerms.clear();
-    await Future.wait<void>(<Future<void>>[_settingsLocal.delete(_key), _settingsLocal.set(_seededKey, !allowReseed)]);
+    return _enqueue(
+      () =>
+          Future.wait<void>(<Future<void>>[_settingsLocal.delete(_key), _settingsLocal.set(_seededKey, !allowReseed)]),
+    );
   }
 }

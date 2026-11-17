@@ -221,8 +221,8 @@ void main() {
       ]);
       final List<TasteSignal> kept = store.read();
       expect(kept, hasLength(300));
-      expect(kept.last.wallKey, 'skip');
-      expect(kept.first.wallKey, 'fav1');
+      expect(kept.where((s) => s.action == TasteAction.scrolledPast), isEmpty);
+      expect(kept.first.wallKey, 'fav0');
     });
 
     test('signaled keys hold every wall with a signal', () async {
@@ -259,6 +259,31 @@ void main() {
             .items
             .map((item) => item.id)
             .toList();
+
+    test('excludes a group when its earlier wall is absent from the new pools', () {
+      PersonalizedRankingResult rankWithGroups(RankingRules rules) => const PersonalizedRankingService().rank(
+        candidates: <RankingCandidate>[
+          RankingCandidate(
+            item: goldenWall('partner', 'city', group: 'seen-group'),
+            pool: CandidatePool.fresh,
+          ),
+          RankingCandidate(item: goldenWall('unrelated', 'city'), pool: CandidatePool.fresh),
+        ],
+        profile: TasteProfile.build(interests: const [], following: const [], signals: const [], now: goldenNow),
+        recentShows: const <String, int>{},
+        excludedKeys: const <String>{'https://g.test/original.jpg'},
+        excludedVariantGroups: const <String>{'seen-group'},
+        mix: FeedMix.balanced,
+        random: Random(3),
+        now: goldenNow,
+        rules: rules,
+      );
+      expect(rankWithGroups(RankingRules.x2026).items.map((item) => item.id), <String>['unrelated']);
+      expect(
+        rankWithGroups(RankingRules.legacy).items.map((item) => item.id),
+        unorderedEquals(<String>['partner', 'unrelated']),
+      );
+    });
 
     test('keeps one wall of each pair in a page', () {
       final List<String> legacy = rank(RankingRules.legacy);

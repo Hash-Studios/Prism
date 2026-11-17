@@ -75,6 +75,8 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   final DateTime Function() _now;
   final PersonalizedRankingService _rankingService = const PersonalizedRankingService();
   final Random _random = Random();
+  String? _variantScope;
+  final Map<String, String> _selectedVariantGroups = <String, String>{};
 
   static const int _cacheTtlHours = 2;
   static const int _cacheCap = 48;
@@ -225,7 +227,8 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         usedKeys: starters.map((item) => item.canonicalKey).toList(growable: false),
       );
     }
-    final List<FeedItemEntity> items = cached.items.take(_cachedPageSize).toList(growable: false);
+    final List<FeedItemEntity> items = _dedupeVariants(cached.items).take(_cachedPageSize).toList(growable: false);
+    if (scope == _cacheScope) _rememberVariants(items, const <String>{});
     return PersonalizedFeedPage(
       items: items,
       hasMore: true,
@@ -571,23 +574,24 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         random: _random,
         now: now,
         rules: rules,
+        excludedVariantGroups: <String>{
+          if (_variantScope == cacheScope)
+            for (final String key in excludedKeys)
+              if (_selectedVariantGroups[key] case final String group) group,
+          for (final FeedItemEntity item in request.existingItems)
+            if (item.maybeWhen(prism: (_, wall) => wall.variantGroupId, orElse: () => null) case final String group)
+              group,
+        },
       );
-      if (rules.scrolledPast) {
-        final List<TasteSignal> skipped = scrolledPastSignals(
-          candidates: candidates,
-          recentShows: recentShows,
-          excludedKeys: excludedKeys,
-          signaledKeys: _tasteSignals.signaledKeys(),
-          now: now,
-        );
-        if (skipped.isNotEmpty) {
-          unawaited(
-            _tasteSignals
-                .recordAll(skipped)
-                .catchError((Object e) => logger.w('[PersonalizedFeed] scrolled-past signals failed: $e')),
-          );
-        }
-      }
+      final List<TasteSignal> skipped = rules.scrolledPast
+          ? scrolledPastSignals(
+              candidates: candidates,
+              recentShows: recentShows,
+              excludedKeys: excludedKeys,
+              signaledKeys: <String>{..._tasteSignals.signaledKeys(), ..._impressions.scrolledPastKeys(now)},
+              now: now,
+            )
+          : const <TasteSignal>[];
       if (sourceFailures.isNotEmpty && ranking.items.isEmpty) {
         throw StateError('Personalized feed sources failed without ranked candidates');
       }
@@ -608,6 +612,29 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       if (!isCurrentSession() || !isCurrentPrime() || !isCurrentGeneration()) {
         return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
       }
+      if (skipped.isNotEmpty) {
+        try {
+          await _tasteSignals.recordAll(skipped, expectedRevision: tasteRevision);
+          if (isCurrentSession() && isCurrentGeneration()) {
+            await _impressions.recordScrolledPast(
+              skipped.map((signal) => signal.wallKey!),
+              now,
+              expectedRevision: impressionRevision,
+              isCurrent: isCurrentSession,
+            );
+          }
+        } catch (error) {
+          logger.w('[PersonalizedFeed] scrolled-past signals failed: $error');
+        }
+        if (!isCurrentSession() || primeContext != _primeContextKey() || !isCurrentGeneration()) {
+          return Result.error(const UnknownFailure('Feed request was invalidated by a session change'));
+        }
+        if (primeKey != null) {
+          primeKey = _primeKey();
+          onPrimeKeyChanged?.call(primeKey);
+        }
+      }
+      _rememberVariants(<FeedItemEntity>[...request.existingItems, ...ranking.items], excludedKeys);
       unawaited(_rememberInCatalog(ranking.items));
 
       logger.i(
@@ -644,10 +671,13 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
           ...request.seenKeys,
           ...request.existingItems.map((item) => item.canonicalKey),
         };
-        final List<FeedItemEntity> unseenCachedItems = fallbackItems
-            .where((item) => !excluded.contains(item.canonicalKey))
-            .toList(growable: false);
+        final List<FeedItemEntity> unseenCachedItems = _dedupeVariants(
+          fallbackItems.where((item) => !excluded.contains(item.canonicalKey)).toList(growable: false),
+          excludedKeys: excluded,
+          existingItems: request.existingItems,
+        );
         if (unseenCachedItems.isNotEmpty || fallbackItems.every(BundledWallpapers.isStarter)) {
+          _rememberVariants(<FeedItemEntity>[...request.existingItems, ...unseenCachedItems], excluded);
           return Result.success(
             PersonalizedFeedPage(
               items: unseenCachedItems,
@@ -659,6 +689,38 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       }
       return Result.error(ServerFailure('Failed to fetch personalized feed: $error'));
     }
+  }
+
+  void _rememberVariants(List<FeedItemEntity> items, Set<String> excludedKeys) {
+    if (_variantScope != _cacheScope) _selectedVariantGroups.clear();
+    _variantScope = _cacheScope;
+    _selectedVariantGroups.removeWhere((key, _) => !excludedKeys.contains(key));
+    for (final FeedItemEntity item in items) {
+      if (item.maybeWhen(prism: (_, wall) => wall.variantGroupId, orElse: () => null) case final String group) {
+        _selectedVariantGroups[item.canonicalKey] = group;
+      }
+    }
+  }
+
+  List<FeedItemEntity> _dedupeVariants(
+    List<FeedItemEntity> items, {
+    Set<String> excludedKeys = const <String>{},
+    List<FeedItemEntity> existingItems = const <FeedItemEntity>[],
+  }) {
+    if (!_rules.dedupeVariants) return items;
+    final Set<String> groups = <String>{
+      if (_variantScope == _cacheScope)
+        for (final String key in excludedKeys)
+          if (_selectedVariantGroups[key] case final String group) group,
+      for (final FeedItemEntity item in existingItems)
+        if (item.maybeWhen(prism: (_, wall) => wall.variantGroupId, orElse: () => null) case final String group) group,
+    };
+    return items
+        .where((item) {
+          final String? group = item.maybeWhen(prism: (_, wall) => wall.variantGroupId, orElse: () => null);
+          return group == null || groups.add(group);
+        })
+        .toList(growable: false);
   }
 
   PersonalizedFeedPage _excludingBlocked(PersonalizedFeedPage page) {

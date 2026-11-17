@@ -14,6 +14,8 @@ class FeedImpressionStore {
 
   static const String _key = 'personalized_feed_impressions_v1';
   static const String _hiddenKey = 'personalized_feed_hidden_v1';
+  static const String _scrolledPastKey = 'personalized_feed_scrolled_past_v1';
+  Future<void>? _scrolledPastWrite;
   static const int _cap = 800;
   static const int _hiddenCap = 2000;
   static const Duration _window = Duration(days: 14);
@@ -65,9 +67,44 @@ class FeedImpressionStore {
     return _settingsLocal.set(_hiddenKey, json.encode(hidden));
   }
 
-  Future<void> clear() async {
+  /// Keeps consumed feedback for as long as the corresponding impression is retained.
+  Set<String> scrolledPastKeys(DateTime now) {
+    final Set<String> retained = recentShows(now).keys.toSet();
+    try {
+      final Object? decoded = json.decode(_settingsLocal.get<String>(_scrolledPastKey, defaultValue: '[]'));
+      return decoded is List ? decoded.whereType<String>().where(retained.contains).toSet() : <String>{};
+    } catch (_) {
+      return <String>{};
+    }
+  }
+
+  Future<void> recordScrolledPast(
+    Iterable<String> keys,
+    DateTime now, {
+    required int expectedRevision,
+    bool Function()? isCurrent,
+  }) {
+    final Future<void> write = (_scrolledPastWrite ?? Future<void>.value()).then((_) async {
+      if (_revision != expectedRevision || (isCurrent != null && !isCurrent())) return;
+      final Set<String> retained = recentShows(now).keys.toSet();
+      final Set<String> all = <String>{...scrolledPastKeys(now), ...keys.where(retained.contains)};
+      await _settingsLocal.set(_scrolledPastKey, json.encode(all.toList(growable: false)));
+    });
+    _scrolledPastWrite = write.catchError((Object _) {});
+    return write;
+  }
+
+  Future<void> clear() {
     _revision++;
-    await Future.wait<void>(<Future<void>>[_settingsLocal.delete(_key), _settingsLocal.delete(_hiddenKey)]);
+    final Future<void> clear = (_scrolledPastWrite ?? Future<void>.value()).then((_) async {
+      await Future.wait<void>(<Future<void>>[
+        _settingsLocal.delete(_key),
+        _settingsLocal.delete(_hiddenKey),
+        _settingsLocal.delete(_scrolledPastKey),
+      ]);
+    });
+    _scrolledPastWrite = clear.catchError((Object _) {});
+    return clear;
   }
 
   List<String> _readHidden() {

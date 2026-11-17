@@ -13,6 +13,50 @@ void main() {
     store = FeedImpressionStore(SettingsLocalDataSource(InMemoryLocalStore()));
   });
 
+  test('consumed scrolled-past feedback survives reload but expires with impressions and clear', () async {
+    final settings = SettingsLocalDataSource(InMemoryLocalStore());
+    store = FeedImpressionStore(settings);
+    await store.recordShown(<String>['shown'], now);
+    await store.recordScrolledPast(<String>['shown', 'never-shown'], now, expectedRevision: store.revision);
+    store = FeedImpressionStore(settings);
+    expect(store.scrolledPastKeys(now), <String>{'shown'});
+    expect(store.scrolledPastKeys(now.add(const Duration(days: 15))), isEmpty);
+    await store.clear();
+    expect(store.scrolledPastKeys(now), isEmpty);
+    await store.recordShown(<String>['shown'], now);
+    expect(store.scrolledPastKeys(now), isEmpty);
+  });
+
+  test('clear invalidates queued scrolled-past markers', () async {
+    await store.recordShown(<String>['shown'], now);
+    final pending = store.recordScrolledPast(<String>['shown'], now, expectedRevision: store.revision);
+    await store.clear();
+    await pending;
+    await store.recordShown(<String>['shown'], now);
+    expect(store.scrolledPastKeys(now), isEmpty);
+  });
+
+  test('a taste clear invalidates a queued feedback marker without clearing impressions', () async {
+    await store.recordShown(<String>['shown'], now);
+    bool current = true;
+    final pending = store.recordScrolledPast(
+      <String>['shown'],
+      now,
+      expectedRevision: store.revision,
+      isCurrent: () => current,
+    );
+    current = false;
+    await pending;
+    expect(store.recentShows(now), <String, int>{'shown': 1});
+    expect(store.scrolledPastKeys(now), isEmpty);
+  });
+
+  testWidgets('a store created before the widget test can record feedback in its zone', (tester) async {
+    await store.recordShown(<String>['shown'], now);
+    await store.recordScrolledPast(<String>['shown'], now, expectedRevision: store.revision);
+    expect(store.scrolledPastKeys(now), <String>{'shown'});
+  });
+
   test('recording twice counts two shows', () async {
     await store.recordShown(<String>['a'], now);
     await store.recordShown(<String>['a'], now.add(const Duration(minutes: 1)));
