@@ -122,9 +122,15 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   int _followingLoadSeq = 0;
   List<_CreatorChunk> _followingChunks = <_CreatorChunk>[];
 
-  RankingRules get _rules => RankingRules.fromFlag(
-    FirebaseInit.remoteConfigIfInitialized?.getBool(RankingRules.remoteConfigKey) ?? RankingRules.defaultEnabled,
-  );
+  RankingRules get _rules {
+    bool enabled = RankingRules.defaultEnabled;
+    try {
+      enabled = FirebaseInit.remoteConfigIfInitialized?.getBool(RankingRules.remoteConfigKey) ?? enabled;
+    } catch (error) {
+      logger.w('[PersonalizedFeed] ranker flag unreadable, using the default: $error');
+    }
+    return RankingRules.fromFlag(enabled);
+  }
 
   @override
   Future<void> lessLikeThis(FeedItemEntity item) async {
