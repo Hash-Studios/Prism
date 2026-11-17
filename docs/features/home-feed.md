@@ -176,7 +176,7 @@ The For you ranker learns from things the user does with a wall. The app keeps t
 
 A weight halves every 30 days. "Clear" in the Tune sheet removes all signals.
 
-Each signal stores the wall key, so the feed knows which walls the user acted on.
+Each signal stores the wall key, so the feed knows which walls the user acted on. When the store is full, the oldest `scrolledPast` signals go first, so they never push out a favourite or a set. The "Learned from you" list in the Tune sheet uses the same rules as the feed.
 
 ### Ranking
 
@@ -190,8 +190,8 @@ The For you ranker runs three stages on the device, in this order.
 |---|---|
 | `hardNegatives` | Keeps a negative term or creator from shrinking when the user has many positive signals. |
 | `newActions` | Counts share (5) and folder add (4) as taste signals. |
-| `scrolledPast` | Counts a wall that an earlier feed load showed, and that has no signal yet, as a weak no (-0.3). Each wall counts once. |
-| `dedupeVariants` | Shows one wall for each light or dark group in a page, and across the pages of one session. |
+| `scrolledPast` | Counts a wall that an earlier feed load showed, and that has no signal yet, as a weak no (-0.3). Each wall counts once while the app keeps its impression (14 days). |
+| `dedupeVariants` | Shows one wall for each light or dark group in a page, and across the pages of one session. This includes the cached first page and the offline fallback. |
 
 The Remote Config key `feed_ranker_x2026_enabled` turns the rules on. The in-app default is true. False gives the old ranker, order for order.
 
