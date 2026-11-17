@@ -6,6 +6,8 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/ranking_rules.dart';
+import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
@@ -766,4 +768,164 @@ void main() {
       );
     });
   }
+
+  group('personal order', () {
+    late WallpaperRecommendationRepositoryImpl personal;
+    TasteProfile profile = TasteProfile.empty;
+    Set<String> hidden = <String>{};
+    setUp(() {
+      profile = TasteProfile.empty;
+      hidden = <String>{};
+      personal = WallpaperRecommendationRepositoryImpl(
+        firestore: () => firestore,
+        wallhaven: () => wallhaven,
+        pexels: () => pexels,
+        settings: () => settings,
+        blocks: () => blocks,
+        localSearch: (_) async => local,
+        rules: () => RankingRules.x2026,
+        tasteProfile: () => profile,
+        hiddenKeys: () => hidden,
+      );
+    });
+
+    test('legacy keeps the query order and x2026 puts the most shared tags first', () async {
+      firestore.rows = [
+        {
+          'id': 'w0',
+          'category': 'Nature',
+          'review': true,
+          'tags': ['city'],
+        },
+        {
+          'id': 'w1',
+          'category': 'Nature',
+          'review': true,
+          'tags': ['forest', 'fog'],
+        },
+        {
+          'id': 'w2',
+          'category': 'Nature',
+          'review': true,
+          'tags': ['forest'],
+        },
+      ];
+      final current = _item('current', tags: ['forest', 'fog']);
+      final legacy = await repository.load(current: current, sessionKey: 'legacy');
+      expect(legacy.items.map((item) => item.id), ['w0', 'w1', 'w2']);
+      final ranked = await personal.load(current: current, sessionKey: 'personal');
+      expect(ranked.items.map((item) => item.id), ['w1', 'w2', 'w0']);
+    });
+
+    test('taste breaks a tie between walls with the same overlap', () async {
+      firestore.rows = [
+        {
+          'id': 'w0',
+          'category': 'Nature',
+          'review': true,
+          'tags': ['city'],
+        },
+        {
+          'id': 'w1',
+          'category': 'Nature',
+          'review': true,
+          'tags': ['snow'],
+        },
+      ];
+      profile = TasteProfile.build(
+        interests: const ['snow'],
+        following: const [],
+        signals: const [],
+        now: DateTime.utc(2026, 11, 18),
+      );
+      final page = await personal.load(
+        current: _item('current', tags: ['forest', 'fog']),
+        sessionKey: 'taste',
+      );
+      expect(page.items.map((item) => item.id), ['w1', 'w0']);
+    });
+
+    test('a wall hidden with Show less like this drops out of the page', () async {
+      firestore.rows = [
+        {
+          'id': 'w0',
+          'category': 'Nature',
+          'review': true,
+          'tags': ['city'],
+        },
+        {
+          'id': 'w1',
+          'category': 'Nature',
+          'review': true,
+          'tags': ['forest', 'fog'],
+        },
+        {
+          'id': 'w2',
+          'category': 'Nature',
+          'review': true,
+          'tags': ['forest'],
+        },
+      ];
+      hidden = {_item('w1').canonicalKey};
+      final page = await personal.load(
+        current: _item('current', tags: ['forest', 'fog']),
+        sessionKey: 'hidden',
+      );
+      expect(page.items.map((item) => item.id), ['w2', 'w0']);
+    });
+
+    test('a light and dark pair shows once across two pages of one visit', () async {
+      firestore.rows = [
+        for (var i = 0; i < 24; i++)
+          {'id': 'p$i', 'category': 'Nature', 'review': true, if (i == 0) 'variantGroupId': 'g1'},
+        {'id': 'partner', 'category': 'Nature', 'review': true, 'variantGroupId': 'g1'},
+        {'id': 'tail', 'category': 'Nature', 'review': true},
+      ];
+      final current = _item('current');
+      final first = await personal.load(current: current, sessionKey: 'pair');
+      expect(first.items.map((item) => item.id), [for (var i = 0; i < 24; i++) 'p$i']);
+      expect(first.nextCursor, isNotNull);
+      final second = await personal.load(current: current, sessionKey: 'pair', cursor: first.nextCursor);
+      expect(second.items.map((item) => item.id), ['tail']);
+    });
+
+    test('a taste lookup failure keeps the query order and is not offline', () async {
+      firestore.rows = [
+        {
+          'id': 'w0',
+          'category': 'Nature',
+          'review': true,
+          'tags': ['city'],
+        },
+        {
+          'id': 'w1',
+          'category': 'Nature',
+          'review': true,
+          'tags': ['forest', 'fog'],
+        },
+        {
+          'id': 'w2',
+          'category': 'Nature',
+          'review': true,
+          'tags': ['forest'],
+        },
+      ];
+      final failing = WallpaperRecommendationRepositoryImpl(
+        firestore: () => firestore,
+        wallhaven: () => wallhaven,
+        pexels: () => pexels,
+        settings: () => settings,
+        blocks: () => blocks,
+        localSearch: (_) async => local,
+        rules: () => RankingRules.x2026,
+        tasteProfile: () => throw StateError('no feed'),
+      );
+      final page = await failing.load(
+        current: _item('current', tags: ['forest', 'fog']),
+        sessionKey: 'taste-error',
+      );
+      expect(page.items.map((item) => item.id), ['w0', 'w1', 'w2']);
+      expect(page.kind, isNot(RecommendationKind.offline));
+    });
+  });
 }
