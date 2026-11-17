@@ -8,8 +8,8 @@ import 'package:injectable/injectable.dart';
 
 /// Things a user does with a wallpaper. The ranker turns these into weights,
 /// like X's heavy ranker weighs predicted actions. [passedOver] is the wall
-/// that lost a "This or that" round.
-enum TasteAction { open, favourite, download, set, lessLikeThis, passedOver }
+/// that lost a "This or that" round. [share], [folderAdd] and [scrolledPast] count only under the X 2026 rules.
+enum TasteAction { open, favourite, download, set, lessLikeThis, passedOver, share, folderAdd, scrolledPast }
 
 const Set<String> _noiseTerms = <String>{'community', 'general', 'wallpaper', 'wallpapers'};
 
@@ -54,7 +54,7 @@ String? tasteCreatorOf(WallpaperCore core) {
 }
 
 class TasteSignal {
-  const TasteSignal({required this.action, required this.at, required this.terms, this.creator});
+  const TasteSignal({required this.action, required this.at, required this.terms, this.creator, this.wallKey});
 
   factory TasteSignal.forWallpaper(
     TasteAction action,
@@ -77,6 +77,7 @@ class TasteSignal {
         ...?feedTerms,
       ]),
       creator: tasteCreatorOf(core),
+      wallKey: key,
     );
   }
 
@@ -95,11 +96,13 @@ class TasteSignal {
     if (normalizedTerms.isEmpty && creator.isEmpty) {
       return null;
     }
+    final String wallKey = json['w'] is String ? (json['w'] as String).trim().toLowerCase() : '';
     return TasteSignal(
       action: action,
       at: at.toUtc(),
       terms: normalizedTerms,
       creator: creator.isEmpty ? null : creator,
+      wallKey: wallKey.isEmpty ? null : wallKey,
     );
   }
 
@@ -108,11 +111,15 @@ class TasteSignal {
   final List<String> terms;
   final String? creator;
 
+  /// The canonical key of the wall, so the feed knows which walls the user acted on.
+  final String? wallKey;
+
   Map<String, Object?> toJson() => <String, Object?>{
     'a': action.name,
     't': at.toIso8601String(),
     'k': terms,
     if (creator != null) 'c': creator,
+    if (wallKey != null) 'w': wallKey,
   };
 }
 
@@ -126,6 +133,9 @@ class TasteSignalStore {
   static const String _key = 'personalized_taste_signals_v1';
   static const String _seededKey = 'personalized_taste_seeded_v1';
   static const int _cap = 300;
+
+  /// [TasteAction.scrolledPast] comes in bulk, so it may fill at most this many of the [_cap] places.
+  static const int scrolledPastCap = 60;
   int _revision = 0;
 
   int get revision => _revision;
@@ -157,9 +167,18 @@ class TasteSignalStore {
       ...read(),
       ...signals.where((s) => s.terms.isNotEmpty || s.creator != null),
     ]..sort((a, b) => a.at.compareTo(b.at));
+    final int excess = all.where((s) => s.action == TasteAction.scrolledPast).length - scrolledPastCap;
+    int dropped = 0;
+    all.removeWhere((s) => s.action == TasteAction.scrolledPast && dropped++ < excess);
     final List<TasteSignal> kept = all.length > _cap ? all.sublist(all.length - _cap) : all;
     return _settingsLocal.set(_key, json.encode(kept.map((s) => s.toJson()).toList(growable: false)));
   }
+
+  /// Walls with any signal: opened, saved, set, shared, hidden or already scrolled past.
+  Set<String> signaledKeys() => <String>{
+    for (final TasteSignal signal in read())
+      if (signal.wallKey case final String key) key,
+  };
 
   /// Seeding from older data (for example favourites) runs once per install.
   bool get isSeeded => _settingsLocal.get<bool>(_seededKey, defaultValue: false);

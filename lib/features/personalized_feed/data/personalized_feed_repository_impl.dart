@@ -11,6 +11,7 @@ import 'package:Prism/core/monitoring/sentry_before_send.dart';
 import 'package:Prism/core/persistence/data_sources/feed_cache_local_data_source.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
+import 'package:Prism/core/personalization/ranking_rules.dart';
 import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
@@ -120,6 +121,10 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
   String? _followingLoadedFor;
   int _followingLoadSeq = 0;
   List<_CreatorChunk> _followingChunks = <_CreatorChunk>[];
+
+  RankingRules get _rules => RankingRules.fromFlag(
+    FirebaseInit.remoteConfigIfInitialized?.getBool(RankingRules.remoteConfigKey) ?? RankingRules.defaultEnabled,
+  );
 
   @override
   Future<void> lessLikeThis(FeedItemEntity item) async {
@@ -474,11 +479,13 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
       }
 
       final DateTime now = DateTime.now().toUtc();
+      final RankingRules rules = _rules;
       final TasteProfile profile = TasteProfile.build(
         interests: _interests,
         following: _following,
         signals: _tasteSignals.read(),
         now: now,
+        rules: rules,
       );
       final FeedMix mix = FeedMix.parse(_settingsLocal.get<String>(personalizedFeedMixLocalKey, defaultValue: ''));
 
@@ -544,15 +551,37 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
         throw _AllSourcesFailed(sourceFailures);
       }
 
+      final Map<String, int> recentShows = _impressions.recentShows(now);
+      final Set<String> excludedKeys = <String>{
+        ...request.seenKeys,
+        ...request.existingItems.map((item) => item.canonicalKey),
+      };
       final PersonalizedRankingResult ranking = _rankingService.rank(
         candidates: candidates,
         profile: profile,
-        recentShows: _impressions.recentShows(now),
-        excludedKeys: <String>{...request.seenKeys, ...request.existingItems.map((item) => item.canonicalKey)},
+        recentShows: recentShows,
+        excludedKeys: excludedKeys,
         mix: mix,
         random: _random,
         now: now,
+        rules: rules,
       );
+      if (rules.scrolledPast) {
+        final List<TasteSignal> skipped = scrolledPastSignals(
+          candidates: candidates,
+          recentShows: recentShows,
+          excludedKeys: excludedKeys,
+          signaledKeys: _tasteSignals.signaledKeys(),
+          now: now,
+        );
+        if (skipped.isNotEmpty) {
+          unawaited(
+            _tasteSignals
+                .recordAll(skipped)
+                .catchError((Object e) => logger.w('[PersonalizedFeed] scrolled-past signals failed: $e')),
+          );
+        }
+      }
       if (sourceFailures.isNotEmpty && ranking.items.isEmpty) {
         throw StateError('Personalized feed sources failed without ranked candidates');
       }
@@ -921,6 +950,7 @@ class PersonalizedFeedRepositoryImpl implements PersonalizedFeedRepository {
     following: _following,
     signals: _tasteSignals.read(),
     now: DateTime.now().toUtc(),
+    rules: _rules,
   );
 
   @override
