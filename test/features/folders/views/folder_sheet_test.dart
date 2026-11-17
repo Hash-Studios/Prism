@@ -5,6 +5,8 @@ import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
@@ -318,6 +320,36 @@ void main() {
       unorderedEquals(<String>['addItem:blue', 'addItem:calm']),
     );
     expect(bloc.state.membership[folderItemKey(wall)], unorderedEquals(<String>['blue', 'calm']));
+  });
+
+  testWidgets('saving a Prism wall to a folder records a folderAdd taste signal', (tester) async {
+    const String fullUrl = 'https://Img.test/Wall-1.jpg';
+    final TasteSignalStore store = TasteSignalStore(SettingsLocalDataSource(InMemoryLocalStore()));
+    getIt.registerSingleton<TasteSignalStore>(store);
+    const FavouriteWallEntity wall = PrismFavouriteWall(
+      id: 'wall_1',
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(
+          id: 'wall_1',
+          source: WallpaperSource.prism,
+          fullUrl: fullUrl,
+          thumbnailUrl: '',
+          category: 'nature',
+        ),
+      ),
+    );
+    final _FakeFoldersRepository repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')]);
+    final FoldersBloc bloc = FoldersBloc(repo, _NoPublicFolders());
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, wall);
+
+    await tester.tap(find.text('Blue'));
+    await settle(tester);
+    await tester.tap(find.text('Done'));
+    await settle(tester);
+
+    expect(store.read().single.action, TasteAction.folderAdd);
+    expect(store.read().single.wallKey, fullUrl.toLowerCase());
   });
 
   testWidgets('a folder the wall is already in starts ticked, and unticking it removes the wall', (tester) async {

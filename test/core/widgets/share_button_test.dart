@@ -74,6 +74,33 @@ void main() {
     app_state.prismUser = app_constants.createGuestPrismUser();
   });
 
+  testWidgets('tapping share runs onShareTapped once', (tester) async {
+    int taps = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: ShareButton(
+            webCatalogueCheck: (_) async => false,
+            id: 'wall-1',
+            source: WallpaperSource.prism,
+            url: 'https://img.test/full.jpg',
+            thumbUrl: 'https://img.test/thumb.jpg',
+            createLink: (id, source, url, thumbUrl) async => 'https://prismwalls.com/share?id=$id',
+            onShareTapped: () => taps++,
+            openSheet: _resolved((context, content, sourceContext) {}),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.bySemanticsLabel('Share'));
+    await tester.pumpAndSettle();
+
+    expect(taps, 1);
+  });
+
   testWidgets('Prism shares pass the display derivative, never an original', (tester) async {
     final FakeAppAnalytics analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;

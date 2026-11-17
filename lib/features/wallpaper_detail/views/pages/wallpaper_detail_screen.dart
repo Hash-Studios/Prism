@@ -3192,6 +3192,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
               creator: entity.wallpaperCore.authorName,
               palette: _sharePalette(entity),
               duoReveal: isDuoWallpaper(entity),
+              onShareTapped: () => _recordTaste(TasteAction.share, entity),
               createLink: (id, source, url, thumbUrl) => createDynamicLink(
                 id,
                 source,
