@@ -1,3 +1,6 @@
+import 'package:Prism/core/startup/firebase_init.dart';
+import 'package:Prism/logger/logger.dart';
+
 /// The For you ranker rules taken from X's 2026 feed algorithm (docs/research/x-algorithm-2026.md).
 /// [legacy] turns every rule off and gives the ranker that shipped before them, order for order.
 class RankingRules {
@@ -21,6 +24,17 @@ class RankingRules {
   static const bool defaultEnabled = true;
 
   static RankingRules fromFlag(bool enabled) => enabled ? x2026 : legacy;
+
+  /// The rules the Remote Config flag picks now. An unreadable flag gives the default.
+  static RankingRules get current {
+    bool enabled = defaultEnabled;
+    try {
+      enabled = FirebaseInit.remoteConfigIfInitialized?.getBool(remoteConfigKey) ?? enabled;
+    } catch (error) {
+      logger.w('[PersonalizedFeed] ranker flag unreadable, using the default: $error');
+    }
+    return fromFlag(enabled);
+  }
 
   /// A negative term or creator keeps its full weight when the user has many positive signals.
   final bool hardNegatives;
