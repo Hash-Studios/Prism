@@ -158,7 +158,7 @@ void main() {
   });
 
   test('disliked walls are not treated as exploration candidates', () {
-    const TasteProfile profile = TasteProfile(
+    final TasteProfile profile = TasteProfile(
       terms: <String, double>{'space': 4, 'cats': -0.1},
       creators: <String, double>{},
     );

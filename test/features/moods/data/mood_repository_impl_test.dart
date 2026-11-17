@@ -308,9 +308,7 @@ void main() {
     });
 
     test('ranks the walls that match the taste profile first', () async {
-      feed = _FakeFeedRepository(
-        const TasteProfile(terms: <String, double>{'nature': 10}, creators: <String, double>{}),
-      );
+      feed = _FakeFeedRepository(TasteProfile(terms: <String, double>{'nature': 10}, creators: <String, double>{}));
       repository = MoodRepositoryImpl(
         client,
         blocks,

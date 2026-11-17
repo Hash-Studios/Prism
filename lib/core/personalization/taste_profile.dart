@@ -6,7 +6,7 @@ import 'package:Prism/core/personalization/taste_signals.dart';
 /// What the user likes, as weights per term (category, tag) and per creator.
 /// Built fresh on device from explicit picks, follows and [TasteSignal]s.
 class TasteProfile {
-  const TasteProfile({required this.terms, required this.creators, this.hardNegatives = false});
+  TasteProfile({required this.terms, required this.creators, this.hardNegatives = false});
 
   factory TasteProfile.build({
     required Iterable<String> interests,
@@ -57,7 +57,7 @@ class TasteProfile {
     _ => actionWeights[action],
   };
 
-  static const TasteProfile empty = TasteProfile(terms: <String, double>{}, creators: <String, double>{});
+  static final TasteProfile empty = TasteProfile(terms: <String, double>{}, creators: <String, double>{});
 
   static const Map<TasteAction, double> actionWeights = <TasteAction, double>{
     TasteAction.open: 1,
@@ -70,7 +70,7 @@ class TasteProfile {
   };
 
   /// Actions that count only under [RankingRules]. A share is a strong vote, as in X's weights. A folder add is a
-  /// favourite with intent. A wall shown twice without a tap is a weak no.
+  /// favourite with intent. A wall the feed showed before and the user never acted on is a weak no.
   static const Map<TasteAction, double> newActionWeights = <TasteAction, double>{
     TasteAction.share: 5,
     TasteAction.folderAdd: 4,
@@ -88,8 +88,13 @@ class TasteProfile {
   final Map<String, double> creators;
   final bool hardNegatives;
 
-  double get _maxTerm => terms.values.fold(1, max);
-  double get _maxCreator => creators.values.fold(1, max);
+  late final double _maxTerm = terms.values.fold(1, max);
+  late final double _maxCreator = creators.values.fold(1, max);
+  late final List<MapEntry<String, double>> _termList = terms.entries.toList(growable: false);
+
+  /// Item term to the indexes in [_termList] of the taste terms it contains. Item terms repeat across candidates,
+  /// so one ranking pass checks each distinct item term once.
+  final Map<String, List<int>> _matches = <String, List<int>>{};
 
   /// Sum of matched term weights, scaled so the strongest term counts 1.
   /// A taste term matches an item term that contains it ("space" hits "deep space").
@@ -99,11 +104,21 @@ class TasteProfile {
     }
     final double scale = _maxTerm;
     final double negative = hardNegatives ? min(scale, negativeScale) : scale;
+    final Set<int> matched = <int>{
+      for (final String term in itemTerms)
+        ..._matches.putIfAbsent(
+          term,
+          () => <int>[
+            for (int i = 0; i < _termList.length; i++)
+              if (term.contains(_termList[i].key)) i,
+          ],
+        ),
+    };
+    // Sum in term order, so the result is the same double as a plain loop over [terms].
     double sum = 0;
-    for (final MapEntry<String, double> entry in terms.entries) {
-      if (itemTerms.any((term) => term.contains(entry.key))) {
-        sum += entry.value / (entry.value < 0 ? negative : scale);
-      }
+    for (final int i in matched.toList()..sort()) {
+      final double value = _termList[i].value;
+      sum += value / (value < 0 ? negative : scale);
     }
     return sum.clamp(-2, 2).toDouble();
   }
