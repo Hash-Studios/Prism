@@ -199,6 +199,34 @@ void main() {
     expect(repository.cursors[4], const ExternalRecommendationCursor(5));
   });
 
+  test('fully filtered pages keep advancing and a later retry resumes after the four-page burst', () async {
+    repository.respond = (cursor) async {
+      final page = cursor == null ? 1 : (cursor as ExternalRecommendationCursor).page;
+      return RecommendationPage(
+        items: page <= 4 ? [] : [_item('z'), _item('a')],
+        kind: RecommendationKind.discovery,
+        nextCursor: page <= 4 ? ExternalRecommendationCursor(page + 1) : null,
+      );
+    };
+    await load();
+    bloc.add(const LoadRecommendations());
+    await pumpEventQueue();
+    expect(repository.cursors, [
+      null,
+      const ExternalRecommendationCursor(2),
+      const ExternalRecommendationCursor(3),
+      const ExternalRecommendationCursor(4),
+    ]);
+    expect(getState().recommendations.items, isEmpty);
+    expect(getState().recommendations.cursor, const ExternalRecommendationCursor(5));
+    expect(getState().recommendations.loading, isFalse);
+    bloc.add(const LoadRecommendations());
+    await pumpEventQueue();
+    expect(repository.cursors.last, const ExternalRecommendationCursor(5));
+    expect(getState().recommendations.items.map((item) => item.id), ['z', 'a']);
+    expect(getState().recommendations.status, RecommendationStatus.exhausted);
+  });
+
   test('a queued load cannot allocate another recommendation visit after close releases it', () async {
     repository.respond = (_) async => RecommendationPage(items: [_item('never')], kind: RecommendationKind.discovery);
     await load();

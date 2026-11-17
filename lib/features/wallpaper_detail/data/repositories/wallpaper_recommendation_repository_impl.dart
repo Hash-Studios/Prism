@@ -294,9 +294,9 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
   /// With [RankingRules.personalNextWalls], each page ranks by what it shares with [current], then the user's taste.
   /// A light/dark group shows once in the whole visit.
   List<FeedItemEntity> _personal(FeedItemEntity current, _RecommendationVisit visit, List<FeedItemEntity> items) {
-    if (!rules().personalNextWalls) return items;
     final List<FeedItemEntity> ranked;
     try {
+      if (!rules().personalNextWalls) return items;
       ranked = rankNextWalls(
         current: current,
         items: items,

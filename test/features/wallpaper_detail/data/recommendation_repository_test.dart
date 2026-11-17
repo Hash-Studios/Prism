@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:Prism/core/coins/economy_state.dart';
+import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
@@ -18,6 +19,7 @@ import 'package:Prism/data/feed_cache/pagination_session.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/drop_wall_tiles.dart';
+import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/pexels_feed/data/repositories/pexels_wallpaper_repository_impl.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
@@ -142,6 +144,8 @@ class _Wallhaven extends Mock implements WallhavenWallpaperRepository, Paginatio
 class _Pexels extends Mock implements PexelsWallpaperRepository, PaginationSession {}
 
 class _Blocks extends Mock implements UserBlockRepository {}
+
+class _PersonalizedFeed extends Mock implements PersonalizedFeedRepository {}
 
 FeedItemEntity _item(
   String id, {
@@ -888,6 +892,219 @@ void main() {
       final second = await personal.load(current: current, sessionKey: 'pair', cursor: first.nextCursor);
       expect(second.items.map((item) => item.id), ['tail']);
     });
+
+    for (final filter in ['hidden', 'used pair']) {
+      test('an entirely $filter page advances from the raw last document', () async {
+        firestore.rows = [
+          for (var i = 0; i < 48; i++)
+            {'id': 'w$i', 'category': 'Nature', 'review': true, if (filter == 'used pair') 'variantGroupId': 'pair'},
+          {'id': 'tail', 'category': 'Nature', 'review': true},
+        ];
+        if (filter == 'hidden') {
+          hidden = {for (var i = 0; i < 48; i++) _item('w$i').canonicalKey};
+        }
+        final current = _item('current');
+        final first = await personal.load(current: current, sessionKey: filter);
+        expect(first.items.map((item) => item.id), filter == 'hidden' ? <String>[] : ['w0']);
+        expect((first.nextCursor! as PrismRecommendationCursor).documentId, 'doc-w23');
+        final second = await personal.load(current: current, sessionKey: filter, cursor: first.nextCursor);
+        expect(second.items, isEmpty);
+        expect((second.nextCursor! as PrismRecommendationCursor).documentId, 'doc-w47');
+        final third = await personal.load(current: current, sessionKey: filter, cursor: second.nextCursor);
+        expect(third.items.single.id, 'tail');
+        expect(third.nextCursor, isNull);
+      });
+    }
+
+    test('release resets used groups without changing another visit', () async {
+      firestore.rows = [
+        {'id': 'light', 'category': 'Nature', 'review': true, 'variantGroupId': 'pair'},
+      ];
+      final current = _item('current');
+      expect((await personal.load(current: current, sessionKey: 'a')).items.single.id, 'light');
+      expect((await personal.load(current: current, sessionKey: 'b')).items.single.id, 'light');
+      personal.release('a');
+      personal.release('a');
+      expect((await personal.load(current: current, sessionKey: 'a')).items.single.id, 'light');
+      expect((await personal.load(current: current, sessionKey: 'b')).items, isEmpty);
+    });
+
+    test('released in-flight Prism page cannot consume a new visit group', () async {
+      firestore.rows = [
+        {'id': 'light', 'category': 'Nature', 'review': true, 'variantGroupId': 'pair'},
+      ];
+      firestore.queryEntered = Completer<void>();
+      firestore.queryGate = Completer<void>();
+      final current = _item('current');
+      final pending = personal.load(current: current, sessionKey: 'reused');
+      await firestore.queryEntered!.future;
+      final failure = expectLater(pending, throwsStateError);
+      personal.release('reused');
+      firestore.queryEntered = null;
+      final gate = firestore.queryGate!;
+      firestore.queryGate = null;
+      final next = await personal.load(current: current, sessionKey: 'reused');
+      expect(next.items.single.id, 'light');
+      gate.complete();
+      await failure;
+    });
+
+    for (final callback in ['rules', 'taste', 'hidden']) {
+      for (final path in ['first', 'later', 'offline']) {
+        test('$callback failure keeps $path query order and cursor', () async {
+          firestore.rows = [
+            for (var i = 0; i < 25; i++)
+              {
+                'id': 'w$i',
+                'category': 'Nature',
+                'review': true,
+                'tags': ['forest'],
+              },
+          ];
+          local = [_item('cached-first'), _item('cached-second')];
+          var localCalls = 0;
+          final failing = WallpaperRecommendationRepositoryImpl(
+            firestore: () => firestore,
+            wallhaven: () => wallhaven,
+            pexels: () => pexels,
+            settings: () => settings,
+            blocks: () => blocks,
+            localSearch: (_) async {
+              localCalls++;
+              return local;
+            },
+            rules: () => callback == 'rules' ? throw StateError('rules unavailable') : RankingRules.x2026,
+            tasteProfile: () => callback == 'taste' ? throw StateError('taste unavailable') : TasteProfile.empty,
+            hiddenKeys: () => callback == 'hidden' ? throw StateError('hidden unavailable') : <String>{},
+          );
+          firestore.fail = path == 'offline';
+          final page = await failing.load(
+            current: _item('current', tags: ['forest']),
+            sessionKey: '$callback-$path',
+            cursor: path == 'later' ? const PrismRecommendationCursor('doc-w0') : null,
+          );
+          expect(page.items.map((item) => item.id), switch (path) {
+            'offline' => ['cached-first', 'cached-second'],
+            'later' => [for (var i = 1; i < 25; i++) 'w$i'],
+            _ => [for (var i = 0; i < 24; i++) 'w$i'],
+          });
+          expect(page.kind, path == 'offline' ? RecommendationKind.offline : RecommendationKind.related);
+          expect(localCalls, path == 'offline' ? 1 : 0);
+          if (path != 'offline') {
+            expect((page.nextCursor! as PrismRecommendationCursor).documentId, path == 'later' ? 'doc-w24' : 'doc-w23');
+          } else {
+            expect(page.nextCursor, isNull);
+          }
+        });
+      }
+    }
+
+    for (final explicitLegacy in [false, true]) {
+      for (final offline in [false, true]) {
+        test(
+          '${explicitLegacy ? "explicit legacy" : "default"} preserves exact ${offline ? "offline" : "online"} rows',
+          () async {
+            firestore.rows = [
+              {
+                'id': 'first',
+                'category': 'Nature',
+                'review': true,
+                'variantGroupId': 'pair',
+                'tags': ['city'],
+              },
+              {
+                'id': 'second',
+                'category': 'Nature',
+                'review': true,
+                'variantGroupId': 'pair',
+                'tags': ['forest'],
+              },
+              {'id': 'current', 'category': 'Nature', 'review': true},
+            ];
+            local = firestore.rows
+                .map(
+                  (row) => PrismFeedItem(
+                    id: row['id'] as String,
+                    wallpaper: PrismWallDocDto.fromJson(row).toDomain(docId: 'doc-${row['id']}'),
+                  ),
+                )
+                .toList();
+            var personalizationCalls = 0;
+            final legacy = WallpaperRecommendationRepositoryImpl(
+              firestore: () => firestore,
+              wallhaven: () => wallhaven,
+              pexels: () => pexels,
+              settings: () => settings,
+              blocks: () => blocks,
+              localSearch: (_) async => local,
+              tasteProfile: () {
+                personalizationCalls++;
+                throw StateError('must not read taste');
+              },
+              hiddenKeys: () {
+                personalizationCalls++;
+                throw StateError('must not read hidden');
+              },
+            );
+            final configured = explicitLegacy
+                ? WallpaperRecommendationRepositoryImpl(
+                    firestore: legacy.firestore,
+                    wallhaven: legacy.wallhaven,
+                    pexels: legacy.pexels,
+                    settings: legacy.settings,
+                    blocks: legacy.blocks,
+                    localSearch: legacy.localSearch,
+                    rules: () => RankingRules.legacy,
+                    tasteProfile: legacy.tasteProfile,
+                    hiddenKeys: legacy.hiddenKeys,
+                  )
+                : legacy;
+            firestore.fail = offline;
+            final page = await configured.load(
+              current: _item('current', tags: ['forest']),
+              sessionKey: 'legacy-exact',
+            );
+            if (offline) {
+              for (var i = 0; i < local.length; i++) {
+                expect(page.items[i], same(local[i]));
+              }
+            }
+            expect(page.items.whereType<PrismFeedItem>().map((item) => item.wallpaper.variantGroupId), [
+              'pair',
+              'pair',
+              null,
+            ]);
+            expect(page.items.map((item) => item.id), ['first', 'second', 'current']);
+            expect(page.kind, offline ? RecommendationKind.offline : RecommendationKind.related);
+            expect(page.nextCursor, isNull);
+            expect(personalizationCalls, 0);
+          },
+        );
+      }
+    }
+
+    for (final missingTaste in [true, false]) {
+      test('fromGetIt tolerates missing ${missingTaste ? "taste repository" : "impression store"}', () async {
+        getIt.pushNewScope();
+        addTearDown(getIt.popScope);
+        getIt.registerSingleton<FirestoreClient>(firestore);
+        getIt.registerSingleton<SettingsLocalDataSource>(settings);
+        getIt.registerSingleton<UserBlockRepository>(blocks);
+        if (!missingTaste) {
+          final feed = _PersonalizedFeed();
+          when(feed.currentTasteProfile).thenReturn(TasteProfile.empty);
+          getIt.registerSingleton<PersonalizedFeedRepository>(feed);
+        }
+        firestore.rows = [
+          {'id': 'first', 'category': 'Nature', 'review': true},
+          {'id': 'second', 'category': 'Nature', 'review': true},
+        ];
+        final fromGetIt = WallpaperRecommendationRepositoryImpl.fromGetIt();
+        final page = await fromGetIt.load(current: _item('current'), sessionKey: 'di');
+        expect(page.items.map((item) => item.id), ['first', 'second']);
+        expect(page.kind, RecommendationKind.related);
+      });
+    }
 
     test('a taste lookup failure keeps the query order and is not offline', () async {
       firestore.rows = [

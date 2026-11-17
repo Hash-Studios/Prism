@@ -1,3 +1,4 @@
+import 'package:Prism/core/personalization/ranking_rules.dart';
 import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/wallpaper/wallpaper_core.dart';
@@ -41,6 +42,13 @@ List<String> _rank(
 
 void main() {
   final FeedItemEntity open = _wall('open', const <String>['forest', 'fog']);
+
+  test('next walls ranking follows the X 2026 flag and defaults to legacy', () {
+    expect(const RankingRules().personalNextWalls, isFalse);
+    expect(RankingRules.legacy.personalNextWalls, isFalse);
+    expect(RankingRules.fromFlag(false).personalNextWalls, isFalse);
+    expect(RankingRules.fromFlag(true).personalNextWalls, isTrue);
+  });
 
   test('walls that share more with the open wall come first', () {
     expect(
@@ -138,5 +146,62 @@ void main() {
       ]),
       <String>['c', 'a', 'b'],
     );
+  });
+
+  test('empty metadata and taste keep discovery query order', () {
+    FeedItemEntity pexels(String id) => FeedItemEntity.pexels(
+      id: id,
+      wallpaper: PexelsWallpaper(
+        core: WallpaperCore(
+          id: id,
+          source: WallpaperSource.pexels,
+          fullUrl: 'https://n.test/$id.jpg',
+          thumbnailUrl: 'https://n.test/$id-t.jpg',
+        ),
+      ),
+    );
+    expect(_rank(pexels('open'), <FeedItemEntity>[pexels('z'), pexels('a')]), <String>['z', 'a']);
+    expect(_rank(open, const <FeedItemEntity>[]), isEmpty);
+  });
+
+  test('negative scores share the floor and preserve query order', () {
+    final TasteProfile profile = TasteProfile(
+      terms: <String, double>{'bad': -2},
+      creators: <String, double>{'disliked@x.com': -1},
+    );
+    expect(
+      _rank(_wall('open', const <String>[], creator: 'neutral@x.com'), <FeedItemEntity>[
+        _wall('negative-term', const <String>['bad']),
+        _wall('negative-creator', const <String>[], creator: 'disliked@x.com'),
+      ], profile: profile),
+      <String>['negative-term', 'negative-creator'],
+    );
+  });
+
+  test('full term overlap caps the same creator bonus', () {
+    expect(
+      _rank(_wall('open', const <String>['forest'], creator: 'open@x.com'), <FeedItemEntity>[
+        _wall('other', const <String>['forest']),
+        _wall('same', const <String>['forest'], creator: 'open@x.com'),
+      ]),
+      <String>['other', 'same'],
+    );
+  });
+
+  test('a hidden variant does not consume its group or mutate the caller set', () {
+    final Set<String> used = <String>{'earlier'};
+    expect(
+      _rank(
+        open,
+        <FeedItemEntity>[
+          _wall('hidden', const <String>['forest', 'fog'], group: 'pair'),
+          _wall('visible', const <String>['forest'], group: 'pair'),
+        ],
+        hidden: <String>{'https://n.test/hidden.jpg'},
+        usedGroups: used,
+      ),
+      <String>['visible'],
+    );
+    expect(used, <String>{'earlier'});
   });
 }
