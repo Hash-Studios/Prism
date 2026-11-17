@@ -163,6 +163,8 @@ class ReplayPersona {
     this.lessLikeAtStart = const <String, int>{},
     this.openRate = 0.45,
     this.gridSaveRate = 0,
+    this.likedTag,
+    this.dislikedCreator,
   });
 
   final String name;
@@ -182,6 +184,17 @@ class ReplayPersona {
 
   /// Chance to save a wall in [taste] to a folder from the grid, without opening it.
   final double gridSaveRate;
+
+  /// When set, only walls in [taste] with this tag are liked.
+  final String? likedTag;
+
+  /// A creator the user says "less like this" to.
+  final String? dislikedCreator;
+
+  bool likes(ReplayWall wall) =>
+      taste.contains(wall.category) && (likedTag == null || wall.candidate.terms.contains(likedTag));
+
+  bool dislikes(ReplayWall wall) => disliked.contains(wall.category) || wall.creator == dislikedCreator;
 }
 
 const List<ReplayPersona> replayPersonas = <ReplayPersona>[
@@ -383,13 +396,18 @@ final List<int> replaySeeds = List<int>.generate(20, (i) => i + 1);
 Future<ReplayMetrics> replay(ReplayPersona persona, ReplayRanker ranker, {List<int>? seeds}) async {
   ReplayMetrics? total;
   for (final int seed in seeds ?? replaySeeds) {
-    final ReplayMetrics run = await _replayOnce(persona, ranker, seed);
+    final ReplayMetrics run = (await replayOnce(persona, ranker, seed)).metrics;
     total = total == null ? run : total.merge(run);
   }
   return total!;
 }
 
-Future<ReplayMetrics> _replayOnce(ReplayPersona persona, ReplayRanker ranker, int seed) async {
+/// One seed of [persona]. Returns the metrics and the state the user ends with, for scenarios that run after the feed.
+Future<({ReplayMetrics metrics, ReplayContext ctx, List<ReplayWall> catalog, Set<String> hidden})> replayOnce(
+  ReplayPersona persona,
+  ReplayRanker ranker,
+  int seed,
+) async {
   TasteSignal.clearRememberedFeedTerms();
   final DateTime start = DateTime.utc(2026, 11);
   final List<ReplayWall> catalog = buildReplayCatalog(start);
@@ -477,7 +495,7 @@ Future<ReplayMetrics> _replayOnce(ReplayPersona persona, ReplayRanker ranker, in
           metrics.shownAfterDislike++;
           if (persona.disliked.contains(wall.category)) metrics.dislikedShown++;
         }
-        if (persona.disliked.contains(wall.category)) {
+        if (persona.dislikes(wall)) {
           if (behaviour.nextDouble() < 0.6) {
             actions.add(signalFor(TasteAction.lessLikeThis, wall, now));
             await ctx.impressions.hide(wall.key, now);
@@ -486,7 +504,7 @@ Future<ReplayMetrics> _replayOnce(ReplayPersona persona, ReplayRanker ranker, in
           }
           continue;
         }
-        final bool liked = persona.taste.contains(wall.category);
+        final bool liked = persona.likes(wall);
         if (liked && behaviour.nextDouble() < persona.gridSaveRate) {
           actions.add(signalFor(TasteAction.folderAdd, wall, now));
         }
@@ -503,7 +521,7 @@ Future<ReplayMetrics> _replayOnce(ReplayPersona persona, ReplayRanker ranker, in
       await ctx.impressions.recordShown(result.usedKeys, now);
     }
   }
-  return metrics;
+  return (metrics: metrics, ctx: ctx, catalog: catalog, hidden: hidden);
 }
 
 /// The pools of one feed load, shaped like the repository's: fresh (newest 40), gems (random 30), taste (12 from each
