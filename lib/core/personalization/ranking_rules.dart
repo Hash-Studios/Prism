@@ -9,6 +9,7 @@ class RankingRules {
     this.newActions = false,
     this.scrolledPast = false,
     this.dedupeVariants = false,
+    this.personalNextWalls = false,
   });
 
   static const RankingRules legacy = RankingRules();
@@ -17,6 +18,7 @@ class RankingRules {
     newActions: true,
     scrolledPast: true,
     dedupeVariants: true,
+    personalNextWalls: true,
   );
 
   /// Remote Config switch. Off gives [legacy].
@@ -47,4 +49,7 @@ class RankingRules {
 
   /// One wall per light/dark group in a page and across the pages of one session.
   final bool dedupeVariants;
+
+  /// The walls under an open wallpaper rank by how much they share with it, then by the user's taste.
+  final bool personalNextWalls;
 }

@@ -81,6 +81,7 @@ More wallpapers (`WallpaperRecommendationRepositoryImpl`):
 
 - A uniform grid under the details. Its title is **More like this** for related walls, **Discovery** otherwise, and **Offline** for local results. Each tile has the shared favourite and view totals under it.
 - Prism wallpapers with a category: a `FirestoreClient` query on `walls`. Filters: `category` equals the current category and `review` equals true. Order: `createdAt` descending. 24 walls a page. The next page starts after the last document of the page, also when every row on it was filtered out. Source tag: `wallpaper_detail.recommendations`. The cache policy is `memoryFirst`.
+- With the Remote Config flag `feed_ranker_x2026_enabled` on (the default), the app puts each page in a new order. The score is `1 + 1.5 × related + 0.75 × taste + 1.0 × creator`, with a floor of 0.05. `related` is the share of the open wall's terms (category, tags and collections) that the wall also has. A wall by the same creator adds 0.25. `related` is at most 1. `taste` and `creator` come from the For you taste profile (see `home-feed.md`). Equal scores keep the query order. Walls hidden with **Show less like this** drop out. A light or dark pair shows once in the visit. The query, the page size and the cursor do not change, so there are no new reads.
 - Prism wallpapers without a category: the same query without the category filter, titled Discovery.
 - Wallhaven wallpapers: a Wallhaven search for the first tag, or a plain search when the wall has no tags. It uses the Wallhaven category and purity settings. The query stays the same for the whole visit. If its first page fails, Pexels Curated continues the visit.
 - Pexels wallpapers: Pexels Curated, titled Discovery.
@@ -188,7 +189,7 @@ The table compares each gesture before and after the change.
 - The full-image preview decodes at screen width times pixel ratio, with a cap of 2160 px.
 - The low-resolution note uses the stored size. It can be wrong when the server data is wrong.
 - Pexels wallpapers have no tags, so their grid is always Pexels Curated, never More like this.
-- More like this matches only the category (Prism) or the first tag (Wallhaven). It is not personalized.
+- More like this still queries only the category (Prism) or the first tag (Wallhaven). The new order works inside each page of 24. For a Pexels wall, only creator taste changes the order of Curated.
 - The Home view in the clock preview on iOS has no dock. This is by design in the code.
 - While the Live chip fades in or out, it is inside an opacity layer, so its glass shows the tint without the blur until it is fully there.
 - The colour tint needs the full image to render for Set, Download and Edit. The first tap on one of them can take a moment. The same colour on the same wallpaper reuses the file.
@@ -233,6 +234,7 @@ Automated tests:
 - `test/features/wallpaper_detail/biz/bloc/wallpaper_detail_bloc_test.dart`
 - `test/features/wallpaper_detail/biz/bloc/recommendations_test.dart`
 - `test/features/wallpaper_detail/data/recommendation_repository_test.dart`
+- `test/features/personalized_feed/replay/detail_replay_test.dart`
 - `test/core/router/wallpaper_detail_route_test.dart`
 - `test/features/category_feed/wallpaper_hold_region_test.dart`
 - `test/core/widgets/content_report/content_report_sheet_test.dart`

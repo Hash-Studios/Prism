@@ -39,6 +39,34 @@ void main() {
     expect(first, isNot(state(const PrismRecommendationCursor('doc-a', visitedDocumentIds: {'doc-a'}))));
   });
 
+  test('ranked order survives append, deduplication and variant exclusion without changing the raw cursor', () {
+    final current = _wall('open');
+    final first = const RecommendationState.initial().append(
+      RecommendationPage(
+        items: [_wall('z'), _wall('a'), _wall('z'), current],
+        kind: RecommendationKind.related,
+        nextCursor: const ExternalRecommendationCursor(2),
+      ),
+      current,
+    );
+    final next = first
+        .excluding([_wall('a')])
+        .append(
+          RecommendationPage(
+            items: [_wall('y'), _wall('z'), _wall('b')],
+            kind: RecommendationKind.related,
+            nextCursor: const ExternalRecommendationCursor(3),
+          ),
+          current,
+        );
+    expect(next.items.map((item) => item.id), ['z', 'y', 'b']);
+    expect(next.cursor, const ExternalRecommendationCursor(3));
+    final excluded = next.excluding(next.items);
+    expect(excluded.items, isEmpty);
+    expect(excluded.cursor, next.cursor);
+    expect(excluded.status, RecommendationStatus.ready);
+  });
+
   test('More like this drops the open ID and repeated IDs, but keeps distinct uploads', () {
     final FeedItemEntity current = _wall('open', picture: 'samurai');
     final RecommendationState first = const RecommendationState.initial().append(

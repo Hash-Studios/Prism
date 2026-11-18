@@ -1,0 +1,207 @@
+import 'package:Prism/core/personalization/ranking_rules.dart';
+import 'package:Prism/core/personalization/taste_profile.dart';
+import 'package:Prism/core/personalization/taste_signals.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
+import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+final DateTime _now = DateTime.utc(2026, 11, 18);
+
+FeedItemEntity _wall(String id, List<String> tags, {String creator = 'someone@x.com', String? group}) =>
+    FeedItemEntity.prism(
+      id: id,
+      wallpaper: PrismWallpaper(
+        core: WallpaperCore(
+          id: id,
+          source: WallpaperSource.prism,
+          fullUrl: 'https://n.test/$id.jpg',
+          thumbnailUrl: 'https://n.test/$id-t.jpg',
+          authorEmail: creator,
+        ),
+        tags: tags,
+        variantGroupId: group,
+      ),
+    );
+
+List<String> _rank(
+  FeedItemEntity current,
+  List<FeedItemEntity> items, {
+  TasteProfile? profile,
+  Set<String> hidden = const <String>{},
+  Set<String> usedGroups = const <String>{},
+}) => rankNextWalls(
+  current: current,
+  items: items,
+  profile: profile ?? TasteProfile.empty,
+  hiddenKeys: hidden,
+  usedGroups: usedGroups,
+).map((item) => item.id).toList();
+
+void main() {
+  final FeedItemEntity open = _wall('open', const <String>['forest', 'fog']);
+
+  test('next walls ranking follows the X 2026 flag and defaults to legacy', () {
+    expect(const RankingRules().personalNextWalls, isFalse);
+    expect(RankingRules.legacy.personalNextWalls, isFalse);
+    expect(RankingRules.fromFlag(false).personalNextWalls, isFalse);
+    expect(RankingRules.fromFlag(true).personalNextWalls, isTrue);
+  });
+
+  test('walls that share more with the open wall come first', () {
+    expect(
+      _rank(open, <FeedItemEntity>[
+        _wall('none', const <String>['city']),
+        _wall('both', const <String>['forest', 'fog']),
+        _wall('one', const <String>['forest']),
+      ]),
+      <String>['both', 'one', 'none'],
+    );
+  });
+
+  test('the same creator counts as related', () {
+    expect(
+      _rank(_wall('open', const <String>['forest', 'fog'], creator: 'a@x.com'), <FeedItemEntity>[
+        _wall('other', const <String>['forest']),
+        _wall('same', const <String>['forest'], creator: 'a@x.com'),
+      ]),
+      <String>['same', 'other'],
+    );
+  });
+
+  test('taste breaks a tie and a liked wall can pass a slightly more related one', () {
+    final TasteProfile profile = TasteProfile.build(
+      interests: const <String>['snow'],
+      following: const <String>[],
+      signals: const <TasteSignal>[],
+      now: _now,
+    );
+    expect(
+      _rank(open, <FeedItemEntity>[
+        _wall('plain', const <String>['forest']),
+        _wall('snowy', const <String>['forest', 'snow']),
+        _wall('closest', const <String>['forest', 'fog']),
+      ], profile: profile),
+      <String>['snowy', 'closest', 'plain'],
+    );
+  });
+
+  test('a disliked creator sinks below an equally related wall', () {
+    final TasteProfile profile = TasteProfile.build(
+      interests: const <String>[],
+      following: const <String>[],
+      signals: <TasteSignal>[
+        TasteSignal(action: TasteAction.lessLikeThis, at: _now, terms: const <String>['x'], creator: 'bad@x.com'),
+      ],
+      now: _now,
+    );
+    expect(
+      _rank(open, <FeedItemEntity>[
+        _wall('bad', const <String>['forest', 'fog'], creator: 'bad@x.com'),
+        _wall('good', const <String>['forest', 'fog']),
+      ], profile: profile),
+      <String>['good', 'bad'],
+    );
+  });
+
+  test('hidden walls drop out', () {
+    expect(
+      _rank(
+        open,
+        <FeedItemEntity>[
+          _wall('a', const <String>['forest']),
+          _wall('b', const <String>['forest']),
+        ],
+        hidden: <String>{'https://n.test/a.jpg'},
+      ),
+      <String>['b'],
+    );
+  });
+
+  test('a light/dark pair keeps its better wall, and the open wall partner and used groups drop out', () {
+    expect(
+      _rank(
+        _wall('open', const <String>['forest'], group: 'own'),
+        <FeedItemEntity>[
+          _wall('partner', const <String>['forest'], group: 'own'),
+          _wall('dark', const <String>['city'], group: 'g1'),
+          _wall('light', const <String>['forest'], group: 'g1'),
+          _wall('seen', const <String>['forest'], group: 'g2'),
+          _wall('solo', const <String>['city']),
+        ],
+        usedGroups: <String>{'g2'},
+      ),
+      <String>['light', 'solo'],
+    );
+  });
+
+  test('equal scores keep the query order', () {
+    expect(
+      _rank(open, <FeedItemEntity>[
+        _wall('c', const <String>['city']),
+        _wall('a', const <String>['sea']),
+        _wall('b', const <String>['sky']),
+      ]),
+      <String>['c', 'a', 'b'],
+    );
+  });
+
+  test('empty metadata and taste keep discovery query order', () {
+    FeedItemEntity pexels(String id) => FeedItemEntity.pexels(
+      id: id,
+      wallpaper: PexelsWallpaper(
+        core: WallpaperCore(
+          id: id,
+          source: WallpaperSource.pexels,
+          fullUrl: 'https://n.test/$id.jpg',
+          thumbnailUrl: 'https://n.test/$id-t.jpg',
+        ),
+      ),
+    );
+    expect(_rank(pexels('open'), <FeedItemEntity>[pexels('z'), pexels('a')]), <String>['z', 'a']);
+    expect(_rank(open, const <FeedItemEntity>[]), isEmpty);
+  });
+
+  test('negative scores share the floor and preserve query order', () {
+    final TasteProfile profile = TasteProfile(
+      terms: <String, double>{'bad': -2},
+      creators: <String, double>{'disliked@x.com': -1},
+    );
+    expect(
+      _rank(_wall('open', const <String>[], creator: 'neutral@x.com'), <FeedItemEntity>[
+        _wall('negative-term', const <String>['bad']),
+        _wall('negative-creator', const <String>[], creator: 'disliked@x.com'),
+      ], profile: profile),
+      <String>['negative-term', 'negative-creator'],
+    );
+  });
+
+  test('full term overlap caps the same creator bonus', () {
+    expect(
+      _rank(_wall('open', const <String>['forest'], creator: 'open@x.com'), <FeedItemEntity>[
+        _wall('other', const <String>['forest']),
+        _wall('same', const <String>['forest'], creator: 'open@x.com'),
+      ]),
+      <String>['other', 'same'],
+    );
+  });
+
+  test('a hidden variant does not consume its group or mutate the caller set', () {
+    final Set<String> used = <String>{'earlier'};
+    expect(
+      _rank(
+        open,
+        <FeedItemEntity>[
+          _wall('hidden', const <String>['forest', 'fog'], group: 'pair'),
+          _wall('visible', const <String>['forest'], group: 'pair'),
+        ],
+        hidden: <String>{'https://n.test/hidden.jpg'},
+        usedGroups: used,
+      ),
+      <String>['visible'],
+    );
+    expect(used, <String>{'earlier'});
+  });
+}

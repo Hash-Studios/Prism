@@ -4,12 +4,17 @@ import 'package:Prism/core/firestore/firestore_collections.dart';
 import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
+import 'package:Prism/core/personalization/ranking_rules.dart';
+import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/user_blocks/blocked_creators_filter.dart';
 import 'package:Prism/core/wallpaper/ai_content_filter.dart';
 import 'package:Prism/core/wallpaper/anime_content_filter.dart';
 import 'package:Prism/data/feed_cache/pagination_session.dart';
 import 'package:Prism/data/offline/offline_wallpaper_catalog.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/personalized_feed/data/feed_impression_store.dart';
+import 'package:Prism/features/personalized_feed/data/personalized_ranking_service.dart';
+import 'package:Prism/features/personalized_feed/domain/repositories/personalized_feed_repository.dart';
 import 'package:Prism/features/pexels_feed/domain/repositories/pexels_wallpaper_repository.dart';
 import 'package:Prism/features/prism_feed/data/dtos/prism_wall_doc_dto.dart';
 import 'package:Prism/features/prism_feed/data/mappers/prism_wall_doc_mapper.dart';
@@ -18,6 +23,7 @@ import 'package:Prism/features/wallhaven_feed/domain/repositories/wallhaven_wall
 import 'package:Prism/features/wallpaper_detail/biz/wallpaper_detail_rules.dart';
 import 'package:Prism/features/wallpaper_detail/domain/entities/recommendation_page.dart';
 import 'package:Prism/features/wallpaper_detail/domain/repositories/wallpaper_recommendation_repository.dart';
+import 'package:Prism/logger/logger.dart';
 
 /// A visit owns its external page key. Detail never borrows the search screen's mutable cursor.
 final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommendationRepository {
@@ -28,7 +34,14 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
     required this.settings,
     required this.blocks,
     required this.localSearch,
+    this.rules = _legacyRules,
+    this.tasteProfile = _noTaste,
+    this.hiddenKeys = _noHidden,
   });
+
+  static RankingRules _legacyRules() => RankingRules.legacy;
+  static TasteProfile _noTaste() => TasteProfile.empty;
+  static Set<String> _noHidden() => const <String>{};
 
   factory WallpaperRecommendationRepositoryImpl.fromGetIt() => WallpaperRecommendationRepositoryImpl(
     firestore: () => getIt<FirestoreClient>(),
@@ -37,6 +50,13 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
     settings: () => getIt<SettingsLocalDataSource>(),
     blocks: () => getIt<UserBlockRepository>(),
     localSearch: (query) => OfflineWallpaperCatalog.instance.search(query),
+    rules: () => RankingRules.current,
+    tasteProfile: () => getIt<PersonalizedFeedRepository>().currentTasteProfile(),
+    hiddenKeys: () => <String>{
+      for (final MapEntry<String, int> entry
+          in getIt<FeedImpressionStore>().recentShows(DateTime.now().toUtc()).entries)
+        if (entry.value >= FeedImpressionStore.hiddenShows) entry.key,
+    },
   );
 
   static const pageSize = 24;
@@ -46,6 +66,11 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
   final SettingsLocalDataSource Function() settings;
   final UserBlockRepository Function() blocks;
   final Future<List<FeedItemEntity>> Function(String) localSearch;
+  final RankingRules Function() rules;
+  final TasteProfile Function() tasteProfile;
+
+  /// Walls the user hid with "Show less like this".
+  final Set<String> Function() hiddenKeys;
   final Map<String, _RecommendationVisit> _visits = {};
 
   @override
@@ -107,7 +132,11 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
         PexelsFeedItem() => await _pexels(sessionKey, visit, cursor as ExternalRecommendationCursor?),
       };
       visit.ensureActive();
-      return RecommendationPage(items: visible(page.items), kind: page.kind, nextCursor: page.nextCursor);
+      return RecommendationPage(
+        items: _personal(current, visit, visible(page.items)),
+        kind: page.kind,
+        nextCursor: page.nextCursor,
+      );
     } catch (_) {
       // A later-page failure is retryable, not an excuse to replace an already loaded feed with local results.
       if (!visit.active || cursor != null) rethrow;
@@ -116,7 +145,7 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
       final purity = settings().get<int>('WHpurity', defaultValue: 100);
       final local = visible(rows).where((item) => _allowsCachedWallhaven(item, visit.categories, purity)).toList();
       if (local.isEmpty) rethrow;
-      return RecommendationPage(items: local, kind: RecommendationKind.offline);
+      return RecommendationPage(items: _personal(current, visit, local), kind: RecommendationKind.offline);
     }
   }
 
@@ -262,6 +291,32 @@ final class WallpaperRecommendationRepositoryImpl implements WallpaperRecommenda
     );
   }
 
+  /// With [RankingRules.personalNextWalls], each page ranks by what it shares with [current], then the user's taste.
+  /// A light/dark group shows once in the whole visit.
+  List<FeedItemEntity> _personal(FeedItemEntity current, _RecommendationVisit visit, List<FeedItemEntity> items) {
+    final List<FeedItemEntity> ranked;
+    try {
+      if (!rules().personalNextWalls) return items;
+      ranked = rankNextWalls(
+        current: current,
+        items: items,
+        profile: tasteProfile(),
+        hiddenKeys: hiddenKeys(),
+        usedGroups: visit.variantGroups,
+      );
+    } catch (error) {
+      // A taste lookup failure is not a network failure. Keep the query order instead of the offline fallback.
+      logger.w('More like this kept the query order: $error');
+      return items;
+    }
+    for (final FeedItemEntity item in ranked) {
+      if (item case PrismFeedItem(:final wallpaper) when wallpaper.variantGroupId != null) {
+        visit.variantGroups.add(wallpaper.variantGroupId!);
+      }
+    }
+    return ranked;
+  }
+
   bool _allowsCachedWallhaven(FeedItemEntity item, int categories, int purity) {
     if (item is! WallhavenFeedItem) return true;
     // The offline catalog does not retain Wallhaven purity, so restricted requests cannot verify these rows.
@@ -282,6 +337,7 @@ final class _RecommendationVisit {
   final int categories;
   final int purity;
   final Set<PaginationSession> providers = {};
+  final Set<String> variantGroups = {};
   bool active = true;
 
   void ensureActive() {

@@ -72,6 +72,45 @@ List<TasteSignal> scrolledPastSignals({
   ];
 }
 
+/// Orders one page of the walls under an open wallpaper ([current]). The score is mostly how many terms a wall shares
+/// with [current], then the user's taste and creator. The weights came from the replay harness
+/// (test/features/personalized_feed/replay/detail_replay.dart). Equal scores keep the page order. Hidden walls, and a wall whose
+/// light/dark group is in [usedGroups], drop out.
+List<FeedItemEntity> rankNextWalls({
+  required FeedItemEntity current,
+  required List<FeedItemEntity> items,
+  required TasteProfile profile,
+  required Set<String> hiddenKeys,
+  Set<String> usedGroups = const <String>{},
+}) {
+  final RankingCandidate open = RankingCandidate(item: current, pool: CandidatePool.taste);
+  final Set<String> openTerms = open.terms.toSet();
+  final Set<String> groups = <String>{...usedGroups, ?open.variantGroup};
+  final List<(double, int, RankingCandidate)> scored = <(double, int, RankingCandidate)>[];
+  for (int i = 0; i < items.length; i++) {
+    final RankingCandidate candidate = RankingCandidate(item: items[i], pool: CandidatePool.taste);
+    if (hiddenKeys.contains(candidate.key)) {
+      continue;
+    }
+    final double shared = openTerms.isEmpty ? 0 : candidate.terms.where(openTerms.contains).length / openTerms.length;
+    final double sameCreator = candidate.creator != null && candidate.creator == open.creator ? 0.25 : 0;
+    final double related = min(1, shared + sameCreator);
+    final double score = max(
+      0.05,
+      1 +
+          1.5 * related +
+          0.75 * profile.termAffinity(candidate.terms) +
+          1.0 * profile.creatorAffinity(candidate.creator),
+    );
+    scored.add((score, i, candidate));
+  }
+  scored.sort((a, b) => a.$1 == b.$1 ? a.$2.compareTo(b.$2) : b.$1.compareTo(a.$1));
+  return <FeedItemEntity>[
+    for (final (_, _, RankingCandidate candidate) in scored)
+      if (candidate.variantGroup == null || groups.add(candidate.variantGroup!)) candidate.item,
+  ];
+}
+
 class PersonalizedRankingResult {
   const PersonalizedRankingResult({required this.items, required this.usedKeys});
 
