@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/favorites_local_data_source.dart';
+import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
@@ -165,6 +166,10 @@ class _FolderSheetState extends State<FolderSheet> {
       );
       for (int i = 0; i < newNames.length; i++) {
         unawaited(analytics.track(const FolderCreatedEvent(source: 'sheet', withWall: true)));
+      }
+      final TasteSignal? signal = _folderAddSignal(wall);
+      if (signal != null && getIt.isRegistered<TasteSignalStore>()) {
+        unawaited(getIt<TasteSignalStore>().record(signal));
       }
     }
     toasts.success(added > 0 ? l10n.foldersSavedToCount(added) : l10n.foldersUpdated);
@@ -397,3 +402,20 @@ class _FolderNameSheetState extends State<_FolderNameSheet> {
     );
   }
 }
+
+/// A folder add teaches the For you feed, like a favourite. Old favourites without a wall model teach nothing.
+TasteSignal? _folderAddSignal(FavouriteWallEntity wall) => switch (wall) {
+  PrismFavouriteWall(:final wallpaper) => TasteSignal.forWallpaper(
+    TasteAction.folderAdd,
+    wallpaper.core,
+    tags: wallpaper.tags,
+    collections: wallpaper.collections,
+  ),
+  WallhavenFavouriteWall(:final wallpaper) => TasteSignal.forWallpaper(
+    TasteAction.folderAdd,
+    wallpaper.core,
+    tags: wallpaper.tags,
+  ),
+  PexelsFavouriteWall(:final wallpaper) => TasteSignal.forWallpaper(TasteAction.folderAdd, wallpaper.core),
+  _ => null,
+};

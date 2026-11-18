@@ -170,8 +170,32 @@ The For you ranker learns from things the user does with a wall. The app keeps t
 | `set` | 6 | A set wallpaper. |
 | `passedOver` | -0.5 | The wall that lost a round of "This or that". It is a hint, not a dislike. |
 | `lessLikeThis` | -8 | Show less like this. |
+| `share` | 5 | Share on the wallpaper screen. Counts only with the new rules. |
+| `folderAdd` | 4 | A save to a folder, from any folder sheet. Counts only with the new rules. |
+| `scrolledPast` | -0.3 | A wall that an earlier feed load showed comes back as a candidate, and has no signal yet. Counts only with the new rules. At most 60 of the 300 signals. |
 
 A weight halves every 30 days. "Clear" in the Tune sheet removes all signals.
+
+Each signal stores the wall key, so the feed knows which walls the user acted on. When the store is full, the oldest `scrolledPast` signals go first, so they never push out a favourite or a set. The "Learned from you" list in the Tune sheet uses the same rules as the feed.
+
+### Ranking
+
+The For you ranker runs three stages on the device, in this order.
+
+1. **Filter.** Removes excluded walls and hidden walls. With the new rules, it also removes the light or dark partner of a wall that the page or the session already has.
+2. **Score.** Multiplies the source prior by a base value, then by impression fatigue and noise. The base is 1, plus 1.5 times the taste affinity, plus the creator affinity, plus freshness. It has a floor of 0.05. A wall's score uses only that wall, the taste profile and its own impressions.
+3. **Select.** Applies author decay, `(1 - 0.3) * 0.5^k + 0.3`, where `k` is the number of walls from the same creator already picked. External walls fill at most half a page. Explore slots take walls with no taste match, one slot in 8, 5 or 3, by feed mix.
+
+| Rule | What it does |
+|---|---|
+| `hardNegatives` | Keeps a negative term or creator from shrinking when the user has many positive signals. |
+| `newActions` | Counts share (5) and folder add (4) as taste signals. |
+| `scrolledPast` | Counts a wall that an earlier feed load showed, and that has no signal yet, as a weak no (-0.3). Each wall counts once while the app keeps its impression (14 days). |
+| `dedupeVariants` | Shows one wall for each light or dark group in a page, and across the pages of one session. This includes the cached first page and the offline fallback. |
+
+The Remote Config key `feed_ranker_x2026_enabled` turns the rules on. The in-app default is true. False gives the old ranker, order for order.
+
+The offline check is `fvm flutter test test/features/personalized_feed/replay/`. It fails when a metric falls below its floor.
 
 ### This or that
 
@@ -252,6 +276,7 @@ Automated tests:
 - `test/features/navigation/prism_fab_test.dart`
 - `test/features/navigation/tune_sheet_retake_test.dart`
 - `test/features/taste_quiz/taste_quiz_ranking_test.dart`
+- `test/features/personalized_feed/replay/feed_replay_test.dart`
 - `test/features/prism_feed/biz/bloc/paged_feed_bloc_test.dart`
 - `test/core/widgets/home/loading_cards_test.dart`
 - `test/features/pexels_feed/data/repositories/pexels_wallpaper_repository_impl_test.dart`

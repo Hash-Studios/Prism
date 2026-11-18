@@ -724,6 +724,17 @@ void main() {
     expect(store.read(), isEmpty);
   });
 
+  testWidgets('learned terms include shares and folder saves, like the feed', (tester) async {
+    await store.recordAll(<TasteSignal>[
+      TasteSignal(action: TasteAction.share, at: DateTime.now(), terms: const <String>['ocean']),
+      TasteSignal(action: TasteAction.folderAdd, at: DateTime.now(), terms: const <String>['forest']),
+    ]);
+    await pumpSheet(tester);
+
+    expect(find.text('Ocean'), findsOneWidget);
+    expect(find.text('Forest'), findsOneWidget);
+  });
+
   testWidgets('a failed clear keeps the learned terms and says so', (tester) async {
     store = _FailingClearStore(SettingsLocalDataSource(InMemoryLocalStore()));
     await store.record(TasteSignal(action: TasteAction.set, at: DateTime.now(), terms: const <String>['neon']));

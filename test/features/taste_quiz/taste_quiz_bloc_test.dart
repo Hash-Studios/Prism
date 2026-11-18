@@ -34,11 +34,11 @@ class _DelayedTasteSignalStore extends TasteSignalStore {
   int writeCount = 0;
 
   @override
-  Future<void> recordAll(List<TasteSignal> signals) async {
+  Future<void> recordAll(List<TasteSignal> signals, {int? expectedRevision}) async {
     writeCount++;
     if (!writeStarted.isCompleted) writeStarted.complete();
     await allowWrite.future;
-    await super.recordAll(signals);
+    await super.recordAll(signals, expectedRevision: expectedRevision);
   }
 }
 

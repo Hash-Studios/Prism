@@ -41,6 +41,9 @@ class ShareButton extends StatefulWidget {
   /// Shows a caption under the round button.
   final bool labelled;
   final bool duoReveal;
+
+  /// Runs when the user taps share, before the sheet opens.
+  final VoidCallback? onShareTapped;
   const ShareButton({
     required this.id,
     required this.source,
@@ -54,6 +57,7 @@ class ShareButton extends StatefulWidget {
     this.webCatalogueCheck = isOnWebCatalogue,
     this.labelled = false,
     this.duoReveal = false,
+    this.onShareTapped,
     super.key,
   });
 
@@ -194,6 +198,7 @@ class _ShareButtonState extends State<ShareButton> {
     }
 
     analytics.track(const InviteShareTappedEvent(sourceContext: 'wallpaper_screen'));
+    widget.onShareTapped?.call();
     _sharing = true;
     final Future<ShareCardContent?> ready = resolve();
     try {

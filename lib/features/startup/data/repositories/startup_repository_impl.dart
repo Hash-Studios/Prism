@@ -8,6 +8,7 @@ import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/monitoring/field_diagnostics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/persistence/persistence_keys.dart';
+import 'package:Prism/core/personalization/ranking_rules.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/data/notifications/notifications.dart';
@@ -66,6 +67,7 @@ Future<void> prepareRemoteConfig(
     AdExperimentConfig.remoteConfigKey: '{}',
     iosShortcutLinkRemoteConfigKey: '',
     FieldDiagnostics.sampleRateKey: FieldDiagnostics.defaultSampleRate,
+    RankingRules.remoteConfigKey: RankingRules.defaultEnabled,
   });
   try {
     await remoteConfig.activate();

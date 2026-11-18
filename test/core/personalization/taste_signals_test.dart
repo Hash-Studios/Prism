@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
@@ -70,6 +71,111 @@ void main() {
     expect(read, hasLength(300));
     expect(read.first.terms, ['t10']);
     expect(read.last.terms, ['t309']);
+  });
+
+  test('scrolled-past signals cannot evict explicit actions even below their cap', () async {
+    final DateTime at = DateTime.utc(2026);
+    await store.recordAll(<TasteSignal>[
+      for (int i = 0; i < 300; i++)
+        TasteSignal(
+          action: i.isEven ? TasteAction.favourite : TasteAction.set,
+          at: at.add(Duration(minutes: i)),
+          terms: const <String>['nature'],
+          wallKey: 'saved$i',
+        ),
+    ]);
+    await store.recordAll(<TasteSignal>[
+      for (int i = 0; i < 20; i++)
+        TasteSignal(
+          action: TasteAction.scrolledPast,
+          at: at.add(Duration(days: 1, minutes: i)),
+          terms: const <String>['city'],
+          wallKey: 'skipped$i',
+        ),
+    ]);
+
+    expect(store.read(), hasLength(300));
+    expect(store.signaledKeys(), <String>{for (int i = 0; i < 300; i++) 'saved$i'});
+  });
+
+  test('equal timestamps retain insertion order and trim the oldest insertions', () async {
+    await store.recordAll(<TasteSignal>[
+      for (int i = 0; i < 310; i++)
+        TasteSignal(action: TasteAction.open, at: DateTime.utc(2026), terms: <String>['t$i']),
+    ]);
+
+    expect(store.read().map((signal) => signal.terms.single), <String>[for (int i = 10; i < 310; i++) 't$i']);
+  });
+
+  test('equal-time scrolled-past signals retain the newest 60 insertions', () async {
+    await store.recordAll(<TasteSignal>[
+      for (int i = 0; i < 100; i++)
+        TasteSignal(
+          action: TasteAction.scrolledPast,
+          at: DateTime.utc(2026),
+          terms: const <String>['city'],
+          wallKey: 'skip$i',
+        ),
+    ]);
+
+    expect(store.read().map((signal) => signal.wallKey), <String>[for (int i = 40; i < 100; i++) 'skip$i']);
+  });
+
+  test('wall keys round-trip without changing the legacy signal fields', () async {
+    final TasteSignal signal = TasteSignal(
+      action: TasteAction.favourite,
+      at: DateTime.utc(2026),
+      terms: const <String>['nature'],
+      wallKey: 'https://example.com/wall',
+    );
+    await store.record(signal);
+
+    expect(store.read().single.wallKey, signal.wallKey);
+    final Map<String, Object?> oldJson = signal.toJson()..remove('w');
+    expect(TasteSignal.fromJson(oldJson)!.wallKey, isNull);
+    expect(oldJson.keys.toSet(), <String>{'a', 't', 'k'});
+    expect(TasteSignal.fromJson(oldJson)!.action, TasteAction.favourite);
+  });
+
+  test('concurrent batches record a scrolled-past wall only once', () async {
+    final TasteSignal signal = TasteSignal(
+      action: TasteAction.scrolledPast,
+      at: DateTime.utc(2026),
+      terms: const <String>['city'],
+      wallKey: 'skipped',
+    );
+    await Future.wait<void>(<Future<void>>[store.record(signal), store.record(signal)]);
+
+    expect(store.read(), hasLength(1));
+  });
+
+  test('clear waits for an in-flight signal write before removing history', () async {
+    final _DelayedSignalStore local = _DelayedSignalStore();
+    store = TasteSignalStore(SettingsLocalDataSource(local));
+    final Future<void> write = store.record(
+      TasteSignal(action: TasteAction.scrolledPast, at: DateTime.utc(2026), terms: const <String>['city']),
+    );
+    await local.started.future;
+    final int revision = store.revision;
+    final Future<void> clear = store.clear(allowReseed: true);
+    expect(store.revision, revision + 1);
+    local.release.complete();
+    await Future.wait<void>(<Future<void>>[write, clear]);
+
+    expect(store.read(), isEmpty);
+    expect(store.isSeeded, isFalse);
+  });
+
+  test('stale batches cannot write after clear and later writes still succeed', () async {
+    final int revision = store.revision;
+    await store.clear();
+    await store.recordAll(<TasteSignal>[
+      TasteSignal(action: TasteAction.scrolledPast, at: DateTime.utc(2026), terms: const <String>['city']),
+    ], expectedRevision: revision);
+    expect(store.read(), isEmpty);
+
+    await store.record(TasteSignal(action: TasteAction.share, at: DateTime.utc(2026), terms: const <String>['nature']));
+    expect(store.read().single.action, TasteAction.share);
   });
 
   test('drops malformed stored terms without discarding valid signals', () async {
@@ -200,3 +306,17 @@ void main() {
 
 WallpaperCore _core({String? category}) =>
     WallpaperCore(id: 'w1', source: WallpaperSource.prism, fullUrl: 'f', thumbnailUrl: 't', category: category);
+
+class _DelayedSignalStore extends InMemoryLocalStore {
+  final Completer<void> started = Completer<void>();
+  final Completer<void> release = Completer<void>();
+
+  @override
+  Future<void> set(String key, Object? value) async {
+    if (key == PersistenceKeys.settings('personalized_taste_signals_v1') && !started.isCompleted) {
+      started.complete();
+      await release.future;
+    }
+    await super.set(key, value);
+  }
+}

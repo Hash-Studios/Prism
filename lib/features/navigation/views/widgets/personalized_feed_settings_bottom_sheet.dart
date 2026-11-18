@@ -8,6 +8,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/personalization/personalized_feed_settings.dart';
 import 'package:Prism/core/personalization/personalized_interests_catalog.dart';
+import 'package:Prism/core/personalization/ranking_rules.dart';
 import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
@@ -137,6 +138,7 @@ class _PersonalizedFeedSettingsSheetState extends State<PersonalizedFeedSettings
     following: const <String>[],
     signals: _tasteSignals.read(),
     now: DateTime.now(),
+    rules: RankingRules.current,
   );
 
   /// Runs the quiz over the sheet. The picks add to what the feed already learned.

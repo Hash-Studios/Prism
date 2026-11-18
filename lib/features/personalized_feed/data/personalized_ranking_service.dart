@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:Prism/core/personalization/ranking_rules.dart';
 import 'package:Prism/core/personalization/taste_profile.dart';
 import 'package:Prism/core/personalization/taste_signals.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
@@ -27,12 +28,16 @@ class RankingCandidate {
   RankingCandidate({required this.item, required this.pool, List<String> extraTerms = const <String>[]})
     : key = item.canonicalKey,
       creator = tasteCreatorOf(item.wallpaperCore),
+      variantGroup = item.maybeWhen(prism: (_, wall) => wall.variantGroupId, orElse: () => null),
       terms = <String>{...termsOf(item), ...extraTerms.map((e) => e.toLowerCase())}.toList(growable: false);
 
   final FeedItemEntity item;
   final CandidatePool pool;
   final String key;
   final String? creator;
+
+  /// Light and dark versions of one wall share this.
+  final String? variantGroup;
   final List<String> terms;
 
   static List<String> termsOf(FeedItemEntity item) => item.when(
@@ -40,6 +45,31 @@ class RankingCandidate {
     wallhaven: (_, wall) => tasteTermsOf(wall.core, tags: wall.tags),
     pexels: (_, wall) => tasteTermsOf(wall.core),
   );
+}
+
+/// A weak "no" for each candidate that an earlier feed load showed and the user never acted on. [signaledKeys] holds
+/// every wall with a signal, so a wall teaches this once. [excludedKeys] are this session's walls, which the user can
+/// still tap.
+List<TasteSignal> scrolledPastSignals({
+  required List<RankingCandidate> candidates,
+  required Map<String, int> recentShows,
+  required Set<String> excludedKeys,
+  required Set<String> signaledKeys,
+  required DateTime now,
+}) {
+  final Set<String> done = <String>{...signaledKeys, ...excludedKeys};
+  return <TasteSignal>[
+    for (final RankingCandidate candidate in candidates)
+      if (recentShows[candidate.key] ?? 0 case final int shows
+          when shows > 0 && shows < FeedImpressionStore.hiddenShows && done.add(candidate.key))
+        TasteSignal(
+          action: TasteAction.scrolledPast,
+          at: now,
+          terms: candidate.terms,
+          creator: candidate.creator,
+          wallKey: candidate.key,
+        ),
+  ];
 }
 
 class PersonalizedRankingResult {
@@ -71,11 +101,22 @@ class PersonalizedRankingService {
     required Random random,
     required DateTime now,
     int limit = 24,
+    RankingRules rules = RankingRules.legacy,
+    Set<String> excludedVariantGroups = const <String>{},
   }) {
     final Map<String, _Scored> byKey = <String, _Scored>{};
+    final Set<String> usedGroups = <String>{
+      if (rules.dedupeVariants) ...excludedVariantGroups,
+      if (rules.dedupeVariants)
+        for (final RankingCandidate candidate in candidates)
+          if (candidate.variantGroup != null && excludedKeys.contains(candidate.key)) candidate.variantGroup!,
+    };
     for (final RankingCandidate candidate in candidates) {
       if (excludedKeys.contains(candidate.key) ||
           (recentShows[candidate.key] ?? 0) >= FeedImpressionStore.hiddenShows) {
+        continue;
+      }
+      if (usedGroups.contains(candidate.variantGroup)) {
         continue;
       }
       final _Scored scored = _score(candidate, profile, recentShows[candidate.key] ?? 0, random, now);
@@ -101,6 +142,10 @@ class PersonalizedRankingService {
         break;
       }
       pool.remove(pick);
+      final String? group = pick.candidate.variantGroup;
+      if (rules.dedupeVariants && group != null) {
+        pool.removeWhere((e) => e.candidate.variantGroup == group);
+      }
       selected.add(pick);
       if (pick.candidate.pool.isExternal) {
         external += 1;
