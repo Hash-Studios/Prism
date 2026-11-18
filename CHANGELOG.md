@@ -1,5 +1,12 @@
 ## Changelog
 
+### v3.32.0
+- For you learns faster from what you like, share and save to folders
+- "Show less like this" now stays strong, even after many likes
+- For you shows one wall from each light and dark pair
+- More like this now follows your taste as well as the wall you opened
+- Security and stability fixes
+
 ### v3.31.0
 - Restyle a photo in one of 13 AI styles with Photo to wallpaper
 - During a coin event, a rewarded ad pays double or triple coins. Rewards shows when the next event starts
