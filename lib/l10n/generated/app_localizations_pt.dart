@@ -16138,6 +16138,96 @@ class AppLocalizationsPt extends AppLocalizations {
   String coreCoinEventGeneric(String action, int multiplier) {
     return '$action · evento ${multiplier}x';
   }
+
+  @override
+  String get creatorFundTitle => 'Fundo de criadores';
+
+  @override
+  String get creatorFundAbout =>
+      'Toda semana, um fundo de Prism Coins é dividido entre os criadores. Sua parte depende de quantas pessoas salvam, definem, baixam, remixam e adicionam seus wallpapers a pastas.';
+
+  @override
+  String creatorFundPaid(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Você ganhou $coinsString moedas na semana passada',
+      one: 'Você ganhou 1 moeda na semana passada',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creatorFundShare(String share) {
+    return 'Isso é $share do fundo.';
+  }
+
+  @override
+  String get creatorFundOff => 'O Fundo de criadores não está em funcionamento no momento.';
+
+  @override
+  String get creatorFundPending => 'Os resultados de cada semana saem na segunda-feira.';
+
+  @override
+  String get creatorFundNoActivity => 'Ninguém interagiu com seus wallpapers na semana passada.';
+
+  @override
+  String creatorFundFewUsers(int count, int min) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Na semana passada, $count pessoas interagiram com seus wallpapers. Você precisa de pelo menos $min para se qualificar.',
+      one:
+          'Na semana passada, 1 pessoa interagiu com seus wallpapers. Você precisa de pelo menos $min para se qualificar.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creatorFundSmallShare(int min) {
+    String _temp0 = intl.Intl.pluralLogic(
+      min,
+      locale: localeName,
+      other: 'Sua parte na semana passada ficou abaixo do pagamento mínimo de $min moedas.',
+      one: 'Sua parte na semana passada ficou abaixo do pagamento mínimo de 1 moeda.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get creatorFundModeration =>
+      'A semana passada não conta, porque denúncias deixaram um dos seus wallpapers em análise.';
+
+  @override
+  String get creatorFundTeam => 'As contas de equipe do Prism não fazem parte do Fundo de criadores.';
+
+  @override
+  String get creatorFundError =>
+      'Não foi possível carregar o Fundo de criadores. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get coreCoinCreatorFund => 'Fundo de criadores';
+
+  @override
+  String notifPushCreatorFundPaidTitle(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Você ganhou $coinsString moedas do Fundo de criadores',
+      one: 'Você ganhou 1 moeda do Fundo de criadores',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushCreatorFundPaidBody => 'Veja sua parte nas estatísticas de criador.';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -32272,4 +32362,94 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String coreCoinEventGeneric(String action, int multiplier) {
     return '$action · evento ${multiplier}x';
   }
+
+  @override
+  String get creatorFundTitle => 'Fundo de criadores';
+
+  @override
+  String get creatorFundAbout =>
+      'Toda semana, um fundo de Prism Coins é dividido entre os criadores. Sua parte depende de quantas pessoas salvam, definem, baixam, remixam e adicionam seus wallpapers a pastas.';
+
+  @override
+  String creatorFundPaid(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Você ganhou $coinsString moedas na semana passada',
+      one: 'Você ganhou 1 moeda na semana passada',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creatorFundShare(String share) {
+    return 'Isso é $share do fundo.';
+  }
+
+  @override
+  String get creatorFundOff => 'O Fundo de criadores não está em funcionamento no momento.';
+
+  @override
+  String get creatorFundPending => 'Os resultados de cada semana saem na segunda-feira.';
+
+  @override
+  String get creatorFundNoActivity => 'Ninguém interagiu com seus wallpapers na semana passada.';
+
+  @override
+  String creatorFundFewUsers(int count, int min) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Na semana passada, $count pessoas interagiram com seus wallpapers. Você precisa de pelo menos $min para se qualificar.',
+      one:
+          'Na semana passada, 1 pessoa interagiu com seus wallpapers. Você precisa de pelo menos $min para se qualificar.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creatorFundSmallShare(int min) {
+    String _temp0 = intl.Intl.pluralLogic(
+      min,
+      locale: localeName,
+      other: 'Sua parte na semana passada ficou abaixo do pagamento mínimo de $min moedas.',
+      one: 'Sua parte na semana passada ficou abaixo do pagamento mínimo de 1 moeda.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get creatorFundModeration =>
+      'A semana passada não conta, porque denúncias deixaram um dos seus wallpapers em análise.';
+
+  @override
+  String get creatorFundTeam => 'As contas de equipe do Prism não fazem parte do Fundo de criadores.';
+
+  @override
+  String get creatorFundError =>
+      'Não foi possível carregar o Fundo de criadores. Verifique sua conexão e tente novamente.';
+
+  @override
+  String get coreCoinCreatorFund => 'Fundo de criadores';
+
+  @override
+  String notifPushCreatorFundPaidTitle(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Você ganhou $coinsString moedas do Fundo de criadores',
+      one: 'Você ganhou 1 moeda do Fundo de criadores',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushCreatorFundPaidBody => 'Veja sua parte nas estatísticas de criador.';
 }

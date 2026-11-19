@@ -3541,6 +3541,15 @@ events:
       - name: metric
         key: metric
         type: string
+  - id: creator_fund_viewed
+    fields:
+      - name: state
+        key: state
+        type: string
+      - name: reason
+        key: reason
+        type: string
+        required: false
   - id: creator_wall_stats_opened
     fields:
       - name: wall_id

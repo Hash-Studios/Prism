@@ -6,7 +6,6 @@ import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/ht
 import {db, REGION, CALLABLE_REGIONS, utcDateString} from "./common";
 import {
   bumpDaily,
-  claimRateDoc,
   normalizeId,
   RATE_DOC_TTL_MS,
   WALLPAPER_STATS,
@@ -14,9 +13,11 @@ import {
 } from "./viewStats";
 import {progressQuestForUser, progressWallpaperActionQuest, type Awarded} from "./quests";
 import {dayKey} from "./economy";
+import {prepareFundEvent} from "./creatorFund/events";
 
 const ACTION_FIELDS = {download: "downloads", set: "sets", share: "shares"} as const;
 type WallAction = keyof typeof ACTION_FIELDS;
+const FUND_METRICS = {download: "downloads", set: "sets", share: null} as const;
 
 const WALL_ACTION_RATE = "wallActionRate";
 export const FAVOURITE_AGGREGATION_GATE = "maintenance/favouriteAggregation";
@@ -50,22 +51,26 @@ export const recordWallpaperAction = onCall(
       if (typeof requestId !== "string" || !/^[A-Za-z0-9_-]{8,64}$/.test(requestId)) {
         throw new HttpsError("invalid-argument", "requestId is invalid.");
       }
-      return recordReceiptedAction(uid, wallId, action, requestId);
+      return recordReceiptedAction(uid, wallId, action, requestId, request.data.wallId as string);
     }
 
     const rateRef = db.collection(WALL_ACTION_RATE).doc(`${uid}_${wallId}_${action}`);
-    const rateSnap = await rateRef.get();
-    const lastAt = rateSnap.data()?.lastAt as admin.firestore.Timestamp | undefined;
     const now = Date.now();
-    if (lastAt && now - lastAt.toMillis() < RATE_DOC_TTL_MS) return {counted: false};
-
-    const claimed = await claimRateDoc(rateRef, rateSnap, {
-      lastAt: admin.firestore.Timestamp.fromMillis(now),
-      expireAt: admin.firestore.Timestamp.fromMillis(now + RATE_DOC_TTL_MS),
+    const field = ACTION_FIELDS[action];
+    const claimed = await db.runTransaction(async (tx) => {
+      const lastAt = (await tx.get(rateRef)).data()?.lastAt;
+      if (lastAt && now - lastAt.toMillis() < RATE_DOC_TTL_MS) return false;
+      const metric = FUND_METRICS[action];
+      const fund = metric ? await prepareFundEvent(tx, wallId, metric, uid, now, request.data.wallId as string) : null;
+      tx.set(rateRef, {lastAt: admin.firestore.Timestamp.fromMillis(now),
+        expireAt: admin.firestore.Timestamp.fromMillis(now + RATE_DOC_TTL_MS)});
+      tx.set(db.collection(WALLPAPER_STATS).doc(wallId), {
+        [field]: admin.firestore.FieldValue.increment(1), lastEventAt: admin.firestore.Timestamp.fromMillis(now),
+      }, {merge: true});
+      if (fund) tx.set(fund.ref, fund.data);
+      return true;
     });
     if (!claimed) return {counted: false};
-
-    const field = ACTION_FIELDS[action];
     const eventId = `${uid}_${wallId}_${dayKey(now)}`;
     // The quest events write the same user docs, so they stay in order. The rate-doc claim gates all of them.
     const quests = async () => {
@@ -77,10 +82,6 @@ export const recordWallpaperAction = onCall(
         if (action === "download") await progressQuestForUser(uid, "download", eventId, now);
       }
     };
-    await db.collection(WALLPAPER_STATS).doc(wallId).set({
-      [field]: admin.firestore.FieldValue.increment(1),
-      lastEventAt: admin.firestore.Timestamp.fromMillis(now),
-    }, {merge: true});
     await Promise.all([
       bumpDaily(wallId, field, now).catch((err: unknown) => {
         logger.warn("Could not record the daily wallpaper action.", {err});
@@ -91,7 +92,7 @@ export const recordWallpaperAction = onCall(
   },
 );
 
-async function recordReceiptedAction(uid: string, wallId: string, action: WallAction, requestId: string) {
+async function recordReceiptedAction(uid: string, wallId: string, action: WallAction, requestId: string, rawId: string) {
   const receiptRef = db.collection("usersv2").doc(uid).collection("wallActionReceipts").doc(requestId);
   const rateRef = db.collection(WALL_ACTION_RATE).doc(`${uid}_${wallId}_${action}`);
   const now = Date.now();
@@ -112,6 +113,8 @@ async function recordReceiptedAction(uid: string, wallId: string, action: WallAc
     }
     const lastAt = rate.data()?.lastAt as admin.firestore.Timestamp | undefined;
     const counted = !lastAt || now - lastAt.toMillis() >= RATE_DOC_TTL_MS;
+    const metric = FUND_METRICS[action];
+    const fund = counted && metric ? await prepareFundEvent(tx, wallId, metric, uid, now, rawId) : null;
     tx.set(receiptRef, {wallId, action, counted, acceptedAt: now});
     if (counted) {
       tx.set(rateRef, {
@@ -127,6 +130,7 @@ async function recordReceiptedAction(uid: string, wallId: string, action: WallAc
         wallId, day, [field]: admin.firestore.FieldValue.increment(1),
         expireAt: admin.firestore.Timestamp.fromMillis(now + 14 * 86_400_000),
       }, {merge: true});
+      if (fund) tx.set(fund.ref, fund.data);
     }
     return {counted, acceptedAt: now};
   });
@@ -183,13 +187,14 @@ export const onFavouriteWritten = onDocumentWritten(
         tx.get(db.collection("usersv2").doc(event.params.uid).collection("images")),
         tx.get(contributionRef), tx.get(statsRef),
       ]);
-      const active = images.docs.some((doc) => {
+      const members = images.docs.filter((doc) => {
         try {
           return normalizeId(doc.id) === wallId && isPrismFavourite(doc.id, doc.data());
         } catch {
           return false;
         }
       });
+      const active = members.length > 0;
       const previous = contribution.data();
       const changed = active !== (previous?.epoch === gate.epoch && previous?.active === true);
       const previousSequence = previous?.sequence;
@@ -204,6 +209,9 @@ export const onFavouriteWritten = onDocumentWritten(
         source.createTime.isEqual(event.data.after.createTime) &&
         isDeepStrictEqual(source.updateTime, event.data.after.updateTime);
       if (!changed && !acceptQuest) return;
+      const first = members.reduce<typeof members[number] | undefined>((old, doc) =>
+        !old || doc.createTime.toMillis() < old.createTime.toMillis() ? doc : old, undefined);
+      const fund = changed && first ? await prepareFundEvent(tx, wallId, "saves", event.params.uid, first.createTime.toMillis(), first.id) : null;
       tx.set(contributionRef, {active, sequence, epoch: gate.epoch,
         ...(active ? {acceptedAt} : {}), ...(acceptQuest ? {questSequence: sequence} : {}),
       }, {merge: true});
@@ -216,6 +224,7 @@ export const onFavouriteWritten = onDocumentWritten(
             wallId, day, favs: admin.firestore.FieldValue.increment(1),
             expireAt: admin.firestore.Timestamp.fromMillis(now + 14 * 86_400_000),
           }, {merge: true});
+          if (fund) tx.set(fund.ref, fund.data);
         }
       }
       if (acceptQuest) tx.set(pendingQuests.doc(String(sequence)), {acceptedAt});

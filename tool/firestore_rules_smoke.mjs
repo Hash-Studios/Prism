@@ -1417,6 +1417,12 @@ const cases = [
   ['stranger reviewed-wall list omits scheduled wall', () => listHidesWall(C, 'walls/rel-sched'), 200],
   ['owner gets scheduled wall', () => req('GET', 'walls/rel-sched', null, Bu), 200],
   ['admin gets scheduled wall', () => req('GET', 'walls/rel-sched', null, ADM), 200],
+  ['signed-in user cannot read a creator fund week', () => req('GET', 'creatorFund/2026-W46', null, A), 403],
+  ['signed-in user cannot write a creator fund week', () => req('PATCH', 'creatorFund/2026-W46', { state: str('complete') }, A, ['state']), 403],
+  ['signed-in user cannot read their own creator fund row', () => req('GET', 'creatorFund/2026-W46/creators/a', null, A), 403],
+  ['signed-in user cannot write their own creator fund row', () => req('PATCH', 'creatorFund/2026-W46/creators/a', { coins: { integerValue: '999' } }, A, ['coins']), 403],
+  ['signed-in user cannot read a creator fund event', () => req('GET', 'creatorFundEvents/x', null, A), 403],
+  ['signed-in user cannot write a creator fund event', () => req('PATCH', 'creatorFundEvents/x', { wallId: str('w1') }, A, ['wallId']), 403],
 ];
 await seed();
 let bad = 0;

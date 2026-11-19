@@ -15910,4 +15910,91 @@ class AppLocalizationsHi extends AppLocalizations {
   String coreCoinEventGeneric(String action, int multiplier) {
     return '$action · ${multiplier}x इवेंट';
   }
+
+  @override
+  String get creatorFundTitle => 'क्रिएटर फंड';
+
+  @override
+  String get creatorFundAbout =>
+      'हर हफ़्ते, Prism Coins का एक पूल क्रिएटर्स में बाँटा जाता है। आपका हिस्सा इस पर निर्भर है कि कितने लोग आपके वॉलपेपर सेव, सेट, डाउनलोड, रीमिक्स और फ़ोल्डर में जोड़ते हैं।';
+
+  @override
+  String creatorFundPaid(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'आपने पिछले हफ़्ते $coinsString कॉइन कमाए',
+      one: 'आपने पिछले हफ़्ते 1 कॉइन कमाया',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creatorFundShare(String share) {
+    return 'यह फ़ंड का $share है।';
+  }
+
+  @override
+  String get creatorFundOff => 'क्रिएटर फ़ंड अभी चालू नहीं है।';
+
+  @override
+  String get creatorFundPending => 'हर हफ़्ते के नतीजे सोमवार को आते हैं।';
+
+  @override
+  String get creatorFundNoActivity => 'पिछले हफ़्ते किसी ने आपके वॉलपेपर से इंटरैक्ट नहीं किया।';
+
+  @override
+  String creatorFundFewUsers(int count, int min) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'पिछले हफ़्ते $count लोगों ने आपके वॉलपेपर से इंटरैक्ट किया। योग्य होने के लिए आपको कम से कम $min चाहिए।',
+      one: 'पिछले हफ़्ते 1 व्यक्ति ने आपके वॉलपेपर से इंटरैक्ट किया। योग्य होने के लिए आपको कम से कम $min चाहिए।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creatorFundSmallShare(int min) {
+    String _temp0 = intl.Intl.pluralLogic(
+      min,
+      locale: localeName,
+      other: 'पिछले हफ़्ते आपका हिस्सा न्यूनतम भुगतान $min कॉइन से कम था।',
+      one: 'पिछले हफ़्ते आपका हिस्सा न्यूनतम भुगतान 1 कॉइन से कम था।',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get creatorFundModeration =>
+      'पिछला हफ़्ता नहीं गिना जाएगा, क्योंकि रिपोर्ट के कारण आपका एक वॉलपेपर समीक्षा के लिए रोका गया।';
+
+  @override
+  String get creatorFundTeam => 'Prism की टीम के अकाउंट क्रिएटर फ़ंड का हिस्सा नहीं हैं।';
+
+  @override
+  String get creatorFundError => 'क्रिएटर फ़ंड लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।';
+
+  @override
+  String get coreCoinCreatorFund => 'क्रिएटर फ़ंड';
+
+  @override
+  String notifPushCreatorFundPaidTitle(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'आपने क्रिएटर फ़ंड से $coinsString कॉइन कमाए',
+      one: 'आपने क्रिएटर फ़ंड से 1 कॉइन कमाया',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushCreatorFundPaidBody => 'अपनी क्रिएटर स्टैट्स में अपना हिस्सा देखें।';
 }

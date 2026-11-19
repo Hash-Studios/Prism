@@ -20,6 +20,7 @@
     "migrate:github-to-r2": "npm run build && node lib/scripts/migrateGithubToR2.js",
     "migrate:ai-receipts": "npm run build && node lib/scripts/backfillAiGenerationReceipts.js",
     "migrate:dedupe-wall-ids": "npm run build && node lib/scripts/dedupeWallIds.js",
+    "creator-fund:dry": "npm run build && node lib/scripts/creatorFundDry.js",
     "migrate:wall-authors": "npm run build && node lib/scripts/backfillWallAuthors.js",
     "migrate:wall-spatial": "npm run build && node lib/scripts/backfillWallSpatial.js",
     "recategorize:walls": "npm run build && node lib/scripts/backfillWallCategories.js",

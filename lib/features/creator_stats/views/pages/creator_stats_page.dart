@@ -6,6 +6,8 @@ import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/router/app_router.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/sign_in_prompt.dart';
+import 'package:Prism/features/creator_fund/biz/bloc/creator_fund_bloc.j.dart';
+import 'package:Prism/features/creator_fund/views/widgets/creator_fund_row.dart';
 import 'package:Prism/features/creator_stats/biz/bloc/creator_stats_bloc.j.dart';
 import 'package:Prism/features/creator_stats/domain/creator_stats.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
@@ -51,9 +53,16 @@ class _CreatorStatsPageState extends State<CreatorStatsPage> {
             title: context.l10n.statsTitle,
             body: SignInPrompt(feature: context.l10n.statsTitle),
           )
-        : BlocProvider(
+        : MultiBlocProvider(
             key: ValueKey(owner),
-            create: (_) => getIt<CreatorStatsBloc>()..add(const CreatorStatsEvent.load()),
+            providers: [
+              BlocProvider<CreatorStatsBloc>(
+                create: (_) => getIt<CreatorStatsBloc>()..add(const CreatorStatsEvent.load()),
+              ),
+              BlocProvider<CreatorFundBloc>(
+                create: (_) => getIt<CreatorFundBloc>()..add(const CreatorFundEvent.load()),
+              ),
+            ],
             child: CreatorStatsView(ownerUid: owner),
           ),
   );
@@ -101,6 +110,10 @@ class CreatorStatsView extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
               child: _TipsSummary(tips: data.tips, walls: data.walls),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: PrismSpace.xs),
+              child: CreatorFundRow(),
             ),
             const SizedBox(height: PrismSpace.xl),
             _Selector(

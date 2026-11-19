@@ -3,6 +3,8 @@ import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {db, findUserByEmail, int, REGION, str} from "./common";
 import {activeOwner, addHistory, hash, historyRef, incarnation, type History} from "./creatorStatsHistory";
 import {notificationCopyPayload} from "./notificationCatalog";
+import {prepareFundEvent} from "./creatorFund/events";
+import {normalizeId} from "./viewStats";
 
 export const DOC_ID = /^[A-Za-z0-9_-]{1,64}$/;
 export const REMIX_LEDGER = "wallRemixes";
@@ -158,6 +160,24 @@ export async function syncRemixCredit(remixId: string): Promise<RemixNotice | nu
     const currentIncarnation = originalSnap?.createTime;
 
     const creatorUid = str(original?.creatorUid);
+    const actor = str(remix?.creatorUid);
+    const firstCredit = wanted && credited !== wanted && !noticeSnap.exists;
+    const pending = noticeSnap.data()?.fundPending;
+    const originalBorn = originalSnap && incarnation(originalSnap);
+    const matchesPending = pending?.originalId === wanted && pending.originalBorn === originalBorn &&
+      pending.remixBorn === incarnation(remixSnap) && (!pending.creator || pending.creator === hash(creatorUid)) &&
+      (!pending.actor || pending.actor === hash(actor));
+    const fundAt = firstCredit ? Date.now() : matchesPending ? pending.at : null;
+    let fund: Awaited<ReturnType<typeof prepareFundEvent>> = null;
+    if (wanted && originalSnap && creatorUid && actor && typeof fundAt === "number") {
+      let id: string | undefined;
+      try {
+        id = normalizeId(original?.id);
+      } catch {
+        id = undefined;
+      }
+      if (id) fund = await prepareFundEvent(tx, id, "remixes", actor, fundAt, originalSnap);
+    }
     if (wanted && originalSnap && remixSnap.exists && creatorUid && await activeOwner(tx, creatorUid)) {
       const firstRef = db.collection("creatorStatsRemixMarkers").doc(hash(
         `${remixRef.path}:${incarnation(remixSnap)}`,
@@ -177,6 +197,8 @@ export async function syncRemixCredit(remixId: string): Promise<RemixNotice | nu
       }
     }
 
+    if (fund) tx.set(fund.ref, fund.data);
+    if (matchesPending && creatorUid && actor) tx.update(noticeRef, {fundPending: admin.firestore.FieldValue.delete()});
     if (credited !== wanted) {
       if (credited !== "") {
         tx.delete(ledgerRef);
@@ -208,6 +230,8 @@ export async function syncRemixCredit(remixId: string): Promise<RemixNotice | nu
         remixId,
         originalCreateTime: currentIncarnation,
         sent: false,
+        ...(firstCredit && (!creatorUid || !actor) ? {fundPending: {at: fundAt, originalId: wanted,
+          originalBorn, remixBorn: incarnation(remixSnap), creator: creatorUid && hash(creatorUid), actor: actor && hash(actor)}} : {}),
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
       return notice;
@@ -295,7 +319,7 @@ export const onWallRemixWritten = onDocumentWritten(
     const after = event.data?.after?.data();
     const wallId = event.params.wallId;
     const remixStateChanged = !before || !after || before.review !== after.review || before.remixOf !== after.remixOf ||
-      before.isAiGenerated !== after.isAiGenerated || before.email !== after.email;
+      before.isAiGenerated !== after.isAiGenerated || before.email !== after.email || before.creatorUid !== after.creatorUid;
     if (remixStateChanged && (typeof before?.remixOf === "string" || typeof after?.remixOf === "string")) {
       const notice = await syncRemixCredit(wallId);
       if (notice) await sendRemixNotice(notice);
@@ -303,7 +327,7 @@ export const onWallRemixWritten = onDocumentWritten(
     const couldBeOriginal = before?.isAiGenerated === true || after?.isAiGenerated === true;
     if (couldBeOriginal && (!before || !after || before.review !== after.review ||
       before.isAiGenerated !== after.isAiGenerated || before.aiPrompt !== after.aiPrompt ||
-      before.email !== after.email || before.remixOf !== after.remixOf)) {
+      before.email !== after.email || before.creatorUid !== after.creatorUid || before.remixOf !== after.remixOf)) {
       await reconcileRemixesOf(wallId);
     }
   },

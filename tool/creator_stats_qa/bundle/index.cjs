@@ -15,6 +15,7 @@ exports.getCreatorStats = stats.getCreatorStats;
 exports.onCreatorStatsDailyWritten = daily.onCreatorStatsDailyWritten;
 exports.onCreatorStatsFolderCreated = history.onCreatorStatsFolderCreated;
 exports.tipCreator = require('./fnlib/tips.js').tipCreator;
+exports.getCreatorFundStatus = require('./fnlib/creatorFund/status.js').getCreatorFundStatus;
 const comments = require('./fnlib/comments.js');
 exports.addComment = comments.addComment;
 exports.deleteComment = comments.deleteComment;

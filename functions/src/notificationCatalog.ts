@@ -1,6 +1,7 @@
 /** English notification copy is the compatibility fallback for old clients and unsupported locales. */
 export type NotificationCopy =
   | { kind: "creatorStatsWeekly"; week: string }
+  | { kind: "creatorFundPaid"; coins: number; week: string }
   | { kind: "challengeWinner"; theme: string }
   | { kind: "wallApprovedForArtist"; wallTitle: string }
   | { kind: "desktopVersionApproved"; wallTitle: string }
@@ -93,6 +94,11 @@ export function renderNotificationCopy(
   case "creatorStatsWeekly":
     return {kind: copy.kind, args: {week: copy.week}, title: "Your walls this week",
       body: `See how your walls did in ${copy.week}.`};
+  case "creatorFundPaid":
+    return {kind: copy.kind, args: {coins: copy.coins, week: copy.week},
+      title: copy.coins === 1 ? "You earned 1 coin from the Creator fund" :
+        `You earned ${copy.coins.toLocaleString("en-US")} coins from the Creator fund`,
+      body: "See your share in Creator stats."};
   case "challengeWinner":
     return {kind: copy.kind, args: {theme: copy.theme}, title: "You won the weekly challenge",
       body: `Your wallpaper won “${copy.theme}”. See the results.`};
@@ -439,6 +445,8 @@ export function nativeNotificationLocalization(
   message: Pick<RenderedNotificationCopy, "kind" | "args">,
 ): NativeNotificationLocalization | null {
   const kind = message.kind;
+  // Installed builds lack notif_push_creator_fund_paid_* resources, so the banner stays English and the inbox localizes.
+  if (kind === "creatorFundPaid") return null;
   if (kind === "custom" || kind === "wallRemixed" || kind === "editorsChoicePicked" || kind === "creatorStatsWeekly" ||
     kind === "challengeWinner") return null;
   // Later tips of the day only rewrite the inbox item, so this copy never reaches a system banner.

@@ -8,6 +8,9 @@ import 'package:Prism/core/router/deep_link_parser.dart';
 import 'package:Prism/core/router/notification_route_mapper.dart';
 import 'package:Prism/core/utils/status.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/creator_fund/biz/bloc/creator_fund_bloc.j.dart';
+import 'package:Prism/features/creator_fund/domain/creator_fund_repository.dart';
+import 'package:Prism/features/creator_fund/domain/creator_fund_status.dart';
 import 'package:Prism/features/creator_stats/biz/bloc/creator_stats_bloc.j.dart';
 import 'package:Prism/features/creator_stats/data/creator_stats_repository_impl.dart';
 import 'package:Prism/features/creator_stats/domain/creator_stats.dart';
@@ -79,11 +82,25 @@ Map<String, Object?> tipsFixture(Map<String, Object?> stats) {
   };
 }
 
+class _OffFund implements CreatorFundRepository {
+  @override
+  Future<CreatorFundStatus> load() async => const CreatorFundOff(week: '2026-W46');
+}
+
+Widget _withFund({required CreatorStatsBloc value, required Widget child}) => MultiBlocProvider(
+  providers: [
+    BlocProvider<CreatorStatsBloc>.value(value: value),
+    BlocProvider<CreatorFundBloc>(create: (_) => CreatorFundBloc(_OffFund())..add(const CreatorFundEvent.load())),
+  ],
+  child: child,
+);
+
 void main() {
   late FakeAppAnalytics analytics;
   setUp(() {
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
+    getIt.registerFactory<CreatorFundBloc>(() => CreatorFundBloc(_OffFund()));
   });
   tearDown(() async {
     AnalyticsRuntime.reset();
@@ -234,7 +251,7 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: MediaQuery(
           data: MediaQueryData(textScaler: TextScaler.linear(scale)),
-          child: BlocProvider<CreatorStatsBloc>.value(
+          child: _withFund(
             value: bloc,
             child: const CreatorStatsView(ownerUid: 'alice'),
           ),
@@ -382,7 +399,8 @@ void main() {
     await tester.pump();
     await tester.tap(find.widgetWithText(PrismChip, 'Saves'));
     verify(() => bloc.add(const CreatorStatsEvent.select(StatsMetric.saves))).called(1);
-    expect(analytics.events.single.eventName, 'creator_stats_metric_switched');
+    expect(analytics.events.map((event) => event.eventName), contains('creator_stats_metric_switched'));
+    expect(analytics.events.where((event) => event.eventName == 'creator_stats_metric_switched'), hasLength(1));
   });
   testWidgets('loaded dashboard and chart adapt to large text', (tester) async {
     await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())), scale: 2);
@@ -437,7 +455,7 @@ void main() {
     await tester.tap(find.text('Blue sky'));
     await tester.pumpAndSettle();
     expect(find.byType(WallStatsPage), findsOneWidget);
-    expect(analytics.events.single.eventName, 'creator_wall_stats_opened');
+    expect(analytics.events.where((event) => event.eventName == 'creator_wall_stats_opened'), hasLength(1));
     final chart = find.bySemanticsLabel(RegExp('Views, eight weeks.*Unavailable'));
     expect(chart, findsOneWidget);
     expect(tester.takeException(), isNull);

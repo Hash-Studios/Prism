@@ -15817,4 +15817,93 @@ class AppLocalizationsId extends AppLocalizations {
   String coreCoinEventGeneric(String action, int multiplier) {
     return '$action · event ${multiplier}x';
   }
+
+  @override
+  String get creatorFundTitle => 'Dana kreator';
+
+  @override
+  String get creatorFundAbout =>
+      'Setiap minggu, sebagian dana Prism Coins dibagikan kepada kreator. Bagian Anda bergantung pada berapa banyak orang yang menyimpan, menetapkan, mengunduh, meremix, dan menambahkan wallpaper Anda ke folder.';
+
+  @override
+  String creatorFundPaid(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Anda mendapat $coinsString koin minggu lalu',
+      one: 'Anda mendapat 1 koin minggu lalu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creatorFundShare(String share) {
+    return 'Itu $share dari dana.';
+  }
+
+  @override
+  String get creatorFundOff => 'Dana kreator tidak berjalan saat ini.';
+
+  @override
+  String get creatorFundPending => 'Hasil setiap minggu keluar pada hari Senin.';
+
+  @override
+  String get creatorFundNoActivity => 'Tidak ada yang berinteraksi dengan wallpaper Anda minggu lalu.';
+
+  @override
+  String creatorFundFewUsers(int count, int min) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Minggu lalu, $count orang berinteraksi dengan wallpaper Anda. Anda memerlukan minimal $min untuk memenuhi syarat.',
+      one:
+          'Minggu lalu, 1 orang berinteraksi dengan wallpaper Anda. Anda memerlukan minimal $min untuk memenuhi syarat.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creatorFundSmallShare(int min) {
+    String _temp0 = intl.Intl.pluralLogic(
+      min,
+      locale: localeName,
+      other: 'Bagian Anda minggu lalu kurang dari pembayaran minimum $min koin.',
+      one: 'Bagian Anda minggu lalu kurang dari pembayaran minimum 1 koin.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get creatorFundModeration =>
+      'Minggu lalu tidak dihitung, karena laporan menahan salah satu wallpaper Anda untuk ditinjau.';
+
+  @override
+  String get creatorFundTeam => 'Akun tim Prism tidak termasuk dalam Dana kreator.';
+
+  @override
+  String get creatorFundError => 'Dana kreator tidak dapat dimuat. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
+  String get coreCoinCreatorFund => 'Dana kreator';
+
+  @override
+  String notifPushCreatorFundPaidTitle(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Anda mendapat $coinsString koin dari Dana kreator',
+      one: 'Anda mendapat 1 koin dari Dana kreator',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushCreatorFundPaidBody => 'Lihat bagian Anda di statistik kreator.';
 }

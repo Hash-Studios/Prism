@@ -5,6 +5,7 @@ import {getAdminEmails} from "./adminConfig";
 import {sendToUserByEmail} from "./notificationHelper";
 import {db, REGION} from "./common";
 import {parseCommentTarget, setCommentState} from "./comments";
+import {weekKey} from "./economy";
 import {hideFolder} from "./publicFolders";
 
 interface ReportDoc {
@@ -64,16 +65,24 @@ async function reportedByTrustedUsers(contentType: string, targetId: string): Pr
  * Takes an approved wall back to review when trusted users reported it.
  * An admin re-approves it from the review screen. Returns true when this call held the wall.
  */
-async function holdWallAfterReports(wallId: string): Promise<boolean> {
+export async function holdWallAfterReports(wallId: string): Promise<boolean> {
   if (!(await reportedByTrustedUsers("wall", wallId))) return false;
   const wallRef = db.collection("walls").doc(wallId);
   return db.runTransaction(async (tx) => {
     const wall = await tx.get(wallRef);
     if (wall.data()?.review !== true) return false;
+    const heldAt = admin.firestore.Timestamp.now();
+    const uid = wall.data()?.creatorUid;
+    if (typeof uid === "string" && uid && !uid.includes("/")) {
+      const barrier = db.doc(`creatorDeletionState/${uid}`);
+      if ((await tx.get(barrier)).data()?.closed !== true) {
+        tx.set(barrier.collection("fundStrikes").doc(weekKey(heldAt.toMillis())), {heldAt});
+      }
+    }
     tx.update(wallRef, {
       review: false,
       heldForReview: true,
-      heldAt: admin.firestore.FieldValue.serverTimestamp(),
+      heldAt,
     });
     return true;
   });

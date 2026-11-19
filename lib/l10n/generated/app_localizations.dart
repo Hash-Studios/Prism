@@ -25068,6 +25068,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{action} · {multiplier}x event'**
   String coreCoinEventGeneric(String action, int multiplier);
+
+  /// Creator fund section title on the creator stats page.
+  ///
+  /// In en, this message translates to:
+  /// **'Creator fund'**
+  String get creatorFundTitle;
+
+  /// Explains how the weekly Creator fund share is calculated.
+  ///
+  /// In en, this message translates to:
+  /// **'Each week, a pool of Prism Coins is shared among creators. Your share depends on how many people save, set, download, remix, and add your walls to folders.'**
+  String get creatorFundAbout;
+
+  /// Creator fund: coins earned last week.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins, plural, =1{You earned 1 coin last week} other{You earned {coins} coins last week}}'**
+  String creatorFundPaid(int coins);
+
+  /// Creator fund: the user's share of the fund as a percentage.
+  ///
+  /// In en, this message translates to:
+  /// **'That is {share} of the fund.'**
+  String creatorFundShare(String share);
+
+  /// Creator fund is not running this week.
+  ///
+  /// In en, this message translates to:
+  /// **'The Creator fund is not running right now.'**
+  String get creatorFundOff;
+
+  /// Creator fund: the fund is on, but last week's results are not ready yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Results for each week come out on Monday.'**
+  String get creatorFundPending;
+
+  /// Creator fund not qualified: no engagement last week.
+  ///
+  /// In en, this message translates to:
+  /// **'No one engaged with your walls last week.'**
+  String get creatorFundNoActivity;
+
+  /// Creator fund not qualified: too few people engaged.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Last week, 1 person engaged with your walls. You need at least {min} to qualify.} other{Last week, {count} people engaged with your walls. You need at least {min} to qualify.}}'**
+  String creatorFundFewUsers(int count, int min);
+
+  /// Creator fund not qualified: share below the minimum payout.
+  ///
+  /// In en, this message translates to:
+  /// **'{min, plural, =1{Your share last week was less than the minimum payout of 1 coin.} other{Your share last week was less than the minimum payout of {min} coins.}}'**
+  String creatorFundSmallShare(int min);
+
+  /// Creator fund not qualified: a wall was held for moderation review.
+  ///
+  /// In en, this message translates to:
+  /// **'Last week does not count, because reports held one of your walls for review.'**
+  String get creatorFundModeration;
+
+  /// Creator fund not qualified: team account.
+  ///
+  /// In en, this message translates to:
+  /// **'Prism team accounts are not part of the Creator fund.'**
+  String get creatorFundTeam;
+
+  /// Creator fund failed to load.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load the Creator fund. Check your connection and try again.'**
+  String get creatorFundError;
+
+  /// Coin history label for a Creator fund payout.
+  ///
+  /// In en, this message translates to:
+  /// **'Creator fund'**
+  String get coreCoinCreatorFund;
+
+  /// Push notification title for a Creator fund payout.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins, plural, =1{You earned 1 coin from the Creator fund} other{You earned {coins} coins from the Creator fund}}'**
+  String notifPushCreatorFundPaidTitle(int coins);
+
+  /// Push notification body for a Creator fund payout.
+  ///
+  /// In en, this message translates to:
+  /// **'See your share in Creator stats.'**
+  String get notifPushCreatorFundPaidBody;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -243,9 +243,12 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
       limit: (n: number) => next({limitTo: n}),
       offset: (n: number) => next({offsetBy: n}),
       startAt: (value: unknown) => next({startAt: value}),
-      startAfter: (value: Snap | {id: string; path?: string}) =>
-        next({startAfter: "data" in value ? value : state.group ? value.path : value.id}),
+      startAfter: (value: string | Snap | {id: string; path?: string}) =>
+        next({startAfter: typeof value === "string" ? value : "data" in value ? value : state.group ? value.path : value.id}),
       select: (...fields: string[]) => next({projection: fields}),
+      stream: async function* () {
+        for (const doc of rows()) yield doc;
+      },
       count: () => ({get: async () => {
         if ((!pending || transactionReadDepth === 0) && observed?.outsideReads !== undefined) observed.outsideReads++;
         return {data: () => ({count: rows().length})};
@@ -271,6 +274,7 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
   function collection(path: string) {
     return {
       ...query(path, {filters: [], orders: [], offsetBy: 0}),
+      path,
       doc: (id?: string) => ref(`${path}/${id ?? `auto${++auto}`}`),
       add: async (data: Doc) => {
         const added = ref(`${path}/auto${++auto}`);
@@ -284,6 +288,35 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
   t.mock.method(db, "collectionGroup", (name: string) =>
     query("", {filters: [], orders: [], offsetBy: 0, group: name}));
   t.mock.method(db, "doc", (path: string) => ref(path));
+  const withFieldMask = (refs: FakeRef[]) => refs.filter((r) => "get" in r);
+  t.mock.method(db, "getAll", async (...refs: FakeRef[]) => Promise.all(withFieldMask(refs).map((r) => r.get())));
+  t.mock.method(db, "batch", () => {
+    const ops: Array<() => Promise<unknown>> = [];
+    const batch = {
+      set: (r: FakeRef, data: Doc, options?: {merge?: boolean}) => {
+        ops.push(() => r.set(data, options));
+        return batch;
+      },
+      update: (r: FakeRef, data: Doc) => {
+        ops.push(() => r.update(data));
+        return batch;
+      },
+      delete: (r: FakeRef) => {
+        ops.push(() => r.delete());
+        return batch;
+      },
+      commit: async () => {
+        for (const op of ops.splice(0)) await op();
+        return [];
+      },
+    };
+    return batch;
+  });
+  t.mock.method(db, "recursiveDelete", async (target: {path: string}) => {
+    for (const path of [...store.keys()]) {
+      if (path === target.path || path.startsWith(`${target.path}/`)) write(path, undefined);
+    }
+  });
   // The fake keeps one write buffer, so transactions run one at a time, like a Firestore with full contention.
   let turn: Promise<unknown> = Promise.resolve();
   t.mock.method(db, "runTransaction", (callback: (tx: unknown) => Promise<unknown>) => {
@@ -339,7 +372,7 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
       },
       getAll: async (...targets: Array<{get: () => Promise<unknown>}>) => {
         if (wrote) throw new Error("Firestore transaction reads must precede writes");
-        return startOrQueue(() => Promise.all(targets.map(read)));
+        return startOrQueue(() => Promise.all(targets.filter((target) => "get" in target).map(read)));
       },
       set: guarded((r: FakeRef, data: Doc, options?: {merge?: boolean}) => r.set(data, options)),
       update: guarded((r: FakeRef, data: Doc) => r.update(data)),

@@ -87,6 +87,8 @@ export {
 export {getCreatorStats, creatorStatsWeekly} from "./creatorStats";
 export {onCreatorStatsDailyWritten, processCreatorStatsDailyQueueScheduled} from "./creatorStatsDaily";
 export {onCreatorStatsFolderCreated} from "./creatorStatsHistory";
+export {settleCreatorFund} from "./creatorFund/settle";
+export {getCreatorFundStatus} from "./creatorFund/status";
 export {listWeeklyChallenges, getWeeklyChallenge, setChallengeVote, onChallengeWallWritten, onChallengeWallSubmitted} from "./weeklyChallenges";
 
 export {scheduleWeeklyChallenges} from "./challengeScheduler";
