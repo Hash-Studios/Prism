@@ -10040,7 +10040,7 @@
   },
   "foldersAddToFolder": "Add to folder",
   "@foldersAddToFolder": {
-    "description": "Action on the toast shown after a wallpaper is favourited. Opens the folder picker."
+    "description": "Title of the folder picker sheet, and the action on the toast shown after a wallpaper is favourited."
   },
   "foldersNewFolder": "New folder",
   "@foldersNewFolder": {
@@ -10056,15 +10056,31 @@
   },
   "foldersCreateFolder": "Create folder",
   "@foldersCreateFolder": {
-    "description": "Tooltip of the icon button that adds the typed folder name."
+    "description": "Button on the New folder page that creates the folder."
   },
-  "foldersSuggested": "Suggested",
-  "@foldersSuggested": {
-    "description": "Tag on a suggested folder name when the user has no folders yet."
+  "foldersCreateNewFolder": "Create new folder",
+  "@foldersCreateNewFolder": {
+    "description": "Row in the Add to folder sheet that opens the New folder page."
   },
-  "foldersNewTag": "New",
-  "@foldersNewTag": {
-    "description": "Tag on a folder row that is created when the user taps Done."
+  "foldersCreateNewFolderSubtitle": "Organise your saves",
+  "@foldersCreateNewFolderSubtitle": {
+    "description": "Subtitle under Create new folder in the Add to folder sheet."
+  },
+  "foldersNewFolderHelp": "Make a folder for your walls. You can edit it later.",
+  "@foldersNewFolderHelp": {
+    "description": "Help line on the New folder page of the Add to folder sheet."
+  },
+  "foldersPickerEmpty": "You have no folders yet.",
+  "@foldersPickerEmpty": {
+    "description": "Short line in the Add to folder sheet when the user has no folders."
+  },
+  "foldersCreateFailed": "Could not create the folder. Try again.",
+  "@foldersCreateFailed": {
+    "description": "Error under the name field when creating a folder fails."
+  },
+  "foldersClearName": "Clear name",
+  "@foldersClearName": {
+    "description": "Tooltip of the button that clears the folder name field."
   },
   "foldersItemCount": "{count, plural, =0{No wallpapers} =1{1 wallpaper} other{{count} wallpapers}}",
   "@foldersItemCount": {
@@ -10174,14 +10190,6 @@
   "foldersMoreOptions": "More options",
   "@foldersMoreOptions": {
     "description": "Tooltip of the folder page overflow menu."
-  },
-  "foldersSuggestionLockScreen": "Lock screen",
-  "@foldersSuggestionLockScreen": {
-    "description": "Suggested folder name for wallpapers to use on the lock screen."
-  },
-  "foldersSuggestionHomeScreen": "Home screen",
-  "@foldersSuggestionHomeScreen": {
-    "description": "Suggested folder name for wallpapers to use on the home screen."
   },
   "moodDreamyTitle": "Dreamy",
   "@moodDreamyTitle": {

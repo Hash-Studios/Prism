@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
@@ -21,6 +22,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Opens the folder picker for [wall]. Guests see the sign-in prompt instead.
@@ -30,13 +32,18 @@ Future<void> showFolderSheet(BuildContext context, FavouriteWallEntity wall) asy
     await showPrismSheet<void>(
       context,
       builder: (sheetContext) => PrismSheetBody(
-        title: sheetContext.l10n.foldersSaveToFolder,
+        title: sheetContext.l10n.foldersAddToFolder,
         child: SignInPrompt(feature: sheetContext.l10n.foldersSignInFeature),
       ),
     );
     return;
   }
-  await showPrismSheet<void>(context, dismissKeyboardOnDrag: true, builder: (_) => FolderSheet(wall: wall));
+  await showPrismSheet<void>(
+    context,
+    detents: const <PrismSheetDetent>[PrismSheetDetent.fit],
+    dismissKeyboardOnDrag: true,
+    builder: (_) => FolderSheet(wall: wall),
+  );
 }
 
 /// Asks for a folder name. Returns the trimmed name, or null when the user closes the sheet.
@@ -64,6 +71,10 @@ Future<String?> showFolderNameSheet(
   );
 }
 
+enum _FolderSheetPage { folders, create }
+
+/// The Add to folder sheet. Page one ticks folders and commits them on Done in one save. Page two names a new folder
+/// and creates it at once, then goes back to page one with that folder first and ticked.
 class FolderSheet extends StatefulWidget {
   const FolderSheet({super.key, required this.wall});
 
@@ -77,27 +88,41 @@ class _FolderSheetState extends State<FolderSheet> {
   final TextEditingController _name = TextEditingController();
   final String _ownerId = app_state.prismUser.id;
   bool _closing = false;
+  bool _loading = false;
+  _FolderSheetPage _page = _FolderSheetPage.folders;
 
-  /// Null until the user changes a tick; until then the ticks show the wall's folders.
-  Set<String>? _selected;
-  final List<String> _newNames = <String>[];
+  /// The ticks the user changed, by folder id. A folder not here keeps the tick the wall's membership gives it.
+  final Map<String, bool> _ticks = <String, bool>{};
+
+  /// Folders made in this sheet, newest first. They show above the other folders.
+  final List<String> _createdIds = <String>[];
+  bool _creating = false;
+  String? _createError;
 
   String get _key => folderItemKey(widget.wall);
 
   @override
   void initState() {
     super.initState();
+    _name.addListener(_nameChanged);
     unawaited(_load());
   }
 
   Future<void> _load() async {
+    if (_loading || _closing) return;
     final FoldersBloc bloc = context.read<FoldersBloc>();
-    await ensureFoldersLoaded(context);
-    if (mounted &&
-        app_state.prismUser.id == _ownerId &&
-        bloc.state.userId == _ownerId &&
-        bloc.state.status == LoadStatus.success) {
-      bloc.add(FoldersEvent.membershipRequested(wall: widget.wall));
+    setState(() => _loading = true);
+    try {
+      await ensureFoldersLoaded(context);
+      if (mounted &&
+          !_closing &&
+          app_state.prismUser.id == _ownerId &&
+          bloc.state.userId == _ownerId &&
+          bloc.state.status == LoadStatus.success) {
+        await bloc.run((id) => FoldersEvent.membershipRequested(wall: widget.wall, operationId: id));
+      }
+    } finally {
+      if (mounted && !_closing) setState(() => _loading = false);
     }
   }
 
@@ -107,53 +132,127 @@ class _FolderSheetState extends State<FolderSheet> {
     super.dispose();
   }
 
-  Set<String> _current(FoldersState state) => _selected ?? state.membership[_key] ?? const <String>{};
+  void _nameChanged() => setState(() => _createError = null);
+
+  bool _canEdit(FolderEntity folder) => !folder.isSmart && folder.roleOf(_ownerId) != null;
+
+  Set<String> _current(FoldersState state) {
+    final Set<String> selected = <String>{...?state.membership[_key]};
+    for (final FolderEntity folder in state.folders.where(_canEdit)) {
+      switch (_ticks[folder.id]) {
+        case true:
+          selected.add(folder.id);
+        case false:
+          selected.remove(folder.id);
+        case null:
+          break;
+      }
+    }
+    return selected;
+  }
+
+  bool _ready(FoldersState state) =>
+      !_loading && state.status == LoadStatus.success && state.membershipStatus[_key] == LoadStatus.success;
 
   void _toggle(FoldersState state, String folderId) {
     PrismHaptics.selection();
+    final bool checked = _ticks[folderId] ?? (state.membership[_key]?.contains(folderId) ?? false);
+    setState(() => _ticks[folderId] = !checked);
+  }
+
+  bool _isOwner(FoldersBloc bloc) => app_state.prismUser.id == _ownerId && bloc.state.userId == _ownerId;
+
+  void _close() {
+    if (_closing) return;
+    final route = ModalRoute.of(context);
+    if (route == null || !route.isActive) return;
+    _closing = true;
+    if (route.isCurrent) {
+      route.navigator!.pop();
+    } else {
+      route.navigator!.removeRoute(route);
+    }
+  }
+
+  void _showPage(_FolderSheetPage page) {
+    if (page == _FolderSheetPage.folders) FocusScope.of(context).unfocus();
     setState(() {
-      final Set<String> next = _current(state).toSet();
-      if (!next.remove(folderId)) next.add(folderId);
-      _selected = next;
+      _page = page;
+      _createError = null;
     });
   }
 
-  void _addName([String? raw]) {
-    final String? name = normalizeFolderName(raw ?? _name.text);
-    if (name == null || _newNames.contains(name)) return;
-    PrismHaptics.selection();
-    setState(() => _newNames.add(name));
+  Future<void> _create() async {
+    final String? name = normalizeFolderName(_name.text);
+    if (name == null || _creating || _closing || _page != _FolderSheetPage.create) return;
+    final route = ModalRoute.of(context);
+    if (route == null || !route.isCurrent) return;
+    final FoldersBloc bloc = context.read<FoldersBloc>();
+    if (!_isOwner(bloc)) {
+      _close();
+      return;
+    }
+    final AppLocalizations l10n = context.l10n;
+    final String folderId = newFolderId();
+    setState(() => _creating = true);
+    final bool ok = await bloc.run(
+      (id) => FoldersEvent.createRequested(name: name, folderId: folderId, operationId: id),
+    );
+    if (ok) unawaited(analytics.track(const FolderCreatedEvent(source: 'sheet', withWall: false)));
+    if (!mounted || _closing || !route.isActive) return;
+    if (!_isOwner(bloc)) {
+      _close();
+      return;
+    }
+    if (!ok) {
+      PrismHaptics.error();
+      setState(() {
+        _creating = false;
+        _createError = l10n.foldersCreateFailed;
+      });
+      return;
+    }
+    PrismHaptics.success();
     _name.clear();
+    setState(() {
+      _creating = false;
+      _createdIds.insert(0, folderId);
+      _ticks[folderId] = true;
+    });
+    _showPage(_FolderSheetPage.folders);
   }
 
-  Future<void> _done(FoldersState state) async {
-    if (app_state.prismUser.id != _ownerId || state.userId != _ownerId) return;
-    _addName();
+  Future<void> _done() async {
+    if (_closing || _page != _FolderSheetPage.folders || ModalRoute.of(context)?.isCurrent != true) return;
+    final FoldersBloc bloc = context.read<FoldersBloc>();
+    final FoldersState state = bloc.state;
+    if (!_isOwner(bloc)) {
+      _close();
+      return;
+    }
+    if (!_ready(state)) return;
     final Set<String> initial = state.membership[_key] ?? const <String>{};
     final Set<String> selected = _current(state);
-    final List<String> newNames = List<String>.of(_newNames);
-    final int added = selected.difference(initial).length + newNames.length;
+    final int added = selected.difference(initial).length;
     final bool changed = added > 0 || initial.difference(selected).isNotEmpty;
-    final FoldersBloc bloc = context.read<FoldersBloc>();
     final FavouriteWallsAdapter favourites = context.favouriteWallsAdapter(listen: false);
     final AppLocalizations l10n = context.l10n;
-    _closing = true;
-    Navigator.of(context).pop();
+    _close();
     if (!changed) return;
     final FavouriteWallEntity wall = widget.wall;
     // Favourite first, so a saved folder item always has its favourite.
     if (added > 0) {
       final bool favourited = await _favourite(favourites, wall);
-      if (app_state.prismUser.id != _ownerId || bloc.state.userId != _ownerId) return;
+      if (!_isOwner(bloc)) return;
       if (!favourited) {
         toasts.error(l10n.foldersSaveFailed);
         return;
       }
     }
     final bool ok = await bloc.run(
-      (id) => FoldersEvent.saveRequested(wall: wall, folderIds: selected, newNames: newNames, operationId: id),
+      (id) => FoldersEvent.saveRequested(wall: wall, folderIds: selected, operationId: id),
     );
-    if (app_state.prismUser.id != _ownerId || bloc.state.userId != _ownerId) return;
+    if (!_isOwner(bloc)) return;
     if (!ok) {
       toasts.error(l10n.foldersSaveFailed);
       return;
@@ -164,9 +263,6 @@ class _FolderSheetState extends State<FolderSheet> {
           WallSavedToFolderEvent(wallId: wall.id, provider: wall.source.legacyProviderString, folderCount: added),
         ),
       );
-      for (int i = 0; i < newNames.length; i++) {
-        unawaited(analytics.track(const FolderCreatedEvent(source: 'sheet', withWall: true)));
-      }
       final TasteSignal? signal = _folderAddSignal(wall);
       if (signal != null && getIt.isRegistered<TasteSignalStore>()) {
         unawaited(getIt<TasteSignalStore>().record(signal));
@@ -188,101 +284,323 @@ class _FolderSheetState extends State<FolderSheet> {
     }
   }
 
-  Widget _body(BuildContext context, FoldersState state) {
+  /// The folders the user can put a wall in: their own and the ones they edit. A smart folder fills itself from
+  /// rules, so it is never a save target. Folders made in this sheet come first.
+  List<FolderEntity> _targets(FoldersState state) {
+    final List<FolderEntity> targets = state.folders.where(_canEdit).toList();
+    final List<FolderEntity> created = <FolderEntity>[
+      for (final String id in _createdIds) ?targets.where((folder) => folder.id == id).firstOrNull,
+    ];
+    return <FolderEntity>[...created, ...targets.where((folder) => !_createdIds.contains(folder.id))];
+  }
+
+  List<Widget> _rows(BuildContext context, FoldersState state) {
     final AppLocalizations l10n = context.l10n;
-    final LoadStatus? membership = state.membershipStatus[_key];
-    if (state.status == LoadStatus.failure || membership == LoadStatus.failure) {
-      return GlintState(
-        kind: GlintStateKind.error,
-        title: l10n.foldersSaveFailed,
-        actionLabel: l10n.wallpaperTryAgain,
-        actionVariant: PrismButtonVariant.tonal,
-        onAction: () => unawaited(_load()),
-      );
+    if (state.status == LoadStatus.failure || state.membershipStatus[_key] == LoadStatus.failure) {
+      return <Widget>[
+        PrismInlineState(
+          icon: Icons.cloud_off_rounded,
+          title: l10n.foldersSaveFailed,
+          actionLabel: l10n.wallpaperTryAgain,
+          onAction: () => unawaited(_load()),
+        ),
+      ];
     }
-    // Three 64 px rows: the sheet body scrolls, so the skeleton list needs a bounded height.
-    if (membership != LoadStatus.success) return SizedBox(height: 3 * 64, child: PrismSkeleton.rows(rows: 3));
+    if (!_ready(state)) return <Widget>[SizedBox(height: 3 * 64, child: PrismSkeleton.rows(rows: 3))];
     final Set<String> selected = _current(state);
-    // A smart folder fills itself from rules, so it is never a save target.
-    final List<FolderEntity> targets = state.folders.where((folder) => !folder.isSmart).toList();
-    final bool suggest = targets.isEmpty;
+    final List<FolderEntity> targets = _targets(state);
+    return <Widget>[
+      PrismRow(
+        key: const ValueKey<String>('create-folder'),
+        title: l10n.foldersCreateNewFolder,
+        subtitle: l10n.foldersCreateNewFolderSubtitle,
+        padding: _rowPadding,
+        leading: const _CreateFolderTile(),
+        onTap: () {
+          PrismHaptics.tap();
+          _showPage(_FolderSheetPage.create);
+        },
+      ),
+      if (targets.isEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.xl, vertical: PrismSpace.sm),
+          child: Text(l10n.foldersPickerEmpty, style: PrismTextStyles.caption(context)),
+        ),
+      for (final FolderEntity folder in targets)
+        FolderCheckRow(
+          key: ValueKey<String>(folder.id),
+          title: folder.name,
+          covers: folder.covers,
+          checked: selected.contains(folder.id),
+          onTap: () => _toggle(state, folder.id),
+        ),
+    ];
+  }
+
+  Widget _foldersPage(BuildContext context, FoldersState state) {
+    final AppLocalizations l10n = context.l10n;
     return Column(
+      key: const ValueKey<_FolderSheetPage>(_FolderSheetPage.folders),
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: PrismSpace.md),
-          child: PrismTextField(
-            controller: _name,
-            hint: l10n.foldersNewFolder,
-            prefixIcon: Icons.create_new_folder_outlined,
-            maxLength: folderNameMaxLength,
-            textCapitalization: TextCapitalization.sentences,
-            textInputAction: TextInputAction.done,
-            onSubmitted: _addName,
-            suffix: PrismIconButton(icon: Icons.add_rounded, tooltip: l10n.foldersCreateFolder, onPressed: _addName),
+        _FolderSheetHeader(title: l10n.foldersAddToFolder, onClose: _close),
+        Flexible(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.55),
+            child: _FadeBottom(
+              child: ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.only(top: PrismSpace.xs, bottom: _FadeBottom.height),
+                children: _rows(context, state),
+              ),
+            ),
           ),
         ),
-        for (final String name in _newNames)
-          FolderCheckRow(
-            key: ValueKey<String>('new:$name'),
-            title: name,
-            covers: <String>[widget.wall.thumbnailUrl],
-            tag: l10n.foldersNewTag,
-            checked: true,
-            onTap: () => setState(() => _newNames.remove(name)),
+        Padding(
+          padding: PrismBottomSheet.actionsPadding,
+          child: PrismButton(
+            label: l10n.coreDone,
+            expand: true,
+            onPressed: _ready(state) ? () => unawaited(_done()) : null,
           ),
-        if (suggest)
-          for (final String name in suggestedFolderNames(widget.wall, l10n).where((name) => !_newNames.contains(name)))
-            FolderCheckRow(
-              key: ValueKey<String>('suggested:$name'),
-              title: name,
-              covers: const <String>[],
-              tag: l10n.foldersSuggested,
-              checked: false,
-              onTap: () => _addName(name),
+        ),
+      ],
+    );
+  }
+
+  Widget _createPage(BuildContext context) {
+    final AppLocalizations l10n = context.l10n;
+    final bool hasName = normalizeFolderName(_name.text) != null;
+    return Column(
+      key: const ValueKey<_FolderSheetPage>(_FolderSheetPage.create),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _FolderSheetHeader(
+          title: l10n.foldersNewFolder,
+          subpage: true,
+          onBack: _creating ? null : () => _showPage(_FolderSheetPage.folders),
+          onClose: _close,
+        ),
+        Flexible(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(PrismSpace.xl, PrismSpace.md, PrismSpace.xl, 0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Text(l10n.foldersNewFolderHelp, style: PrismTextStyles.body(context).copyWith(height: 1.4)),
+                const SizedBox(height: PrismSpace.md),
+                PrismTextField(
+                  controller: _name,
+                  hint: l10n.foldersNameHint,
+                  autofocus: true,
+                  enabled: !_creating,
+                  error: _createError,
+                  inputFormatters: <TextInputFormatter>[LengthLimitingTextInputFormatter(folderNameMaxLength)],
+                  textCapitalization: TextCapitalization.sentences,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => unawaited(_create()),
+                  suffix: _name.text.isEmpty || _creating
+                      ? null
+                      : PrismIconButton(
+                          icon: Icons.cancel_rounded,
+                          tooltip: l10n.foldersClearName,
+                          iconSize: 20,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          onPressed: _name.clear,
+                        ),
+                ),
+              ],
             ),
-        for (final FolderEntity folder in targets)
-          FolderCheckRow(
-            key: ValueKey<String>(folder.id),
-            title: folder.name,
-            subtitle: l10n.foldersItemCount(folder.itemCount),
-            covers: folder.covers,
-            checked: selected.contains(folder.id),
-            onTap: () => _toggle(state, folder.id),
           ),
+        ),
+        Padding(
+          padding: PrismBottomSheet.actionsPadding.copyWith(top: PrismSpace.md),
+          child: PrismButton(
+            label: l10n.foldersCreateFolder,
+            expand: true,
+            loading: _creating,
+            haptic: false,
+            onPressed: hasName ? () => unawaited(_create()) : null,
+          ),
+        ),
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final Duration duration = context.motion(PrismDurations.base);
     return BlocConsumer<FoldersBloc, FoldersState>(
-      listenWhen: (previous, current) => previous.userId != current.userId,
+      listenWhen: (previous, current) =>
+          previous.userId != current.userId ||
+          (current.status == LoadStatus.success &&
+              previous.membershipStatus[_key] != null &&
+              current.membershipStatus[_key] == null),
       listener: (context, state) {
-        if (state.userId != _ownerId && !_closing) {
-          _closing = true;
-          Navigator.of(context).pop();
+        if (state.userId != _ownerId) {
+          _close();
+        } else if (state.status == LoadStatus.success && state.membershipStatus[_key] == null) {
+          unawaited(_load());
         }
       },
-      builder: (context, state) => PrismSheetBody(
-        title: context.l10n.foldersSaveToFolder,
-        actions: <Widget>[
-          PrismButton(
-            label: context.l10n.coreDone,
-            expand: true,
-            onPressed: state.status == LoadStatus.success && state.membershipStatus[_key] == LoadStatus.success
-                ? () => unawaited(_done(state))
-                : null,
+      builder: (context, state) => Material(
+        type: MaterialType.transparency,
+        child: AnimatedSize(
+          duration: duration,
+          curve: PrismCurves.sheet,
+          alignment: Alignment.topCenter,
+          child: AnimatedSwitcher(
+            duration: duration,
+            switchInCurve: PrismCurves.enter,
+            switchOutCurve: PrismCurves.exit,
+            layoutBuilder: (current, previous) =>
+                Stack(alignment: Alignment.topCenter, children: <Widget>[...previous, ?current]),
+            transitionBuilder: (child, animation) {
+              final bool incoming = child.key == ValueKey<_FolderSheetPage>(_page);
+              final bool forward = _page == _FolderSheetPage.create;
+              final double dx = incoming == forward ? 0.25 : -0.25;
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(begin: Offset(dx, 0), end: Offset.zero).animate(animation),
+                  child: child,
+                ),
+              );
+            },
+            child: _page == _FolderSheetPage.folders ? _foldersPage(context, state) : _createPage(context),
           ),
-        ],
-        child: _body(context, state),
+        ),
       ),
     );
   }
 }
 
-/// One folder in the picker: a small cover, the name, an optional tag and a tick.
+const EdgeInsets _rowPadding = EdgeInsets.symmetric(horizontal: PrismSpace.xl, vertical: PrismSpace.xs);
+
+/// The drag handle, the title row and a thin divider. Page one puts the title on the left; page two adds a back
+/// button and centres the title.
+class _FolderSheetHeader extends StatelessWidget {
+  const _FolderSheetHeader({required this.title, required this.onClose, this.subpage = false, this.onBack});
+
+  final String title;
+  final VoidCallback onClose;
+  final bool subpage;
+
+  /// Null disables the back button, while the folder is being created.
+  final VoidCallback? onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    PrismIconButton button(IconData icon, String tooltip, VoidCallback? onPressed) => PrismIconButton(
+      icon: icon,
+      tooltip: tooltip,
+      filled: true,
+      size: PrismBottomSheet.closeButtonSize,
+      iconSize: 20,
+      onPressed: onPressed,
+    );
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Center(
+          child: Container(
+            margin: const EdgeInsets.only(top: 6, bottom: 4),
+            width: PrismBottomSheet.dragHandleWidth,
+            height: PrismBottomSheet.dragHandleHeight,
+            decoration: BoxDecoration(
+              color: cs.onSurface.withValues(alpha: 0.22),
+              borderRadius: BorderRadius.circular(PrismBottomSheet.dragHandleRadius),
+            ),
+          ),
+        ),
+        Padding(
+          padding: PrismBottomSheet.headerPadding,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: PrismBottomSheet.headerRowHeight),
+            child: Row(
+              children: <Widget>[
+                if (subpage) ...<Widget>[
+                  button(Icons.arrow_back_rounded, context.l10n.coreBack, onBack),
+                  const SizedBox(width: PrismSpace.xs),
+                ],
+                Expanded(
+                  child: Semantics(
+                    header: true,
+                    child: Text(
+                      title,
+                      textAlign: subpage ? TextAlign.center : TextAlign.start,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: PrismTextStyles.cardTitle(context),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: PrismSpace.xs),
+                button(Icons.close_rounded, context.l10n.actionClose, () {
+                  PrismHaptics.tap();
+                  onClose();
+                }),
+              ],
+            ),
+          ),
+        ),
+        Container(
+          height: 1,
+          margin: const EdgeInsets.symmetric(horizontal: PrismSpace.xl),
+          color: cs.onSurface.withValues(alpha: 0.08),
+        ),
+      ],
+    );
+  }
+}
+
+/// Fades the last [height] of its child, so a list reads as scrolling under the button below it.
+class _FadeBottom extends StatelessWidget {
+  const _FadeBottom({required this.child});
+
+  static const double height = 28;
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ShaderMask(
+      blendMode: BlendMode.dstIn,
+      shaderCallback: (rect) => LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: const <Color>[Colors.black, Colors.black, Colors.transparent],
+        stops: <double>[0, math.max(0, 1 - height / rect.height), 1],
+      ).createShader(rect),
+      child: child,
+    );
+  }
+}
+
+class _CreateFolderTile extends StatelessWidget {
+  const _CreateFolderTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: cs.onSurface.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(PrismRadius.xs),
+      ),
+      child: Icon(Icons.add_rounded, size: 22, color: cs.onSurface),
+    );
+  }
+}
+
+/// One folder in the picker: a small cover, the name and a check box. Screen readers get one checkable node.
 class FolderCheckRow extends StatelessWidget {
   const FolderCheckRow({
     super.key,
@@ -290,50 +608,57 @@ class FolderCheckRow extends StatelessWidget {
     required this.covers,
     required this.checked,
     required this.onTap,
-    this.subtitle,
-    this.tag,
   });
 
   final String title;
-  final String? subtitle;
   final List<String> covers;
-  final String? tag;
   final bool checked;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme cs = Theme.of(context).colorScheme;
     return MergeSemantics(
       child: Semantics(
         checked: checked,
         child: PrismRow(
           title: title,
-          subtitle: subtitle,
+          padding: _rowPadding,
           leading: FolderCover(covers: covers, size: 40, radius: PrismRadius.xs),
           onTap: onTap,
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              if (tag != null) ...<Widget>[
-                PrismTag(label: tag!, tone: checked ? PrismTone.accent : PrismTone.neutral),
-                const SizedBox(width: PrismSpace.xs),
-              ],
-              AnimatedSwitcher(
-                duration: context.motion(PrismDurations.fast),
-                switchInCurve: PrismCurves.pop,
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: ScaleTransition(scale: Tween<double>(begin: 0.95, end: 1).animate(animation), child: child),
-                ),
-                child: Icon(
-                  checked ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                  key: ValueKey<bool>(checked),
-                  color: checked ? cs.primary : cs.onSurface.withValues(alpha: 0.35),
-                ),
-              ),
-            ],
-          ),
+          trailing: _CheckBox(checked: checked),
+        ),
+      ),
+    );
+  }
+}
+
+class _CheckBox extends StatelessWidget {
+  const _CheckBox({required this.checked});
+
+  final bool checked;
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme cs = Theme.of(context).colorScheme;
+    final Duration duration = context.motion(PrismDurations.fast);
+    return AnimatedContainer(
+      duration: duration,
+      curve: PrismCurves.enter,
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: checked ? cs.primary : Colors.transparent,
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: checked ? cs.primary : cs.onSurface.withValues(alpha: 0.35), width: 1.5),
+      ),
+      child: AnimatedScale(
+        duration: duration,
+        curve: PrismCurves.pop,
+        scale: checked ? 1 : 0.5,
+        child: AnimatedOpacity(
+          duration: duration,
+          opacity: checked ? 1 : 0,
+          child: Icon(Icons.check_rounded, size: 18, color: cs.onPrimary),
         ),
       ),
     );

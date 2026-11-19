@@ -17269,7 +17269,7 @@ abstract class AppLocalizations {
   /// **'Save to folder'**
   String get foldersSaveToFolder;
 
-  /// Action on the toast shown after a wallpaper is favourited. Opens the folder picker.
+  /// Title of the folder picker sheet, and the action on the toast shown after a wallpaper is favourited.
   ///
   /// In en, this message translates to:
   /// **'Add to folder'**
@@ -17293,23 +17293,47 @@ abstract class AppLocalizations {
   /// **'Create'**
   String get foldersCreate;
 
-  /// Tooltip of the icon button that adds the typed folder name.
+  /// Button on the New folder page that creates the folder.
   ///
   /// In en, this message translates to:
   /// **'Create folder'**
   String get foldersCreateFolder;
 
-  /// Tag on a suggested folder name when the user has no folders yet.
+  /// Row in the Add to folder sheet that opens the New folder page.
   ///
   /// In en, this message translates to:
-  /// **'Suggested'**
-  String get foldersSuggested;
+  /// **'Create new folder'**
+  String get foldersCreateNewFolder;
 
-  /// Tag on a folder row that is created when the user taps Done.
+  /// Subtitle under Create new folder in the Add to folder sheet.
   ///
   /// In en, this message translates to:
-  /// **'New'**
-  String get foldersNewTag;
+  /// **'Organise your saves'**
+  String get foldersCreateNewFolderSubtitle;
+
+  /// Help line on the New folder page of the Add to folder sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a folder for your walls. You can edit it later.'**
+  String get foldersNewFolderHelp;
+
+  /// Short line in the Add to folder sheet when the user has no folders.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no folders yet.'**
+  String get foldersPickerEmpty;
+
+  /// Error under the name field when creating a folder fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create the folder. Try again.'**
+  String get foldersCreateFailed;
+
+  /// Tooltip of the button that clears the folder name field.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear name'**
+  String get foldersClearName;
 
   /// Number of wallpapers in a folder.
   ///
@@ -17448,18 +17472,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'More options'**
   String get foldersMoreOptions;
-
-  /// Suggested folder name for wallpapers to use on the lock screen.
-  ///
-  /// In en, this message translates to:
-  /// **'Lock screen'**
-  String get foldersSuggestionLockScreen;
-
-  /// Suggested folder name for wallpapers to use on the home screen.
-  ///
-  /// In en, this message translates to:
-  /// **'Home screen'**
-  String get foldersSuggestionHomeScreen;
 
   /// Home mood name for soft, pastel wallpapers.
   ///

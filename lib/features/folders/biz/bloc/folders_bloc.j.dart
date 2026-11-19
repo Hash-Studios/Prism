@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:convert';
 
 import 'package:Prism/core/error/failure.dart';
 import 'package:Prism/core/utils/result.dart';
@@ -284,20 +283,15 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
     _finish(emit, event.operationId, failure: await session.wait(_loadMembership(event.wall, emit, session)));
   }
 
-  Future<Failure?> _create(
-    String rawName,
-    FavouriteWallEntity? wall,
-    Emitter<FoldersState> emit,
-    _FolderSession session, {
-    void Function(String folderId)? onCreated,
-  }) async {
+  Future<Failure?> _create(_CreateRequested event, Emitter<FoldersState> emit, _FolderSession session) async {
     session.ensureActive();
-    final String? name = normalizeFolderName(rawName);
+    final String? name = normalizeFolderName(event.name);
     if (name == null) return const ValidationFailure('A folder name needs 1 to $folderNameMaxLength characters.');
     if (state.userId.isEmpty) return const ValidationFailure('Sign in to make folders.');
+    final FavouriteWallEntity? wall = event.wall;
     final DateTime now = DateTime.now().toUtc();
     final FolderEntity empty = FolderEntity(
-      id: newFolderId(),
+      id: event.folderId ?? newFolderId(),
       ownerId: state.userId,
       name: name,
       createdAt: now,
@@ -319,12 +313,11 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
         membership: wall == null ? state.membership : _withMembership(folderItemKey(wall), folder.id, member: true),
       ),
     );
-    onCreated?.call(folder.id);
     return null;
   }
 
   Future<void> _onCreateRequested(_CreateRequested event, Emitter<FoldersState> emit, _FolderSession session) async {
-    _finish(emit, event.operationId, failure: await session.wait(_create(event.name, event.wall, emit, session)));
+    _finish(emit, event.operationId, failure: await session.wait(_create(event, emit, session)));
   }
 
   Future<void> _onRenameRequested(_RenameRequested event, Emitter<FoldersState> emit, _FolderSession session) async {
@@ -486,34 +479,20 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
       _finish(emit, event.operationId, failure: failure ?? const ServerFailure('Could not read folders.'));
       return;
     }
-    final requestKey = jsonEncode(<Object>[key, event.folderIds.toList()..sort(), event.newNames]);
-    final progress = session.saves.putIfAbsent(requestKey, _SaveProgress.new);
-    final selected = <String>{...event.folderIds, ...progress.createdFolderIds};
-    for (final String id in selected.difference(current)) {
+    for (final String id in event.folderIds.difference(current)) {
       failure = await session.wait(_add(id, event.wall, emit, session));
       if (failure != null) {
         _finish(emit, event.operationId, failure: failure);
         return;
       }
     }
-    for (final String id in current.difference(selected)) {
+    for (final String id in current.difference(event.folderIds)) {
       failure = await session.wait(_remove(id, event.wall, emit, session));
       if (failure != null) {
         _finish(emit, event.operationId, failure: failure);
         return;
       }
     }
-    while (progress.nextName < event.newNames.length) {
-      failure = await session.wait(
-        _create(event.newNames[progress.nextName], event.wall, emit, session, onCreated: progress.createdFolderIds.add),
-      );
-      if (failure != null) {
-        _finish(emit, event.operationId, failure: failure);
-        return;
-      }
-      progress.nextName++;
-    }
-    session.saves.remove(requestKey);
     _finish(emit, event.operationId);
   }
 
@@ -584,7 +563,6 @@ class _FolderSession {
   final int writeBoundary;
   final Completer<void> cancelled = Completer<void>();
   Future<void> queueTail = Future<void>.value();
-  final Map<String, _SaveProgress> saves = <String, _SaveProgress>{};
 
   void ensureActive() {
     if (cancelled.isCompleted) throw const _FolderSessionCancelled();
@@ -598,11 +576,6 @@ class _FolderSession {
       },
     );
   }
-}
-
-class _SaveProgress {
-  final Set<String> createdFolderIds = <String>{};
-  int nextName = 0;
 }
 
 class _FolderSessionCancelled implements Exception {

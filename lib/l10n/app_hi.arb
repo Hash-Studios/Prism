@@ -10040,7 +10040,7 @@
   },
   "foldersAddToFolder": "फ़ोल्डर में जोड़ें",
   "@foldersAddToFolder": {
-    "description": "Action on the toast shown after a wallpaper is favourited. Opens the folder picker."
+    "description": "Title of the folder picker sheet, and the action on the toast shown after a wallpaper is favourited."
   },
   "foldersNewFolder": "नया फ़ोल्डर",
   "@foldersNewFolder": {
@@ -10056,15 +10056,31 @@
   },
   "foldersCreateFolder": "फ़ोल्डर बनाएँ",
   "@foldersCreateFolder": {
-    "description": "Tooltip of the icon button that adds the typed folder name."
+    "description": "Button on the New folder page that creates the folder."
   },
-  "foldersSuggested": "सुझाया गया",
-  "@foldersSuggested": {
-    "description": "Tag on a suggested folder name when the user has no folders yet."
+  "foldersCreateNewFolder": "नया फ़ोल्डर बनाएँ",
+  "@foldersCreateNewFolder": {
+    "description": "Row in the Add to folder sheet that opens the New folder page."
   },
-  "foldersNewTag": "नया",
-  "@foldersNewTag": {
-    "description": "Tag on a folder row that is created when the user taps Done."
+  "foldersCreateNewFolderSubtitle": "अपनी सेव की गई चीज़ें व्यवस्थित करें",
+  "@foldersCreateNewFolderSubtitle": {
+    "description": "Subtitle under Create new folder in the Add to folder sheet."
+  },
+  "foldersNewFolderHelp": "अपने वॉलपेपर के लिए एक फ़ोल्डर बनाएँ। आप इसे बाद में बदल सकते हैं।",
+  "@foldersNewFolderHelp": {
+    "description": "Help line on the New folder page of the Add to folder sheet."
+  },
+  "foldersPickerEmpty": "आपके पास अभी कोई फ़ोल्डर नहीं है।",
+  "@foldersPickerEmpty": {
+    "description": "Short line in the Add to folder sheet when the user has no folders."
+  },
+  "foldersCreateFailed": "फ़ोल्डर नहीं बनाया जा सका। फिर से कोशिश करें।",
+  "@foldersCreateFailed": {
+    "description": "Error under the name field when creating a folder fails."
+  },
+  "foldersClearName": "नाम साफ़ करें",
+  "@foldersClearName": {
+    "description": "Tooltip of the button that clears the folder name field."
   },
   "foldersItemCount": "{count, plural, =0{कोई वॉलपेपर नहीं} =1{1 वॉलपेपर} other{{count} वॉलपेपर}}",
   "@foldersItemCount": {
@@ -10174,14 +10190,6 @@
   "foldersMoreOptions": "और विकल्प",
   "@foldersMoreOptions": {
     "description": "Tooltip of the folder page overflow menu."
-  },
-  "foldersSuggestionLockScreen": "लॉक स्क्रीन",
-  "@foldersSuggestionLockScreen": {
-    "description": "Suggested folder name for wallpapers to use on the lock screen."
-  },
-  "foldersSuggestionHomeScreen": "होम स्क्रीन",
-  "@foldersSuggestionHomeScreen": {
-    "description": "Suggested folder name for wallpapers to use on the home screen."
   },
   "moodDreamyTitle": "स्वप्निल",
   "@moodDreamyTitle": {

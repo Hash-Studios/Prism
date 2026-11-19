@@ -4,7 +4,99 @@ A **folder** is a named group of saved wallpapers. A **smart folder** fills itse
 
 The owner can invite up to 10 people to add and remove wallpapers in a folder. These people are editors. See Shared folders. The owner and the editors can split a folder into named sections. See Sections.
 
-The Library page ([library.md](library.md)) covers the Folders tab, the folder grid and the Save to folder sheet. This page covers public and shared folders. See Discover folders for the Search row and the discover page.
+The Library page ([library.md](library.md)) covers the Folders tab and the folder grid. This page covers the Add to folder sheet (see [Add to folder sheet](#add-to-folder-sheet)), public folders and shared folders. See Discover folders for the Search row and the discover page.
+
+## Add to folder sheet
+
+The Add to folder sheet saves a wall to folders. The sheet opens from these places:
+
+| Entry point | What the user does |
+|---|---|
+| Heart button | Long press the heart. A guest first sees the sign-in prompt. |
+| Favourite toast | Tap **Add to folder** on the toast that shows after a favourite, from the heart or the tile menu. |
+| Feed tile menu | Tap **Save to folder** in the tile quick actions. |
+| Photo wallpaper result page | Tap **Save to folder**. |
+| Shared wall link | Share to Prism opens wall detail with the sheet open. |
+
+The code is `showFolderSheet` and `FolderSheet` in `lib/features/folders/views/widgets/folder_sheet.dart`.
+
+### Page 1: Add to folder
+
+The first page shows the title on the left and a close button on the right. A thin line sits below them.
+
+The first row is **Create new folder**. It has a plus tile, the text "Organise your saves" and an arrow.
+
+The folders follow. Each folder row has a small cover (`FolderCover`), the name and a check box on the right. A checked box uses the accent colour.
+
+The **Done** button stays at the bottom. The list scrolls under the button. The list fades out above the button.
+
+### Page 2: New folder
+
+Tap **Create new folder** to open page 2 in the same sheet. Page 2 has a back button, the title "New folder" and the close button.
+
+Then it shows the line "Make a folder for your walls. You can edit it later.", the name field and the **Create folder** button.
+
+- The name field gets focus. The keyboard opens.
+- The name field has a clear button.
+- The **Create folder** button is grey. It does not work until the name has text. Spaces only do not count.
+- A name has 1 to 50 characters after trimming. The code is `normalizeFolderName`.
+
+### Sheet movement
+
+The sheet moves up with the keyboard. Its height changes with an animation when the page changes. Back keeps the checks of page 1.
+
+### Domain rules
+
+| Action | Result |
+|---|---|
+| Tap a folder | Changes its check on the screen only. Nothing is written. The haptic is selection. |
+| **Done** | One `saveRequested` puts the wall in exactly the checked folders. It takes the wall out of the unchecked folders that held it. The wall can be in many folders. When the wall goes into at least one folder, the app favourites it first. **Done** works only once. A second tap does nothing. |
+| Close button, swipe down, or tap outside | The sheet closes. The checks are lost. Nothing is written. |
+| **Create folder** | `createRequested` writes an empty folder at once. This is the only write before **Done**. On success, page 1 shows the new folder first, already checked. The haptic is success. On failure, "Could not create the folder. Try again." shows under the field. The user can try again. If the user closes the sheet after a create, the empty folder stays. The wall is not added. |
+
+### Which folders show
+
+The sheet shows the folders that the user owns. It also shows the shared folders that the user edits.
+
+Smart folders do not show. The server fills them from rules. A folder that the user can no longer edit does not show. For example, the owner removed the user.
+
+There is no limit on the number of plain folders. Smart folders have their own limit of 20.
+
+### States
+
+| State | What shows |
+|---|---|
+| Guest | The sign-in prompt, "Sign in to use folders". The title is "Add to folder". |
+| Loading | Grey placeholder rows. **Done** is off. |
+| Load failed | "Could not save to folders. Try again." with **Try again**. **Done** is off. |
+| No folders | **Create new folder** and the line "You have no folders yet." |
+| Account changes while open | The sheet closes. Nothing is written. |
+
+### Offline and errors
+
+A folder write that gets no answer in 8 seconds is queued. The app goes on as if it worked.
+
+If the server later refuses a queued write, `FolderWriteFailureListener` shows "Could not save to folders. Try again.". If **Done** fails at once, the same message shows.
+
+After a good save, a toast shows. When the wall goes into one or more folders, the toast says "Saved to 1 folder." or "Saved to <count> folders.". The count is the number of folders that the wall was added to. When the save only removes the wall, the toast says "Folders updated.".
+
+### Accessibility
+
+- Each folder row is one screen reader item. The item says its checked state.
+- The close and back buttons have tooltips, "Close" and "Back".
+- The clear button has the tooltip "Clear name".
+- On page 2, the focus goes to the name field.
+
+### Analytics
+
+| Event | Fields |
+|---|---|
+| `folder_created` | `source` (`sheet`), `with_wall` (`false`) |
+| `wall_saved_to_folder` | `wall_id`, `provider`, `folder_count` |
+
+`folder_created` fires after a create in the sheet. `wall_saved_to_folder` fires after a **Done** that adds the wall to at least one folder.
+
+The copy is in all 7 locales: en, de, es, hi, id, pt and pt_BR.
 
 ## Where to find it
 
@@ -518,7 +610,7 @@ A rule has a kind and a value.
 | New smart folder sheet | The name, the rule chips, and a live preview of the first 12 matches with the count. Each rule chip is a `PrismChip` with a 48 dp tap area on Android and 44 points on iOS. The name field has its label above it and no placeholder, so a screen reader reads "Folder name" once. |
 | Folder page, smart folder | The rules under the title, for example "Colour: Blue, Teal · Creators I follow". The owner sees **Edit rules**. |
 | Empty smart folder | "Nothing matches yet" with **Edit rules**. |
-| Save to folder sheet | Smart folders do not show. Nobody saves a wall into a smart folder by hand. |
+| Add to folder sheet | Smart folders do not show. Nobody saves a wall into a smart folder by hand. |
 
 ### Create and edit
 
