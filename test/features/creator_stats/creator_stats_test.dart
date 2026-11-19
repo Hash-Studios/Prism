@@ -97,6 +97,7 @@ Widget _withFund({required CreatorStatsBloc value, required Widget child}) => Mu
 );
 
 void main() {
+  setUpAll(() => registerFallbackValue(const CreatorStatsEvent.load()));
   late FakeAppAnalytics analytics;
   setUp(() {
     analytics = FakeAppAnalytics();
@@ -387,9 +388,7 @@ void main() {
     await tester.scrollUntilVisible(find.text('Tips'), 300);
     expect(find.text('Tips'), findsOneWidget);
     expect(find.text('2 tips, 35 coins in all'), findsOneWidget);
-    final week = find.textContaining('Week of ');
-    expect(week, findsOneWidget);
-    expect(tester.widget<Text>(week).data, contains('2 tips, 35 coins'));
+    expect(find.text('Week of Oct 19: 2 tips, 35 coins'), findsOneWidget);
     expect(find.text('Blue sky: 1 tip, 25 coins'), findsOneWidget);
   });
   testWidgets('tips summary shows the empty copy without tips', (tester) async {
@@ -399,10 +398,10 @@ void main() {
   });
   testWidgets('metric switch dispatches and tracks typed event', (tester) async {
     final bloc = await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())));
-    await tester.scrollUntilVisible(find.widgetWithText(PrismChip, 'Saves'), 300);
-    await tester.ensureVisible(find.widgetWithText(PrismChip, 'Saves'));
+    await tester.scrollUntilVisible(find.text('Saves'), 300);
+    await tester.ensureVisible(find.text('Saves'));
     await tester.pump();
-    await tester.tap(find.widgetWithText(PrismChip, 'Saves'));
+    await tester.tap(find.text('Saves'));
     verify(() => bloc.add(const CreatorStatsEvent.select(StatsMetric.saves))).called(1);
     expect(analytics.events.map((event) => event.eventName), contains('creator_stats_metric_switched'));
     expect(analytics.events.where((event) => event.eventName == 'creator_stats_metric_switched'), hasLength(1));
@@ -414,10 +413,14 @@ void main() {
     await tester.pump();
     expect(tester.takeException(), isNull);
   });
-  testWidgets('all eight weekly chart values are visible at narrow width and large text', (tester) async {
+  testWidgets('chart bars are readable buttons at narrow width and large text', (tester) async {
+    final handle = tester.ensureSemantics();
     tester.view.physicalSize = const Size(320, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
+    // The readout Text repeats the selected bar's label, so count only the bar buttons.
+    Finder bar(String label) =>
+        find.byWidgetPredicate((w) => w is Semantics && w.properties.button == true && w.properties.label == label);
     final data = parseCreatorStats(fixture());
     await tester.pumpWidget(
       MaterialApp(
@@ -443,12 +446,15 @@ void main() {
       'Week of Oct 12, 2026: 6',
       'Week of Oct 19, 2026: 7',
     ]) {
-      final text = find.text(label);
-      expect(text, findsOneWidget);
-      await tester.ensureVisible(text);
-      expect(text.hitTestable(), findsOneWidget);
+      expect(bar(label), findsOneWidget);
     }
+    expect(find.text('Week of Oct 19, 2026: 7'), findsOneWidget);
+    await tester.tap(bar('Week of Sep 14, 2026: 2'));
+    await tester.pump();
+    expect(find.text('Week of Sep 14, 2026: 2'), findsOneWidget);
+    expect(find.text('Week of Oct 19, 2026: 7'), findsNothing);
     expect(tester.takeException(), isNull);
+    handle.dispose();
   });
   testWidgets('wall detail uses response and chart has all eight semantic values', (tester) async {
     final handle = tester.ensureSemantics();
@@ -461,9 +467,74 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(WallStatsPage), findsOneWidget);
     expect(analytics.events.where((event) => event.eventName == 'creator_wall_stats_opened'), hasLength(1));
-    final chart = find.bySemanticsLabel(RegExp('Views, eight weeks.*Unavailable'));
-    expect(chart, findsOneWidget);
+    expect(find.bySemanticsLabel('Week of Aug 31, 2026: Unavailable'), findsOneWidget);
+    expect(find.bySemanticsLabel('Week of Oct 19, 2026: 7'), findsOneWidget);
     expect(tester.takeException(), isNull);
     handle.dispose();
+  });
+  testWidgets('hero shows this week with the change and the total', (tester) async {
+    await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())));
+    expect(find.text('VIEWS'), findsOneWidget);
+    expect(find.text('+1 (+17%) vs last week'), findsOneWidget);
+    expect(find.text('Total: 10'), findsOneWidget);
+    expect(find.text('7'), findsWidgets);
+  });
+  testWidgets('period switch changes the hero and the comparison', (tester) async {
+    final bloc = await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())));
+    await tester.tap(find.text('Last week'));
+    await tester.pump();
+    expect(find.text('+1 (+20%) vs the week before'), findsOneWidget);
+    await tester.tap(find.text('4 weeks'));
+    await tester.pump();
+    expect(find.text('Not enough history to compare'), findsOneWidget);
+    expect(find.text('22'), findsWidgets);
+    verifyNever(() => bloc.add(any()));
+    expect(analytics.events.map((event) => event.eventName), isNot(contains('creator_stats_metric_switched')));
+  });
+  testWidgets('walls with no views show the calm chart state', (tester) async {
+    final raw = fixture();
+    List<Object?> zeroWeeks(List<Object?> weeks) => [
+      for (var i = 0; i < weeks.length; i++)
+        {
+          ...weeks[i]! as Map<String, Object?>,
+          'metrics': {for (final m in StatsMetric.values) m.name: i == 0 ? null : 0},
+        },
+    ];
+    raw['weeks'] = zeroWeeks(raw['weeks']! as List<Object?>);
+    final wall = (raw['walls']! as List).single as Map<String, Object?>;
+    raw['walls'] = [
+      {...wall, 'weeks': zeroWeeks(wall['weeks']! as List<Object?>)},
+    ];
+    await pump(tester, CreatorStatsState(data: parseCreatorStats(raw)));
+    expect(find.text('Nothing recorded in these eight weeks yet.'), findsOneWidget);
+    expect(find.text('No change vs last week'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Blue sky'), 300);
+    expect(find.text('Blue sky'), findsOneWidget);
+  });
+  testWidgets('top walls list caps at five with show all', (tester) async {
+    final raw = fixture();
+    final original = (raw['walls']! as List).single as Map<String, Object?>;
+    raw['approvedWallCount'] = 7;
+    raw['walls'] = [
+      for (var i = 0; i < 7; i++) {...original, 'wallId': 'w$i', 'title': 'Wall $i'},
+    ];
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pump(tester, CreatorStatsState(data: parseCreatorStats(raw)));
+    await tester.scrollUntilVisible(find.text('Show all 7 walls'), 300);
+    expect(find.textContaining('Wall '), findsNWidgets(5));
+    await tester.tap(find.text('Show all 7 walls'));
+    await tester.pump();
+    expect(find.textContaining('Wall '), findsNWidgets(7));
+    expect(find.text('Show fewer'), findsOneWidget);
+  });
+  testWidgets('whole dashboard fits 320 wide at 200% text', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())), scale: 2);
+    await tester.scrollUntilVisible(find.text('About these numbers'), 300, scrollable: find.byType(Scrollable).first);
+    expect(tester.takeException(), isNull);
   });
 }
