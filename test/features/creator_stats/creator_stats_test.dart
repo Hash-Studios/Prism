@@ -518,6 +518,16 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.space);
     await tester.pump();
     verify(() => bloc.add(const CreatorStatsEvent.select(StatsMetric.saves))).called(1);
+    final viewsTile = find.ancestor(of: find.text('Views'), matching: find.byType(FocusableActionDetector));
+    expect(viewsTile, findsOneWidget);
+    await tester.ensureVisible(viewsTile);
+    final selectedTile = Focus.of(tester.element(find.descendant(of: viewsTile, matching: find.text('Views'))));
+    selectedTile.requestFocus();
+    await tester.pump();
+    expect(selectedTile.hasFocus, isTrue, reason: 'the selected tile keeps keyboard focus');
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    verifyNever(() => bloc.add(const CreatorStatsEvent.select(StatsMetric.views)));
   });
   testWidgets('hero shows this week with the change and the total', (tester) async {
     await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())));

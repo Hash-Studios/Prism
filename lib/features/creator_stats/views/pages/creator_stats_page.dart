@@ -412,6 +412,7 @@ class _MetricTile extends StatelessWidget {
 }
 
 /// A custom control that takes taps, keyboard focus and Enter or Space, with a focus ring.
+/// It stays focusable without [onActivate], so a control keeps focus when it becomes the selected one.
 class _Activatable extends StatefulWidget {
   const _Activatable({required this.onActivate, required this.child, this.radius = PrismRadius.xs});
   final VoidCallback? onActivate;
@@ -426,7 +427,6 @@ class _ActivatableState extends State<_Activatable> {
 
   @override
   Widget build(BuildContext context) => FocusableActionDetector(
-    enabled: widget.onActivate != null,
     onShowFocusHighlight: (value) => setState(() => focused = value),
     actions: <Type, Action<Intent>>{
       ActivateIntent: CallbackAction<ActivateIntent>(
