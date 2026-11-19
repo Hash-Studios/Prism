@@ -10040,7 +10040,7 @@
   },
   "foldersAddToFolder": "फ़ोल्डर में जोड़ें",
   "@foldersAddToFolder": {
-    "description": "Action on the toast shown after a wallpaper is favourited. Opens the folder picker."
+    "description": "Title of the folder picker sheet, and the action on the toast shown after a wallpaper is favourited."
   },
   "foldersNewFolder": "नया फ़ोल्डर",
   "@foldersNewFolder": {
@@ -10056,7 +10056,7 @@
   },
   "foldersCreateFolder": "फ़ोल्डर बनाएँ",
   "@foldersCreateFolder": {
-    "description": "Tooltip of the icon button that adds the typed folder name."
+    "description": "Button on the New folder page that creates the folder."
   },
   "foldersCreateNewFolder": "नया फ़ोल्डर बनाएँ",
   "@foldersCreateNewFolder": {

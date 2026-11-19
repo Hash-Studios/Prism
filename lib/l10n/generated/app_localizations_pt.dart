@@ -11073,13 +11073,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get foldersCreateNewFolder => 'Criar nova pasta';
 
   @override
-  String get foldersCreateNewFolderSubtitle => 'Organize os seus salvos';
+  String get foldersCreateNewFolderSubtitle => 'Organize seus salvos';
 
   @override
-  String get foldersNewFolderHelp => 'Crie uma pasta para os seus papéis de parede. Pode editá-la mais tarde.';
+  String get foldersNewFolderHelp => 'Crie uma pasta para seus papéis de parede. Você pode editá-la depois.';
 
   @override
-  String get foldersPickerEmpty => 'Ainda não tem pastas.';
+  String get foldersPickerEmpty => 'Você ainda não tem pastas.';
 
   @override
   String get foldersCreateFailed => 'Não foi possível criar a pasta. Tente novamente.';

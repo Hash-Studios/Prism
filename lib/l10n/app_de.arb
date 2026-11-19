@@ -9866,7 +9866,7 @@
   },
   "foldersAddToFolder": "Zu Ordner hinzufügen",
   "@foldersAddToFolder": {
-    "description": "Action on the toast shown after a wallpaper is favourited. Opens the folder picker."
+    "description": "Title of the folder picker sheet, and the action on the toast shown after a wallpaper is favourited."
   },
   "foldersNewFolder": "Neuer Ordner",
   "@foldersNewFolder": {
@@ -9882,7 +9882,7 @@
   },
   "foldersCreateFolder": "Ordner erstellen",
   "@foldersCreateFolder": {
-    "description": "Tooltip of the icon button that adds the typed folder name."
+    "description": "Button on the New folder page that creates the folder."
   },
   "foldersCreateNewFolder": "Neuen Ordner erstellen",
   "@foldersCreateNewFolder": {

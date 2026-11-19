@@ -9863,7 +9863,7 @@
   },
   "foldersAddToFolder": "Tambahkan ke folder",
   "@foldersAddToFolder": {
-    "description": "Action on the toast shown after a wallpaper is favourited. Opens the folder picker."
+    "description": "Title of the folder picker sheet, and the action on the toast shown after a wallpaper is favourited."
   },
   "foldersNewFolder": "Folder baru",
   "@foldersNewFolder": {
@@ -9879,7 +9879,7 @@
   },
   "foldersCreateFolder": "Buat folder",
   "@foldersCreateFolder": {
-    "description": "Tooltip of the icon button that adds the typed folder name."
+    "description": "Button on the New folder page that creates the folder."
   },
   "foldersCreateNewFolder": "Buat folder baru",
   "@foldersCreateNewFolder": {
