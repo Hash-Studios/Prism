@@ -98,6 +98,49 @@ Two results need special care:
 
 If a source cannot be read, its kind shows `unknown`. The check continues with the other sources and exits with 1. An error message gives the program name, the exit code, or the HTTP status. It does not contain command output, HTTP response bodies, or the text of an unexpected exception. Drift alone does not make the command fail. An unresolved Remote Config key alone does not make the command fail.
 
+## Production state, 2026-11-19
+
+This is the result of a deploy catch-up against master `22938e93d` (release 3.32.0). Each write had the owner's OK.
+
+### Live with no deploy
+
+| Part | Live state | How it was checked |
+|---|---|---|
+| Rules | In sync. Released 2026-11-13. | Content compare (`make deploy-drift`) |
+| Indexes and TTLs | 78 indexes and 13 TTL policies in sync | Content compare |
+| Functions | 237 functions, deployed 2026-11-16 | The live source zip matches master `functions/src` and `package.json`. Each function has the `GH_*` and `R2_*` env names. |
+| Worker | Deployed 2026-11-13 18:30 UTC, after the last change at 07:19 UTC. `AI_REQUIRE_CHARGE` is `"true"`. | Deploy time only |
+| Run-once jobs | `moods/current`, `trending/current`, `creatorDirectory`, `webCatalogState/pages`, `challengeThemes`, `economyConfig/current` (version 2), AI routing KV | Read each doc or key |
+
+### Changed on 2026-11-19
+
+| Item | Change | PR |
+|---|---|---|
+| Studio test run | Run `m1795097194314` made 4 `winter-light` candidates for review. | #888 |
+| `studioConfig/current` | `seriesWeights.winter-light = 2`, `dropSeries.2026-W50 = winter-light`, `dropTitles.2026-W50 = "Winter Drop"` | #888 |
+| `backfillWallColors --apply` | 5 walls | #480 |
+| `backfillWallSignatures --apply` | 3 walls | #608 |
+| `backfillWallCollections --apply` | 8 walls filed | #517 |
+| `firestore.indexes.json` | Adds the live `walls` index (`review`, `editorsChoiceAt`). Older clients use it. No deploy. | none |
+
+The colours and smart folder scripts read `R2_PREVIEW_BASE_URL`. Set it in the shell from Doppler `prd` before you run them. Without it, R2 preview images are refused.
+
+### Not done
+
+| Item | Why | PR |
+|---|---|---|
+| `studioConfig.desktopCompanions = true` | The owner did not approve it. Each new approval would cost fal money. | #783 |
+| `qualifyFavouriteKeys --apply` (28,680 docs) | Waits until most users run a build with #524 | #843 |
+| `backfillUsernameLower --apply` (8 users) | Waits for the owner's OK | #369 |
+| `backfillWallDepth` | The dry run also calls fal and costs money | #514 |
+| Remote Config `wrapped_2026_enabled = true` | Set on 1 December, after `buildWrapped --apply` | #786 |
+| `seriesWeights.winter-light = 0` | Set on 1 January 2027 | #888 |
+| `dailyDropReserves = 2` | On 4 December, only if fewer than 4 Winter reserves are ready | #888 |
+
+Owner steps outside this repo: the Cloud Run quota request (#856), a tag rule for `shorebird/*` (#730), the GitHub secret `IOS_SHARE_EXTENSION_PROVISIONING_PROFILE_BASE64` (#840, missing), the RevenueCat and store trial offers (#785), the Web Bot Auth key (#832), and the banner art (#895).
+
+Fourteen Remote Config keys that the app reads are not in the template. Apart from `wrapped_2026_enabled`, each has a safe code default, so no publish is needed.
+
 ## How it works
 
 ### Before you start
