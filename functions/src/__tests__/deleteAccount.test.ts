@@ -87,6 +87,8 @@ function fake(t: TestContext, options: Options = {}) {
   };
   const query = (collection: string, filters: Array<[string, string, unknown]> = []) => {
     const q = {
+      select: () => q,
+      limit: () => q,
       where: (field: string | admin.firestore.FieldPath, op: string, value: unknown) => {
         const fieldPath = String(field);
         log.push(`query:${collection}.${fieldPath}${op}${value}`);
@@ -95,7 +97,8 @@ function fake(t: TestContext, options: Options = {}) {
       },
       get: async () => {
         if (options.slowQueries) await new Promise((resolve) => setTimeout(resolve, 20));
-        return {docs: docsFor(collection, filters)};
+        const docs = docsFor(collection, filters);
+        return {docs, size: docs.length};
       },
     };
     return q;
@@ -230,7 +233,7 @@ test("account deletion removes the followed topics session and the topic digest 
     "usersv2/u1/private/session": {followedTopics: ["category:Pastel"], followedTopicsOffset: 330, topicAlerts: true},
     "usersv2/u1/private/topicDigest": {day: "2026-11-05", atMs: 1},
   });
-  const empty = {where: () => empty, get: async () => ({docs: []})};
+  const empty = {where: () => empty, limit: () => empty, startAfter: () => empty, get: async () => ({docs: [], size: 0})};
   t.mock.method(db, "collectionGroup", () => empty);
   t.mock.method(db, "bulkWriter", () => ({
     set: (ref: admin.firestore.DocumentReference, data: admin.firestore.DocumentData) => ref.set(data),
@@ -511,7 +514,7 @@ test("SV-S12 releases all deleted UID reservations, permits reuse and never remo
     "usernames/stalename": {uid: "u1"},
     "usernames/foreign": {uid: "u2"},
   });
-  const empty = {where: () => empty, get: async () => ({docs: []})};
+  const empty = {where: () => empty, limit: () => empty, startAfter: () => empty, get: async () => ({docs: [], size: 0})};
   t.mock.method(db, "collectionGroup", () => empty);
   await call();
   assert.equal(store.has("usernames/oldname"), false);
@@ -532,7 +535,7 @@ test("account deletion removes reward sessions and locks but retains minimal Goo
     "rewardedAdGoogleTransactions/google": {sessionId: "session"},
     "coinTransactions/ssv_session": {userId: "u1", delta: 20},
   });
-  const empty = {where: () => empty, get: async () => ({docs: []})};
+  const empty = {where: () => empty, limit: () => empty, startAfter: () => empty, get: async () => ({docs: [], size: 0})};
   t.mock.method(db, "collectionGroup", () => empty);
   t.mock.method(db, "bulkWriter", () => ({
     set: (ref: admin.firestore.DocumentReference, data: admin.firestore.DocumentData) => ref.set(data),
@@ -554,7 +557,7 @@ test("SV-S12 rechecks reservation ownership after the cleanup query", async (t) 
   const store = installFakeDb(t, {
     "usersv2/u1": {username: "OldName"}, "usernames/oldname": {uid: "u1"},
   });
-  const empty = {where: () => empty, get: async () => ({docs: []})};
+  const empty = {where: () => empty, limit: () => empty, startAfter: () => empty, get: async () => ({docs: [], size: 0})};
   t.mock.method(db, "collectionGroup", () => empty);
   const runTransaction = db.runTransaction.bind(db);
   t.mock.method(db, "runTransaction", (callback: (tx: admin.firestore.Transaction) => Promise<unknown>) => {
@@ -570,7 +573,7 @@ test("SV-S12 failed reservation cleanup preserves the profile and can be retried
   const store = installFakeDb(t, {
     "usersv2/u1": {username: "OldName"}, "usernames/oldname": {uid: "u1"},
   });
-  const empty = {where: () => empty, get: async () => ({docs: []})};
+  const empty = {where: () => empty, limit: () => empty, startAfter: () => empty, get: async () => ({docs: [], size: 0})};
   t.mock.method(db, "collectionGroup", () => empty);
   const runTransaction = db.runTransaction.bind(db);
   t.mock.method(db, "runTransaction", async () => {

@@ -22,47 +22,46 @@ class _CreatorFundRowState extends State<CreatorFundRow> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).toLanguageTag();
-    return BlocListener<CreatorFundBloc, CreatorFundState>(
-      listenWhen: (_, current) => !_viewed && current.status != null,
-      listener: (_, state) {
+    return BlocBuilder<CreatorFundBloc, CreatorFundState>(
+      builder: (context, state) {
         final status = state.status;
-        if (status == null) return;
-        _viewed = true;
-        analytics.track(CreatorFundViewedEvent(state: _stateName(status), reason: _reasonName(status)));
-      },
-      child: BlocBuilder<CreatorFundBloc, CreatorFundState>(
-        builder: (context, state) {
-          final lines = _lines(l10n, state, locale);
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Semantics(
-                container: true,
-                label: [l10n.creatorFundTitle, ...lines].join('. '),
-                child: ExcludeSemantics(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l10n.creatorFundTitle, style: PrismTextStyles.rowTitle(context)),
-                      if (lines.isEmpty) const PrismBone(width: 160),
-                      for (final line in lines) Text(line, style: PrismTextStyles.body(context)),
-                      Text(l10n.creatorFundAbout, style: PrismTextStyles.caption(context)),
-                    ],
-                  ),
+        if (!_viewed && status != null && !state.failed) {
+          _viewed = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted)
+              analytics.track(CreatorFundViewedEvent(state: _stateName(status), reason: _reasonName(status)));
+          });
+        }
+        final lines = _lines(l10n, state, locale);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Semantics(
+              container: true,
+              label: [l10n.creatorFundTitle, ...lines, l10n.creatorFundAbout].join('. '),
+              child: ExcludeSemantics(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.creatorFundTitle, style: PrismTextStyles.rowTitle(context)),
+                    if (lines.isEmpty) const PrismBone(width: 160),
+                    for (final line in lines) Text(line, style: PrismTextStyles.body(context)),
+                    Text(l10n.creatorFundAbout, style: PrismTextStyles.caption(context)),
+                  ],
                 ),
               ),
-              if (state.failed)
-                Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: TextButton(
-                    onPressed: () => context.read<CreatorFundBloc>().add(const CreatorFundEvent.load()),
-                    child: Text(l10n.statsRetry),
-                  ),
+            ),
+            if (state.failed)
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton(
+                  onPressed: () => context.read<CreatorFundBloc>().add(const CreatorFundEvent.load()),
+                  child: Text(l10n.statsRetry),
                 ),
-            ],
-          );
-        },
-      ),
+              ),
+          ],
+        );
+      },
     );
   }
 

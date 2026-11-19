@@ -34,5 +34,5 @@ const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'firebase.json'))
 assert.equal(config.functions.length, 1);
 assert.equal(config.functions[0].source, '.runtime');
 assert.deepEqual(fs.readdirSync(path.join(__dirname, '.runtime/lib')).sort(),
-  ['coinEvents.js', 'common.js', 'creatorFund', 'creatorStats.js', 'creatorStatsDaily.js', 'creatorStatsHistory.js', 'economy.js', 'notificationCatalog.js', 'viewStats.js']);
+  ['common.js', 'creatorFund', 'creatorStats.js', 'creatorStatsDaily.js', 'creatorStatsHistory.js', 'notificationCatalog.js', 'viewStats.js']);
 console.log('PASS: script syntax, public-profile seed contract, source transpilation, exact export/module allowlist, daily API wiring, normalizer, week boundaries, production-project rejection. No emulator or device started.');

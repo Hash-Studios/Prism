@@ -21,9 +21,7 @@ const compile = (name, source) => {
   assert.equal((result.diagnostics ?? []).length, 0, `Transpile diagnostics: ${name}`);
   fs.writeFileSync(path.join(target, 'lib', name + '.js'), result.outputText);
 };
-fs.mkdirSync(path.join(target, 'lib', 'creatorFund'));
-for (const name of ['creatorStats', 'creatorStatsHistory', 'creatorStatsDaily', 'common', 'notificationCatalog', 'economy',
-  'coinEvents', 'creatorFund/events']) {
+for (const name of ['creatorStats', 'creatorStatsHistory', 'creatorStatsDaily', 'common', 'notificationCatalog']) {
   compile(name, fs.readFileSync(path.join(root, 'functions/src', name + '.ts'), 'utf8'));
 }
 // viewStats also imports economy and asset delivery. Extract its exact normalizer and constant
@@ -52,6 +50,9 @@ const transpileTree = (dir, out) => {
   }
 };
 transpileTree(path.join(root, 'functions/src'), fnlib);
+// The fund event helper needs most of the backend, so the slim modules load it from the full copy.
+fs.mkdirSync(path.join(target, 'lib', 'creatorFund'));
+fs.writeFileSync(path.join(target, 'lib', 'creatorFund', 'events.js'), "module.exports = require('../../fnlib/creatorFund/events.js');\n");
 fs.copyFileSync(path.join(__dirname, 'bundle/index.cjs'), path.join(target, 'index.cjs'));
 fs.writeFileSync(path.join(target, 'package.json'), JSON.stringify({name: 'prism-local-stats', private: true,
   main: 'index.cjs', engines: {node: '24'}, dependencies: {

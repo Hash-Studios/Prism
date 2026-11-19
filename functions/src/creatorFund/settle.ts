@@ -5,14 +5,14 @@ import {onSchedule} from "firebase-functions/v2/scheduler";
 import {coinTransactionDoc, db, int, str, US_REGION} from "../common";
 import {type CreatorFundConfig, ECONOMY_CONFIG_DOC, parseEconomy} from "../economy";
 import {notificationCopyPayload} from "../notificationCatalog";
-import {isLoggedOut, sendToUser} from "../notificationHelper";
-import {loadFundGates, loadLedgerEvents, loadWallCensus, previousWeek, weekRange} from "./load";
-import {computeCreatorFund, CREATOR_FUND_RULES_VERSION, type CreatorRow, type FundEvent} from "./score";
+import {isLoggedOut, notificationDocument, sendToUser} from "../notificationHelper";
+import {previousWeek} from "./load";
+import {checkLease, computePage} from "./compute";
+import {CREATOR_FUND_RULES_VERSION} from "./score";
 
 export const CREATOR_FUND = "creatorFund";
 export const FUND_ROWS = "creators";
-const PAY_BATCH = 100;
-const ROW_BATCH = 400;
+const PAY_BATCH = 75;
 const NOTICE_BATCH = 50;
 const LEASE_MS = 600_000;
 const SOFT_BUDGET_MS = 240_000;
@@ -22,12 +22,10 @@ export type WeekState = "computing" | "paying" | "notifying" | "complete";
 export type SettleOutcome = "off" | "busy" | "complete" | "partial";
 
 export const creatorFundIo = {
-  economy: async (): Promise<CreatorFundConfig> =>
-    parseEconomy((await db.doc(ECONOMY_CONFIG_DOC).get()).data() ?? null).creatorFund,
-  events: (week: string): Promise<FundEvent[]> => loadLedgerEvents(db, week),
-  census: (week: string) => loadWallCensus(db, weekRange(week)),
-  gates: (events: FundEvent[], census: Awaited<ReturnType<typeof loadWallCensus>>, team: readonly string[], week: string) =>
-    loadFundGates(db, admin.auth(), events, census, team, weekRange(week).end),
+  economy: async (tx?: admin.firestore.Transaction): Promise<CreatorFundConfig> => {
+    const ref = db.doc(ECONOMY_CONFIG_DOC);
+    return parseEconomy((await (tx ? tx.get(ref) : ref.get())).data()).creatorFund;
+  },
   sendToUser,
   now: () => Date.now(),
 };
@@ -36,23 +34,16 @@ const uidKey = (uid: string) => encodeURIComponent(uid).replace(/_/g, "%5F");
 export const fundTxId = (uid: string, week: string) => `ctx_creatorFund_${uidKey(uid)}_${week}`;
 const weekRef = (week: string) => db.collection(CREATOR_FUND).doc(week);
 
-function rowDoc(row: CreatorRow): Record<string, unknown> {
-  const base = {scoreCenti: row.scoreCenti, distinctUsers: row.distinctUsers, capped: row.capped, shareBps: row.shareBps};
-  return row.status === "paid" ?
-    {...base, status: "paid", coins: row.coins, payState: "due"} :
-    {...base, status: "notQualified", reason: row.reason, coins: 0, payState: "none"};
-}
-
 /** Takes or renews the week lease. Creates the week only while the pool is above 0. */
-async function acquire(week: string, token: string, pool: () => Promise<CreatorFundConfig>):
+async function acquire(week: string, token: string, pool: typeof creatorFundIo.economy):
   Promise<{state: WeekState; rules: CreatorFundConfig} | "off" | "busy"> {
-  const config = await pool();
   const ref = weekRef(week);
   return db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     const now = creatorFundIo.now();
     const lease = admin.firestore.Timestamp.fromMillis(now + LEASE_MS);
     if (!snap.exists) {
+      const config = await pool(tx);
       if (config.pool === 0) return "off";
       tx.create(ref, {week, state: "computing", rulesVersion: CREATOR_FUND_RULES_VERSION, rules: config,
         pool: config.pool, coinsPaid: 0, paidCreators: 0, startedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -73,28 +64,11 @@ async function advance(week: string, token: string, from: WeekState, next: WeekS
   const ref = weekRef(week);
   await db.runTransaction(async (tx) => {
     const data = (await tx.get(ref)).data();
-    if (data?.lease?.token !== token || data.state !== from) throw new Error(`Creator fund ${week} lease lost.`);
+    checkLease(data, token, from, creatorFundIo.now());
     tx.update(ref, {state: next, ...fields,
       ...(next === "complete" ? {lease: admin.firestore.FieldValue.delete(),
         completedAt: admin.firestore.FieldValue.serverTimestamp()} : {})});
   });
-}
-
-/** Scores the week and writes every row. Rows from a crashed earlier attempt are deleted first. */
-async function compute(week: string, token: string, rules: CreatorFundConfig): Promise<void> {
-  const rows = weekRef(week).collection(FUND_ROWS);
-  await db.recursiveDelete(rows);
-  const [events, census] = await Promise.all([creatorFundIo.events(week), creatorFundIo.census(week)]);
-  const gates = await creatorFundIo.gates(events, census, rules.excludedUids, week);
-  const result = computeCreatorFund({events, wallCreators: census.wallCreators, ...gates, rules});
-  for (let i = 0; i < result.rows.length; i += ROW_BATCH) {
-    const batch = db.batch();
-    for (const row of result.rows.slice(i, i + ROW_BATCH)) batch.set(rows.doc(row.uid), rowDoc(row));
-    await batch.commit();
-  }
-  await advance(week, token, "computing", "paying", {totals: result.totals, events: events.length,
-    computedAt: admin.firestore.FieldValue.serverTimestamp()});
-  logger.info("creatorFund: computed.", {week, ...result.totals, events: events.length});
 }
 
 /**
@@ -112,13 +86,19 @@ async function payBatch(week: string, token: string, uids: string[]): Promise<nu
       barrier: db.collection("creatorDeletionState").doc(uid),
     }));
     const weekSnap = await tx.get(ref);
+    const data = weekSnap.data() ?? {};
+    checkLease(data, token, "paying", creatorFundIo.now());
+    const accounts = await admin.auth().getUsers(uids.map((uid) => ({uid})));
+    const open = new Set(accounts.users.filter((u) => !u.disabled).map((u) => u.uid));
     const snaps = await Promise.all(reads.map(async (r) => {
-      const [row, ledger, user, barrier] = await tx.getAll(r.row, r.ledger, r.user, r.barrier);
-      return {...r, rowSnap: row, ledgerSnap: ledger, userSnap: user, barrierSnap: barrier};
+      const [row, ledger, user, barrier, strike] = await tx.getAll(r.row, r.ledger, r.user, r.barrier,
+        r.barrier.collection("fundStrikes").doc(week),
+        {fieldMask: ["payState", "status", "coins", "createdAt", "deleted", "closed", "delta", "noticeState"]});
+      const held = await tx.get(db.collection("walls").where("creatorUid", "==", r.uid).where("heldForReview", "==", true).where("review", "==", false).select().limit(1));
+      return {...r, struck: strike.exists || !held.empty, rowSnap: row, ledgerSnap: ledger, userSnap: user, barrierSnap: barrier};
     }));
-    const data = weekSnap.data();
-    if (data?.lease?.token !== token || data.state !== "paying") throw new Error(`Creator fund ${week} lease lost.`);
-    const cap = parseEconomy({creatorFund: data.rules}).creatorFund.perCreatorCap;
+    checkLease(data, token, "paying", creatorFundIo.now());
+    const rules = parseEconomy({creatorFund: data.rules}).creatorFund;
     const at = admin.firestore.Timestamp.fromMillis(creatorFundIo.now());
     let coinsPaid = 0;
     let paidCreators = 0;
@@ -127,17 +107,25 @@ async function payBatch(week: string, token: string, uids: string[]): Promise<nu
       if (row?.payState !== "due") continue;
       const txId = fundTxId(s.uid, week);
       if (s.ledgerSnap.exists) {
-        tx.update(s.row, {payState: "done", txId, paidAt: s.ledgerSnap.data()?.createdAt ?? at});
+        tx.update(s.row, {payState: "done", txId, coins: s.ledgerSnap.data()?.delta, paidAt: s.ledgerSnap.data()?.createdAt ?? at,
+          noticeState: row.noticeState ?? "due"});
         continue;
       }
       const user = s.userSnap.data();
       const coins = row.coins;
-      if (!user || user.deleted === true || s.barrierSnap.data()?.closed === true ||
-        !Number.isSafeInteger(coins) || coins < 1 || coins > cap) {
+      if (s.struck) {
+        tx.update(s.row, {status: "notQualified", reason: "moderation", coins: 0, shareBps: 0, payState: "void"});
+        continue;
+      }
+      if (!open.has(s.uid) || !user || user.deleted === true || s.barrierSnap.data()?.closed === true ||
+        row.status !== "paid" || !Number.isSafeInteger(coins) || coins < rules.minPayout || coins > rules.perCreatorCap) {
         tx.update(s.row, {payState: "void"});
         continue;
       }
-      const balance = int(user.coins, 0);
+      const balance = user.coins ?? 0;
+      if (!Number.isSafeInteger(balance) || balance < 0 || !Number.isSafeInteger(balance + coins)) {
+        throw new Error(`Unsafe balance for Creator fund transaction ${txId}.`);
+      }
       tx.update(s.user, {coins: balance + coins});
       tx.set(s.ledger, {...coinTransactionDoc({id: txId, userId: s.uid, at, delta: coins, balanceBefore: balance,
         action: "creatorFund", description: `Creator fund: ${week}`, sourceTag: "creatorFund.weekly",
@@ -146,6 +134,7 @@ async function payBatch(week: string, token: string, uids: string[]): Promise<nu
       coinsPaid += coins;
       paidCreators += 1;
     }
+    if ((data.coinsPaid ?? 0) + coinsPaid > rules.pool) throw new Error("Creator fund payments exceed the frozen pool.");
     tx.update(ref, {coinsPaid: admin.firestore.FieldValue.increment(coinsPaid),
       paidCreators: admin.firestore.FieldValue.increment(paidCreators)});
     return paidCreators;
@@ -153,41 +142,51 @@ async function payBatch(week: string, token: string, uids: string[]): Promise<nu
 }
 
 /** One inbox item and push per paid creator. A claim before the send means a crash can drop a push, never repeat it. */
-async function notify(week: string, uid: string): Promise<void> {
-  const row = weekRef(week).collection(FUND_ROWS).doc(uid);
-  const claimed = await db.runTransaction(async (tx) => {
-    const data = (await tx.get(row)).data();
+async function notify(week: string, token: string, uid: string): Promise<void> {
+  const ref = weekRef(week);
+  const row = ref.collection(FUND_ROWS).doc(uid);
+  const claim = await db.runTransaction(async (tx) => {
+    const [parent, snap, user, barrier, session] = await tx.getAll(ref, row, db.doc(`usersv2/${uid}`),
+      db.doc(`creatorDeletionState/${uid}`), db.doc(`usersv2/${uid}/private/session`));
+    checkLease(parent.data(), token, "notifying", creatorFundIo.now());
+    const data = snap.data();
     if (data?.noticeState !== "due") return null;
-    tx.update(row, {noticeState: "sending"});
-    return int(data.coins, 0);
+    if (data.payState !== "done") throw new Error("Creator fund notice without a committed credit.");
+    if (!user.exists || user.data()?.deleted === true || barrier.data()?.closed === true) {
+      tx.update(row, {noticeState: "skipped"});
+      return null;
+    }
+    const email = str(user.data()?.email);
+    const docId = `creator_fund_${uidKey(uid)}_${week}`;
+    const inbox = db.collection("notifications").doc(docId);
+    if ((await tx.get(inbox)).exists) {
+      tx.update(row, {noticeState: "claimed"});
+      return null;
+    }
+    const payload = {
+      ...notificationCopyPayload({kind: "creatorFundPaid", coins: int(data.coins), week}),
+      data: {route: "creator_stats", url: "prism://creator-stats", notification_kind: "creator_fund"},
+      modifier: email, channelId: "posts", scoreKind: "post", collapseKey: `creator_fund_${week}`, docId,
+    };
+    tx.set(inbox, notificationDocument(payload));
+    tx.update(row, {noticeState: "claimed"});
+    return {payload, recipient: {uid, email, loggedOut: isLoggedOut(user.data())}, push: session.data()?.postAlerts !== false};
   });
-  if (claimed === null) return;
+  if (!claim) return;
   let sent = false;
   try {
-    const [user, session] = await Promise.all([db.doc(`usersv2/${uid}`).get(), db.doc(`usersv2/${uid}/private/session`).get()]);
-    const email = str(user.data()?.email);
-    sent = await creatorFundIo.sendToUser(
-      {
-        ...notificationCopyPayload({kind: "creatorFundPaid", coins: claimed, week}),
-        data: {route: "creator_stats", url: "prism://creator-stats", notification_kind: "creator_fund"},
-        modifier: email,
-        channelId: "posts",
-        scoreKind: "post",
-        collapseKey: `creator_fund_${week}`,
-        docId: `creator_fund_${uidKey(uid)}_${week}`,
-      },
-      {uid, email, loggedOut: isLoggedOut(user.data())},
-      session.data()?.postAlerts !== false,
-    );
+    sent = await creatorFundIo.sendToUser({...claim.payload, pushOnly: true}, claim.recipient, claim.push);
   } catch (err) {
     logger.warn("creatorFund: notice failed.", {week, err});
   }
-  await row.update({noticeState: sent ? "sent" : "failed"});
+  await db.runTransaction(async (tx) => {
+    if ((await tx.get(row)).data()?.noticeState === "claimed") tx.update(row, {noticeState: sent ? "sent" : "failed"});
+  });
 }
 
 /**
- * Settles one week. Safe to run again at any point: a finished week costs one read, a crashed compute starts over
- * before any coin moves, and a crashed payout resumes from the rows still due.
+ * Settles one week. Safe to run again at any point: a finished week costs one read, a crashed compute resumes its page,
+ * and a crashed payout resumes from the rows still due.
  */
 export async function settleCreatorFundWeek(week: string): Promise<SettleOutcome> {
   const started = creatorFundIo.now();
@@ -196,12 +195,11 @@ export async function settleCreatorFundWeek(week: string): Promise<SettleOutcome
   if (lease === "off" || lease === "busy") return lease;
   let state = lease.state;
   if (state === "complete") return "complete";
-  if (state === "computing") {
-    await compute(week, token, lease.rules);
-    state = "paying";
-  }
   const rows = weekRef(week).collection(FUND_ROWS);
   const inBudget = () => creatorFundIo.now() - started < SOFT_BUDGET_MS;
+  while (state === "computing" && inBudget()) {
+    if (await computePage(weekRef(week), token, lease.rules, creatorFundIo.now)) state = "paying";
+  }
   while (state === "paying" && inBudget()) {
     const due = await rows.where("payState", "==", "due").limit(PAY_BATCH).get();
     if (due.empty) {
@@ -217,16 +215,27 @@ export async function settleCreatorFundWeek(week: string): Promise<SettleOutcome
       await advance(week, token, "notifying", "complete");
       return "complete";
     }
-    for (const doc of due.docs) await notify(week, doc.id);
+    for (const doc of due.docs) {
+      if (!inBudget()) break;
+      await notify(week, token, doc.id);
+    }
   }
   return "partial";
 }
 
-/** Hourly on Monday morning, after the week closes at 00:00 UTC. Later runs resume or do nothing. */
+export async function scheduledWeek(ms: number): Promise<string | null> {
+  const date = new Date(ms);
+  if (date.getUTCDay() === 1 && date.getUTCHours() >= 6 && date.getUTCHours() <= 12) return previousWeek(ms);
+  const pending = await db.collection(CREATOR_FUND).where("state", "in", ["computing", "paying", "notifying"])
+    .orderBy("lease.until").limit(1).get();
+  return pending.docs[0]?.id ?? null;
+}
+
 export const settleCreatorFund = onSchedule(
-  {schedule: "0 6-12 * * 1", timeZone: "UTC", region: US_REGION, retryCount: 1, timeoutSeconds: 540, memory: "1GiB", cpu: "gcf_gen1"},
+  {schedule: "0 * * * *", timeZone: "UTC", region: US_REGION, retryCount: 1, timeoutSeconds: 540, memory: "1GiB", cpu: "gcf_gen1"},
   async (event) => {
-    const week = previousWeek(Date.parse(event.scheduleTime));
+    const week = await scheduledWeek(Date.parse(event.scheduleTime));
+    if (!week) return;
     const outcome = await settleCreatorFundWeek(week);
     logger.info("creatorFund: run finished.", {week, outcome});
   },

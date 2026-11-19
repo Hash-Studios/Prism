@@ -90,3 +90,14 @@ test("the week used is the last complete ISO week before now", async (t) => {
   assert.equal(status.week, "2026-W46");
   assert.equal(status.state, "pending");
 });
+
+test("an unpaid allocation stays pending until its ledger transaction commits", async (t) => {
+  setup(t, {...weekDoc("paying"), [`${WEEK_PATH}/creators/a`]: {status: "paid", payState: "due", coins: 25}});
+  assert.deepEqual(await creatorFundStatus("a", NOW), {...base, distinctUsers: 0, state: "pending"});
+});
+
+test("the displayed share of the fund reflects the coins actually credited after a cap", async (t) => {
+  setup(t, {...weekDoc("complete"), [`${WEEK_PATH}/creators/a`]: {status: "paid", payState: "done", coins: 5, shareBps: 10000}});
+  const status = await creatorFundStatus("a", NOW);
+  assert.equal(status.state === "paid" && status.shareBps, 500);
+});

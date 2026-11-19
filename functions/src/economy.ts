@@ -301,7 +301,8 @@ function mergeOnto<T>(base: T, raw: unknown): T {
 
 const MAX_FUND_POOL = 100_000;
 const MAX_FUND_WEIGHT = 100;
-const FUND_UID = /^[A-Za-z0-9_-]{1,128}$/;
+const fundUid = (uid: unknown): uid is string => typeof uid === "string" && uid.length > 0 && uid.length <= 128 &&
+  !uid.includes("/") && uid !== "." && uid !== ".." && !/^__.*__$/.test(uid);
 
 /** Each bad field falls back to its default. A bad pool falls back to 0, so a broken config never pays. */
 function parseCreatorFund(raw: CreatorFundConfig): CreatorFundConfig {
@@ -321,7 +322,7 @@ function parseCreatorFund(raw: CreatorFundConfig): CreatorFundConfig {
       raw.minDistinctUsers : d.minDistinctUsers,
     perCreatorCap,
     minPayout: isIntIn(raw.minPayout, perCreatorCap) && raw.minPayout >= 1 ? raw.minPayout : Math.min(d.minPayout, perCreatorCap),
-    excludedUids: [...new Set(raw.excludedUids.filter((uid): uid is string => typeof uid === "string" && FUND_UID.test(uid)))],
+    excludedUids: [...new Set(raw.excludedUids.filter(fundUid))],
   };
 }
 

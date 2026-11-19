@@ -28,7 +28,11 @@ export async function creatorFundStatus(uid: string, nowMs: number): Promise<Cre
   const row = rowSnap.data();
   if (!row) return {...base, state: "notQualified", reason: "noActivity", shareBps: 0};
   const counted = {...base, distinctUsers: int(row.distinctUsers, 0), shareBps: int(row.shareBps, 0)};
-  if (row.status === "paid" && row.payState !== "void") return {...counted, state: "paid", coins: int(row.coins, 0)};
+  if (row.status === "paid" && row.payState === "due") return {...base, state: "pending"};
+  if (row.status === "paid" && row.payState === "done") {
+    const coins = int(row.coins, 0);
+    return {...counted, state: "paid", coins, shareBps: rules.pool > 0 ? Math.floor(coins * 10_000 / rules.pool) : 0};
+  }
   const reason = REASONS.has(row.reason) ? row.reason as FundReason : "noActivity";
   return {...counted, state: "notQualified", reason};
 }

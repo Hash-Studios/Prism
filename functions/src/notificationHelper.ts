@@ -45,7 +45,7 @@ export interface NotificationPayload {
   gallery?: PushGallery;
 }
 
-function notificationDocument(payload: NotificationPayload) {
+export function notificationDocument(payload: NotificationPayload) {
   return {
     notification: {title: payload.title, body: payload.body},
     ...(payload.message ? {message: {kind: payload.message.kind, args: payload.message.args}} : {}),

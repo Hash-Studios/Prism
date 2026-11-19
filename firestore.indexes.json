@@ -1,6 +1,14 @@
 {
   "indexes": [
     {
+      "collectionGroup": "creatorFund",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "state", "order": "ASCENDING"},
+        {"fieldPath": "lease.until", "order": "ASCENDING"}
+      ]
+    },
+    {
       "collectionGroup": "wallMetadataEdits",
       "queryScope": "COLLECTION",
       "fields": [
@@ -2103,9 +2111,11 @@
       "indexes": []
     },
     {
-      "collectionGroup": "creatorFundEvents",
-      "fieldPath": "actorUid",
-      "indexes": []
+      "collectionGroup": "fundPairs",
+      "fieldPath": "uid",
+      "indexes": [
+        {"order": "ASCENDING", "queryScope": "COLLECTION_GROUP"}
+      ]
     },
     {
       "collectionGroup": "creatorFundEvents",

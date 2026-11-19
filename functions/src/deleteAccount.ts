@@ -70,6 +70,31 @@ async function queueUpdateWhere(
   snap.docs.forEach((doc) => queue(doc.ref, data));
 }
 
+export async function removeFundData(uid: string): Promise<void> {
+  await db.recursiveDelete(db.doc(`creatorDeletionState/${uid}`).collection("fundStrikes"));
+  const weeks = db.collection("creatorFund").select();
+  for (const query of [weeks, db.collection("creatorFundEvents").where("actorUid", "==", uid),
+    db.collectionGroup("fundPairs").where("uid", "==", uid)]) {
+    let cursor: admin.firestore.QueryDocumentSnapshot | undefined;
+    for (;;) {
+      const page = await (cursor ? query.startAfter(cursor) : query).limit(200).get();
+      const batch = db.batch();
+      for (const doc of page.docs) {
+        if (query === weeks) {
+          batch.delete(db.doc(`creatorFund/${doc.id}/creators/${uid}`));
+          const key = encodeURIComponent(uid).replace(/_/g, "%5F");
+          batch.delete(db.doc(`notifications/creator_fund_${key}_${doc.id}`));
+        } else if (doc.ref.path.startsWith("creatorFundEvents/") || /^creatorFund\/[^/]+\/fundPairs\/[^/]+$/.test(doc.ref.path)) {
+          batch.delete(doc.ref);
+        }
+      }
+      if (page.size) await batch.commit();
+      if (page.size < 200) break;
+      cursor = page.docs[page.size - 1];
+    }
+  }
+}
+
 /** Deletes the user's boosts and clears `boostedUntil` on the walls they boosted. */
 async function queueBoosts(uid: string, queue: QueueDelete, queueUpdate: QueueUpdate): Promise<void> {
   const snap = await db.collection(BOOSTS).where("uid", "==", uid).get();
@@ -119,6 +144,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
 
   // Close rewards before deleting private state, including cross-user member receipts.
   await closeCreatorProgressForDeletion(callerUid);
+  await removeFundData(callerUid);
   await removeUidFollowGraph(callerUid);
   await removeWallRequestsForAccount(callerUid);
   await removeChallengeVotesForAccount(callerUid);

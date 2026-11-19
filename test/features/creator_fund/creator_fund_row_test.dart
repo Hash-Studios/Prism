@@ -54,6 +54,7 @@ void main() {
     expect(find.text('You earned 120 coins last week'), findsOneWidget);
     expect(find.text('That is 3.3% of the fund.'), findsOneWidget);
     expect(find.text('Creator fund'), findsOneWidget);
+    expect(analytics.events.where((event) => event.eventName == 'creator_fund_viewed'), hasLength(1));
   });
 
   testWidgets('notQualified fewUsers shows the exact sentence', (tester) async {
@@ -98,6 +99,7 @@ void main() {
       find.bySemanticsLabel(RegExp(r'^Creator fund\. You earned 120 coins last week\. That is 3\.3% of the fund\.')),
       findsOneWidget,
     );
+    expect(find.bySemanticsLabel(RegExp('Your share depends on how many people')), findsOneWidget);
     handle.dispose();
   });
 

@@ -39,8 +39,8 @@ test("minPayout above perCreatorCap falls back to the default", () => {
 });
 
 test("excludedUids keeps only valid unique ID strings", () => {
-  const parsed = fund({...DEFAULTS, excludedUids: ["team1", 7, null, "bad/id", "", "team1", "a b", "ok_Two-3"]});
-  assert.deepEqual(parsed.excludedUids, ["team1", "ok_Two-3"]);
+  const parsed = fund({...DEFAULTS, excludedUids: ["team1", 7, null, "bad/id", "", "team1", "a b", "ops.team", ".", "..", "__reserved__", "ok_Two-3"]});
+  assert.deepEqual(parsed.excludedUids, ["team1", "a b", "ops.team", "ok_Two-3"]);
 });
 
 test("percent and distinct-user fields keep valid values and reject out of range ones", () => {
@@ -94,4 +94,8 @@ test("parseDryArgs rejects an unknown source and bad pools", () => {
   assert.throws(() => parseDryArgs(["--source", "x"], now), /--source must be/);
   assert.throws(() => parseDryArgs(["--pool", "100001"], now), /--pool must be/);
   assert.throws(() => parseDryArgs(["--pool", "1.5"], now), /--pool must be/);
+});
+
+test("an incomplete dry-run argument cannot silently select a default week or pool", () => {
+  for (const args of [["--week"], ["--pool", "--top", "5"], ["--pool=1,"]]) assert.throws(() => parseDryArgs(args, 0));
 });

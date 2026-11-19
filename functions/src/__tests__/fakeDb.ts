@@ -243,9 +243,12 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
       limit: (n: number) => next({limitTo: n}),
       offset: (n: number) => next({offsetBy: n}),
       startAt: (value: unknown) => next({startAt: value}),
-      startAfter: (value: Snap | {id: string; path?: string}) =>
-        next({startAfter: "data" in value ? value : state.group ? value.path : value.id}),
+      startAfter: (value: string | Snap | {id: string; path?: string}) =>
+        next({startAfter: typeof value === "string" ? value : "data" in value ? value : state.group ? value.path : value.id}),
       select: (...fields: string[]) => next({projection: fields}),
+      stream: async function* () {
+        for (const doc of rows()) yield doc;
+      },
       count: () => ({get: async () => {
         if ((!pending || transactionReadDepth === 0) && observed?.outsideReads !== undefined) observed.outsideReads++;
         return {data: () => ({count: rows().length})};
@@ -285,7 +288,8 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
   t.mock.method(db, "collectionGroup", (name: string) =>
     query("", {filters: [], orders: [], offsetBy: 0, group: name}));
   t.mock.method(db, "doc", (path: string) => ref(path));
-  t.mock.method(db, "getAll", async (...refs: FakeRef[]) => Promise.all(refs.map((r) => r.get())));
+  const withFieldMask = (refs: FakeRef[]) => refs.filter((r) => "get" in r);
+  t.mock.method(db, "getAll", async (...refs: FakeRef[]) => Promise.all(withFieldMask(refs).map((r) => r.get())));
   t.mock.method(db, "batch", () => {
     const ops: Array<() => Promise<unknown>> = [];
     const batch = {
@@ -368,7 +372,7 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
       },
       getAll: async (...targets: Array<{get: () => Promise<unknown>}>) => {
         if (wrote) throw new Error("Firestore transaction reads must precede writes");
-        return startOrQueue(() => Promise.all(targets.map(read)));
+        return startOrQueue(() => Promise.all(targets.filter((target) => "get" in target).map(read)));
       },
       set: guarded((r: FakeRef, data: Doc, options?: {merge?: boolean}) => r.set(data, options)),
       update: guarded((r: FakeRef, data: Doc) => r.update(data)),

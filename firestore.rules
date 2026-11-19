@@ -159,11 +159,11 @@ service cloud.firestore {
     }
 
     function wallServerKeysAbsent() {
-      return !request.resource.data.keys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantGroupId', 'variantIndex', 'variantLink', 'releaseApprovedAt']);
+      return !request.resource.data.keys().hasAny(['creatorUid', 'heldForReview', 'heldAt', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantGroupId', 'variantIndex', 'variantLink', 'releaseApprovedAt']);
     }
 
     function wallServerKeysUntouched() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantOf', 'variantGroupId', 'variantIndex', 'variantLink', 'releaseApprovedAt']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'heldForReview', 'heldAt', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantOf', 'variantGroupId', 'variantIndex', 'variantLink', 'releaseApprovedAt']);
     }
 
     // Optional creator release time: 15 minutes to 30 days after the write. The server checks it again.

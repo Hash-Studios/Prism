@@ -2,9 +2,9 @@ import * as admin from "firebase-admin";
 import {FieldPath, type Firestore} from "firebase-admin/firestore";
 import {str} from "../common";
 import {approvedWall} from "../creatorProgress";
-import {CREATOR_FUND_METRICS, type CreatorFundMetric, weekBounds, weekKey} from "../economy";
+import {weekBounds, weekKey} from "../economy";
 import {normalizeId} from "../viewStats";
-import {FUND_EVENTS} from "./events";
+import {FUND_EVENTS, fundWallStamp, ledgerEvent} from "./events";
 import type {CreatorGate, FundEvent} from "./score";
 
 const DAY_MS = 86_400_000;
@@ -31,24 +31,21 @@ export function previousWeek(nowMs: number): string {
   return weekKey(weekBounds(nowMs).start - 1);
 }
 
-const isMetric = (value: unknown): value is CreatorFundMetric =>
-  typeof value === "string" && (CREATOR_FUND_METRICS as readonly string[]).includes(value);
-
 export async function loadLedgerEvents(db: Firestore, week: string): Promise<FundEvent[]> {
   const events: FundEvent[] = [];
   let cursor: string | undefined;
+  let seen = 0;
   for (;;) {
     let query = db.collection(FUND_EVENTS).where("week", "==", week).orderBy(FieldPath.documentId())
-      .select("wallId", "metric", "actorUid").limit(PAGE);
+      .select("wallId", "metric", "actorUid", "wallStamp", "resolveAt").limit(PAGE);
     if (cursor) query = query.startAfter(cursor);
     const page = await query.get();
     for (const doc of page.docs) {
-      const {wallId, metric, actorUid} = doc.data();
-      if (typeof wallId === "string" && isMetric(metric) && typeof actorUid === "string" && actorUid) {
-        events.push({wallId, metric, actorUid});
-      }
+      const event = ledgerEvent(doc, week);
+      if (event) events.push(event);
     }
-    if (events.length > MAX_FUND_EVENTS) throw new Error(`More than ${MAX_FUND_EVENTS} fund events in ${week}.`);
+    seen += page.size;
+    if (seen > MAX_FUND_EVENTS) throw new Error(`More than ${MAX_FUND_EVENTS} fund events in ${week}.`);
     if (page.size < PAGE) return events;
     cursor = page.docs[page.docs.length - 1].id;
   }
@@ -59,15 +56,24 @@ export interface WallCensus {
   wallCreators: Map<string, string>;
   /** Creators with a wall held by reports during the week, or held now. */
   struck: Set<string>;
+  wallStamps: Map<string, string>;
+  wallUpdatedAt: Map<string, number>;
 }
 
 const millis = (value: unknown): number | null =>
   value instanceof admin.firestore.Timestamp ? value.toMillis() : null;
 
+export function heldInWeek(data: admin.firestore.DocumentData, range: {start: number; end: number}) {
+  const at = millis(data.heldAt);
+  return data.heldForReview === true && data.review === false || at !== null && at >= range.start && at < range.end;
+}
+
 /** One projected scan of every wall. An ID that two walls share belongs to no one. */
 export async function loadWallCensus(db: Firestore, range: {start: number; end: number}): Promise<WallCensus> {
   const owners = new Map<string, string | null>();
   const struck = new Set<string>();
+  const wallStamps = new Map<string, string>();
+  const wallUpdatedAt = new Map<string, number>();
   let cursor: string | undefined;
   let seen = 0;
   for (;;) {
@@ -78,8 +84,7 @@ export async function loadWallCensus(db: Firestore, range: {start: number; end: 
     for (const doc of page.docs) {
       const data = doc.data();
       const creator = str(data.creatorUid);
-      const heldAt = millis(data.heldAt);
-      if (creator && (data.heldForReview === true || (heldAt !== null && heldAt >= range.start && heldAt < range.end))) {
+      if (creator && heldInWeek(data, range)) {
         struck.add(creator);
       }
       let id: string;
@@ -93,6 +98,10 @@ export async function loadWallCensus(db: Firestore, range: {start: number; end: 
         continue;
       }
       owners.set(id, creator && approvedWall(data) ? creator : null);
+      if (owners.get(id)) {
+        wallStamps.set(id, fundWallStamp(doc));
+        wallUpdatedAt.set(id, doc.updateTime.toMillis());
+      }
     }
     seen += page.size;
     if (seen > MAX_FUND_WALLS) throw new Error(`More than ${MAX_FUND_WALLS} walls.`);
@@ -101,7 +110,7 @@ export async function loadWallCensus(db: Firestore, range: {start: number; end: 
   }
   const wallCreators = new Map<string, string>();
   for (const [id, creator] of owners) if (creator) wallCreators.set(id, creator);
-  return {wallCreators, struck};
+  return {wallCreators, struck, wallStamps, wallUpdatedAt};
 }
 
 function chunks<T>(items: T[], size: number): T[][] {
@@ -120,14 +129,14 @@ export interface AccountCheck {
   untrusted: Set<string>;
 }
 
-export async function loadAccounts(db: Firestore, auth: admin.auth.Auth, uids: Iterable<string>, weekEnd: number):
+export async function loadAccounts(db: Firestore, auth: admin.auth.Auth, uids: Iterable<string>, weekEnd: number, reader: Pick<Firestore, "getAll"> = db):
   Promise<AccountCheck> {
   const closed = new Set<string>();
   const untrusted = new Set<string>();
   for (const part of chunks([...new Set(uids)], GET_ALL_CHUNK)) {
     const [users, barriers, accounts] = await Promise.all([
-      db.getAll(...part.map((uid) => db.collection("usersv2").doc(uid))),
-      db.getAll(...part.map((uid) => db.collection("creatorDeletionState").doc(uid))),
+      reader.getAll(...part.map((uid) => db.collection("usersv2").doc(uid)), {fieldMask: ["deleted"]}),
+      reader.getAll(...part.map((uid) => db.collection("creatorDeletionState").doc(uid)), {fieldMask: ["closed"]}),
       auth.getUsers(part.map((uid) => ({uid}))),
     ]);
     const records = new Map(accounts.users.map((user) => [user.uid, user]));
@@ -140,7 +149,7 @@ export async function loadAccounts(db: Firestore, auth: admin.auth.Auth, uids: I
       }
       const created = Date.parse(record.metadata.creationTime);
       const signedIn = record.providerData.some((provider) => !!provider.providerId && provider.providerId !== "anonymous");
-      if (!signedIn || !Number.isFinite(created) || weekEnd - created < MIN_ACTOR_AGE_MS) untrusted.add(uid);
+      if (!record.emailVerified || !signedIn || !Number.isFinite(created) || weekEnd - created < MIN_ACTOR_AGE_MS) untrusted.add(uid);
     });
   }
   return {closed, untrusted};
@@ -167,9 +176,17 @@ export async function loadFundGates(db: Firestore, auth: admin.auth.Auth, events
     actors.add(event.actorUid);
   }
   const {closed, untrusted} = await loadAccounts(db, auth, [...creators, ...actors], weekEnd);
+  const strikes = new Set(census.struck);
+  for (const part of chunks([...creators], GET_ALL_CHUNK)) {
+    const week = weekKey(weekEnd - 1);
+    const docs = await db.getAll(...part.map((uid) => db.doc(`creatorDeletionState/${uid}/fundStrikes/${week}`)));
+    docs.forEach((doc, i) => {
+      if (doc.exists) strikes.add(part[i]);
+    });
+  }
   const creatorGates = new Map<string, CreatorGate>();
   for (const uid of creators) {
-    creatorGates.set(uid, closed.has(uid) ? "closed" : team.has(uid) ? "team" : census.struck.has(uid) ? "moderation" : "ok");
+    creatorGates.set(uid, closed.has(uid) ? "closed" : team.has(uid) ? "team" : strikes.has(uid) ? "moderation" : "ok");
   }
   const excludedActors = new Set<string>();
   for (const uid of actors) if (closed.has(uid) || untrusted.has(uid) || team.has(uid)) excludedActors.add(uid);

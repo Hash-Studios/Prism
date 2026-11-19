@@ -239,7 +239,7 @@ test("a primary stats failure does not commit daily stats or quest progress", as
   assert.equal(store.get("questEventRate/u1_2026-01-02_download"), undefined);
   assert.equal(store.get("usersv2/u1/private/economy"), undefined);
 
-  assert.deepEqual(await call({wallId: "w1", action: "download"}), {counted: false});
+  assert.equal(store.get("wallActionRate/u1_W1_download"), undefined);
   assert.equal(store.get("wallpaper_stats/W1"), undefined);
   assert.equal(store.get(`wallpaper_stats_daily/${DAY}_W1`), undefined);
   assert.equal(store.get("usersv2/u1/private/economy"), undefined);
