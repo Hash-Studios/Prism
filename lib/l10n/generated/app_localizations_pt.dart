@@ -16166,7 +16166,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get creatorFundOff => 'O Fundo de criadores não está em funcionamento no momento.';
 
   @override
-  String get creatorFundPending => 'Os resultados de cada semana saem à segunda-feira.';
+  String get creatorFundPending => 'Os resultados de cada semana saem na segunda-feira.';
 
   @override
   String get creatorFundNoActivity => 'Ninguém interagiu com seus wallpapers na semana passada.';

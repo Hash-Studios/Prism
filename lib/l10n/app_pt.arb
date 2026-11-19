@@ -4386,7 +4386,7 @@
   "creatorFundPaid": "{coins, plural, =1{Você ganhou 1 moeda na semana passada} other{Você ganhou {coins} moedas na semana passada}}",
   "creatorFundShare": "Isso é {share} do fundo.",
   "creatorFundOff": "O Fundo de criadores não está em funcionamento no momento.",
-  "creatorFundPending": "Os resultados de cada semana saem à segunda-feira.",
+  "creatorFundPending": "Os resultados de cada semana saem na segunda-feira.",
   "creatorFundNoActivity": "Ninguém interagiu com seus wallpapers na semana passada.",
   "creatorFundFewUsers": "{count, plural, =1{Na semana passada, 1 pessoa interagiu com seus wallpapers. Você precisa de pelo menos {min} para se qualificar.} other{Na semana passada, {count} pessoas interagiram com seus wallpapers. Você precisa de pelo menos {min} para se qualificar.}}",
   "creatorFundSmallShare": "{min, plural, =1{Sua parte na semana passada ficou abaixo do pagamento mínimo de 1 moeda.} other{Sua parte na semana passada ficou abaixo do pagamento mínimo de {min} moedas.}}",
