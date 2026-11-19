@@ -7,12 +7,12 @@
   "functions/src/scripts/backfillAiGenerationReceipts.ts": {
     "npm": "migrate:ai-receipts",
     "pr": "#620",
-    "note": "Owner notes: #616, #617, #620 merged 2026-10-21. The backfill waits for the owner OK."
+    "note": "2026-11-19 dry run (needs STUDIO_SECRET): 70 pending AI walls, 0 to write. Done."
   },
   "functions/src/scripts/backfillCreatorUids.ts": {
     "npm": "migrate:creator-uids",
     "pr": "#653",
-    "note": "No run note found."
+    "note": "2026-11-19 dry run: assigned=0 cleared=0 of 4,018. Done."
   },
   "functions/src/scripts/backfillDesktopCompanions.ts": {
     "npm": "studio:desktop-backfill",
@@ -22,42 +22,42 @@
   "functions/src/scripts/backfillPublicProfiles.ts": {
     "npm": "migrate:profiles",
     "pr": "#653",
-    "note": "No run note found."
+    "note": "PR #886: the backfill ran. A 2026-11-19 dry run gave no output in 110 minutes and was stopped."
   },
   "functions/src/scripts/backfillPublishedAt.ts": {
     "npm": "migrate:published-at",
     "pr": "#851",
-    "note": "PR #851: 'Not run.' PR #853: apply with owner OK before release. Pending."
+    "note": "2026-11-19 dry run: planned=0 of 2,661. Done."
   },
   "functions/src/scripts/backfillSmartWallKeys.ts": {
     "npm": "",
     "pr": "#845",
-    "note": "PR #845: backfill only with owner OK. PR #846: run before the release. No apply note."
+    "note": "2026-11-19 dry run: write=0 delete=0 of 3,451. Done. Needs R2_PREVIEW_BASE_URL in the shell."
   },
   "functions/src/scripts/backfillUsernameLower.ts": {
     "npm": "migrate:username-lower",
     "pr": "#369",
-    "note": "No run note found. PR #369 says dry run by default, --apply to write."
+    "note": "2026-11-19 dry run: 8 of 55,433 users would change. Not applied; waits for the owner's OK."
   },
   "functions/src/scripts/backfillWallAuthors.ts": {
     "npm": "migrate:wall-authors",
     "pr": "#610",
-    "note": "No run note found. PR #610 is a search top hit (title match), not verified."
+    "note": "2026-11-19 dry run: changed=0 of 4,014. Done."
   },
   "functions/src/scripts/backfillWallCategories.ts": {
     "npm": "recategorize:walls",
     "pr": "#538",
-    "note": "Fix for #538: dry run 2026-11-13 read 2,636 walls, 67 change. Apply after the onWallCategorize deploy, with the owner's OK. No apply note."
+    "note": "2026-11-19 dry run: changed=0 of 2,661. The #884 apply is done."
   },
   "functions/src/scripts/backfillWallCollections.ts": {
     "npm": "migrate:wall-collections",
     "pr": "#517",
-    "note": "No run note found. PR #517 shows the --apply command only."
+    "note": "2026-11-19: --apply with owner OK filed 8 walls (12 writes). Dry run after: 0 left."
   },
   "functions/src/scripts/backfillWallColors.ts": {
     "npm": "",
     "pr": "#480",
-    "note": "backend-deploy.md (Colour search): 'I did not run it with --apply.' PR #480: dry run, then apply needs owner go. Not run per doc."
+    "note": "2026-11-19: --apply with owner OK wrote 5 walls. Dry run after: 0 left. Needs R2_PREVIEW_BASE_URL in the shell."
   },
   "functions/src/scripts/backfillWallDepth.ts": {
     "npm": "",
@@ -67,12 +67,12 @@
   "functions/src/scripts/backfillWallSearchTerms.ts": {
     "npm": "migrate:wall-search-terms",
     "pr": "#607",
-    "note": "No run note found."
+    "note": "2026-11-19 dry run: changed=0 of 2,661. Done."
   },
   "functions/src/scripts/backfillWallSignatures.ts": {
     "npm": "",
     "pr": "#608",
-    "note": "No run note found. PR #608: dry run by default."
+    "note": "2026-11-19: --apply with owner OK wrote 3 walls. Dry run after: 0 left."
   },
   "functions/src/scripts/backfillWallSpatial.ts": {
     "npm": "migrate:wall-spatial",
@@ -82,22 +82,22 @@
   "functions/src/scripts/backfillWallStudio.ts": {
     "npm": "",
     "pr": "#797",
-    "note": "PR #797: dry run by default, 'not run against production'. Apply needs owner OK (also backend-deploy.md Editors' Choice step 4)."
+    "note": "2026-11-19 dry run: matched=0 of 252 Studio walls. Done."
   },
   "functions/src/scripts/buildWrapped.ts": {
     "npm": "",
     "pr": "#786",
-    "note": "PR #786: job runs 'with your OK'. No run note."
+    "note": "2026-11-19 dry run: 55,433 users read, 16 eligible, 56 skipped (96 minutes). Not applied; the job runs with the owner's OK before 1 December."
   },
   "functions/src/scripts/dedupeWallIds.ts": {
     "npm": "migrate:dedupe-wall-ids",
     "pr": "#604",
-    "note": "No run note found. PR #604 says apply path tested, no prod run note."
+    "note": "2026-11-19 dry run: no duplicate ids. Done."
   },
   "functions/src/scripts/economyConfig.ts": {
     "npm": "economy:config",
     "pr": "#491",
-    "note": "backend-deploy.md (Coin economy v2) step 4: --init --apply, no run note. PR #491 is a title match, not verified."
+    "note": "2026-11-19 dry run: economyConfig/current is version 2 with the #892 weeklyEvent. Done."
   },
   "functions/src/scripts/grantTestCoins.ts": {
     "npm": "",
@@ -112,7 +112,7 @@
   "functions/src/scripts/qualifyFavouriteKeys.ts": {
     "npm": "migrate:favourite-keys",
     "pr": "#843",
-    "note": "PR #843: prod dry run (read only) done. --apply waits for most users on the build (PR #846 step 5). Not applied per PR text."
+    "note": "2026-11-19 dry run: 28,680 of 103,545 docs to move. Not applied: waits until most users run a build with #524."
   },
   "functions/src/scripts/reserveDrop.ts": {
     "npm": "drops:reserve",
@@ -122,7 +122,7 @@
   "functions/src/scripts/seedChallengeThemes.ts": {
     "npm": "",
     "pr": "#759",
-    "note": "No run note found. PR #759 shows the --apply command only."
+    "note": "2026-11-19: all 6 challengeThemes docs exist. Done."
   },
   "functions/src/scripts/setupStudioAccount.ts": {
     "npm": "studio:account",
