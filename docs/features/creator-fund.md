@@ -106,7 +106,7 @@ Set the pool with `npm run economy:config -- --set creatorFund.pool=<coins>`. Ad
 
 ## Weekly job
 
-`settleCreatorFund` runs every hour from 06:00 to 12:00 UTC on Monday. It settles the ISO week that ended at Monday 00:00 UTC. The Monday runs can open a week. Outside that window the hourly job only resumes an unfinished week, even if a newer week has started.
+`settleCreatorFund` runs every hour. From 06:00 to 12:00 UTC on Monday, it settles the ISO week that ended at Monday 00:00 UTC. Only these Monday runs can open a week. Outside that window the hourly job only resumes an unfinished week, even if a newer week has started.
 
 ```text
 (no doc) --pool > 0--> computing --> paying --> notifying --> complete
