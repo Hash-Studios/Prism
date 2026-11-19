@@ -133,7 +133,7 @@ The colours and smart folder scripts read `R2_PREVIEW_BASE_URL`. Set it in the s
 | `qualifyFavouriteKeys --apply` (28,680 docs) | Waits until most users run a build with #524 | #843 |
 | `backfillUsernameLower --apply` (8 users) | Waits for the owner's OK | #369 |
 | `backfillWallDepth` | The dry run also calls fal and costs money | #514 |
-| Remote Config `wrapped_2026_enabled = true` | Set on 1 December, after `buildWrapped --apply` | #786 |
+| Remote Config `wrapped_2026_enabled = true` | Set on 1 December, after `buildWrapped --apply`. The 2026-11-19 dry run read 55,433 users and found 16 eligible. Check the eligibility rules before launch. | #786 |
 | `seriesWeights.winter-light = 0` | Set on 1 January 2027 | #888 |
 | `dailyDropReserves = 2` | On 4 December, only if fewer than 4 Winter reserves are ready | #888 |
 

@@ -87,7 +87,7 @@
   "functions/src/scripts/buildWrapped.ts": {
     "npm": "",
     "pr": "#786",
-    "note": "PR #786: job runs 'with your OK'. No run note."
+    "note": "2026-11-19 dry run: 55,433 users read, 16 eligible, 56 skipped (96 minutes). Not applied; the job runs with the owner's OK before 1 December."
   },
   "functions/src/scripts/dedupeWallIds.ts": {
     "npm": "migrate:dedupe-wall-ids",
