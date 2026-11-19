@@ -60,6 +60,11 @@ import '../../features/creator_directory/data/creator_directory_repository_impl.
     as _i1049;
 import '../../features/creator_directory/domain/creator_directory_repository.dart'
     as _i612;
+import '../../features/creator_fund/biz/bloc/creator_fund_bloc.j.dart' as _i424;
+import '../../features/creator_fund/data/creator_fund_repository_impl.dart'
+    as _i707;
+import '../../features/creator_fund/domain/creator_fund_repository.dart'
+    as _i916;
 import '../../features/creator_stats/biz/bloc/creator_stats_bloc.j.dart'
     as _i1061;
 import '../../features/creator_stats/data/creator_stats_repository_impl.dart'
@@ -417,6 +422,9 @@ _i174.GetIt initGetIt(
   gh.lazySingleton<_i652.PaletteRepository>(
     () => _i446.PaletteRepositoryImpl(),
   );
+  gh.lazySingleton<_i916.CreatorFundRepository>(
+    () => _i707.CreatorFundRepositoryImpl(),
+  );
   gh.lazySingleton<_i366.NotificationsRepository>(
     () => _i1017.NotificationsRepositoryImpl(
       gh<_i290.NotificationsLocalDataSource>(),
@@ -500,6 +508,9 @@ _i174.GetIt initGetIt(
       gh<_i1073.SettingsLocalDataSource>(),
       gh<_i349.FirestoreClient>(),
     ),
+  );
+  gh.factory<_i424.CreatorFundBloc>(
+    () => _i424.CreatorFundBloc(gh<_i916.CreatorFundRepository>()),
   );
   gh.factory<_i638.WallpaperPositionBloc>(
     () => _i638.WallpaperPositionBloc(gh<_i307.WallpaperPositionRepository>()),

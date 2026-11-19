@@ -15884,5 +15884,20 @@
   "coreCoinEventWeekend": "{action} · {multiplier}x वीकेंड",
   "@coreCoinEventWeekend": {"description": "Coin history line for an ad paid during a weekend coin event. action is the base label, like Watched a video.", "placeholders": {"action": {"type": "String"}, "multiplier": {"type": "int"}}},
   "coreCoinEventGeneric": "{action} · {multiplier}x इवेंट",
-  "@coreCoinEventGeneric": {"description": "Coin history line for an ad paid during a one-off coin event. action is the base label, like Watched a video.", "placeholders": {"action": {"type": "String"}, "multiplier": {"type": "int"}}}
+  "@coreCoinEventGeneric": {"description": "Coin history line for an ad paid during a one-off coin event. action is the base label, like Watched a video.", "placeholders": {"action": {"type": "String"}, "multiplier": {"type": "int"}}},
+  "creatorFundTitle": "क्रिएटर फंड",
+  "creatorFundAbout": "हर हफ़्ते, Prism Coins का एक पूल क्रिएटर्स में बाँटा जाता है। आपका हिस्सा इस पर निर्भर है कि कितने लोग आपके वॉलपेपर सेव, सेट, डाउनलोड, रीमिक्स और फ़ोल्डर में जोड़ते हैं।",
+  "creatorFundPaid": "{coins, plural, =1{आपने पिछले हफ़्ते 1 कॉइन कमाया} other{आपने पिछले हफ़्ते {coins} कॉइन कमाए}}",
+  "creatorFundShare": "यह फ़ंड का {share} है।",
+  "creatorFundOff": "क्रिएटर फ़ंड अभी चालू नहीं है।",
+  "creatorFundPending": "हर हफ़्ते के नतीजे सोमवार को आते हैं।",
+  "creatorFundNoActivity": "पिछले हफ़्ते किसी ने आपके वॉलपेपर से इंटरैक्ट नहीं किया।",
+  "creatorFundFewUsers": "{count, plural, =1{पिछले हफ़्ते 1 व्यक्ति ने आपके वॉलपेपर से इंटरैक्ट किया। योग्य होने के लिए आपको कम से कम {min} चाहिए।} other{पिछले हफ़्ते {count} लोगों ने आपके वॉलपेपर से इंटरैक्ट किया। योग्य होने के लिए आपको कम से कम {min} चाहिए।}}",
+  "creatorFundSmallShare": "{min, plural, =1{पिछले हफ़्ते आपका हिस्सा न्यूनतम भुगतान 1 कॉइन से कम था।} other{पिछले हफ़्ते आपका हिस्सा न्यूनतम भुगतान {min} कॉइन से कम था।}}",
+  "creatorFundModeration": "पिछला हफ़्ता नहीं गिना जाएगा, क्योंकि रिपोर्ट के कारण आपका एक वॉलपेपर समीक्षा के लिए रोका गया।",
+  "creatorFundTeam": "Prism की टीम के अकाउंट क्रिएटर फ़ंड का हिस्सा नहीं हैं।",
+  "creatorFundError": "क्रिएटर फ़ंड लोड नहीं हो सका। अपना कनेक्शन जाँचें और फिर से कोशिश करें।",
+  "coreCoinCreatorFund": "क्रिएटर फ़ंड",
+  "notifPushCreatorFundPaidTitle": "{coins, plural, =1{आपने क्रिएटर फ़ंड से 1 कॉइन कमाया} other{आपने क्रिएटर फ़ंड से {coins} कॉइन कमाए}}",
+  "notifPushCreatorFundPaidBody": "अपनी क्रिएटर स्टैट्स में अपना हिस्सा देखें।"
 }

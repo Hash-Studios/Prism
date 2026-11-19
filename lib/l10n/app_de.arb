@@ -15123,5 +15123,20 @@
   "coinEventAdBadge": "{multiplier}x",
   "coinEventAdBadgeLabel": "{multiplier}x-Münzaktion",
   "coreCoinEventWeekend": "{action} · {multiplier}x Wochenende",
-  "coreCoinEventGeneric": "{action} · {multiplier}x Aktion"
+  "coreCoinEventGeneric": "{action} · {multiplier}x Aktion",
+  "creatorFundTitle": "Creator-Fonds",
+  "creatorFundAbout": "Jede Woche wird ein Pool aus Prism Coins unter Creatorn aufgeteilt. Dein Anteil hängt davon ab, wie viele Leute deine Wallpaper speichern, setzen, herunterladen, remixen oder in Ordner legen.",
+  "creatorFundPaid": "{coins, plural, =1{Du hast letzte Woche 1 Coin verdient} other{Du hast letzte Woche {coins} Coins verdient}}",
+  "creatorFundShare": "Das sind {share} des Fonds.",
+  "creatorFundOff": "Der Creator-Fonds läuft gerade nicht.",
+  "creatorFundPending": "Die Ergebnisse jeder Woche erscheinen am Montag.",
+  "creatorFundNoActivity": "Letzte Woche hat niemand mit deinen Wallpapern interagiert.",
+  "creatorFundFewUsers": "{count, plural, =1{Letzte Woche hat 1 Person mit deinen Wallpapern interagiert. Du brauchst mindestens {min}, um dich zu qualifizieren.} other{Letzte Woche haben {count} Personen mit deinen Wallpapern interagiert. Du brauchst mindestens {min}, um dich zu qualifizieren.}}",
+  "creatorFundSmallShare": "{min, plural, =1{Dein Anteil letzte Woche lag unter der Mindestauszahlung von 1 Coin.} other{Dein Anteil letzte Woche lag unter der Mindestauszahlung von {min} Coins.}}",
+  "creatorFundModeration": "Letzte Woche zählt nicht, weil Meldungen eines deiner Wallpaper zur Prüfung zurückgehalten haben.",
+  "creatorFundTeam": "Team-Konten von Prism sind nicht Teil des Creator-Fonds.",
+  "creatorFundError": "Der Creator-Fonds konnte nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.",
+  "coreCoinCreatorFund": "Creator-Fonds",
+  "notifPushCreatorFundPaidTitle": "{coins, plural, =1{Du hast 1 Coin aus dem Creator-Fonds verdient} other{Du hast {coins} Coins aus dem Creator-Fonds verdient}}",
+  "notifPushCreatorFundPaidBody": "Sieh deinen Anteil in deinen Creator-Statistiken."
 }

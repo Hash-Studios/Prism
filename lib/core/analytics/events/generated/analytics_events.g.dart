@@ -5164,6 +5164,21 @@ class CreatorStatsMetricSwitchedEvent extends AnalyticsEvent {
   }
 }
 
+class CreatorFundViewedEvent extends AnalyticsEvent {
+  const CreatorFundViewedEvent({required this.state, this.reason});
+
+  final String state;
+  final String? reason;
+
+  @override
+  String get eventName => 'creator_fund_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'state': state, if (reason != null) 'reason': reason!};
+  }
+}
+
 class CreatorWallStatsOpenedEvent extends AnalyticsEvent {
   const CreatorWallStatsOpenedEvent({required this.wallId});
 

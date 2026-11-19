@@ -119,6 +119,10 @@ String _topicDigestTitle(Map<String, Object?> args, AppLocalizations l10n) {
         : l10n.notifPushEditorsChoiceBody(_stringArg(args, 'wallTitle')),
   ),
   'creatorStatsWeekly' => (title: l10n.statsWeeklyTitle, body: l10n.statsWeeklyBody(_stringArg(args, 'week'))),
+  'creatorFundPaid' => (
+    title: l10n.notifPushCreatorFundPaidTitle(_intArg(args, 'coins')),
+    body: l10n.notifPushCreatorFundPaidBody,
+  ),
   'streakReminder' => (title: l10n.notifPushStreakReminderTitle, body: l10n.notifPushStreakReminderBody),
   'wotdForCreator' => (title: l10n.notifPushWotdCreatorTitle, body: l10n.notifPushWotdCreatorBody),
   'wotdForAudience' => (

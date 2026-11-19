@@ -4524,5 +4524,20 @@
   "coinEventAdBadge": "{multiplier}x",
   "coinEventAdBadgeLabel": "Evento de monedas {multiplier}x",
   "coreCoinEventWeekend": "{action} · fin de semana {multiplier}x",
-  "coreCoinEventGeneric": "{action} · evento {multiplier}x"
+  "coreCoinEventGeneric": "{action} · evento {multiplier}x",
+  "creatorFundTitle": "Fondo para creadores",
+  "creatorFundAbout": "Cada semana, un fondo de Prism Coins se reparte entre los creadores. Tu parte depende de cuántas personas guardan, ponen, descargan, remezclan y añaden tus wallpapers a carpetas.",
+  "creatorFundPaid": "{coins, plural, =1{Ganaste 1 moneda la semana pasada} other{Ganaste {coins} monedas la semana pasada}}",
+  "creatorFundShare": "Eso es el {share} del fondo.",
+  "creatorFundOff": "El Fondo para creadores no está activo en este momento.",
+  "creatorFundPending": "Los resultados de cada semana salen el lunes.",
+  "creatorFundNoActivity": "Nadie interactuó con tus wallpapers la semana pasada.",
+  "creatorFundFewUsers": "{count, plural, =1{La semana pasada, 1 persona interactuó con tus wallpapers. Necesitas al menos {min} para calificar.} other{La semana pasada, {count} personas interactuaron con tus wallpapers. Necesitas al menos {min} para calificar.}}",
+  "creatorFundSmallShare": "{min, plural, =1{Tu parte de la semana pasada fue menor que el pago mínimo de 1 moneda.} other{Tu parte de la semana pasada fue menor que el pago mínimo de {min} monedas.}}",
+  "creatorFundModeration": "La semana pasada no cuenta, porque los reportes pusieron uno de tus wallpapers en revisión.",
+  "creatorFundTeam": "Las cuentas de equipo de Prism no forman parte del Fondo para creadores.",
+  "creatorFundError": "No se pudo cargar el Fondo para creadores. Revisa tu conexión e inténtalo de nuevo.",
+  "coreCoinCreatorFund": "Fondo para creadores",
+  "notifPushCreatorFundPaidTitle": "{coins, plural, =1{Ganaste 1 moneda del Fondo para creadores} other{Ganaste {coins} monedas del Fondo para creadores}}",
+  "notifPushCreatorFundPaidBody": "Mira tu parte en tus estadísticas de creador."
 }

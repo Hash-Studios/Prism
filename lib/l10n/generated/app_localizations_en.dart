@@ -15752,4 +15752,84 @@ class AppLocalizationsEn extends AppLocalizations {
   String coreCoinEventGeneric(String action, int multiplier) {
     return '$action · ${multiplier}x event';
   }
+
+  @override
+  String get creatorFundTitle => 'Creator fund';
+
+  @override
+  String get creatorFundAbout =>
+      'Each week, a pool of Prism Coins is shared among creators. Your share depends on how many people save, set, download, remix, and add your walls to folders.';
+
+  @override
+  String creatorFundPaid(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'You earned $coins coins last week',
+      one: 'You earned 1 coin last week',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creatorFundShare(String share) {
+    return 'That is $share of the fund.';
+  }
+
+  @override
+  String get creatorFundOff => 'The Creator fund is not running right now.';
+
+  @override
+  String get creatorFundPending => 'Results for each week come out on Monday.';
+
+  @override
+  String get creatorFundNoActivity => 'No one engaged with your walls last week.';
+
+  @override
+  String creatorFundFewUsers(int count, int min) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Last week, $count people engaged with your walls. You need at least $min to qualify.',
+      one: 'Last week, 1 person engaged with your walls. You need at least $min to qualify.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creatorFundSmallShare(int min) {
+    String _temp0 = intl.Intl.pluralLogic(
+      min,
+      locale: localeName,
+      other: 'Your share last week was less than the minimum payout of $min coins.',
+      one: 'Your share last week was less than the minimum payout of 1 coin.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get creatorFundModeration => 'Last week does not count, because reports held one of your walls for review.';
+
+  @override
+  String get creatorFundTeam => 'Prism team accounts are not part of the Creator fund.';
+
+  @override
+  String get creatorFundError => 'Unable to load the Creator fund. Check your connection and try again.';
+
+  @override
+  String get coreCoinCreatorFund => 'Creator fund';
+
+  @override
+  String notifPushCreatorFundPaidTitle(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'You earned $coins coins from the Creator fund',
+      one: 'You earned 1 coin from the Creator fund',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushCreatorFundPaidBody => 'See your share in Creator stats.';
 }

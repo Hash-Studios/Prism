@@ -16010,4 +16010,88 @@ class AppLocalizationsDe extends AppLocalizations {
   String coreCoinEventGeneric(String action, int multiplier) {
     return '$action · ${multiplier}x Aktion';
   }
+
+  @override
+  String get creatorFundTitle => 'Creator-Fonds';
+
+  @override
+  String get creatorFundAbout =>
+      'Jede Woche wird ein Pool aus Prism Coins unter Creatorn aufgeteilt. Dein Anteil hängt davon ab, wie viele Leute deine Wallpaper speichern, setzen, herunterladen, remixen oder in Ordner legen.';
+
+  @override
+  String creatorFundPaid(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Du hast letzte Woche $coins Coins verdient',
+      one: 'Du hast letzte Woche 1 Coin verdient',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creatorFundShare(String share) {
+    return 'Das sind $share des Fonds.';
+  }
+
+  @override
+  String get creatorFundOff => 'Der Creator-Fonds läuft gerade nicht.';
+
+  @override
+  String get creatorFundPending => 'Die Ergebnisse jeder Woche erscheinen am Montag.';
+
+  @override
+  String get creatorFundNoActivity => 'Letzte Woche hat niemand mit deinen Wallpapern interagiert.';
+
+  @override
+  String creatorFundFewUsers(int count, int min) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Letzte Woche haben $count Personen mit deinen Wallpapern interagiert. Du brauchst mindestens $min, um dich zu qualifizieren.',
+      one:
+          'Letzte Woche hat 1 Person mit deinen Wallpapern interagiert. Du brauchst mindestens $min, um dich zu qualifizieren.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String creatorFundSmallShare(int min) {
+    String _temp0 = intl.Intl.pluralLogic(
+      min,
+      locale: localeName,
+      other: 'Dein Anteil letzte Woche lag unter der Mindestauszahlung von $min Coins.',
+      one: 'Dein Anteil letzte Woche lag unter der Mindestauszahlung von 1 Coin.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get creatorFundModeration =>
+      'Letzte Woche zählt nicht, weil Meldungen eines deiner Wallpaper zur Prüfung zurückgehalten haben.';
+
+  @override
+  String get creatorFundTeam => 'Team-Konten von Prism sind nicht Teil des Creator-Fonds.';
+
+  @override
+  String get creatorFundError =>
+      'Der Creator-Fonds konnte nicht geladen werden. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String get coreCoinCreatorFund => 'Creator-Fonds';
+
+  @override
+  String notifPushCreatorFundPaidTitle(int coins) {
+    String _temp0 = intl.Intl.pluralLogic(
+      coins,
+      locale: localeName,
+      other: 'Du hast $coins Coins aus dem Creator-Fonds verdient',
+      one: 'Du hast 1 Coin aus dem Creator-Fonds verdient',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notifPushCreatorFundPaidBody => 'Sieh deinen Anteil in deinen Creator-Statistiken.';
 }

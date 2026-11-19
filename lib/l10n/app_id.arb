@@ -15251,5 +15251,20 @@
   "coinEventAdBadge": "{multiplier}x",
   "coinEventAdBadgeLabel": "Event koin {multiplier}x",
   "coreCoinEventWeekend": "{action} · akhir pekan {multiplier}x",
-  "coreCoinEventGeneric": "{action} · event {multiplier}x"
+  "coreCoinEventGeneric": "{action} · event {multiplier}x",
+  "creatorFundTitle": "Dana kreator",
+  "creatorFundAbout": "Setiap minggu, sebagian dana Prism Coins dibagikan kepada kreator. Bagian Anda bergantung pada berapa banyak orang yang menyimpan, menetapkan, mengunduh, meremix, dan menambahkan wallpaper Anda ke folder.",
+  "creatorFundPaid": "{coins, plural, =1{Anda mendapat 1 koin minggu lalu} other{Anda mendapat {coins} koin minggu lalu}}",
+  "creatorFundShare": "Itu {share} dari dana.",
+  "creatorFundOff": "Dana kreator tidak berjalan saat ini.",
+  "creatorFundPending": "Hasil setiap minggu keluar pada hari Senin.",
+  "creatorFundNoActivity": "Tidak ada yang berinteraksi dengan wallpaper Anda minggu lalu.",
+  "creatorFundFewUsers": "{count, plural, =1{Minggu lalu, 1 orang berinteraksi dengan wallpaper Anda. Anda memerlukan minimal {min} untuk memenuhi syarat.} other{Minggu lalu, {count} orang berinteraksi dengan wallpaper Anda. Anda memerlukan minimal {min} untuk memenuhi syarat.}}",
+  "creatorFundSmallShare": "{min, plural, =1{Bagian Anda minggu lalu kurang dari pembayaran minimum 1 koin.} other{Bagian Anda minggu lalu kurang dari pembayaran minimum {min} koin.}}",
+  "creatorFundModeration": "Minggu lalu tidak dihitung, karena laporan menahan salah satu wallpaper Anda untuk ditinjau.",
+  "creatorFundTeam": "Akun tim Prism tidak termasuk dalam Dana kreator.",
+  "creatorFundError": "Dana kreator tidak dapat dimuat. Periksa koneksi Anda lalu coba lagi.",
+  "coreCoinCreatorFund": "Dana kreator",
+  "notifPushCreatorFundPaidTitle": "{coins, plural, =1{Anda mendapat 1 koin dari Dana kreator} other{Anda mendapat {coins} koin dari Dana kreator}}",
+  "notifPushCreatorFundPaidBody": "Lihat bagian Anda di statistik kreator."
 }
