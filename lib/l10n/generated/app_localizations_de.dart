@@ -10900,10 +10900,23 @@ class AppLocalizationsDe extends AppLocalizations {
   String get foldersCreateFolder => 'Ordner erstellen';
 
   @override
-  String get foldersSuggested => 'Vorschlag';
+  String get foldersCreateNewFolder => 'Neuen Ordner erstellen';
 
   @override
-  String get foldersNewTag => 'Neu';
+  String get foldersCreateNewFolderSubtitle => 'Ordne deine Favoriten';
+
+  @override
+  String get foldersNewFolderHelp =>
+      'Erstelle einen Ordner für deine Hintergrundbilder. Du kannst ihn später bearbeiten.';
+
+  @override
+  String get foldersPickerEmpty => 'Du hast noch keine Ordner.';
+
+  @override
+  String get foldersCreateFailed => 'Der Ordner konnte nicht erstellt werden. Bitte versuche es erneut.';
+
+  @override
+  String get foldersClearName => 'Namen löschen';
 
   @override
   String foldersItemCount(int count) {
@@ -10998,12 +11011,6 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get foldersMoreOptions => 'Weitere Optionen';
-
-  @override
-  String get foldersSuggestionLockScreen => 'Sperrbildschirm';
-
-  @override
-  String get foldersSuggestionHomeScreen => 'Startbildschirm';
 
   @override
   String get moodDreamyTitle => 'Verträumt';

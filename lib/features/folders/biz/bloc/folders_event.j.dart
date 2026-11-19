@@ -26,11 +26,10 @@ abstract class FoldersEvent with _$FoldersEvent {
   const factory FoldersEvent.deleteRequested({required String folderId, @Default(0) int operationId}) =
       _DeleteRequested;
 
-  /// Puts [wall] in exactly [folderIds] plus a new folder per name in [newNames], and takes it out of the rest.
+  /// Puts [wall] in exactly [folderIds] and takes it out of the rest.
   const factory FoldersEvent.saveRequested({
     required FavouriteWallEntity wall,
     required Set<String> folderIds,
-    @Default(<String>[]) List<String> newNames,
     @Default(0) int operationId,
   }) = _SaveRequested;
   const factory FoldersEvent.itemRemoved({

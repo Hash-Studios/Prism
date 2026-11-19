@@ -34,7 +34,6 @@ class _FakeFoldersRepository implements FoldersRepository {
   @override
   int writeRevision = 0;
   String? failAddFolderId;
-  String? failCreateName;
   void Function()? afterAdd;
 
   @override
@@ -78,7 +77,7 @@ class _FakeFoldersRepository implements FoldersRepository {
   @override
   Future<Result<void>> createFolder(FolderEntity folder, {FavouriteWallEntity? firstWall}) async {
     calls.add('createFolder:${folder.name}:${folder.itemCount}:${firstWall != null}');
-    if (fail || folder.name == failCreateName) return Result.error<void>(const ServerFailure('boom'));
+    if (fail) return Result.error<void>(const ServerFailure('boom'));
     folders = <FolderEntity>[...folders, folder];
     items[folder.id] = <FavouriteWallEntity>[?firstWall];
     return Result.success<void>(null);
@@ -316,27 +315,6 @@ void main() {
     await pumpEventQueue();
     expect(repo.calls, <String>['addItem:a:1:${thumb('w1')}']);
     expect(bloc.state, FoldersState.initial());
-  });
-
-  test('retry resumes created folders rather than duplicating a partial Save', () async {
-    final repo = _FakeFoldersRepository()..failCreateName = 'B';
-    final bloc = _blocFor(repo);
-    await _started(bloc);
-    Future<bool> save() => bloc.run(
-      (id) => FoldersEvent.saveRequested(
-        wall: wall('w1'),
-        folderIds: <String>{},
-        newNames: <String>['A', 'B'],
-        operationId: id,
-      ),
-    );
-    expect(await save(), isFalse);
-    repo.failCreateName = null;
-    expect(await save(), isTrue);
-    expect(bloc.state.folders.map((folder) => folder.name).toList()..sort(), <String>['A', 'B']);
-    expect(bloc.state.folders.every((folder) => folder.itemCount == 1), isTrue);
-    expect(repo.calls.where((call) => call == 'createFolder:A:1:true'), hasLength(1));
-    expect(repo.calls.where((call) => call.startsWith('removeItem:')), isEmpty);
   });
 
   test('refresh invalidates old membership before saving an externally added wall', () async {
@@ -643,31 +621,6 @@ void main() {
     expect(bloc.state.folder('b')?.covers, <String>[thumb('w1')]);
     expect(bloc.state.membership[folderItemKey(wall('w1'))], <String>{'a', 'b'});
     expect(repo.calls, <String>['addItem:a:1:${thumb('w1')}', 'addItem:b:1:${thumb('w1')}']);
-  });
-
-  test('saveRequested with newNames creates the folder with the wall inside', () async {
-    final _FakeFoldersRepository repo = _FakeFoldersRepository();
-    final FoldersBloc bloc = _blocFor(repo);
-    await _started(bloc);
-
-    expect(
-      await bloc.run(
-        (id) => FoldersEvent.saveRequested(
-          wall: wall('w1'),
-          folderIds: const <String>{},
-          newNames: const <String>['New'],
-          operationId: id,
-        ),
-      ),
-      isTrue,
-    );
-
-    expect(bloc.state.folders, hasLength(1));
-    final FolderEntity created = bloc.state.folders.single;
-    expect(created.itemCount, 1);
-    expect(created.covers, <String>[thumb('w1')]);
-    expect(bloc.state.membership[folderItemKey(wall('w1'))], <String>{created.id});
-    expect(repo.calls, <String>['createFolder:New:1:true']);
   });
 
   test('saveRequested removes the wall from a folder it is unticked in and refills covers', () async {

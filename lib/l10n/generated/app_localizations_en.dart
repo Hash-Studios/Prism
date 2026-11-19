@@ -10735,10 +10735,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get foldersCreateFolder => 'Create folder';
 
   @override
-  String get foldersSuggested => 'Suggested';
+  String get foldersCreateNewFolder => 'Create new folder';
 
   @override
-  String get foldersNewTag => 'New';
+  String get foldersCreateNewFolderSubtitle => 'Organise your saves';
+
+  @override
+  String get foldersNewFolderHelp => 'Make a folder for your walls. You can edit it later.';
+
+  @override
+  String get foldersPickerEmpty => 'You have no folders yet.';
+
+  @override
+  String get foldersCreateFailed => 'Could not create the folder. Try again.';
+
+  @override
+  String get foldersClearName => 'Clear name';
 
   @override
   String foldersItemCount(int count) {
@@ -10833,12 +10845,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get foldersMoreOptions => 'More options';
-
-  @override
-  String get foldersSuggestionLockScreen => 'Lock screen';
-
-  @override
-  String get foldersSuggestionHomeScreen => 'Home screen';
 
   @override
   String get moodDreamyTitle => 'Dreamy';

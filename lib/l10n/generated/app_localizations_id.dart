@@ -10790,10 +10790,22 @@ class AppLocalizationsId extends AppLocalizations {
   String get foldersCreateFolder => 'Buat folder';
 
   @override
-  String get foldersSuggested => 'Disarankan';
+  String get foldersCreateNewFolder => 'Buat folder baru';
 
   @override
-  String get foldersNewTag => 'Baru';
+  String get foldersCreateNewFolderSubtitle => 'Atur simpananmu';
+
+  @override
+  String get foldersNewFolderHelp => 'Buat folder untuk wallpaper kamu. Kamu bisa mengeditnya nanti.';
+
+  @override
+  String get foldersPickerEmpty => 'Kamu belum punya folder.';
+
+  @override
+  String get foldersCreateFailed => 'Folder tidak dapat dibuat. Coba lagi.';
+
+  @override
+  String get foldersClearName => 'Hapus nama';
 
   @override
   String foldersItemCount(int count) {
@@ -10888,12 +10900,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get foldersMoreOptions => 'Opsi lainnya';
-
-  @override
-  String get foldersSuggestionLockScreen => 'Layar kunci';
-
-  @override
-  String get foldersSuggestionHomeScreen => 'Layar utama';
 
   @override
   String get moodDreamyTitle => 'Impian';

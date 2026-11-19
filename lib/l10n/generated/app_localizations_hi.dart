@@ -10878,10 +10878,22 @@ class AppLocalizationsHi extends AppLocalizations {
   String get foldersCreateFolder => 'फ़ोल्डर बनाएँ';
 
   @override
-  String get foldersSuggested => 'सुझाया गया';
+  String get foldersCreateNewFolder => 'नया फ़ोल्डर बनाएँ';
 
   @override
-  String get foldersNewTag => 'नया';
+  String get foldersCreateNewFolderSubtitle => 'अपनी सेव की गई चीज़ें व्यवस्थित करें';
+
+  @override
+  String get foldersNewFolderHelp => 'अपने वॉलपेपर के लिए एक फ़ोल्डर बनाएँ। आप इसे बाद में बदल सकते हैं।';
+
+  @override
+  String get foldersPickerEmpty => 'आपके पास अभी कोई फ़ोल्डर नहीं है।';
+
+  @override
+  String get foldersCreateFailed => 'फ़ोल्डर नहीं बनाया जा सका। फिर से कोशिश करें।';
+
+  @override
+  String get foldersClearName => 'नाम साफ़ करें';
 
   @override
   String foldersItemCount(int count) {
@@ -10976,12 +10988,6 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get foldersMoreOptions => 'और विकल्प';
-
-  @override
-  String get foldersSuggestionLockScreen => 'लॉक स्क्रीन';
-
-  @override
-  String get foldersSuggestionHomeScreen => 'होम स्क्रीन';
 
   @override
   String get moodDreamyTitle => 'स्वप्निल';

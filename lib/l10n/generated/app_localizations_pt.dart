@@ -11070,10 +11070,22 @@ class AppLocalizationsPt extends AppLocalizations {
   String get foldersCreateFolder => 'Criar pasta';
 
   @override
-  String get foldersSuggested => 'Sugerida';
+  String get foldersCreateNewFolder => 'Criar nova pasta';
 
   @override
-  String get foldersNewTag => 'Nova';
+  String get foldersCreateNewFolderSubtitle => 'Organize os seus salvos';
+
+  @override
+  String get foldersNewFolderHelp => 'Crie uma pasta para os seus papéis de parede. Pode editá-la mais tarde.';
+
+  @override
+  String get foldersPickerEmpty => 'Ainda não tem pastas.';
+
+  @override
+  String get foldersCreateFailed => 'Não foi possível criar a pasta. Tente novamente.';
+
+  @override
+  String get foldersClearName => 'Limpar nome';
 
   @override
   String foldersItemCount(int count) {
@@ -11168,12 +11180,6 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get foldersMoreOptions => 'Mais opções';
-
-  @override
-  String get foldersSuggestionLockScreen => 'Tela de bloqueio';
-
-  @override
-  String get foldersSuggestionHomeScreen => 'Tela inicial';
 
   @override
   String get moodDreamyTitle => 'Sonhador';
@@ -27294,10 +27300,22 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get foldersCreateFolder => 'Criar pasta';
 
   @override
-  String get foldersSuggested => 'Sugerida';
+  String get foldersCreateNewFolder => 'Criar nova pasta';
 
   @override
-  String get foldersNewTag => 'Nova';
+  String get foldersCreateNewFolderSubtitle => 'Organize seus salvos';
+
+  @override
+  String get foldersNewFolderHelp => 'Crie uma pasta para seus papéis de parede. Você pode editá-la depois.';
+
+  @override
+  String get foldersPickerEmpty => 'Você ainda não tem pastas.';
+
+  @override
+  String get foldersCreateFailed => 'Não foi possível criar a pasta. Tente novamente.';
+
+  @override
+  String get foldersClearName => 'Limpar nome';
 
   @override
   String foldersItemCount(int count) {
@@ -27392,12 +27410,6 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get foldersMoreOptions => 'Mais opções';
-
-  @override
-  String get foldersSuggestionLockScreen => 'Tela de bloqueio';
-
-  @override
-  String get foldersSuggestionHomeScreen => 'Tela inicial';
 
   @override
   String get moodDreamyTitle => 'Sonhador';

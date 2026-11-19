@@ -152,7 +152,7 @@ return organizeRequested(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String userId,  int operationId)?  started,TResult Function()?  cleared,TResult Function( String userId,  Failure failure)?  writeFailed,TResult Function( String folderId,  int operationId)?  folderOpened,TResult Function( FavouriteWallEntity wall,  int operationId)?  membershipRequested,TResult Function( String name,  FavouriteWallEntity? wall,  int operationId)?  createRequested,TResult Function( String folderId,  String name,  int operationId)?  renameRequested,TResult Function( String folderId,  bool isPublic,  int operationId)?  visibilityRequested,TResult Function( String folderId,  int operationId)?  deleteRequested,TResult Function( FavouriteWallEntity wall,  Set<String> folderIds,  List<String> newNames,  int operationId)?  saveRequested,TResult Function( String folderId,  FavouriteWallEntity wall,  int operationId)?  itemRemoved,TResult Function( String folderId,  FolderEdit edit,  int operationId)?  organizeRequested,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String userId,  int operationId)?  started,TResult Function()?  cleared,TResult Function( String userId,  Failure failure)?  writeFailed,TResult Function( String folderId,  int operationId)?  folderOpened,TResult Function( FavouriteWallEntity wall,  int operationId)?  membershipRequested,TResult Function( String name,  FavouriteWallEntity? wall,  int operationId)?  createRequested,TResult Function( String folderId,  String name,  int operationId)?  renameRequested,TResult Function( String folderId,  bool isPublic,  int operationId)?  visibilityRequested,TResult Function( String folderId,  int operationId)?  deleteRequested,TResult Function( FavouriteWallEntity wall,  Set<String> folderIds,  int operationId)?  saveRequested,TResult Function( String folderId,  FavouriteWallEntity wall,  int operationId)?  itemRemoved,TResult Function( String folderId,  FolderEdit edit,  int operationId)?  organizeRequested,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.userId,_that.operationId);case _Cleared() when cleared != null:
@@ -164,7 +164,7 @@ return createRequested(_that.name,_that.wall,_that.operationId);case _RenameRequ
 return renameRequested(_that.folderId,_that.name,_that.operationId);case _VisibilityRequested() when visibilityRequested != null:
 return visibilityRequested(_that.folderId,_that.isPublic,_that.operationId);case _DeleteRequested() when deleteRequested != null:
 return deleteRequested(_that.folderId,_that.operationId);case _SaveRequested() when saveRequested != null:
-return saveRequested(_that.wall,_that.folderIds,_that.newNames,_that.operationId);case _ItemRemoved() when itemRemoved != null:
+return saveRequested(_that.wall,_that.folderIds,_that.operationId);case _ItemRemoved() when itemRemoved != null:
 return itemRemoved(_that.folderId,_that.wall,_that.operationId);case _OrganizeRequested() when organizeRequested != null:
 return organizeRequested(_that.folderId,_that.edit,_that.operationId);case _:
   return orElse();
@@ -184,7 +184,7 @@ return organizeRequested(_that.folderId,_that.edit,_that.operationId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String userId,  int operationId)  started,required TResult Function()  cleared,required TResult Function( String userId,  Failure failure)  writeFailed,required TResult Function( String folderId,  int operationId)  folderOpened,required TResult Function( FavouriteWallEntity wall,  int operationId)  membershipRequested,required TResult Function( String name,  FavouriteWallEntity? wall,  int operationId)  createRequested,required TResult Function( String folderId,  String name,  int operationId)  renameRequested,required TResult Function( String folderId,  bool isPublic,  int operationId)  visibilityRequested,required TResult Function( String folderId,  int operationId)  deleteRequested,required TResult Function( FavouriteWallEntity wall,  Set<String> folderIds,  List<String> newNames,  int operationId)  saveRequested,required TResult Function( String folderId,  FavouriteWallEntity wall,  int operationId)  itemRemoved,required TResult Function( String folderId,  FolderEdit edit,  int operationId)  organizeRequested,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String userId,  int operationId)  started,required TResult Function()  cleared,required TResult Function( String userId,  Failure failure)  writeFailed,required TResult Function( String folderId,  int operationId)  folderOpened,required TResult Function( FavouriteWallEntity wall,  int operationId)  membershipRequested,required TResult Function( String name,  FavouriteWallEntity? wall,  int operationId)  createRequested,required TResult Function( String folderId,  String name,  int operationId)  renameRequested,required TResult Function( String folderId,  bool isPublic,  int operationId)  visibilityRequested,required TResult Function( String folderId,  int operationId)  deleteRequested,required TResult Function( FavouriteWallEntity wall,  Set<String> folderIds,  int operationId)  saveRequested,required TResult Function( String folderId,  FavouriteWallEntity wall,  int operationId)  itemRemoved,required TResult Function( String folderId,  FolderEdit edit,  int operationId)  organizeRequested,}) {final _that = this;
 switch (_that) {
 case _Started():
 return started(_that.userId,_that.operationId);case _Cleared():
@@ -196,7 +196,7 @@ return createRequested(_that.name,_that.wall,_that.operationId);case _RenameRequ
 return renameRequested(_that.folderId,_that.name,_that.operationId);case _VisibilityRequested():
 return visibilityRequested(_that.folderId,_that.isPublic,_that.operationId);case _DeleteRequested():
 return deleteRequested(_that.folderId,_that.operationId);case _SaveRequested():
-return saveRequested(_that.wall,_that.folderIds,_that.newNames,_that.operationId);case _ItemRemoved():
+return saveRequested(_that.wall,_that.folderIds,_that.operationId);case _ItemRemoved():
 return itemRemoved(_that.folderId,_that.wall,_that.operationId);case _OrganizeRequested():
 return organizeRequested(_that.folderId,_that.edit,_that.operationId);case _:
   throw StateError('Unexpected subclass');
@@ -215,7 +215,7 @@ return organizeRequested(_that.folderId,_that.edit,_that.operationId);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String userId,  int operationId)?  started,TResult? Function()?  cleared,TResult? Function( String userId,  Failure failure)?  writeFailed,TResult? Function( String folderId,  int operationId)?  folderOpened,TResult? Function( FavouriteWallEntity wall,  int operationId)?  membershipRequested,TResult? Function( String name,  FavouriteWallEntity? wall,  int operationId)?  createRequested,TResult? Function( String folderId,  String name,  int operationId)?  renameRequested,TResult? Function( String folderId,  bool isPublic,  int operationId)?  visibilityRequested,TResult? Function( String folderId,  int operationId)?  deleteRequested,TResult? Function( FavouriteWallEntity wall,  Set<String> folderIds,  List<String> newNames,  int operationId)?  saveRequested,TResult? Function( String folderId,  FavouriteWallEntity wall,  int operationId)?  itemRemoved,TResult? Function( String folderId,  FolderEdit edit,  int operationId)?  organizeRequested,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String userId,  int operationId)?  started,TResult? Function()?  cleared,TResult? Function( String userId,  Failure failure)?  writeFailed,TResult? Function( String folderId,  int operationId)?  folderOpened,TResult? Function( FavouriteWallEntity wall,  int operationId)?  membershipRequested,TResult? Function( String name,  FavouriteWallEntity? wall,  int operationId)?  createRequested,TResult? Function( String folderId,  String name,  int operationId)?  renameRequested,TResult? Function( String folderId,  bool isPublic,  int operationId)?  visibilityRequested,TResult? Function( String folderId,  int operationId)?  deleteRequested,TResult? Function( FavouriteWallEntity wall,  Set<String> folderIds,  int operationId)?  saveRequested,TResult? Function( String folderId,  FavouriteWallEntity wall,  int operationId)?  itemRemoved,TResult? Function( String folderId,  FolderEdit edit,  int operationId)?  organizeRequested,}) {final _that = this;
 switch (_that) {
 case _Started() when started != null:
 return started(_that.userId,_that.operationId);case _Cleared() when cleared != null:
@@ -227,7 +227,7 @@ return createRequested(_that.name,_that.wall,_that.operationId);case _RenameRequ
 return renameRequested(_that.folderId,_that.name,_that.operationId);case _VisibilityRequested() when visibilityRequested != null:
 return visibilityRequested(_that.folderId,_that.isPublic,_that.operationId);case _DeleteRequested() when deleteRequested != null:
 return deleteRequested(_that.folderId,_that.operationId);case _SaveRequested() when saveRequested != null:
-return saveRequested(_that.wall,_that.folderIds,_that.newNames,_that.operationId);case _ItemRemoved() when itemRemoved != null:
+return saveRequested(_that.wall,_that.folderIds,_that.operationId);case _ItemRemoved() when itemRemoved != null:
 return itemRemoved(_that.folderId,_that.wall,_that.operationId);case _OrganizeRequested() when organizeRequested != null:
 return organizeRequested(_that.folderId,_that.edit,_that.operationId);case _:
   return null;
@@ -823,7 +823,7 @@ as int,
 
 
 class _SaveRequested implements FoldersEvent {
-  const _SaveRequested({required this.wall, required final  Set<String> folderIds, final  List<String> newNames = const <String>[], this.operationId = 0}): _folderIds = folderIds,_newNames = newNames;
+  const _SaveRequested({required this.wall, required final  Set<String> folderIds, this.operationId = 0}): _folderIds = folderIds;
   
 
  final  FavouriteWallEntity wall;
@@ -832,13 +832,6 @@ class _SaveRequested implements FoldersEvent {
   if (_folderIds is EqualUnmodifiableSetView) return _folderIds;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableSetView(_folderIds);
-}
-
- final  List<String> _newNames;
-@JsonKey() List<String> get newNames {
-  if (_newNames is EqualUnmodifiableListView) return _newNames;
-  // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_newNames);
 }
 
 @JsonKey() final  int operationId;
@@ -853,16 +846,16 @@ _$SaveRequestedCopyWith<_SaveRequested> get copyWith => __$SaveRequestedCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SaveRequested&&(identical(other.wall, wall) || other.wall == wall)&&const DeepCollectionEquality().equals(other._folderIds, _folderIds)&&const DeepCollectionEquality().equals(other._newNames, _newNames)&&(identical(other.operationId, operationId) || other.operationId == operationId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SaveRequested&&(identical(other.wall, wall) || other.wall == wall)&&const DeepCollectionEquality().equals(other._folderIds, _folderIds)&&(identical(other.operationId, operationId) || other.operationId == operationId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,wall,const DeepCollectionEquality().hash(_folderIds),const DeepCollectionEquality().hash(_newNames),operationId);
+int get hashCode => Object.hash(runtimeType,wall,const DeepCollectionEquality().hash(_folderIds),operationId);
 
 @override
 String toString() {
-  return 'FoldersEvent.saveRequested(wall: $wall, folderIds: $folderIds, newNames: $newNames, operationId: $operationId)';
+  return 'FoldersEvent.saveRequested(wall: $wall, folderIds: $folderIds, operationId: $operationId)';
 }
 
 
@@ -873,7 +866,7 @@ abstract mixin class _$SaveRequestedCopyWith<$Res> implements $FoldersEventCopyW
   factory _$SaveRequestedCopyWith(_SaveRequested value, $Res Function(_SaveRequested) _then) = __$SaveRequestedCopyWithImpl;
 @useResult
 $Res call({
- FavouriteWallEntity wall, Set<String> folderIds, List<String> newNames, int operationId
+ FavouriteWallEntity wall, Set<String> folderIds, int operationId
 });
 
 
@@ -890,12 +883,11 @@ class __$SaveRequestedCopyWithImpl<$Res>
 
 /// Create a copy of FoldersEvent
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') $Res call({Object? wall = null,Object? folderIds = null,Object? newNames = null,Object? operationId = null,}) {
+@pragma('vm:prefer-inline') $Res call({Object? wall = null,Object? folderIds = null,Object? operationId = null,}) {
   return _then(_SaveRequested(
 wall: null == wall ? _self.wall : wall // ignore: cast_nullable_to_non_nullable
 as FavouriteWallEntity,folderIds: null == folderIds ? _self._folderIds : folderIds // ignore: cast_nullable_to_non_nullable
-as Set<String>,newNames: null == newNames ? _self._newNames : newNames // ignore: cast_nullable_to_non_nullable
-as List<String>,operationId: null == operationId ? _self.operationId : operationId // ignore: cast_nullable_to_non_nullable
+as Set<String>,operationId: null == operationId ? _self.operationId : operationId // ignore: cast_nullable_to_non_nullable
 as int,
   ));
 }

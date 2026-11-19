@@ -10877,10 +10877,22 @@ class AppLocalizationsEs extends AppLocalizations {
   String get foldersCreateFolder => 'Crear carpeta';
 
   @override
-  String get foldersSuggested => 'Sugerida';
+  String get foldersCreateNewFolder => 'Crear nueva carpeta';
 
   @override
-  String get foldersNewTag => 'Nueva';
+  String get foldersCreateNewFolderSubtitle => 'Organiza tus guardados';
+
+  @override
+  String get foldersNewFolderHelp => 'Crea una carpeta para tus fondos de pantalla. Podrás editarla más tarde.';
+
+  @override
+  String get foldersPickerEmpty => 'Aún no tienes carpetas.';
+
+  @override
+  String get foldersCreateFailed => 'No se pudo crear la carpeta. Inténtalo de nuevo.';
+
+  @override
+  String get foldersClearName => 'Borrar nombre';
 
   @override
   String foldersItemCount(int count) {
@@ -10975,12 +10987,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get foldersMoreOptions => 'Más opciones';
-
-  @override
-  String get foldersSuggestionLockScreen => 'Pantalla de bloqueo';
-
-  @override
-  String get foldersSuggestionHomeScreen => 'Pantalla de inicio';
 
   @override
   String get moodDreamyTitle => 'Soñador';
