@@ -1,0 +1,49 @@
+Page: com.hash.prism
+App: com.hash.prism
+Snapshot: 25 nodes
+@e1 [application] "Prism"
+@e2 [button] "Back"
+@e3 [text] "Your stats"
+@e4 [scroll-area] [scrollable]
+@e5 [other] "VIEWS
+26
++16 (+160%) vs the 4 weeks before
+Total: 12,000
+Week of Oct 19, 2026: 4
+Tap a bar to read its week."
+@e6 [button] "This week"
+@e7 [button] "Last week"
+@e8 [button] "4 weeks" [selected]
+@e9 [button] "Week of Sep 28, 2026: 1"
+@e10 [button] "Week of Oct 5, 2026: 2"
+@e11 [button] "Week of Oct 12, 2026: 3"
+@e12 [button] "Week of Oct 19, 2026: 4" [selected]
+@e13 [button] "Week of Oct 26, 2026: 5"
+@e14 [button] "Week of Nov 2, 2026: 6"
+@e15 [button] "Week of Nov 9, 2026: 7"
+@e16 [button] "Week of Nov 16, 2026: 8"
+@e17 [button] "Views
+26
++16 (+160%)" [selected]
+@e18 [button] "Saves
+52
++32 (+160%)"
+@e19 [button] "Sets
+78
++48 (+160%)"
+@e20 [button] "Downloads
+104
++64 (+160%)"
+@e21 [button] "Shares
+130
++80 (+160%)"
+@e22 [button] "Folder additions
+156
++96 (+160%)"
+@e23 [button] "Remixes
+182
++112 (+160%)"
+@e24 [text] "Top walls"
+@e25 [button] "QA creator wall
+Views
+26"

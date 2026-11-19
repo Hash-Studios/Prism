@@ -1,0 +1,24 @@
+Page: com.hash.prism
+App: com.hash.prism
+Snapshot: 19 nodes
+@e1 [application] "Prism"
+@e2 [button] "Back"
+@e3 [text] "Your stats"
+@e4 [scroll-area] [scrollable]
+@e5 [text] "Tips
+No tips yet. Fans can tip you from your walls and your profile."
+@e6 [text] "Creator fund. The Creator fund is not running right now.. Each week, a pool of Prism Coins is shared among creators. Your share depends on how many people save, set, download, remix, and add your walls to folders."
+@e7 [button] "Views" [selected]
+@e8 [button] "Saves"
+@e9 [button] "Sets"
+@e10 [button] "Downloads"
+@e11 [button] "Shares"
+@e12 [button] "Folder additions"
+@e13 [button] "Remixes"
+@e14 [text] "Views, eight weeks. Week of Sep 28, 2026: 1; Week of Oct 5, 2026: 2; Week of Oct 12, 2026: 3; Week of Oct 19, 2026: 4; Week of Oct 26, 2026: 5; Week of Nov 2, 2026: 6; Week of Nov 9, 2026: 7; Week of Nov 16, 2026: 8"
+@e15 [text] "Eight weeks, oldest first. A dash means unavailable history. Tracking can begin partway through a week, so recorded weeks may be partial. The current week is incomplete."
+@e16 [text] "Top walls this week"
+@e17 [button] "QA creator wall
+Views: 8 this week"
+@e18 [text] "Save totals count current favourites; weekly saves count additions. Remix totals count current credited remixes; weekly remixes count first accepted credits. Folder additions are recorded only from the start of tracking."
+@e19 [text] "Updated Nov 19, 2026 13:30 UTC"

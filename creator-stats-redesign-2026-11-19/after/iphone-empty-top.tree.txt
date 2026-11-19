@@ -1,0 +1,10 @@
+Page: com.hash.prism
+App: com.hash.prism
+Snapshot: 7 nodes
+@e1 [application] "Prism"
+@e2 [button] "Back"
+@e3 [text] "Your stats"
+@e4 [scroll-area] [scrollable]
+@e5 [text] "Your first wall starts here"
+@e6 [text] "Upload a wallpaper. Its stats will appear after approval."
+@e7 [button] "Upload a wallpaper"

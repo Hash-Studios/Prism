@@ -1,0 +1,46 @@
+Page: com.hash.prism
+App: com.hash.prism
+Snapshot: 21 nodes
+@e1 [application] "Prism"
+@e2 [button] "Back"
+@e3 [text] "Your stats"
+@e4 [scroll-area] [scrollable]
+@e5 [text] "This week so far compared with last week. Weeks start on Monday, UTC."
+@e6 [text] "Views
+8 this week · 7 last week
+Total: 12,000
++1 compared with last week"
+@e7 [text] "Saves
+16 this week · 14 last week
+Total: 180
++2 compared with last week"
+@e8 [text] "Sets
+24 this week · 21 last week
+Total: 240
++3 compared with last week"
+@e9 [text] "Downloads
+32 this week · 28 last week
+Total: 360
++4 compared with last week"
+@e10 [text] "Shares
+40 this week · 35 last week
+Total: 90
++5 compared with last week"
+@e11 [text] "Folder additions
+48 this week · 42 last week
+Total: 252
++6 compared with last week"
+@e12 [text] "Remixes
+56 this week · 49 last week
+Total: 8
++7 compared with last week"
+@e13 [text] "Tips
+No tips yet. Fans can tip you from your walls and your profile."
+@e14 [text] "Creator fund. The Creator fund is not running right now.. Each week, a pool of Prism Coins is shared among creators. Your share depends on how many people save, set, download, remix, and add your walls to folders."
+@e15 [button] "Views" [selected]
+@e16 [button] "Saves"
+@e17 [button] "Sets"
+@e18 [button] "Downloads"
+@e19 [button] "Shares"
+@e20 [button] "Folder additions"
+@e21 [button] "Remixes"

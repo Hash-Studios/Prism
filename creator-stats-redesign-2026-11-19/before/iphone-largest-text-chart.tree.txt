@@ -1,0 +1,23 @@
+Page: com.hash.prism
+App: com.hash.prism
+Snapshot: 8 nodes
+@e1 [application] "Prism"
+@e2 [button] "Back"
+@e3 [text] "Your stats"
+@e4 [scroll-area] [scrollable]
+@e5 [text] "Views
+8 this week · 7 last week
+Total: 12,000
++1 compared with last week"
+@e6 [text] "Saves
+16 this week · 14 last week
+Total: 180
++2 compared with last week"
+@e7 [text] "Sets
+24 this week · 21 last week
+Total: 240
++3 compared with last week"
+@e8 [text] "Downloads
+32 this week · 28 last week
+Total: 360
++4 compared with last week"
