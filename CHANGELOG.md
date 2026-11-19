@@ -1,5 +1,13 @@
 ## Changelog
 
+### v3.33.0
+- A new Creator stats page: one main number for this week, last week or the last 4 weeks, with a chart you can tap
+- Tap a bar or a tile on Creator stats to see the exact numbers
+- Add to folder is now one sheet: check the folders you want, then tap Done
+- Make a new folder in the same sheet. It shows first and is already checked
+- Creator stats has a new Creator fund row
+- Security and stability fixes
+
 ### v3.32.0
 - For you learns faster from what you like, share and save to folders
 - "Show less like this" now stays strong, even after many likes
