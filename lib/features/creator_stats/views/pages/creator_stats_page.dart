@@ -365,9 +365,9 @@ class _MetricTile extends StatelessWidget {
       button: true,
       selected: selected,
       child: PressScale(
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: selected ? null : onTap,
+        child: _Activatable(
+          onActivate: selected ? null : onTap,
+          radius: PrismRadius.md,
           child: AnimatedContainer(
             duration: context.motion(PrismDurations.fast),
             curve: PrismCurves.move,
@@ -409,6 +409,46 @@ class _MetricTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A custom control that takes taps, keyboard focus and Enter or Space, with a focus ring.
+class _Activatable extends StatefulWidget {
+  const _Activatable({required this.onActivate, required this.child, this.radius = PrismRadius.xs});
+  final VoidCallback? onActivate;
+  final Widget child;
+  final double radius;
+  @override
+  State<_Activatable> createState() => _ActivatableState();
+}
+
+class _ActivatableState extends State<_Activatable> {
+  bool focused = false;
+
+  @override
+  Widget build(BuildContext context) => FocusableActionDetector(
+    enabled: widget.onActivate != null,
+    onShowFocusHighlight: (value) => setState(() => focused = value),
+    actions: <Type, Action<Intent>>{
+      ActivateIntent: CallbackAction<ActivateIntent>(
+        onInvoke: (_) {
+          widget.onActivate?.call();
+          return null;
+        },
+      ),
+    },
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onActivate,
+      child: DecoratedBox(
+        position: DecorationPosition.foreground,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(widget.radius),
+          border: focused ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 2) : null,
+        ),
+        child: widget.child,
+      ),
+    ),
+  );
 }
 
 class _TopWallRow extends StatelessWidget {
@@ -687,9 +727,9 @@ class _StatsChartState extends State<StatsChart> {
                           label: weekText(i),
                           onTap: () => setState(() => picked = i),
                           excludeSemantics: true,
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => setState(() => picked = i),
+                          child: _Activatable(
+                            onActivate: () => setState(() => picked = i),
+                            child: const SizedBox.expand(),
                           ),
                         ),
                       ),

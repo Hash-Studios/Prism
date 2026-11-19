@@ -25,6 +25,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -502,6 +503,21 @@ void main() {
     expect(find.bySemanticsLabel('Week of Oct 19, 2026: 7'), findsOneWidget);
     expect(tester.takeException(), isNull);
     handle.dispose();
+  });
+  testWidgets('chart bars and metric tiles work with a keyboard', (tester) async {
+    final bloc = await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())));
+    final bar = find.descendant(of: find.byType(StatsChart), matching: find.byType(FocusableActionDetector)).at(2);
+    Focus.of(tester.element(find.descendant(of: bar, matching: find.byType(SizedBox)).first)).requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(find.text('Week of Sep 14, 2026: 2'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Saves'), 300);
+    Focus.of(tester.element(find.text('Saves'))).requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pump();
+    verify(() => bloc.add(const CreatorStatsEvent.select(StatsMetric.saves))).called(1);
   });
   testWidgets('hero shows this week with the change and the total', (tester) async {
     await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())));
