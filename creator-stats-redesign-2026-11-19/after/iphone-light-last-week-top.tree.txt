@@ -9,7 +9,7 @@ Snapshot: 25 nodes
 7
 +1 (+17%) vs the week before
 Total: 12,000
-Week of Nov 16, 2026: 8
+Week of Nov 9, 2026: 7
 Tap a bar to read its week."
 @e6 [button] "This week"
 @e7 [button] "Last week" [selected]
@@ -20,8 +20,8 @@ Tap a bar to read its week."
 @e12 [button] "Week of Oct 19, 2026: 4"
 @e13 [button] "Week of Oct 26, 2026: 5"
 @e14 [button] "Week of Nov 2, 2026: 6"
-@e15 [button] "Week of Nov 9, 2026: 7"
-@e16 [button] "Week of Nov 16, 2026: 8" [selected]
+@e15 [button] "Week of Nov 9, 2026: 7" [selected]
+@e16 [button] "Week of Nov 16, 2026: 8"
 @e17 [button] "Views
 7
 +1 (+17%)" [selected]
