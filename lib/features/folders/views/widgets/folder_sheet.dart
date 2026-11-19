@@ -88,6 +88,7 @@ class _FolderSheetState extends State<FolderSheet> {
   final TextEditingController _name = TextEditingController();
   final String _ownerId = app_state.prismUser.id;
   bool _closing = false;
+  bool _loading = false;
   _FolderSheetPage _page = _FolderSheetPage.folders;
 
   /// The ticks the user changed, by folder id. A folder not here keeps the tick the wall's membership gives it.
@@ -108,13 +109,20 @@ class _FolderSheetState extends State<FolderSheet> {
   }
 
   Future<void> _load() async {
+    if (_loading || _closing) return;
     final FoldersBloc bloc = context.read<FoldersBloc>();
-    await ensureFoldersLoaded(context);
-    if (mounted &&
-        app_state.prismUser.id == _ownerId &&
-        bloc.state.userId == _ownerId &&
-        bloc.state.status == LoadStatus.success) {
-      bloc.add(FoldersEvent.membershipRequested(wall: widget.wall));
+    setState(() => _loading = true);
+    try {
+      await ensureFoldersLoaded(context);
+      if (mounted &&
+          !_closing &&
+          app_state.prismUser.id == _ownerId &&
+          bloc.state.userId == _ownerId &&
+          bloc.state.status == LoadStatus.success) {
+        await bloc.run((id) => FoldersEvent.membershipRequested(wall: widget.wall, operationId: id));
+      }
+    } finally {
+      if (mounted && !_closing) setState(() => _loading = false);
     }
   }
 
@@ -126,25 +134,44 @@ class _FolderSheetState extends State<FolderSheet> {
 
   void _nameChanged() => setState(() => _createError = null);
 
-  Set<String> _current(FoldersState state) => <String>{
-    for (final String id in state.membership[_key] ?? const <String>{})
-      if (_ticks[id] ?? true) id,
-    for (final MapEntry<String, bool> tick in _ticks.entries)
-      if (tick.value) tick.key,
-  };
+  bool _canEdit(FolderEntity folder) => !folder.isSmart && folder.roleOf(_ownerId) != null;
+
+  Set<String> _current(FoldersState state) {
+    final Set<String> selected = <String>{...?state.membership[_key]};
+    for (final FolderEntity folder in state.folders.where(_canEdit)) {
+      switch (_ticks[folder.id]) {
+        case true:
+          selected.add(folder.id);
+        case false:
+          selected.remove(folder.id);
+        case null:
+          break;
+      }
+    }
+    return selected;
+  }
 
   bool _ready(FoldersState state) =>
-      state.status == LoadStatus.success && state.membershipStatus[_key] == LoadStatus.success;
+      !_loading && state.status == LoadStatus.success && state.membershipStatus[_key] == LoadStatus.success;
 
   void _toggle(FoldersState state, String folderId) {
     PrismHaptics.selection();
-    setState(() => _ticks[folderId] = !_current(state).contains(folderId));
+    final bool checked = _ticks[folderId] ?? (state.membership[_key]?.contains(folderId) ?? false);
+    setState(() => _ticks[folderId] = !checked);
   }
+
+  bool _isOwner(FoldersBloc bloc) => app_state.prismUser.id == _ownerId && bloc.state.userId == _ownerId;
 
   void _close() {
     if (_closing) return;
+    final route = ModalRoute.of(context);
+    if (route == null || !route.isActive) return;
     _closing = true;
-    Navigator.of(context).pop();
+    if (route.isCurrent) {
+      route.navigator!.pop();
+    } else {
+      route.navigator!.removeRoute(route);
+    }
   }
 
   void _showPage(_FolderSheetPage page) {
@@ -157,14 +184,26 @@ class _FolderSheetState extends State<FolderSheet> {
 
   Future<void> _create() async {
     final String? name = normalizeFolderName(_name.text);
-    if (name == null || _creating || _closing) return;
+    if (name == null || _creating || _closing || _page != _FolderSheetPage.create) return;
+    final route = ModalRoute.of(context);
+    if (route == null || !route.isCurrent) return;
     final FoldersBloc bloc = context.read<FoldersBloc>();
+    if (!_isOwner(bloc)) {
+      _close();
+      return;
+    }
     final AppLocalizations l10n = context.l10n;
-    final Set<String> before = bloc.state.folders.map((folder) => folder.id).toSet();
+    final String folderId = newFolderId();
     setState(() => _creating = true);
-    final bool ok = await bloc.run((id) => FoldersEvent.createRequested(name: name, operationId: id));
+    final bool ok = await bloc.run(
+      (id) => FoldersEvent.createRequested(name: name, folderId: folderId, operationId: id),
+    );
     if (ok) unawaited(analytics.track(const FolderCreatedEvent(source: 'sheet', withWall: false)));
-    if (!mounted || _closing || app_state.prismUser.id != _ownerId || bloc.state.userId != _ownerId) return;
+    if (!mounted || _closing || !route.isActive) return;
+    if (!_isOwner(bloc)) {
+      _close();
+      return;
+    }
     if (!ok) {
       PrismHaptics.error();
       setState(() {
@@ -173,29 +212,29 @@ class _FolderSheetState extends State<FolderSheet> {
       });
       return;
     }
-    final String? createdId = bloc.state.folders
-        .where((folder) => !before.contains(folder.id) && folder.name == name && folder.isOwnedBy(_ownerId))
-        .firstOrNull
-        ?.id;
     PrismHaptics.success();
     _name.clear();
     setState(() {
       _creating = false;
-      if (createdId != null) {
-        _createdIds.insert(0, createdId);
-        _ticks[createdId] = true;
-      }
+      _createdIds.insert(0, folderId);
+      _ticks[folderId] = true;
     });
     _showPage(_FolderSheetPage.folders);
   }
 
-  Future<void> _done(FoldersState state) async {
-    if (_closing || app_state.prismUser.id != _ownerId || state.userId != _ownerId) return;
+  Future<void> _done() async {
+    if (_closing || _page != _FolderSheetPage.folders || ModalRoute.of(context)?.isCurrent != true) return;
+    final FoldersBloc bloc = context.read<FoldersBloc>();
+    final FoldersState state = bloc.state;
+    if (!_isOwner(bloc)) {
+      _close();
+      return;
+    }
+    if (!_ready(state)) return;
     final Set<String> initial = state.membership[_key] ?? const <String>{};
     final Set<String> selected = _current(state);
     final int added = selected.difference(initial).length;
     final bool changed = added > 0 || initial.difference(selected).isNotEmpty;
-    final FoldersBloc bloc = context.read<FoldersBloc>();
     final FavouriteWallsAdapter favourites = context.favouriteWallsAdapter(listen: false);
     final AppLocalizations l10n = context.l10n;
     _close();
@@ -204,7 +243,7 @@ class _FolderSheetState extends State<FolderSheet> {
     // Favourite first, so a saved folder item always has its favourite.
     if (added > 0) {
       final bool favourited = await _favourite(favourites, wall);
-      if (app_state.prismUser.id != _ownerId || bloc.state.userId != _ownerId) return;
+      if (!_isOwner(bloc)) return;
       if (!favourited) {
         toasts.error(l10n.foldersSaveFailed);
         return;
@@ -213,7 +252,7 @@ class _FolderSheetState extends State<FolderSheet> {
     final bool ok = await bloc.run(
       (id) => FoldersEvent.saveRequested(wall: wall, folderIds: selected, operationId: id),
     );
-    if (app_state.prismUser.id != _ownerId || bloc.state.userId != _ownerId) return;
+    if (!_isOwner(bloc)) return;
     if (!ok) {
       toasts.error(l10n.foldersSaveFailed);
       return;
@@ -248,9 +287,7 @@ class _FolderSheetState extends State<FolderSheet> {
   /// The folders the user can put a wall in: their own and the ones they edit. A smart folder fills itself from
   /// rules, so it is never a save target. Folders made in this sheet come first.
   List<FolderEntity> _targets(FoldersState state) {
-    final List<FolderEntity> targets = state.folders
-        .where((folder) => !folder.isSmart && folder.roleOf(_ownerId) != null)
-        .toList();
+    final List<FolderEntity> targets = state.folders.where(_canEdit).toList();
     final List<FolderEntity> created = <FolderEntity>[
       for (final String id in _createdIds) ?targets.where((folder) => folder.id == id).firstOrNull,
     ];
@@ -325,7 +362,7 @@ class _FolderSheetState extends State<FolderSheet> {
           child: PrismButton(
             label: l10n.coreDone,
             expand: true,
-            onPressed: _ready(state) ? () => unawaited(_done(state)) : null,
+            onPressed: _ready(state) ? () => unawaited(_done()) : null,
           ),
         ),
       ],
@@ -397,9 +434,17 @@ class _FolderSheetState extends State<FolderSheet> {
   Widget build(BuildContext context) {
     final Duration duration = context.motion(PrismDurations.base);
     return BlocConsumer<FoldersBloc, FoldersState>(
-      listenWhen: (previous, current) => previous.userId != current.userId,
+      listenWhen: (previous, current) =>
+          previous.userId != current.userId ||
+          (current.status == LoadStatus.success &&
+              previous.membershipStatus[_key] != null &&
+              current.membershipStatus[_key] == null),
       listener: (context, state) {
-        if (state.userId != _ownerId) _close();
+        if (state.userId != _ownerId) {
+          _close();
+        } else if (state.status == LoadStatus.success && state.membershipStatus[_key] == null) {
+          unawaited(_load());
+        }
       },
       builder: (context, state) => Material(
         type: MaterialType.transparency,

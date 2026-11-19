@@ -59,6 +59,8 @@ class _FakeFoldersRepository implements FoldersRepository {
   bool failCreate = false;
   Completer<void>? loadGate;
   Completer<void>? saveGate;
+  Completer<void>? createGate;
+  final List<FolderEntity> createdFolders = <FolderEntity>[];
 
   /// Folder ids that hold each item, keyed by folderItemKey.
   final Map<String, Set<String>> containing;
@@ -110,7 +112,9 @@ class _FakeFoldersRepository implements FoldersRepository {
   @override
   Future<Result<void>> createFolder(FolderEntity folder, {FavouriteWallEntity? firstWall}) async {
     calls.add('createFolder:${folder.name}:${folder.itemCount}');
+    await createGate?.future;
     if (failCreate) return Result.error(const ServerFailure('boom'));
+    createdFolders.add(folder);
     return Result.success<void>(null);
   }
 
@@ -264,7 +268,12 @@ void main() {
   }
 
   /// Pumps a button that opens the folder sheet for [wall], then taps it.
-  Future<void> openSheet(WidgetTester tester, FoldersBloc bloc, FavouriteWallEntity wall) async {
+  Future<void> openSheet(
+    WidgetTester tester,
+    FoldersBloc bloc,
+    FavouriteWallEntity wall, {
+    GlobalKey<NavigatorState>? navigatorKey,
+  }) async {
     final FavouriteWallsBloc favourites = FavouriteWallsBloc(
       fetchUseCase,
       toggleUseCase,
@@ -274,6 +283,7 @@ void main() {
     addTearDown(favourites.close);
     await tester.pumpWidget(
       MaterialApp(
+        navigatorKey: navigatorKey,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: kLightTheme,
@@ -494,6 +504,20 @@ void main() {
     expect(repo.calls.where((call) => call.startsWith('addItem:')), isEmpty);
   });
 
+  testWidgets('a failed favourite list read does not block a successful favourite and folder save', (tester) async {
+    when(() => fetchUseCase(any())).thenAnswer((_) async => Result.error(const NetworkFailure('offline')));
+    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')]);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, _wall());
+    await tester.tap(find.text('Blue'));
+    await tester.tap(find.text('Done'));
+    await settle(tester);
+
+    verify(() => toggleUseCase(any())).called(1);
+    expect(repo.calls.where((call) => call.startsWith('addItem:')), <String>['addItem:blue']);
+  });
+
   testWidgets('opening a picker during an existing folder load waits and then loads membership', (tester) async {
     final gate = Completer<void>();
     final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')])..loadGate = gate;
@@ -509,6 +533,29 @@ void main() {
     expect(await started, isTrue);
     expect(find.text('Blue'), findsOneWidget);
     expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Done')).onPressed, isNotNull);
+  });
+
+  testWidgets('cached membership does not enable Done before the membership refresh can run', (tester) async {
+    final wall = _wall();
+    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')]);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
+    addTearDown(bloc.close);
+    bloc.add(const FoldersEvent.started(userId: 'u1'));
+    bloc.add(FoldersEvent.membershipRequested(wall: wall));
+    await tester.pump();
+    expect(bloc.state.membershipStatus[folderItemKey(wall)], LoadStatus.success);
+
+    final gate = Completer<void>();
+    repo.loadGate = gate;
+    bloc.add(const FoldersEvent.folderOpened(folderId: 'blue'));
+    await openSheet(tester, bloc, wall);
+    expect(_onPressedOf(tester, 'Done'), isNull);
+    expect(find.text('Blue'), findsNothing);
+
+    gate.complete();
+    await settle(tester);
+    expect(_onPressedOf(tester, 'Done'), isNotNull);
+    expect(_checked(tester, 'Blue'), isFalse);
   });
 
   testWidgets('clear then a new account closes only the picker, not the page beneath it', (tester) async {
@@ -718,6 +765,181 @@ void main() {
 
     expect(find.text('Add to folder'), findsOneWidget);
     expect(_checked(tester, 'Night'), isTrue);
+  });
+
+  testWidgets('a same-name folder discovered before create is not selected instead of the new folder', (tester) async {
+    final folders = <FolderEntity>[_folder('blue', 'Blue')];
+    final repo = _FakeFoldersRepository(folders: folders);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, _wall());
+    await tester.tap(find.text('Create new folder'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), 'Night');
+    await settle(tester);
+
+    final gate = Completer<void>();
+    repo.loadGate = gate;
+    folders.add(_folder('other-night', 'Night').copyWith(updatedAt: DateTime.utc(2100)));
+    bloc.add(const FoldersEvent.folderOpened(folderId: 'blue'));
+    await tester.tap(find.text('Create folder'));
+    await tester.pump();
+    expect(repo.createdFolders, isEmpty);
+    gate.complete();
+    await settle(tester);
+
+    final createdId = repo.createdFolders.single.id;
+    final rows = tester.widgetList<FolderCheckRow>(find.byType(FolderCheckRow));
+    expect(rows.first.key, ValueKey<String>(createdId));
+    expect(rows.first.checked, isTrue);
+    expect(rows.singleWhere((row) => row.key == const ValueKey<String>('other-night')).checked, isFalse);
+    await tester.tap(find.text('Done'));
+    await settle(tester);
+    expect(repo.calls.where((call) => call.startsWith('addItem:')), <String>['addItem:$createdId']);
+  });
+
+  testWidgets('a same-account refresh reloads membership and preserves draft ticks', (tester) async {
+    final wall = _wall();
+    final repo = _FakeFoldersRepository(
+      folders: <FolderEntity>[_folder('blue', 'Blue'), _folder('calm', 'Calm')],
+      containing: <String, Set<String>>{
+        folderItemKey(wall): <String>{'blue'},
+      },
+    );
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, wall);
+    await tester.tap(find.text('Calm'));
+    bloc.add(const FoldersEvent.started(userId: 'u1'));
+    await settle(tester);
+
+    expect(_checked(tester, 'Blue'), isTrue);
+    expect(_checked(tester, 'Calm'), isTrue);
+    await tester.tap(find.text('Done'));
+    await settle(tester);
+    expect(bloc.state.membership[folderItemKey(wall)], <String>{'blue', 'calm'});
+    expect(repo.calls.where((call) => call.startsWith('addItem:')), <String>['addItem:calm']);
+  });
+
+  testWidgets('a deleted draft target does not block saving the remaining checked folder', (tester) async {
+    final wall = _wall();
+    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue'), _folder('calm', 'Calm')]);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, wall);
+    await tester.tap(find.text('Blue'));
+    await tester.tap(find.text('Calm'));
+    bloc.add(const FoldersEvent.deleteRequested(folderId: 'blue'));
+    await settle(tester);
+
+    expect(find.text('Blue'), findsNothing);
+    expect(_checked(tester, 'Calm'), isTrue);
+    await tester.tap(find.text('Done'));
+    await settle(tester);
+    expect(bloc.state.membership[folderItemKey(wall)], <String>{'calm'});
+  });
+
+  testWidgets('an account change removes the picker without popping a route pushed above it', (tester) async {
+    final navigator = GlobalKey<NavigatorState>();
+    final bloc = FoldersBloc(_FakeFoldersRepository(), _NoPublicFolders());
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, _wall(), navigatorKey: navigator);
+    unawaited(
+      navigator.currentState!.push<void>(
+        MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('New destination'))),
+      ),
+    );
+    await settle(tester);
+
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
+    bloc.add(const FoldersEvent.started(userId: 'u2'));
+    await settle(tester);
+
+    expect(find.text('New destination'), findsOneWidget);
+    expect(find.byType(FolderSheet, skipOffstage: false), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('dismissing the route before a stale Done callback discards its ticks', (tester) async {
+    final navigator = GlobalKey<NavigatorState>();
+    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')]);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, _wall(), navigatorKey: navigator);
+    await tester.tap(find.text('Blue'));
+    await settle(tester);
+    final done = _onPressedOf(tester, 'Done')!;
+    navigator.currentState!.pop();
+    done();
+    await settle(tester);
+
+    expect(find.text('open'), findsOneWidget);
+    expect(find.byType(FolderSheet), findsNothing);
+    expect(repo.calls.where((call) => call.startsWith('addItem:')), isEmpty);
+    verifyNever(() => toggleUseCase(any()));
+  });
+
+  testWidgets('closing during a pending create leaves exactly one empty folder', (tester) async {
+    final gate = Completer<void>();
+    final repo = _FakeFoldersRepository()..createGate = gate;
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, _wall());
+    await tester.tap(find.text('Create new folder'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), 'Night');
+    await settle(tester);
+    final create = _onPressedOf(tester, 'Create folder')!;
+    create();
+    create();
+    await tester.pump();
+    await tester.tap(find.byTooltip('Close'));
+    await settle(tester);
+    gate.complete();
+    await settle(tester);
+
+    expect(find.text('open'), findsOneWidget);
+    expect(find.byType(FolderSheet), findsNothing);
+    expect(bloc.state.folders.single.name, 'Night');
+    expect(bloc.state.items[repo.createdFolders.single.id], isEmpty);
+    expect(repo.calls.where((call) => call.startsWith('addItem:')), isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Create does not write for a previous account before the bloc receives the account change', (
+    tester,
+  ) async {
+    final repo = _FakeFoldersRepository();
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, _wall());
+    await tester.tap(find.text('Create new folder'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), 'Night');
+    await settle(tester);
+
+    app_state.prismUser = app_constants.createGuestPrismUser()..id = 'u2';
+    await tester.tap(find.text('Create folder'));
+    await settle(tester);
+
+    expect(find.text('open'), findsOneWidget);
+    expect(find.byType(FolderSheet), findsNothing);
+    expect(repo.calls.where((call) => call.startsWith('createFolder:')), isEmpty);
+  });
+
+  testWidgets('a fit-only picker can be swiped away without saving ticks', (tester) async {
+    final repo = _FakeFoldersRepository(folders: <FolderEntity>[_folder('blue', 'Blue')]);
+    final bloc = FoldersBloc(repo, _NoPublicFolders());
+    addTearDown(bloc.close);
+    await openSheet(tester, bloc, _wall());
+    await tester.tap(find.text('Blue'));
+    expect(find.text('Add to folder'), findsOneWidget);
+    await tester.fling(find.text('Add to folder'), const Offset(0, 600), 3000);
+    await settle(tester);
+
+    expect(find.text('open'), findsOneWidget);
+    expect(find.byType(FolderSheet), findsNothing);
+    expect(repo.calls.where((call) => call.startsWith('addItem:')), isEmpty);
   });
 
   testWidgets('with no folders, page 1 shows only Create new folder and the empty line', (tester) async {

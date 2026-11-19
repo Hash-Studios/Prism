@@ -283,19 +283,15 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
     _finish(emit, event.operationId, failure: await session.wait(_loadMembership(event.wall, emit, session)));
   }
 
-  Future<Failure?> _create(
-    String rawName,
-    FavouriteWallEntity? wall,
-    Emitter<FoldersState> emit,
-    _FolderSession session,
-  ) async {
+  Future<Failure?> _create(_CreateRequested event, Emitter<FoldersState> emit, _FolderSession session) async {
     session.ensureActive();
-    final String? name = normalizeFolderName(rawName);
+    final String? name = normalizeFolderName(event.name);
     if (name == null) return const ValidationFailure('A folder name needs 1 to $folderNameMaxLength characters.');
     if (state.userId.isEmpty) return const ValidationFailure('Sign in to make folders.');
+    final FavouriteWallEntity? wall = event.wall;
     final DateTime now = DateTime.now().toUtc();
     final FolderEntity empty = FolderEntity(
-      id: newFolderId(),
+      id: event.folderId ?? newFolderId(),
       ownerId: state.userId,
       name: name,
       createdAt: now,
@@ -321,7 +317,7 @@ class FoldersBloc extends Bloc<FoldersEvent, FoldersState> {
   }
 
   Future<void> _onCreateRequested(_CreateRequested event, Emitter<FoldersState> emit, _FolderSession session) async {
-    _finish(emit, event.operationId, failure: await session.wait(_create(event.name, event.wall, emit, session)));
+    _finish(emit, event.operationId, failure: await session.wait(_create(event, emit, session)));
   }
 
   Future<void> _onRenameRequested(_RenameRequested event, Emitter<FoldersState> emit, _FolderSession session) async {

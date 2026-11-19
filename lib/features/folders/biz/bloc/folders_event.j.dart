@@ -10,6 +10,9 @@ abstract class FoldersEvent with _$FoldersEvent {
       _MembershipRequested;
   const factory FoldersEvent.createRequested({
     required String name,
+
+    /// The id for the new folder. A caller that sets it knows which folder it made.
+    String? folderId,
     FavouriteWallEntity? wall,
     @Default(0) int operationId,
   }) = _CreateRequested;
