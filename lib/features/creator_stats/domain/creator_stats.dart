@@ -1,3 +1,5 @@
+import 'package:Prism/features/creator_stats/domain/stats_period.dart';
+
 enum StatsMetric { views, saves, sets, downloads, shares, folderAdds, remixes }
 
 class StatsWeek {
@@ -70,10 +72,10 @@ class CreatorStats {
   final List<StatsWeek> weeks;
   final List<WallStats> walls;
   final CreatorTips tips;
-  List<WallStats> ranked(StatsMetric metric) => [...walls]
+  List<WallStats> ranked(StatsMetric metric, StatsPeriod period) => [...walls]
     ..sort((a, b) {
-      final av = a.weeks.last.metrics[metric];
-      final bv = b.weeks.last.metrics[metric];
+      final av = period.value(a.weeks, metric);
+      final bv = period.value(b.weeks, metric);
       if (av == null && bv != null) return 1;
       if (bv == null && av != null) return -1;
       final order = (bv ?? 0).compareTo(av ?? 0);

@@ -20242,19 +20242,19 @@ abstract class AppLocalizations {
   /// Creator dashboard: statsWeekNote
   ///
   /// In en, this message translates to:
-  /// **'This week so far compared with last week. Weeks start on Monday, UTC.'**
+  /// **'Weeks start on Monday, UTC. This week is not over yet, so it can look low next to last week.'**
   String get statsWeekNote;
 
   /// Creator dashboard: statsHistoryNote
   ///
   /// In en, this message translates to:
-  /// **'Eight weeks, oldest first. A dash means unavailable history. Tracking can begin partway through a week, so recorded weeks may be partial. The current week is incomplete.'**
+  /// **'The chart shows eight weeks, oldest first. A short grey mark means history is unavailable. Tracking can begin partway through a week, so recorded weeks may be partial.'**
   String get statsHistoryNote;
 
   /// Creator dashboard: statsTopWalls
   ///
   /// In en, this message translates to:
-  /// **'Top walls this week'**
+  /// **'Top walls'**
   String get statsTopWalls;
 
   /// Creator dashboard: statsUntitled
@@ -20287,29 +20287,11 @@ abstract class AppLocalizations {
   /// **'See how your walls did in {week}.'**
   String statsWeeklyBody(String week);
 
-  /// Creator dashboard: statsWallValue
-  ///
-  /// In en, this message translates to:
-  /// **'{metric}: {value} this week'**
-  String statsWallValue(String metric, String value);
-
-  /// Creator dashboard: statsComparison
-  ///
-  /// In en, this message translates to:
-  /// **'{current} this week · {previous} last week'**
-  String statsComparison(String current, String previous);
-
   /// Creator dashboard: statsTotal
   ///
   /// In en, this message translates to:
   /// **'Total: {value}'**
   String statsTotal(String value);
-
-  /// Creator dashboard: statsChange
-  ///
-  /// In en, this message translates to:
-  /// **'{value} compared with last week'**
-  String statsChange(String value);
 
   /// Creator dashboard: statsUpdated
   ///
@@ -20323,11 +20305,89 @@ abstract class AppLocalizations {
   /// **'Week of {date}: {value}'**
   String statsChartWeek(String date, String value);
 
-  /// Creator dashboard: statsChartSummary
+  /// Creator dashboard: statsPeriodThisWeek
   ///
   /// In en, this message translates to:
-  /// **'{metric}, eight weeks. {summary}'**
-  String statsChartSummary(String metric, String summary);
+  /// **'This week'**
+  String get statsPeriodThisWeek;
+
+  /// Creator dashboard: statsPeriodLastWeek
+  ///
+  /// In en, this message translates to:
+  /// **'Last week'**
+  String get statsPeriodLastWeek;
+
+  /// Creator dashboard: statsPeriodFourWeeks
+  ///
+  /// In en, this message translates to:
+  /// **'4 weeks'**
+  String get statsPeriodFourWeeks;
+
+  /// Creator dashboard: statsVsLastWeek
+  ///
+  /// In en, this message translates to:
+  /// **'{change} vs last week'**
+  String statsVsLastWeek(String change);
+
+  /// Creator dashboard: statsVsWeekBefore
+  ///
+  /// In en, this message translates to:
+  /// **'{change} vs the week before'**
+  String statsVsWeekBefore(String change);
+
+  /// Creator dashboard: statsVsFourWeeksBefore
+  ///
+  /// In en, this message translates to:
+  /// **'{change} vs the 4 weeks before'**
+  String statsVsFourWeeksBefore(String change);
+
+  /// Creator dashboard: statsNoChange
+  ///
+  /// In en, this message translates to:
+  /// **'No change'**
+  String get statsNoChange;
+
+  /// Creator dashboard: statsNoComparison
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough history to compare'**
+  String get statsNoComparison;
+
+  /// Creator dashboard: statsChartHint
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a bar to read its week.'**
+  String get statsChartHint;
+
+  /// Creator dashboard: statsChartEmpty
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing recorded in these eight weeks yet.'**
+  String get statsChartEmpty;
+
+  /// Creator dashboard: statsChartEmptyHint
+  ///
+  /// In en, this message translates to:
+  /// **'Share a wall from its page to get it seen.'**
+  String get statsChartEmptyHint;
+
+  /// Creator dashboard: statsShowAllWalls
+  ///
+  /// In en, this message translates to:
+  /// **'Show all {count} walls'**
+  String statsShowAllWalls(String count);
+
+  /// Creator dashboard: statsShowFewerWalls
+  ///
+  /// In en, this message translates to:
+  /// **'Show fewer'**
+  String get statsShowFewerWalls;
+
+  /// Creator dashboard: statsAboutTitle
+  ///
+  /// In en, this message translates to:
+  /// **'About these numbers'**
+  String get statsAboutTitle;
 
   /// Headline of the iOS Shortcuts guide.
   ///

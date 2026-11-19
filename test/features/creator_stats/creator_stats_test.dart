@@ -15,6 +15,7 @@ import 'package:Prism/features/creator_stats/biz/bloc/creator_stats_bloc.j.dart'
 import 'package:Prism/features/creator_stats/data/creator_stats_repository_impl.dart';
 import 'package:Prism/features/creator_stats/domain/creator_stats.dart';
 import 'package:Prism/features/creator_stats/domain/get_creator_stats.dart';
+import 'package:Prism/features/creator_stats/domain/stats_period.dart';
 import 'package:Prism/features/creator_stats/views/pages/creator_stats_page.dart';
 import 'package:Prism/features/in_app_notifications/domain/notification_copy.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
@@ -170,7 +171,11 @@ void main() {
       },
       {...original, 'wallId': 'unknown', 'weeks': unknownWeeks},
     ];
-    expect(parseCreatorStats(raw).ranked(StatsMetric.saves).map((w) => w.wallId), ['one', 'zero', 'unknown']);
+    expect(parseCreatorStats(raw).ranked(StatsMetric.saves, StatsPeriod.thisWeek).map((w) => w.wallId), [
+      'one',
+      'zero',
+      'unknown',
+    ]);
   });
   test('malformed callable payload reports a format failure', () {
     expect(() => parseCreatorStats(null), throwsFormatException);

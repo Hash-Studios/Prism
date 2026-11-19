@@ -12773,14 +12773,15 @@ class AppLocalizationsDe extends AppLocalizations {
   String get statsUpload => 'Wallpaper hochladen';
 
   @override
-  String get statsWeekNote => 'Diese Woche bisher im Vergleich zur letzten Woche. Wochen beginnen montags, UTC.';
+  String get statsWeekNote =>
+      'Wochen beginnen montags, UTC. Diese Woche ist noch nicht vorbei, daher kann sie neben der letzten Woche niedrig wirken.';
 
   @override
   String get statsHistoryNote =>
-      'Acht Wochen, die älteste zuerst. Ein Strich bedeutet, dass Daten fehlen. Die Erfassung kann mitten in einer Woche beginnen; erfasste Wochen können daher unvollständig sein. Die aktuelle Woche ist noch nicht abgeschlossen.';
+      'Das Diagramm zeigt acht Wochen, die älteste zuerst. Ein kurzer grauer Strich bedeutet, dass kein Verlauf verfügbar ist. Die Erfassung kann mitten in einer Woche beginnen, daher können erfasste Wochen unvollständig sein.';
 
   @override
-  String get statsTopWalls => 'Top-Wallpaper dieser Woche';
+  String get statsTopWalls => 'Top-Wallpaper';
 
   @override
   String get statsUntitled => 'Wallpaper ohne Titel';
@@ -12801,23 +12802,8 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String statsWallValue(String metric, String value) {
-    return '$metric: $value diese Woche';
-  }
-
-  @override
-  String statsComparison(String current, String previous) {
-    return '$current diese Woche · $previous letzte Woche';
-  }
-
-  @override
   String statsTotal(String value) {
     return 'Gesamt: $value';
-  }
-
-  @override
-  String statsChange(String value) {
-    return '$value im Vergleich zur letzten Woche';
   }
 
   @override
@@ -12831,9 +12817,54 @@ class AppLocalizationsDe extends AppLocalizations {
   }
 
   @override
-  String statsChartSummary(String metric, String summary) {
-    return '$metric, acht Wochen. $summary';
+  String get statsPeriodThisWeek => 'Diese Woche';
+
+  @override
+  String get statsPeriodLastWeek => 'Letzte Woche';
+
+  @override
+  String get statsPeriodFourWeeks => '4 Wochen';
+
+  @override
+  String statsVsLastWeek(String change) {
+    return '$change im Vergleich zur letzten Woche';
   }
+
+  @override
+  String statsVsWeekBefore(String change) {
+    return '$change gegenüber der Vorwoche';
+  }
+
+  @override
+  String statsVsFourWeeksBefore(String change) {
+    return '$change gegenüber den 4 Wochen davor';
+  }
+
+  @override
+  String get statsNoChange => 'Keine Änderung';
+
+  @override
+  String get statsNoComparison => 'Nicht genug Verlauf für einen Vergleich';
+
+  @override
+  String get statsChartHint => 'Tippe auf einen Balken, um seine Woche zu sehen.';
+
+  @override
+  String get statsChartEmpty => 'In diesen acht Wochen wurde noch nichts erfasst.';
+
+  @override
+  String get statsChartEmptyHint => 'Teile ein Wallpaper über seine Seite, damit es gesehen wird.';
+
+  @override
+  String statsShowAllWalls(String count) {
+    return 'Alle $count Wallpaper anzeigen';
+  }
+
+  @override
+  String get statsShowFewerWalls => 'Weniger anzeigen';
+
+  @override
+  String get statsAboutTitle => 'Über diese Zahlen';
 
   @override
   String get shortcutsGuideHeadline => 'Jeden Tag ein neues Hintergrundbild';
