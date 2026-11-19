@@ -115,6 +115,9 @@ class _FoldersBloc extends Mock implements FoldersBloc {
     when(() => state).thenReturn(FoldersState.initial().copyWith(status: LoadStatus.success, userId: 'user-1'));
     when(() => stream).thenAnswer((_) => const Stream<FoldersState>.empty());
   }
+
+  @override
+  Future<bool> run(FoldersEvent Function(int operationId) eventFor) async => true;
 }
 
 class _Assets extends OfflineAssetStore {
