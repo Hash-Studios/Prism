@@ -225,6 +225,7 @@ class StatsOverview extends StatelessWidget {
 }
 
 /// The change from the previous window, for example "+212 (+20%)", or null when either side is unavailable.
+/// The percentage is left out when it would round to 0%.
 String? statsChange(BuildContext context, int? current, int? previous) {
   if (current == null || previous == null) return null;
   final delta = current - previous;
@@ -232,7 +233,7 @@ String? statsChange(BuildContext context, int? current, int? previous) {
   final locale = Localizations.localeOf(context).toLanguageTag();
   final sign = delta > 0 ? '+' : '';
   final number = '$sign${NumberFormat.decimalPattern(locale).format(delta)}';
-  if (previous == 0) return number;
+  if (previous == 0 || (delta / previous).abs() < 0.005) return number;
   return '$number ($sign${NumberFormat.percentPattern(locale).format(delta / previous)})';
 }
 
@@ -418,30 +419,36 @@ class _TopWallRow extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => PrismRow(
-    padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
-    leading: ClipRRect(
-      borderRadius: BorderRadius.circular(PrismRadius.xs),
-      child: SizedBox(
-        width: 40,
-        height: 54,
-        child: wall.thumbnailUrl.isEmpty
-            ? ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHigh)
-            : Image.network(
-                wall.thumbnailUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, error, stack) =>
-                    ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHigh),
-              ),
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => PrismRow(
+      padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
+      leading: ClipRRect(
+        borderRadius: BorderRadius.circular(PrismRadius.xs),
+        child: SizedBox(
+          width: 40,
+          height: 54,
+          child: wall.thumbnailUrl.isEmpty
+              ? ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHigh)
+              : Image.network(
+                  wall.thumbnailUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, error, stack) =>
+                      ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHigh),
+                ),
+        ),
       ),
+      title: wall.title.isEmpty ? context.l10n.statsUntitled : wall.title,
+      subtitle: statsLabel(context, metric),
+      trailing: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.45),
+        child: Text(
+          statsNumber(context, period.value(wall.weeks, metric)),
+          textAlign: TextAlign.end,
+          style: PrismTextStyles.rowTitle(context).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+        ),
+      ),
+      onTap: onTap,
     ),
-    title: wall.title.isEmpty ? context.l10n.statsUntitled : wall.title,
-    subtitle: statsLabel(context, metric),
-    trailing: Text(
-      statsNumber(context, period.value(wall.weeks, metric)),
-      style: PrismTextStyles.rowTitle(context).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
-    ),
-    onTap: onTap,
   );
 }
 
@@ -589,6 +596,12 @@ class _StatsChartState extends State<StatsChart> {
   int? picked;
 
   @override
+  void didUpdateWidget(covariant StatsChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.metric != widget.metric) picked = null;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final cs = Theme.of(context).colorScheme;
@@ -601,7 +614,7 @@ class _StatsChartState extends State<StatsChart> {
       values[i] == null ? l10n.statsUnavailable : statsNumber(context, values[i]),
     );
     final peak = values.whereType<int>().fold<int>(0, math.max);
-    if (peak == 0 && values.any((value) => value != null)) {
+    if (values.every((value) => value == 0)) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(PrismSpace.lg),
@@ -795,10 +808,14 @@ class _Bars extends CustomPainter {
           Paint()..color = ink,
         );
       }
-      if ((values.length - 1 - i) % stride == 0) {
-        final label = xs[i];
-        final dx = (i * step + (step - label.width) / 2).clamp(0.0, math.max(0.0, width - label.width)).toDouble();
+    }
+    var nextLabelLeft = width + PrismSpace.xxs;
+    for (var i = values.length - 1; i >= 0; i -= stride) {
+      final label = xs[i];
+      final dx = (i * step + (step - label.width) / 2).clamp(0.0, math.max(0.0, width - label.width)).toDouble();
+      if (dx + label.width + PrismSpace.xxs <= nextLabelLeft) {
         label.paint(canvas, Offset(dx, baseline + PrismSpace.xs));
+        nextLabelLeft = dx;
       }
     }
     for (final painter in [...ys, ...xs]) {

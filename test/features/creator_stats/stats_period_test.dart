@@ -44,9 +44,42 @@ void main() {
     expect(StatsPeriod.lastWeek.previous(history, StatsMetric.views), isNull);
   });
 
+  test('zero remains a known value when other weeks in the window are unavailable', () {
+    final history = [for (var i = 0; i < 8; i++) _week(i, i == 4 ? null : 0)];
+    expect(StatsPeriod.thisWeek.value(history, StatsMetric.views), 0);
+    expect(StatsPeriod.fourWeeks.value(history, StatsMetric.views), isNull);
+  });
+
   test('previous is null when the history is too short for the comparison', () {
     final history = [for (var i = 0; i < 6; i++) _week(i, i)];
     expect(StatsPeriod.fourWeeks.previous(history, StatsMetric.views), isNull);
+  });
+
+  test('ranked keeps zero above unavailable values and orders all-null ties by wall ID', () {
+    WallStats wall(String id, int? value) => WallStats(
+      wallId: id,
+      title: id,
+      thumbnailUrl: '',
+      totals: const {},
+      weeks: [for (var i = 0; i < 8; i++) _week(i, value)],
+    );
+    final stats = CreatorStats(
+      generatedAt: DateTime.utc(2026),
+      asOf: DateTime.utc(2026),
+      approvedWallCount: 5,
+      totals: const {},
+      coverage: const {},
+      weeks: const [],
+      walls: [wall('null-b', null), wall('zero-b', 0), wall('positive', 3), wall('null-a', null), wall('zero-a', 0)],
+    );
+
+    expect(stats.ranked(StatsMetric.views, StatsPeriod.thisWeek).map((wall) => wall.wallId), [
+      'positive',
+      'zero-a',
+      'zero-b',
+      'null-a',
+      'null-b',
+    ]);
   });
 
   test('statsAxisTop picks the smallest even step at or above the peak', () {

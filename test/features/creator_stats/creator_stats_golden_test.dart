@@ -49,7 +49,7 @@ CreatorStats _stats({bool zero = false}) {
         },
       ),
   ];
-  final weeks = history([null, 412, 630, 588, 902, 1104, 1072, 1284]);
+  final weeks = history(zero ? List.filled(8, 0) : [null, 412, 630, 588, 902, 1104, 1072, 1284]);
   final walls = [
     for (final (id, title, share) in [('a', 'Blue hour', 2), ('b', 'Glass dunes', 3), ('c', 'Night tram', 5)])
       WallStats(
