@@ -515,6 +515,15 @@ void main() {
     await tester.tap(find.text('Last week'));
     await tester.pump();
     expect(find.text('+1 (+20%) vs the week before'), findsOneWidget);
+    expect(find.text('Week of Oct 12, 2026: 6'), findsOneWidget, reason: 'the readout starts on the period week');
+    await tester.scrollUntilVisible(find.text('Blue sky'), 300);
+    expect(
+      find.descendant(of: find.widgetWithText(PrismRow, 'Blue sky'), matching: find.text('6')),
+      findsOneWidget,
+      reason: 'the top wall value follows the period',
+    );
+    await tester.ensureVisible(find.text('4 weeks'));
+    await tester.pump();
     await tester.tap(find.text('4 weeks'));
     await tester.pump();
     expect(find.text('Not enough history to compare'), findsOneWidget);

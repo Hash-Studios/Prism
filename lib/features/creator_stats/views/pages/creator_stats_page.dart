@@ -598,7 +598,7 @@ class _StatsChartState extends State<StatsChart> {
   @override
   void didUpdateWidget(covariant StatsChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.metric != widget.metric) picked = null;
+    if (oldWidget.metric != widget.metric || !setEquals(oldWidget.highlight, widget.highlight)) picked = null;
   }
 
   @override
@@ -608,7 +608,8 @@ class _StatsChartState extends State<StatsChart> {
     final locale = Localizations.localeOf(context).toLanguageTag();
     final weeks = widget.weeks;
     final values = [for (final week in weeks) week.metrics[widget.metric]];
-    final selected = (picked ?? weeks.length - 1).clamp(0, weeks.length - 1);
+    final newest = widget.highlight.isEmpty ? weeks.length - 1 : widget.highlight.reduce(math.max);
+    final selected = (picked ?? newest).clamp(0, weeks.length - 1);
     String weekText(int i) => l10n.statsChartWeek(
       DateFormat.yMMMd(locale).format(weeks[i].start),
       values[i] == null ? l10n.statsUnavailable : statsNumber(context, values[i]),
