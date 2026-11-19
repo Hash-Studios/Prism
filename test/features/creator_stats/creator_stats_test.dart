@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show Paragraph;
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/di/injection.dart';
@@ -15,6 +16,7 @@ import 'package:Prism/features/creator_stats/biz/bloc/creator_stats_bloc.j.dart'
 import 'package:Prism/features/creator_stats/data/creator_stats_repository_impl.dart';
 import 'package:Prism/features/creator_stats/domain/creator_stats.dart';
 import 'package:Prism/features/creator_stats/domain/get_creator_stats.dart';
+import 'package:Prism/features/creator_stats/domain/stats_period.dart';
 import 'package:Prism/features/creator_stats/views/pages/creator_stats_page.dart';
 import 'package:Prism/features/in_app_notifications/domain/notification_copy.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
@@ -22,6 +24,8 @@ import 'package:Prism/features/session/domain/entities/session_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -87,6 +91,15 @@ class _OffFund implements CreatorFundRepository {
   Future<CreatorFundStatus> load() async => const CreatorFundOff(week: '2026-W46');
 }
 
+class _ParagraphBoundsCanvas extends TestRecordingCanvas {
+  final bounds = <(double, Offset)>[];
+
+  @override
+  void drawParagraph(Paragraph paragraph, Offset offset) {
+    bounds.add((paragraph.maxIntrinsicWidth, offset));
+  }
+}
+
 Widget _withFund({required CreatorStatsBloc value, required Widget child}) => MultiBlocProvider(
   providers: [
     BlocProvider<CreatorStatsBloc>.value(value: value),
@@ -96,6 +109,7 @@ Widget _withFund({required CreatorStatsBloc value, required Widget child}) => Mu
 );
 
 void main() {
+  setUpAll(() => registerFallbackValue(const CreatorStatsEvent.load()));
   late FakeAppAnalytics analytics;
   setUp(() {
     analytics = FakeAppAnalytics();
@@ -170,7 +184,11 @@ void main() {
       },
       {...original, 'wallId': 'unknown', 'weeks': unknownWeeks},
     ];
-    expect(parseCreatorStats(raw).ranked(StatsMetric.saves).map((w) => w.wallId), ['one', 'zero', 'unknown']);
+    expect(parseCreatorStats(raw).ranked(StatsMetric.saves, StatsPeriod.thisWeek).map((w) => w.wallId), [
+      'one',
+      'zero',
+      'unknown',
+    ]);
   });
   test('malformed callable payload reports a format failure', () {
     expect(() => parseCreatorStats(null), throwsFormatException);
@@ -246,15 +264,15 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: ThemeData(brightness: brightness),
-        builder: (context, child) => BlocProvider<SessionBloc>.value(value: session, child: child),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
+          child: BlocProvider<SessionBloc>.value(value: session, child: child),
+        ),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        home: MediaQuery(
-          data: MediaQueryData(textScaler: TextScaler.linear(scale)),
-          child: _withFund(
-            value: bloc,
-            child: const CreatorStatsView(ownerUid: 'alice'),
-          ),
+        home: _withFund(
+          value: bloc,
+          child: const CreatorStatsView(ownerUid: 'alice'),
         ),
       ),
     );
@@ -382,9 +400,7 @@ void main() {
     await tester.scrollUntilVisible(find.text('Tips'), 300);
     expect(find.text('Tips'), findsOneWidget);
     expect(find.text('2 tips, 35 coins in all'), findsOneWidget);
-    final week = find.textContaining('Week of ');
-    expect(week, findsOneWidget);
-    expect(tester.widget<Text>(week).data, contains('2 tips, 35 coins'));
+    expect(find.text('Week of Oct 19: 2 tips, 35 coins'), findsOneWidget);
     expect(find.text('Blue sky: 1 tip, 25 coins'), findsOneWidget);
   });
   testWidgets('tips summary shows the empty copy without tips', (tester) async {
@@ -394,10 +410,10 @@ void main() {
   });
   testWidgets('metric switch dispatches and tracks typed event', (tester) async {
     final bloc = await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())));
-    await tester.scrollUntilVisible(find.widgetWithText(PrismChip, 'Saves'), 300);
-    await tester.ensureVisible(find.widgetWithText(PrismChip, 'Saves'));
+    await tester.scrollUntilVisible(find.text('Saves'), 300);
+    await tester.ensureVisible(find.text('Saves'));
     await tester.pump();
-    await tester.tap(find.widgetWithText(PrismChip, 'Saves'));
+    await tester.tap(find.text('Saves'));
     verify(() => bloc.add(const CreatorStatsEvent.select(StatsMetric.saves))).called(1);
     expect(analytics.events.map((event) => event.eventName), contains('creator_stats_metric_switched'));
     expect(analytics.events.where((event) => event.eventName == 'creator_stats_metric_switched'), hasLength(1));
@@ -409,10 +425,14 @@ void main() {
     await tester.pump();
     expect(tester.takeException(), isNull);
   });
-  testWidgets('all eight weekly chart values are visible at narrow width and large text', (tester) async {
+  testWidgets('chart bars are readable buttons at narrow width and large text', (tester) async {
+    final handle = tester.ensureSemantics();
     tester.view.physicalSize = const Size(320, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
+    // The readout Text repeats the selected bar's label, so count only the bar buttons.
+    Finder bar(String label) =>
+        find.byWidgetPredicate((w) => w is Semantics && w.properties.button == true && w.properties.label == label);
     final data = parseCreatorStats(fixture());
     await tester.pumpWidget(
       MaterialApp(
@@ -438,12 +458,35 @@ void main() {
       'Week of Oct 12, 2026: 6',
       'Week of Oct 19, 2026: 7',
     ]) {
-      final text = find.text(label);
-      expect(text, findsOneWidget);
-      await tester.ensureVisible(text);
-      expect(text.hitTestable(), findsOneWidget);
+      expect(bar(label), findsOneWidget);
     }
+    expect(find.text('Week of Oct 19, 2026: 7'), findsOneWidget);
+    await tester.tap(bar('Week of Sep 14, 2026: 2'));
+    await tester.pump();
+    expect(find.text('Week of Sep 14, 2026: 2'), findsOneWidget);
+    expect(find.text('Week of Oct 19, 2026: 7'), findsNothing);
     expect(tester.takeException(), isNull);
+    handle.dispose();
+  });
+  testWidgets('chart clears a picked week when its metric changes', (tester) async {
+    final data = parseCreatorStats(fixture());
+    Widget chart(StatsMetric metric) => MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: StatsChart(weeks: data.weeks, metric: metric),
+      ),
+    );
+    await tester.pumpWidget(chart(StatsMetric.views));
+    final selectedBar = find.byWidgetPredicate(
+      (w) => w is Semantics && w.properties.button == true && w.properties.label == 'Week of Sep 14, 2026: 2',
+    );
+    await tester.tap(selectedBar);
+    await tester.pump();
+    expect(find.text('Week of Sep 14, 2026: 2'), findsOneWidget);
+    await tester.pumpWidget(chart(StatsMetric.saves));
+    await tester.pump();
+    expect(find.text('Week of Oct 19, 2026: 7'), findsOneWidget);
   });
   testWidgets('wall detail uses response and chart has all eight semantic values', (tester) async {
     final handle = tester.ensureSemantics();
@@ -456,9 +499,200 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(WallStatsPage), findsOneWidget);
     expect(analytics.events.where((event) => event.eventName == 'creator_wall_stats_opened'), hasLength(1));
-    final chart = find.bySemanticsLabel(RegExp('Views, eight weeks.*Unavailable'));
-    expect(chart, findsOneWidget);
+    expect(find.bySemanticsLabel('Week of Aug 31, 2026: Unavailable'), findsOneWidget);
+    expect(find.bySemanticsLabel('Week of Oct 19, 2026: 7'), findsOneWidget);
     expect(tester.takeException(), isNull);
     handle.dispose();
+  });
+  testWidgets('chart bars and metric tiles work with a keyboard', (tester) async {
+    final bloc = await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())));
+    final bar = find.descendant(of: find.byType(StatsChart), matching: find.byType(FocusableActionDetector)).at(2);
+    Focus.of(tester.element(find.descendant(of: bar, matching: find.byType(SizedBox)).first)).requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(find.text('Week of Sep 14, 2026: 2'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Saves'), 300);
+    Focus.of(tester.element(find.text('Saves'))).requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pump();
+    verify(() => bloc.add(const CreatorStatsEvent.select(StatsMetric.saves))).called(1);
+    final viewsTile = find.ancestor(of: find.text('Views'), matching: find.byType(FocusableActionDetector));
+    expect(viewsTile, findsOneWidget);
+    await tester.ensureVisible(viewsTile);
+    final selectedTile = Focus.of(tester.element(find.descendant(of: viewsTile, matching: find.text('Views'))));
+    selectedTile.requestFocus();
+    await tester.pump();
+    expect(selectedTile.hasFocus, isTrue, reason: 'the selected tile keeps keyboard focus');
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    verifyNever(() => bloc.add(const CreatorStatsEvent.select(StatsMetric.views)));
+  });
+  testWidgets('hero shows this week with the change and the total', (tester) async {
+    await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())));
+    expect(find.text('VIEWS'), findsOneWidget);
+    expect(find.text('+1 (+17%) vs last week'), findsOneWidget);
+    expect(find.text('Total: 10'), findsOneWidget);
+    expect(find.text('7'), findsWidgets);
+  });
+  testWidgets('period switch changes the hero and the comparison', (tester) async {
+    final bloc = await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())));
+    await tester.tap(find.text('Last week'));
+    await tester.pump();
+    expect(find.text('+1 (+20%) vs the week before'), findsOneWidget);
+    expect(find.text('Week of Oct 12, 2026: 6'), findsOneWidget, reason: 'the readout starts on the period week');
+    await tester.scrollUntilVisible(find.text('Blue sky'), 300);
+    expect(
+      find.descendant(of: find.widgetWithText(PrismRow, 'Blue sky'), matching: find.text('6')),
+      findsOneWidget,
+      reason: 'the top wall value follows the period',
+    );
+    await tester.ensureVisible(find.text('4 weeks'));
+    await tester.pump();
+    await tester.tap(find.text('4 weeks'));
+    await tester.pump();
+    expect(find.text('Not enough history to compare'), findsOneWidget);
+    expect(find.text('22'), findsWidgets);
+    verifyNever(() => bloc.add(any()));
+    expect(analytics.events.map((event) => event.eventName), isNot(contains('creator_stats_metric_switched')));
+  });
+  testWidgets('walls with no views show the calm chart state', (tester) async {
+    final raw = fixture();
+    List<Object?> zeroWeeks(List<Object?> weeks) => [
+      for (var i = 0; i < weeks.length; i++)
+        {
+          ...weeks[i]! as Map<String, Object?>,
+          'metrics': {for (final m in StatsMetric.values) m.name: 0},
+        },
+    ];
+    raw['weeks'] = zeroWeeks(raw['weeks']! as List<Object?>);
+    final wall = (raw['walls']! as List).single as Map<String, Object?>;
+    raw['walls'] = [
+      {...wall, 'weeks': zeroWeeks(wall['weeks']! as List<Object?>)},
+    ];
+    await pump(tester, CreatorStatsState(data: parseCreatorStats(raw)));
+    expect(find.text('Nothing recorded in these eight weeks yet.'), findsOneWidget);
+    expect(find.text('No change vs last week'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Blue sky'), 300);
+    expect(find.text('Blue sky'), findsOneWidget);
+  });
+  testWidgets('mixed zero and unavailable weeks retain the chart and all bar actions', (tester) async {
+    final raw = fixture();
+    final weeks = raw['weeks']! as List;
+    for (var i = 0; i < weeks.length; i++) {
+      (weeks[i] as Map<String, Object?>)['metrics'] = {
+        for (final metric in StatsMetric.values) metric.name: i.isEven ? 0 : null,
+      };
+    }
+    final data = parseCreatorStats(raw);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: StatsChart(weeks: data.weeks, metric: StatsMetric.views),
+        ),
+      ),
+    );
+    expect(find.text('Nothing recorded in these eight weeks yet.'), findsNothing);
+    expect(find.byWidgetPredicate((w) => w is Semantics && w.properties.button == true), findsNWidgets(8));
+    expect(find.bySemanticsLabel('Week of Aug 31, 2026: 0'), findsOneWidget);
+    expect(find.bySemanticsLabel('Week of Sep 7, 2026: Unavailable'), findsOneWidget);
+  });
+  testWidgets('chart date labels keep a gap and retain the newest label at 390px', (tester) async {
+    tester.view.physicalSize = const Size(390, 700);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final data = parseCreatorStats(fixture());
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: StatsChart(weeks: data.weeks, metric: StatsMetric.views),
+          ),
+        ),
+      ),
+    );
+    final render = tester.renderObject<RenderCustomPaint>(
+      find.descendant(of: find.byType(StatsChart), matching: find.byType(CustomPaint)),
+    );
+    final canvas = _ParagraphBoundsCanvas();
+    render.painter!.paint(canvas, render.size);
+    final bottom = canvas.bounds.map((entry) => entry.$2.dy).reduce((a, b) => a > b ? a : b);
+    final paragraphs = canvas.bounds.where((entry) => entry.$2.dy >= bottom - 1).toList()
+      ..sort((a, b) => a.$2.dx.compareTo(b.$2.dx));
+    expect(paragraphs, isNotEmpty);
+    for (var i = 1; i < paragraphs.length; i++) {
+      expect(paragraphs[i - 1].$2.dx + paragraphs[i - 1].$1 + 4, lessThanOrEqualTo(paragraphs[i].$2.dx));
+    }
+    expect(paragraphs.last.$2.dx + paragraphs.last.$1, greaterThan(render.size.width * 0.75));
+  });
+  testWidgets('top walls list caps at five with show all', (tester) async {
+    final raw = fixture();
+    final original = (raw['walls']! as List).single as Map<String, Object?>;
+    raw['approvedWallCount'] = 7;
+    raw['walls'] = [
+      for (var i = 0; i < 7; i++) {...original, 'wallId': 'w$i', 'title': 'Wall $i'},
+    ];
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pump(tester, CreatorStatsState(data: parseCreatorStats(raw)));
+    await tester.scrollUntilVisible(find.text('Show all 7 walls'), 300);
+    expect(find.textContaining('Wall '), findsNWidgets(5));
+    await tester.tap(find.text('Show all 7 walls'));
+    await tester.pump();
+    expect(find.textContaining('Wall '), findsNWidgets(7));
+    expect(find.text('Show fewer'), findsOneWidget);
+  });
+  for (final width in [320.0, 390.0]) {
+    testWidgets('long top-wall title and 16-digit value fit at 200% on ${width.toInt()}px', (tester) async {
+      tester.view.physicalSize = Size(width, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final raw = fixture();
+      final wall = (raw['walls']! as List).single as Map<String, Object?>;
+      wall['title'] = 'A very long wallpaper title that needs room to wrap safely';
+      const safeInteger = 9007199254740991;
+      wall['totals'] = {for (final m in StatsMetric.values) m.name: safeInteger};
+      final wallWeeks = (wall['weeks']! as List).toList();
+      final finalWeek = wallWeeks.last as Map<String, Object?>;
+      wallWeeks[wallWeeks.length - 1] = {
+        ...finalWeek,
+        'metrics': {for (final m in StatsMetric.values) m.name: safeInteger},
+      };
+      wall['weeks'] = wallWeeks;
+      raw['tips'] = tipsFixture(raw);
+      await pump(tester, CreatorStatsState(data: parseCreatorStats(raw)), scale: 2);
+      await tester.scrollUntilVisible(find.text('Tips'), 250);
+      expect(find.text('Tips'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.scrollUntilVisible(find.text(wall['title']! as String), -250);
+      expect(find.text(wall['title']! as String), findsOneWidget);
+      expect(find.text('9,007,199,254,740,991'), findsWidgets);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text(wall['title']! as String));
+      await tester.pumpAndSettle();
+      expect(find.byType(WallStatsPage), findsOneWidget);
+      expect(MediaQuery.textScalerOf(tester.element(find.byType(WallStatsPage))).scale(10), 20);
+      await tester.scrollUntilVisible(find.text('About these numbers'), 250);
+      expect(tester.takeException(), isNull);
+    });
+  }
+  testWidgets('whole dashboard fits 320 wide at 200% text', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pump(tester, CreatorStatsState(data: parseCreatorStats(fixture())), scale: 2);
+    await tester.scrollUntilVisible(find.text('About these numbers'), 300, scrollable: find.byType(Scrollable).first);
+    expect(tester.takeException(), isNull);
   });
 }

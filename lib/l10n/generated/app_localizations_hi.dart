@@ -12725,14 +12725,15 @@ class AppLocalizationsHi extends AppLocalizations {
   String get statsUpload => 'वॉलपेपर अपलोड करें';
 
   @override
-  String get statsWeekNote => 'इस हफ़्ते अब तक की तुलना पिछले हफ़्ते से। हफ़्ता सोमवार को UTC में शुरू होता है।';
+  String get statsWeekNote =>
+      'हफ़्ते सोमवार से शुरू होते हैं, UTC में। यह हफ़्ता अभी पूरा नहीं हुआ है, इसलिए पिछले हफ़्ते के सामने यह कम लग सकता है।';
 
   @override
   String get statsHistoryNote =>
-      'आठ हफ़्ते, सबसे पुराना पहले। डैश का अर्थ है डेटा उपलब्ध नहीं है। ट्रैकिंग हफ़्ते के बीच में शुरू हो सकती है, इसलिए दर्ज हफ़्तों के आँकड़े अधूरे हो सकते हैं। मौजूदा हफ़्ता अधूरा है।';
+      'चार्ट में आठ हफ़्ते दिखते हैं, सबसे पुराना पहले। छोटा धूसर निशान बताता है कि इतिहास उपलब्ध नहीं है। ट्रैकिंग हफ़्ते के बीच में शुरू हो सकती है, इसलिए दर्ज हफ़्ते अधूरे हो सकते हैं।';
 
   @override
-  String get statsTopWalls => 'इस हफ़्ते के शीर्ष वॉलपेपर';
+  String get statsTopWalls => 'शीर्ष वॉलपेपर';
 
   @override
   String get statsUntitled => 'बिना शीर्षक का वॉलपेपर';
@@ -12753,23 +12754,8 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String statsWallValue(String metric, String value) {
-    return '$metric: इस हफ़्ते $value';
-  }
-
-  @override
-  String statsComparison(String current, String previous) {
-    return 'इस हफ़्ते $current · पिछले हफ़्ते $previous';
-  }
-
-  @override
   String statsTotal(String value) {
     return 'कुल: $value';
-  }
-
-  @override
-  String statsChange(String value) {
-    return 'पिछले हफ़्ते की तुलना में $value';
   }
 
   @override
@@ -12783,9 +12769,54 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
-  String statsChartSummary(String metric, String summary) {
-    return '$metric, आठ हफ़्ते। $summary';
+  String get statsPeriodThisWeek => 'इस हफ़्ते';
+
+  @override
+  String get statsPeriodLastWeek => 'पिछला हफ़्ता';
+
+  @override
+  String get statsPeriodFourWeeks => '4 हफ़्ते';
+
+  @override
+  String statsVsLastWeek(String change) {
+    return '$change पिछले हफ़्ते की तुलना में';
   }
+
+  @override
+  String statsVsWeekBefore(String change) {
+    return '$change उससे पिछले हफ़्ते की तुलना में';
+  }
+
+  @override
+  String statsVsFourWeeksBefore(String change) {
+    return '$change उससे पहले के 4 हफ़्तों की तुलना में';
+  }
+
+  @override
+  String get statsNoChange => 'कोई बदलाव नहीं';
+
+  @override
+  String get statsNoComparison => 'तुलना के लिए पर्याप्त इतिहास नहीं है';
+
+  @override
+  String get statsChartHint => 'किसी बार पर टैप करके उसका हफ़्ता देखें।';
+
+  @override
+  String get statsChartEmpty => 'इन आठ हफ़्तों में अभी तक कुछ दर्ज नहीं हुआ है।';
+
+  @override
+  String get statsChartEmptyHint => 'किसी वॉलपेपर को उसके पेज से शेयर करें, ताकि उसे देखा जा सके।';
+
+  @override
+  String statsShowAllWalls(String count) {
+    return 'सभी $count वॉलपेपर दिखाएं';
+  }
+
+  @override
+  String get statsShowFewerWalls => 'कम दिखाएं';
+
+  @override
+  String get statsAboutTitle => 'इन आँकड़ों के बारे में';
 
   @override
   String get shortcutsGuideHeadline => 'हर दिन एक नया वॉलपेपर';

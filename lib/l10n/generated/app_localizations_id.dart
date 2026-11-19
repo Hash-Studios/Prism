@@ -12623,14 +12623,15 @@ class AppLocalizationsId extends AppLocalizations {
   String get statsUpload => 'Unggah wallpaper';
 
   @override
-  String get statsWeekNote => 'Minggu ini sejauh ini dibanding minggu lalu. Minggu dimulai Senin, UTC.';
+  String get statsWeekNote =>
+      'Minggu dimulai hari Senin, UTC. Minggu ini belum berakhir, jadi bisa terlihat rendah dibanding minggu lalu.';
 
   @override
   String get statsHistoryNote =>
-      'Delapan minggu, yang terlama lebih dulu. Tanda pisah berarti data tidak tersedia. Pelacakan dapat dimulai di tengah minggu, jadi data mingguan bisa tidak lengkap. Minggu ini belum selesai.';
+      'Grafik menampilkan delapan minggu, yang terlama lebih dulu. Tanda abu-abu pendek berarti riwayat tidak tersedia. Pelacakan dapat dimulai di tengah minggu, sehingga minggu yang tercatat mungkin tidak lengkap.';
 
   @override
-  String get statsTopWalls => 'Wallpaper teratas minggu ini';
+  String get statsTopWalls => 'Wallpaper teratas';
 
   @override
   String get statsUntitled => 'Wallpaper tanpa judul';
@@ -12651,23 +12652,8 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String statsWallValue(String metric, String value) {
-    return '$metric: $value minggu ini';
-  }
-
-  @override
-  String statsComparison(String current, String previous) {
-    return '$current minggu ini · $previous minggu lalu';
-  }
-
-  @override
   String statsTotal(String value) {
     return 'Total: $value';
-  }
-
-  @override
-  String statsChange(String value) {
-    return '$value dibanding minggu lalu';
   }
 
   @override
@@ -12681,9 +12667,54 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String statsChartSummary(String metric, String summary) {
-    return '$metric, delapan minggu. $summary';
+  String get statsPeriodThisWeek => 'Minggu ini';
+
+  @override
+  String get statsPeriodLastWeek => 'Minggu lalu';
+
+  @override
+  String get statsPeriodFourWeeks => '4 minggu';
+
+  @override
+  String statsVsLastWeek(String change) {
+    return '$change dibanding minggu lalu';
   }
+
+  @override
+  String statsVsWeekBefore(String change) {
+    return '$change dibanding minggu sebelumnya';
+  }
+
+  @override
+  String statsVsFourWeeksBefore(String change) {
+    return '$change dibanding 4 minggu sebelumnya';
+  }
+
+  @override
+  String get statsNoChange => 'Tidak ada perubahan';
+
+  @override
+  String get statsNoComparison => 'Riwayat belum cukup untuk dibandingkan';
+
+  @override
+  String get statsChartHint => 'Ketuk batang untuk melihat minggunya.';
+
+  @override
+  String get statsChartEmpty => 'Belum ada yang tercatat dalam delapan minggu ini.';
+
+  @override
+  String get statsChartEmptyHint => 'Bagikan wallpaper dari halamannya agar bisa dilihat.';
+
+  @override
+  String statsShowAllWalls(String count) {
+    return 'Tampilkan semua $count wallpaper';
+  }
+
+  @override
+  String get statsShowFewerWalls => 'Tampilkan lebih sedikit';
+
+  @override
+  String get statsAboutTitle => 'Tentang angka ini';
 
   @override
   String get shortcutsGuideHeadline => 'Wallpaper baru setiap hari';

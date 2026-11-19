@@ -12107,21 +12107,31 @@
   "statsEmptyTitle": "Your first wall starts here",
   "statsEmptyBody": "Upload a wallpaper. Its stats will appear after approval.",
   "statsUpload": "Upload a wallpaper",
-  "statsWeekNote": "This week so far compared with last week. Weeks start on Monday, UTC.",
-  "statsHistoryNote": "Eight weeks, oldest first. A dash means unavailable history. Tracking can begin partway through a week, so recorded weeks may be partial. The current week is incomplete.",
-  "statsTopWalls": "Top walls this week",
+  "statsWeekNote": "Weeks start on Monday, UTC. This week is not over yet, so it can look low next to last week.",
+  "statsHistoryNote": "The chart shows eight weeks, oldest first. A short grey mark means history is unavailable. Tracking can begin partway through a week, so recorded weeks may be partial.",
+  "statsTopWalls": "Top walls",
   "statsUntitled": "Untitled wall",
   "statsCountingNote": "Save totals count current favourites; weekly saves count additions. Remix totals count current credited remixes; weekly remixes count first accepted credits. Folder additions are recorded only from the start of tracking.",
   "statsUnavailable": "Unavailable",
   "statsWeeklyTitle": "Your walls this week",
   "statsWeeklyBody": "See how your walls did in {week}.",
-  "statsWallValue": "{metric}: {value} this week",
-  "statsComparison": "{current} this week · {previous} last week",
   "statsTotal": "Total: {value}",
-  "statsChange": "{value} compared with last week",
   "statsUpdated": "Updated {date} UTC",
   "statsChartWeek": "Week of {date}: {value}",
-  "statsChartSummary": "{metric}, eight weeks. {summary}",
+  "statsPeriodThisWeek": "This week",
+  "statsPeriodLastWeek": "Last week",
+  "statsPeriodFourWeeks": "4 weeks",
+  "statsVsLastWeek": "{change} vs last week",
+  "statsVsWeekBefore": "{change} vs the week before",
+  "statsVsFourWeeksBefore": "{change} vs the 4 weeks before",
+  "statsNoChange": "No change",
+  "statsNoComparison": "Not enough history to compare",
+  "statsChartHint": "Tap a bar to read its week.",
+  "statsChartEmpty": "Nothing recorded in these eight weeks yet.",
+  "statsChartEmptyHint": "Share a wall from its page to get it seen.",
+  "statsShowAllWalls": "Show all {count} walls",
+  "statsShowFewerWalls": "Show fewer",
+  "statsAboutTitle": "About these numbers",
   "@statsTitle": {
     "description": "Creator dashboard: statsTitle"
   },
@@ -12196,38 +12206,8 @@
       }
     }
   },
-  "@statsWallValue": {
-    "description": "Creator dashboard: statsWallValue",
-    "placeholders": {
-      "metric": {
-        "type": "String"
-      },
-      "value": {
-        "type": "String"
-      }
-    }
-  },
-  "@statsComparison": {
-    "description": "Creator dashboard: statsComparison",
-    "placeholders": {
-      "current": {
-        "type": "String"
-      },
-      "previous": {
-        "type": "String"
-      }
-    }
-  },
   "@statsTotal": {
     "description": "Creator dashboard: statsTotal",
-    "placeholders": {
-      "value": {
-        "type": "String"
-      }
-    }
-  },
-  "@statsChange": {
-    "description": "Creator dashboard: statsChange",
     "placeholders": {
       "value": {
         "type": "String"
@@ -12253,16 +12233,67 @@
       }
     }
   },
-  "@statsChartSummary": {
-    "description": "Creator dashboard: statsChartSummary",
+  "@statsPeriodThisWeek": {
+    "description": "Creator dashboard: statsPeriodThisWeek"
+  },
+  "@statsPeriodLastWeek": {
+    "description": "Creator dashboard: statsPeriodLastWeek"
+  },
+  "@statsPeriodFourWeeks": {
+    "description": "Creator dashboard: statsPeriodFourWeeks"
+  },
+  "@statsVsLastWeek": {
+    "description": "Creator dashboard: statsVsLastWeek",
     "placeholders": {
-      "metric": {
-        "type": "String"
-      },
-      "summary": {
+      "change": {
         "type": "String"
       }
     }
+  },
+  "@statsVsWeekBefore": {
+    "description": "Creator dashboard: statsVsWeekBefore",
+    "placeholders": {
+      "change": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsVsFourWeeksBefore": {
+    "description": "Creator dashboard: statsVsFourWeeksBefore",
+    "placeholders": {
+      "change": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsNoChange": {
+    "description": "Creator dashboard: statsNoChange"
+  },
+  "@statsNoComparison": {
+    "description": "Creator dashboard: statsNoComparison"
+  },
+  "@statsChartHint": {
+    "description": "Creator dashboard: statsChartHint"
+  },
+  "@statsChartEmpty": {
+    "description": "Creator dashboard: statsChartEmpty"
+  },
+  "@statsChartEmptyHint": {
+    "description": "Creator dashboard: statsChartEmptyHint"
+  },
+  "@statsShowAllWalls": {
+    "description": "Creator dashboard: statsShowAllWalls",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@statsShowFewerWalls": {
+    "description": "Creator dashboard: statsShowFewerWalls"
+  },
+  "@statsAboutTitle": {
+    "description": "Creator dashboard: statsAboutTitle"
   },
   "shortcutsGuideHeadline": "A new wallpaper every day",
   "@shortcutsGuideHeadline": {
