@@ -2,7 +2,7 @@ import * as admin from "firebase-admin";
 import {randomUUID} from "node:crypto";
 import {logger} from "firebase-functions/v2";
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {coinTransactionDoc, db, int, REGION, str} from "../common";
+import {coinTransactionDoc, db, int, str, US_REGION} from "../common";
 import {type CreatorFundConfig, ECONOMY_CONFIG_DOC, parseEconomy} from "../economy";
 import {notificationCopyPayload} from "../notificationCatalog";
 import {isLoggedOut, sendToUser} from "../notificationHelper";
@@ -224,7 +224,7 @@ export async function settleCreatorFundWeek(week: string): Promise<SettleOutcome
 
 /** Hourly on Monday morning, after the week closes at 00:00 UTC. Later runs resume or do nothing. */
 export const settleCreatorFund = onSchedule(
-  {schedule: "0 6-12 * * 1", timeZone: "UTC", region: REGION, retryCount: 1, timeoutSeconds: 540, memory: "1GiB"},
+  {schedule: "0 6-12 * * 1", timeZone: "UTC", region: US_REGION, retryCount: 1, timeoutSeconds: 540, memory: "1GiB", cpu: "gcf_gen1"},
   async (event) => {
     const week = previousWeek(Date.parse(event.scheduleTime));
     const outcome = await settleCreatorFundWeek(week);

@@ -123,7 +123,7 @@ Set the pool with `npm run economy:config -- --set creatorFund.pool=<coins>`. Ad
 | `notifying` | Sends one inbox item and push to each paid creator. |
 | `complete` | Nothing. One read. |
 
-A lease on the week document (10 minutes) stops two runs from working at the same time. A second run returns `busy`. The job stops a phase after 240 seconds. The next hourly run continues.
+The job and the status callable run in `us-central1` only. The app calls that region, and `asia-south1` has no free CPU budget. A lease on the week document (10 minutes) stops two runs from working at the same time. A second run returns `busy`. The job stops a phase after 240 seconds. The next hourly run continues.
 
 ### Documents
 

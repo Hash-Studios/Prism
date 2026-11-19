@@ -1,5 +1,5 @@
 import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/https";
-import {CALLABLE_REGIONS, db, int} from "../common";
+import {db, int, US_REGION} from "../common";
 import {parseEconomy} from "../economy";
 import {previousWeek} from "./load";
 import {CREATOR_FUND, creatorFundIo, FUND_ROWS} from "./settle";
@@ -33,7 +33,8 @@ export async function creatorFundStatus(uid: string, nowMs: number): Promise<Cre
   return {...counted, state: "notQualified", reason};
 }
 
-export const getCreatorFundStatus = onCall({region: CALLABLE_REGIONS, cors: true},
+// The app calls us-central1 only, and only builds with the fund row call this, so asia-south1 keeps its CPU budget.
+export const getCreatorFundStatus = onCall({region: US_REGION, cors: true},
   async (request: CallableRequest<unknown>) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "Sign in to see the Creator fund.");

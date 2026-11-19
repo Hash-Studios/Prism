@@ -271,6 +271,7 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
   function collection(path: string) {
     return {
       ...query(path, {filters: [], orders: [], offsetBy: 0}),
+      path,
       doc: (id?: string) => ref(`${path}/${id ?? `auto${++auto}`}`),
       add: async (data: Doc) => {
         const added = ref(`${path}/auto${++auto}`);
@@ -284,6 +285,34 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
   t.mock.method(db, "collectionGroup", (name: string) =>
     query("", {filters: [], orders: [], offsetBy: 0, group: name}));
   t.mock.method(db, "doc", (path: string) => ref(path));
+  t.mock.method(db, "getAll", async (...refs: FakeRef[]) => Promise.all(refs.map((r) => r.get())));
+  t.mock.method(db, "batch", () => {
+    const ops: Array<() => Promise<unknown>> = [];
+    const batch = {
+      set: (r: FakeRef, data: Doc, options?: {merge?: boolean}) => {
+        ops.push(() => r.set(data, options));
+        return batch;
+      },
+      update: (r: FakeRef, data: Doc) => {
+        ops.push(() => r.update(data));
+        return batch;
+      },
+      delete: (r: FakeRef) => {
+        ops.push(() => r.delete());
+        return batch;
+      },
+      commit: async () => {
+        for (const op of ops.splice(0)) await op();
+        return [];
+      },
+    };
+    return batch;
+  });
+  t.mock.method(db, "recursiveDelete", async (target: {path: string}) => {
+    for (const path of [...store.keys()]) {
+      if (path === target.path || path.startsWith(`${target.path}/`)) write(path, undefined);
+    }
+  });
   // The fake keeps one write buffer, so transactions run one at a time, like a Firestore with full contention.
   let turn: Promise<unknown> = Promise.resolve();
   t.mock.method(db, "runTransaction", (callback: (tx: unknown) => Promise<unknown>) => {
