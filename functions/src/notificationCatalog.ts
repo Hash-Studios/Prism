@@ -97,7 +97,7 @@ export function renderNotificationCopy(
   case "creatorFundPaid":
     return {kind: copy.kind, args: {coins: copy.coins, week: copy.week},
       title: copy.coins === 1 ? "You earned 1 coin from the Creator fund" :
-        `You earned ${copy.coins} coins from the Creator fund`,
+        `You earned ${copy.coins.toLocaleString("en-US")} coins from the Creator fund`,
       body: "See your share in Creator stats."};
   case "challengeWinner":
     return {kind: copy.kind, args: {theme: copy.theme}, title: "You won the weekly challenge",

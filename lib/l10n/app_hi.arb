@@ -15890,7 +15890,7 @@
   "creatorFundAbout": "हर हफ़्ते, Prism Coins का एक पूल क्रिएटर्स में बाँटा जाता है। आपका हिस्सा इस पर निर्भर है कि कितने लोग आपके वॉलपेपर सेव, सेट, डाउनलोड, रीमिक्स और फ़ोल्डर में जोड़ते हैं।",
   "@creatorFundAbout": {"description": "Explains how the weekly Creator fund share is calculated."},
   "creatorFundPaid": "{coins, plural, =1{आपने पिछले हफ़्ते 1 कॉइन कमाया} other{आपने पिछले हफ़्ते {coins} कॉइन कमाए}}",
-  "@creatorFundPaid": {"description": "Creator fund: coins earned last week.", "placeholders": {"coins": {"type": "int"}}},
+  "@creatorFundPaid": {"description": "Creator fund: coins earned last week.", "placeholders": {"coins": {"type": "int", "format": "decimalPattern"}}},
   "creatorFundShare": "यह फ़ंड का {share} है।",
   "@creatorFundShare": {"description": "Creator fund: the user's share of the fund as a percentage.", "placeholders": {"share": {"type": "String"}}},
   "creatorFundOff": "क्रिएटर फ़ंड अभी चालू नहीं है।",
@@ -15912,7 +15912,7 @@
   "coreCoinCreatorFund": "क्रिएटर फ़ंड",
   "@coreCoinCreatorFund": {"description": "Coin history label for a Creator fund payout."},
   "notifPushCreatorFundPaidTitle": "{coins, plural, =1{आपने क्रिएटर फ़ंड से 1 कॉइन कमाया} other{आपने क्रिएटर फ़ंड से {coins} कॉइन कमाए}}",
-  "@notifPushCreatorFundPaidTitle": {"description": "Push notification title for a Creator fund payout.", "placeholders": {"coins": {"type": "int"}}},
+  "@notifPushCreatorFundPaidTitle": {"description": "Push notification title for a Creator fund payout.", "placeholders": {"coins": {"type": "int", "format": "decimalPattern"}}},
   "notifPushCreatorFundPaidBody": "अपनी क्रिएटर स्टैट्स में अपना हिस्सा देखें।",
   "@notifPushCreatorFundPaidBody": {"description": "Push notification body for a Creator fund payout."}
 }

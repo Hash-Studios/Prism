@@ -15972,10 +15972,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String creatorFundPaid(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
     String _temp0 = intl.Intl.pluralLogic(
       coins,
       locale: localeName,
-      other: 'Ganaste $coins monedas la semana pasada',
+      other: 'Ganaste $coinsString monedas la semana pasada',
       one: 'Ganaste 1 moneda la semana pasada',
     );
     return '$_temp0';
@@ -16033,10 +16036,13 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String notifPushCreatorFundPaidTitle(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
     String _temp0 = intl.Intl.pluralLogic(
       coins,
       locale: localeName,
-      other: 'Ganaste $coins monedas del Fondo para creadores',
+      other: 'Ganaste $coinsString monedas del Fondo para creadores',
       one: 'Ganaste 1 moneda del Fondo para creadores',
     );
     return '$_temp0';

@@ -16148,10 +16148,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String creatorFundPaid(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
     String _temp0 = intl.Intl.pluralLogic(
       coins,
       locale: localeName,
-      other: 'Você ganhou $coins moedas na semana passada',
+      other: 'Você ganhou $coinsString moedas na semana passada',
       one: 'Você ganhou 1 moeda na semana passada',
     );
     return '$_temp0';
@@ -16211,10 +16214,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String notifPushCreatorFundPaidTitle(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
     String _temp0 = intl.Intl.pluralLogic(
       coins,
       locale: localeName,
-      other: 'Você ganhou $coins moedas do Fundo de criadores',
+      other: 'Você ganhou $coinsString moedas do Fundo de criadores',
       one: 'Você ganhou 1 moeda do Fundo de criadores',
     );
     return '$_temp0';
@@ -32366,10 +32372,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String creatorFundPaid(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
     String _temp0 = intl.Intl.pluralLogic(
       coins,
       locale: localeName,
-      other: 'Você ganhou $coins moedas na semana passada',
+      other: 'Você ganhou $coinsString moedas na semana passada',
       one: 'Você ganhou 1 moeda na semana passada',
     );
     return '$_temp0';
@@ -32429,10 +32438,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String notifPushCreatorFundPaidTitle(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
     String _temp0 = intl.Intl.pluralLogic(
       coins,
       locale: localeName,
-      other: 'Você ganhou $coins moedas do Fundo de criadores',
+      other: 'Você ganhou $coinsString moedas do Fundo de criadores',
       one: 'Você ganhou 1 moeda do Fundo de criadores',
     );
     return '$_temp0';
