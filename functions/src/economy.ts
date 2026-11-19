@@ -92,6 +92,21 @@ export interface EconomyConfig {
   /** Coin doubler events, see coinEvents.ts. A bad entry is dropped on parse. */
   events: CoinEvent[];
   weeklyEvent: WeeklyCoinEvent | null;
+  creatorFund: CreatorFundConfig;
+}
+
+export const CREATOR_FUND_METRICS = ["saves", "sets", "downloads", "remixes", "folderAdds"] as const;
+export type CreatorFundMetric = typeof CREATOR_FUND_METRICS[number];
+
+/** The weekly Creator fund. A pool of 0 turns it off. See docs/features/creator-fund.md. */
+export interface CreatorFundConfig {
+  pool: number;
+  weights: Record<CreatorFundMetric, number>;
+  maxUserSharePercent: number;
+  minDistinctUsers: number;
+  perCreatorCap: number;
+  minPayout: number;
+  excludedUids: string[];
 }
 
 export const DEFAULT_ECONOMY: EconomyConfig = {
@@ -198,6 +213,15 @@ export const DEFAULT_ECONOMY: EconomyConfig = {
   shopPrices: {},
   events: [],
   weeklyEvent: null,
+  creatorFund: {
+    pool: 0,
+    weights: {saves: 1, sets: 3, downloads: 2, remixes: 5, folderAdds: 1},
+    maxUserSharePercent: 10,
+    minDistinctUsers: 5,
+    perCreatorCap: 1000,
+    minPayout: 5,
+    excludedUids: [],
+  },
 };
 
 const MAX_PRICE = 10_000;
@@ -275,6 +299,32 @@ function mergeOnto<T>(base: T, raw: unknown): T {
   return base;
 }
 
+const MAX_FUND_POOL = 100_000;
+const MAX_FUND_WEIGHT = 100;
+const FUND_UID = /^[A-Za-z0-9_-]{1,128}$/;
+
+/** Each bad field falls back to its default. A bad pool falls back to 0, so a broken config never pays. */
+function parseCreatorFund(raw: CreatorFundConfig): CreatorFundConfig {
+  const d = DEFAULT_ECONOMY.creatorFund;
+  const weights = {...d.weights};
+  for (const metric of CREATOR_FUND_METRICS) {
+    if (isIntIn(raw.weights[metric], MAX_FUND_WEIGHT)) weights[metric] = raw.weights[metric];
+  }
+  const perCreatorCap = isIntIn(raw.perCreatorCap, MAX_FUND_POOL) && raw.perCreatorCap >= 1 ?
+    raw.perCreatorCap : d.perCreatorCap;
+  return {
+    pool: isIntIn(raw.pool, MAX_FUND_POOL) ? raw.pool : 0,
+    weights,
+    maxUserSharePercent: isIntIn(raw.maxUserSharePercent, 100) && raw.maxUserSharePercent >= 1 ?
+      raw.maxUserSharePercent : d.maxUserSharePercent,
+    minDistinctUsers: isIntIn(raw.minDistinctUsers, 1000) && raw.minDistinctUsers >= 1 ?
+      raw.minDistinctUsers : d.minDistinctUsers,
+    perCreatorCap,
+    minPayout: isIntIn(raw.minPayout, perCreatorCap) && raw.minPayout >= 1 ? raw.minPayout : Math.min(d.minPayout, perCreatorCap),
+    excludedUids: [...new Set(raw.excludedUids.filter((uid): uid is string => typeof uid === "string" && FUND_UID.test(uid)))],
+  };
+}
+
 /** Config from a raw Firestore doc, with defaults for anything missing or malformed. */
 export function parseEconomy(raw: unknown): EconomyConfig {
   const merged = {...mergeOnto(DEFAULT_ECONOMY, raw)};
@@ -314,6 +364,7 @@ export function parseEconomy(raw: unknown): EconomyConfig {
   award.dailyChest = parseWheel(award.dailyChest) ?? defaults.award.dailyChest;
   merged.award = award;
   Object.assign(merged, parseCoinEvents(raw));
+  merged.creatorFund = parseCreatorFund(merged.creatorFund);
   merged.proDiscountActions = merged.proDiscountActions.filter((a) => typeof a === "string");
   merged.proBypassActions = merged.proBypassActions.filter((a) => typeof a === "string" && !NEVER_BYPASSED.has(a));
   const ranks = merged.xp.ranks;

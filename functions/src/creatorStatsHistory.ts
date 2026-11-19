@@ -5,6 +5,7 @@ import {db, REGION, str} from "./common";
 import {HttpsError} from "firebase-functions/v2/https";
 import {logger} from "firebase-functions/v2";
 import {normalizeId} from "./viewStats";
+import {fundEventWrite} from "./creatorFund/events";
 
 export const METRICS = ["views", "saves", "sets", "downloads", "shares", "folderAdds", "remixes"] as const;
 export type Metric = typeof METRICS[number];
@@ -139,6 +140,8 @@ export async function countFolderCreation(source: admin.firestore.DocumentSnapsh
     const history = await tx.get(ref);
     tx.set(ref, addHistory(wall, history.data() as History | undefined, {folderAdds: 1}, createdAt.toMillis(), now));
     tx.create(marker, {counted: true});
+    const fund = fundEventWrite(wallId, "folderAdds", str(item.ownerId), createdAt.toMillis());
+    tx.set(fund.ref, fund.data);
   });
 }
 export const onCreatorStatsFolderCreated = onDocumentCreated(

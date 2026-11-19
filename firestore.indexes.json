@@ -2087,6 +2087,32 @@
       "indexes": []
     },
     {
+      "collectionGroup": "creatorFundEvents",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "creatorFundEvents",
+      "fieldPath": "at",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "creatorFundEvents",
+      "fieldPath": "wallId",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "creatorFundEvents",
+      "fieldPath": "actorUid",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "creatorFundEvents",
+      "fieldPath": "metric",
+      "indexes": []
+    },
+    {
       "collectionGroup": "creatorStatsHistory",
       "fieldPath": "weeks",
       "indexes": []

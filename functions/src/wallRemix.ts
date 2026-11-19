@@ -3,6 +3,8 @@ import {onDocumentWritten} from "firebase-functions/v2/firestore";
 import {db, findUserByEmail, int, REGION, str} from "./common";
 import {activeOwner, addHistory, hash, historyRef, incarnation, type History} from "./creatorStatsHistory";
 import {notificationCopyPayload} from "./notificationCatalog";
+import {fundEventWrite} from "./creatorFund/events";
+import {normalizeId} from "./viewStats";
 
 export const DOC_ID = /^[A-Za-z0-9_-]{1,64}$/;
 export const REMIX_LEDGER = "wallRemixes";
@@ -130,6 +132,18 @@ async function reconcileRemixesOf(originalId: string): Promise<void> {
   }));
 }
 
+/** The remixer's credit to the original wall, as a Creator fund event. Null when either identity is unusable. */
+function remixFundEvent(original: admin.firestore.DocumentData | undefined, remix: admin.firestore.DocumentData | undefined,
+  nowMs: number) {
+  const actor = str(remix?.creatorUid);
+  if (!actor) return null;
+  try {
+    return fundEventWrite(normalizeId(original?.id), "remixes", actor, nowMs);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Moves the remix credit of one wall to the original it names now, in one transaction. The ledger
  * `wallRemixes/{remixId}` records the credited original, so a replayed event changes nothing, and a withdrawn or
@@ -171,6 +185,8 @@ export async function syncRemixCredit(remixId: string): Promise<RemixNotice | nu
           const next = addHistory(originalSnap, history.data() as History | undefined, {remixes: 1}, now, now);
           tx.create(firstRef, {counted: true});
           tx.set(ref, next);
+          const fund = remixFundEvent(original, remix, now);
+          if (fund) tx.set(fund.ref, fund.data);
         } else {
           tx.create(firstRef, {counted: false});
         }

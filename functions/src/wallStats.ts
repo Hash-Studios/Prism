@@ -14,9 +14,11 @@ import {
 } from "./viewStats";
 import {progressQuestForUser, progressWallpaperActionQuest, type Awarded} from "./quests";
 import {dayKey} from "./economy";
+import {fundEventWrite} from "./creatorFund/events";
 
 const ACTION_FIELDS = {download: "downloads", set: "sets", share: "shares"} as const;
 type WallAction = keyof typeof ACTION_FIELDS;
+const FUND_METRICS = {download: "downloads", set: "sets", share: null} as const;
 
 const WALL_ACTION_RATE = "wallActionRate";
 export const FAVOURITE_AGGREGATION_GATE = "maintenance/favouriteAggregation";
@@ -81,9 +83,14 @@ export const recordWallpaperAction = onCall(
       [field]: admin.firestore.FieldValue.increment(1),
       lastEventAt: admin.firestore.Timestamp.fromMillis(now),
     }, {merge: true});
+    const fundMetric = FUND_METRICS[action];
+    const fund = fundMetric ? fundEventWrite(wallId, fundMetric, uid, now) : null;
     await Promise.all([
       bumpDaily(wallId, field, now).catch((err: unknown) => {
         logger.warn("Could not record the daily wallpaper action.", {err});
+      }),
+      fund?.ref.set(fund.data).catch((err: unknown) => {
+        logger.warn("Could not record the Creator fund event.", {err});
       }),
       quests(),
     ]);
@@ -127,6 +134,11 @@ async function recordReceiptedAction(uid: string, wallId: string, action: WallAc
         wallId, day, [field]: admin.firestore.FieldValue.increment(1),
         expireAt: admin.firestore.Timestamp.fromMillis(now + 14 * 86_400_000),
       }, {merge: true});
+      const fundMetric = FUND_METRICS[action];
+      if (fundMetric) {
+        const fund = fundEventWrite(wallId, fundMetric, uid, now);
+        tx.set(fund.ref, fund.data);
+      }
     }
     return {counted, acceptedAt: now};
   });
@@ -216,6 +228,8 @@ export const onFavouriteWritten = onDocumentWritten(
             wallId, day, favs: admin.firestore.FieldValue.increment(1),
             expireAt: admin.firestore.Timestamp.fromMillis(now + 14 * 86_400_000),
           }, {merge: true});
+          const fund = fundEventWrite(wallId, "saves", event.params.uid, now);
+          tx.set(fund.ref, fund.data);
         }
       }
       if (acceptQuest) tx.set(pendingQuests.doc(String(sequence)), {acceptedAt});
