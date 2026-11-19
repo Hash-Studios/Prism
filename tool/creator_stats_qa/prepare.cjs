@@ -21,7 +21,9 @@ const compile = (name, source) => {
   assert.equal((result.diagnostics ?? []).length, 0, `Transpile diagnostics: ${name}`);
   fs.writeFileSync(path.join(target, 'lib', name + '.js'), result.outputText);
 };
-for (const name of ['creatorStats', 'creatorStatsHistory', 'creatorStatsDaily', 'common', 'notificationCatalog']) {
+fs.mkdirSync(path.join(target, 'lib', 'creatorFund'));
+for (const name of ['creatorStats', 'creatorStatsHistory', 'creatorStatsDaily', 'common', 'notificationCatalog', 'economy',
+  'coinEvents', 'creatorFund/events']) {
   compile(name, fs.readFileSync(path.join(root, 'functions/src', name + '.ts'), 'utf8'));
 }
 // viewStats also imports economy and asset delivery. Extract its exact normalizer and constant

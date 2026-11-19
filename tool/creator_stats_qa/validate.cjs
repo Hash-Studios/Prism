@@ -10,11 +10,11 @@ const run = (args, env = process.env) => {
 };
 run(['prepare.cjs', 'demo-prism']);
 run(['seed_test.cjs']);
-for (const file of ['prepare', 'local', 'seed', 'seed_tips', 'assert', 'capacity', 'native', 'images', 'bundle/index']) run(['--check', `${file}.cjs`]);
+for (const file of ['prepare', 'local', 'seed', 'seed_tips', 'seed_fund', 'assert', 'capacity', 'native', 'images', 'bundle/index']) run(['--check', `${file}.cjs`]);
 const env = {PATH: process.env.PATH, GCLOUD_PROJECT: 'demo-prism', GOOGLE_CLOUD_PROJECT: 'demo-prism'};
 run(['-e', `const assert = require('node:assert/strict');
   const bundle = require('./.runtime/index.cjs');
-  assert.deepEqual(Object.keys(bundle).sort(), ['addComment','deleteComment','getCreatorStats','onCreatorStatsDailyWritten','onCreatorStatsFolderCreated','setCommentHidden','submitContentReport','tipCreator']);
+  assert.deepEqual(Object.keys(bundle).sort(), ['addComment','deleteComment','getCreatorFundStatus','getCreatorStats','onCreatorStatsDailyWritten','onCreatorStatsFolderCreated','setCommentHidden','submitContentReport','tipCreator']);
   const daily = require('./.runtime/lib/creatorStatsDaily.js');
   assert.equal(bundle.onCreatorStatsDailyWritten, daily.onCreatorStatsDailyWritten);
   assert.equal(typeof daily.enqueueCreatorStatsDaily, 'function');
@@ -34,5 +34,5 @@ const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'firebase.json'))
 assert.equal(config.functions.length, 1);
 assert.equal(config.functions[0].source, '.runtime');
 assert.deepEqual(fs.readdirSync(path.join(__dirname, '.runtime/lib')).sort(),
-  ['common.js', 'creatorStats.js', 'creatorStatsDaily.js', 'creatorStatsHistory.js', 'notificationCatalog.js', 'viewStats.js']);
+  ['coinEvents.js', 'common.js', 'creatorFund', 'creatorStats.js', 'creatorStatsDaily.js', 'creatorStatsHistory.js', 'economy.js', 'notificationCatalog.js', 'viewStats.js']);
 console.log('PASS: script syntax, public-profile seed contract, source transpilation, exact export/module allowlist, daily API wiring, normalizer, week boundaries, production-project rejection. No emulator or device started.');
