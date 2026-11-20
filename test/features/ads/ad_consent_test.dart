@@ -108,6 +108,50 @@ void main() {
     });
   });
 
+  test('privacy options wait for a final tracking answer', () async {
+    final answer = Completer<bool>();
+    var opened = 0;
+    final consent = AdConsent(requestTracking: () => answer.future, showPrivacyOptions: () async => opened++);
+
+    final opening = consent.showPrivacyOptions();
+    await pumpEventQueue();
+    expect(opened, 0);
+    answer.complete(false);
+    await opening;
+    expect(opened, 1);
+    expect(consent.nonPersonalizedAds, isTrue);
+  });
+
+  test('privacy options do not open without a final tracking answer', () async {
+    var opened = 0;
+    final consent = AdConsent(
+      requestTracking: () async => throw StateError('notDetermined'),
+      showPrivacyOptions: () async => opened++,
+    );
+
+    await consent.showPrivacyOptions();
+    expect(opened, 0);
+    expect(consent.privacyOptionsOpen, isFalse);
+  });
+
+  testWidgets('a late timed-out tracking answer cannot overwrite a newer denial', (tester) async {
+    final lateAnswer = Completer<bool>();
+    var attempts = 0;
+    final consent = AdConsent(requestTracking: () => attempts++ == 0 ? lateAnswer.future : Future<bool>.value(false));
+
+    bool? firstResult;
+    unawaited(consent.requestTracking().then((value) => firstResult = value));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 13));
+    expect(firstResult, isFalse);
+    expect(await consent.requestTracking(), isTrue);
+    expect(consent.nonPersonalizedAds, isTrue);
+
+    lateAnswer.complete(true);
+    await tester.pump();
+    expect(consent.nonPersonalizedAds, isTrue);
+  });
+
   test('ads wait for the tracking answer, and tracking is asked only once', () async {
     final steps = <String>[];
     final answer = Completer<bool>();

@@ -27,6 +27,7 @@ import '../../../support/in_memory_local_store.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('plugins.flutter.io/firebase_messaging');
+  const trackingChannel = MethodChannel('prism/tracking');
   late SettingsLocalDataSource settings;
   late FakeAppAnalytics analytics;
   late AdConsent savedConsent;
@@ -77,6 +78,7 @@ void main() {
 
   tearDown(() async {
     AdConsent.instance = savedConsent;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(trackingChannel, null);
     await getIt.reset();
     AnalyticsRuntime.reset();
     app_state.prismUser = constants.createGuestPrismUser();
@@ -208,6 +210,38 @@ void main() {
       );
       expect(event().subscribedToWotd, status == AuthorizationStatus.authorized);
       expect(calls.where((call) => call.method == 'Messaging#requestPermission'), hasLength(1));
+    });
+  }
+
+  for (final trackingStatus in <String>['authorized', 'denied', 'restricted']) {
+    testOnIOS('push waits for the final ATT $trackingStatus answer', (tester) async {
+      final tracking = Completer<String>();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        trackingChannel,
+        (_) => tracking.future,
+      );
+      AdConsent.instance = AdConsent();
+      final context = await host(tester);
+      final result = NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
+        context,
+        sourceTag: 'save',
+      );
+      await settle(tester);
+      expect(find.text('Turn on notifications'), findsNothing);
+      expect(calls.where((call) => call.method == 'Messaging#requestPermission'), isEmpty);
+      expect(settings.get<bool>('notificationPermissionPromptedV2', defaultValue: false), isFalse);
+
+      tracking.complete(trackingStatus);
+      await settle(tester);
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Turn on notifications'), findsOneWidget);
+      expect(calls.where((call) => call.method == 'Messaging#requestPermission'), isEmpty);
+      await tester.tap(find.text('Turn on notifications'));
+      await settle(tester);
+      await result;
+      expect(settings.get<bool>('notificationPermissionPromptedV2'), isTrue);
+      expect(calls.where((call) => call.method == 'Messaging#requestPermission'), hasLength(1));
+      expect(AdConsent.instance.nonPersonalizedAds, trackingStatus != 'authorized');
     });
   }
 

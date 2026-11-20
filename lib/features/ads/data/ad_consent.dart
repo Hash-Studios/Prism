@@ -57,13 +57,7 @@ class AdConsent {
 
   /// Asks for App Tracking Transparency (iOS only). Every ad request waits for a terminal answer first.
   Future<bool> requestTracking() {
-    final Future<bool> pending = _tracking ??= _askTracking().timeout(
-      trackingTimeout,
-      onTimeout: () {
-        logger.w('Tracking permission request timed out.', tag: 'AdConsent');
-        return false;
-      },
-    );
+    final Future<bool> pending = _tracking ??= _askTracking();
     unawaited(
       pending.then((bool allowed) {
         if (!allowed && identical(_tracking, pending)) _tracking = null;
@@ -74,7 +68,7 @@ class AdConsent {
 
   Future<bool> _askTracking() async {
     try {
-      _trackingAllowed = await _requestTracking();
+      _trackingAllowed = await _requestTracking().timeout(trackingTimeout);
       return true;
     } catch (error, stackTrace) {
       logger.w('Could not ask for tracking permission.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
@@ -126,6 +120,7 @@ class AdConsent {
       listener();
     }
     try {
+      if (!await requestTracking()) return;
       await _showPrivacyOptions();
     } catch (error, stackTrace) {
       logger.w('Could not show the privacy options.', tag: 'AdConsent', error: error, stackTrace: stackTrace);

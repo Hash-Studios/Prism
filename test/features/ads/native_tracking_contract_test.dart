@@ -57,8 +57,29 @@ final class FlutterError {
   init(code: String, message: String, details: Any?) {}
 }
 final class FlutterMethodChannel {
+  nonisolated(unsafe) static var handler: ((FlutterMethodCall, @escaping FlutterResult) -> Void)?
   init(name: String, binaryMessenger: any FlutterBinaryMessenger) {}
-  func setMethodCallHandler(_ handler: @escaping (FlutterMethodCall, @escaping FlutterResult) -> Void) {}
+  func setMethodCallHandler(_ handler: @escaping (FlutterMethodCall, @escaping FlutterResult) -> Void) {
+    Self.handler = handler
+  }
+}
+
+@MainActor final class NotificationCenter {
+  static let `default` = NotificationCenter()
+  private var observers: [(Notification.Name?, @Sendable (Notification) -> Void)] = []
+  var observerCount: Int { observers.count }
+
+  func addObserver(forName name: Notification.Name?, object: Any?, queue: OperationQueue?,
+                   using block: @escaping @Sendable (Notification) -> Void) -> any NSObjectProtocol {
+    observers.append((name, block))
+    return NSObject()
+  }
+
+  func post(name: Notification.Name, object: Any?) {
+    for (observedName, callback) in observers where observedName == name {
+      callback(Notification(name: name, object: object))
+    }
+  }
 }
 
 @MainActor final class UIApplication {
@@ -128,6 +149,14 @@ const String _swiftChecks = r'''
     precondition(actual == expected, message)
   }
 
+  static func channelRequest() async -> String {
+    await withCheckedContinuation { continuation in
+      FlutterMethodChannel.handler!(FlutterMethodCall()) { result in
+        continuation.resume(returning: result as! String)
+      }
+    }
+  }
+
   static func becomeActive() async {
     UIApplication.shared.applicationState = .active
     let before = TrackingClock.sleepCount
@@ -141,6 +170,9 @@ const String _swiftChecks = r'''
 
   static func runChecks() async {
     installTracking(on: 0)
+    installTracking(on: 1)
+    precondition(NotificationCenter.default.observerCount == 1,
+                 "Recreating the Flutter engine must not add a second ATT observer")
 
     reset()
     ATTrackingManager.onRequest = { callback in
@@ -199,10 +231,11 @@ const String _swiftChecks = r'''
       ATTrackingManager.trackingAuthorizationStatus = .authorized
       callback(.authorized)
     }
-    async let first = requestTracking()
-    async let second = requestTracking()
+    async let first = channelRequest()
+    async let second = channelRequest()
+    NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
     let answers = await [first, second]
-    precondition(answers == [.authorized, .authorized] && ATTrackingManager.requestCount == 1,
+    precondition(answers == ["authorized", "authorized"] && ATTrackingManager.requestCount == 1,
                  "Concurrent callers get the same answer")
     precondition(TrackingClock.maxSleeping == 1, "Concurrent callers share one request loop")
 

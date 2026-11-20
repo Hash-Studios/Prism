@@ -79,6 +79,7 @@ import WidgetKit
 
   /// iOS shows the ATT prompt only while the app is active with no other system prompt on screen, and only once.
   /// So ask on every activation until the user gives a final answer.
+  @MainActor
   private static func installTracking(on messenger: any FlutterBinaryMessenger) {
     FlutterMethodChannel(name: "prism/tracking", binaryMessenger: messenger).setMethodCallHandler { call, result in
       guard call.method == "request" else {
@@ -89,7 +90,8 @@ import WidgetKit
         result(Self.trackingName(await Self.requestTracking()))
       }
     }
-    NotificationCenter.default.addObserver(
+    guard trackingObserver == nil else { return }
+    trackingObserver = NotificationCenter.default.addObserver(
       forName: UIApplication.didBecomeActiveNotification,
       object: nil,
       queue: .main
@@ -100,6 +102,7 @@ import WidgetKit
     }
   }
 
+  @MainActor private static var trackingObserver: (any NSObjectProtocol)?
   @MainActor private static var trackingRequest: Task<ATTrackingManager.AuthorizationStatus, Never>?
 
   @MainActor
