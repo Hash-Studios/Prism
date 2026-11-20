@@ -5,15 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test(
-    'native ATT settles, retries unresolved prompts, and finishes without a callback or activation',
+    'native ATT asks on every activation until a final answer, one request at a time',
     () async {
       final String delegate = File('ios/Runner/AppDelegate.swift').readAsStringSync();
-      final RegExpMatch? trackingFunction = RegExp(
-        r'^  (?:@MainActor\n  )?private static func requestTracking\(\)',
-        multiLine: true,
-      ).firstMatch(delegate);
-      expect(trackingFunction, isNotNull);
-      final int start = trackingFunction!.start;
+      final int start = delegate.indexOf('  private static func installTracking(');
       final int end = delegate.indexOf('  private static func clearBadge()', start);
       expect(start, greaterThanOrEqualTo(0));
       expect(end, greaterThan(start));
@@ -21,17 +16,11 @@ void main() {
       final String implementation = delegate
           .substring(start, end)
           .replaceAll('Task.sleep(nanoseconds:', 'TrackingClock.sleep(nanoseconds:');
-      final int channelStart = delegate.indexOf('    FlutterMethodChannel(name: "prism/tracking"');
-      final int channelEnd = delegate.indexOf('    NotificationCenter.default.addObserver(', channelStart);
-      expect(channelStart, greaterThanOrEqualTo(0));
-      expect(channelEnd, greaterThan(channelStart));
-      final String channel = delegate.substring(channelStart, channelEnd);
       final Directory fixture = Directory.systemTemp.createTempSync('prism_tracking_contract_');
       addTearDown(() => fixture.deleteSync(recursive: true));
       final File harness = File('${fixture.path}/tracking_contract.swift')
         ..writeAsStringSync(
-          '$_swiftStubs\n@MainActor enum TrackingContract {\n$implementation\n'
-          'static func installChannel() { let messenger = 0\n$channel\n}\n$_swiftChecks\n}\n'
+          '$_swiftStubs\n@MainActor enum TrackingContract {\n$implementation\n$_swiftChecks\n}\n'
           'await TrackingContract.runChecks()\n',
         );
       final Process process = await Process.start('swift', <String>[
@@ -61,12 +50,14 @@ const String _swiftStubs = r'''
 import Foundation
 
 typealias FlutterResult = (Any?) -> Void
+protocol FlutterBinaryMessenger {}
+extension Int: FlutterBinaryMessenger {}
 final class FlutterMethodCall { let method = "request" }
 final class FlutterError {
   init(code: String, message: String, details: Any?) {}
 }
 final class FlutterMethodChannel {
-  init(name: String, binaryMessenger: Int) {}
+  init(name: String, binaryMessenger: any FlutterBinaryMessenger) {}
   func setMethodCallHandler(_ handler: @escaping (FlutterMethodCall, @escaping FlutterResult) -> Void) {}
 }
 
@@ -102,13 +93,18 @@ final class FlutterMethodChannel {
 
 @MainActor enum TrackingClock {
   static var sleepCount = 0
+  static var sleeping = 0
+  static var maxSleeping = 0
   static var onSleep: (() throws -> Void)?
   static func sleep(nanoseconds: UInt64) async throws {
     precondition(nanoseconds > 0, "Polling must yield between attempts")
     sleepCount += 1
     precondition(sleepCount <= 100, "Tracking wait must be bounded")
     try onSleep?()
+    sleeping += 1
+    maxSleeping = max(maxSleeping, sleeping)
     await Task.yield()
+    sleeping -= 1
   }
 }
 ''';
@@ -122,6 +118,7 @@ const String _swiftChecks = r'''
     ATTrackingManager.requestStates = []
     ATTrackingManager.onRequest = nil
     TrackingClock.sleepCount = 0
+    TrackingClock.maxSleeping = 0
     TrackingClock.onSleep = nil
   }
 
@@ -131,7 +128,20 @@ const String _swiftChecks = r'''
     precondition(actual == expected, message)
   }
 
+  static func becomeActive() async {
+    UIApplication.shared.applicationState = .active
+    let before = TrackingClock.sleepCount
+    NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+    for _ in 0..<500 {
+      if trackingRequest == nil && TrackingClock.sleepCount > before { return }
+      if ATTrackingManager.trackingAuthorizationStatus != .notDetermined && trackingRequest == nil { return }
+      await Task.yield()
+    }
+  }
+
   static func runChecks() async {
+    installTracking(on: 0)
+
     reset()
     ATTrackingManager.onRequest = { callback in
       ATTrackingManager.trackingAuthorizationStatus = .authorized
@@ -149,30 +159,52 @@ const String _swiftChecks = r'''
       reset(.background)
       ATTrackingManager.trackingAuthorizationStatus = status
       await expectStatus(status)
+      await becomeActive()
       precondition(ATTrackingManager.requestCount == 0 && TrackingClock.sleepCount == 0,
-                   "A terminal status must not wait for activation or ask again")
+                   "A final answer must never be asked again, on a request or on activation")
       precondition(trackingName(status) == name)
     }
     precondition(trackingName(.notDetermined) == "notDetermined")
 
-    reset(.background)
-    await expectStatus(.notDetermined)
-    precondition(ATTrackingManager.requestCount == 0 && TrackingClock.sleepCount > 0,
-                 "No activation must finish unresolved without requesting ATT")
-
-    reset()
-    TrackingClock.onSleep = {
-      if TrackingClock.sleepCount == 1 { UIApplication.shared.applicationState = .inactive }
-      if TrackingClock.sleepCount == 3 { UIApplication.shared.applicationState = .active }
+    for state in [UIApplication.State.inactive, .background] {
+      reset(state)
+      await expectStatus(.notDetermined)
+      precondition(ATTrackingManager.requestCount == 0,
+                   "No request while another system prompt or the background holds the app")
     }
+
+    reset(.inactive)
+    await expectStatus(.notDetermined)
     ATTrackingManager.onRequest = { callback in
       ATTrackingManager.trackingAuthorizationStatus = .denied
       callback(.denied)
     }
-    await expectStatus(.denied)
-    precondition(ATTrackingManager.requestSleepCounts.first! >= 3)
-    precondition(ATTrackingManager.requestStates.allSatisfy { $0 == .active },
-                 "Recheck activity after the settling delay")
+    await becomeActive()
+    precondition(ATTrackingManager.requestCount == 1,
+                 "The next activation asks again after the first attempt found the app inactive")
+    precondition(ATTrackingManager.requestStates.allSatisfy { $0 == .active })
+    await becomeActive()
+    await becomeActive()
+    precondition(ATTrackingManager.requestCount == 1, "No prompt loop after a denial")
+
+    reset()
+    ATTrackingManager.onRequest = { _ in UIApplication.shared.applicationState = .inactive }
+    await becomeActive()
+    await becomeActive()
+    precondition(ATTrackingManager.requestCount == 2,
+                 "Every activation asks again while the answer is still notDetermined")
+
+    reset()
+    ATTrackingManager.onRequest = { callback in
+      ATTrackingManager.trackingAuthorizationStatus = .authorized
+      callback(.authorized)
+    }
+    async let first = requestTracking()
+    async let second = requestTracking()
+    let answers = await [first, second]
+    precondition(answers == [.authorized, .authorized] && ATTrackingManager.requestCount == 1,
+                 "Concurrent callers get the same answer")
+    precondition(TrackingClock.maxSleeping == 1, "Concurrent callers share one request loop")
 
     reset()
     ATTrackingManager.onRequest = { callback in
@@ -186,7 +218,7 @@ const String _swiftChecks = r'''
     }
     await expectStatus(.authorized, "Persisted status wins over an early or stale callback")
     precondition(ATTrackingManager.requestCount == 2,
-                 "A suppressed permission prompt must be retried")
+                 "A dropped request is retried while the app stays active")
 
     reset()
     ATTrackingManager.onRequest = { _ in
@@ -195,16 +227,9 @@ const String _swiftChecks = r'''
     }
     await expectStatus(.notDetermined, "A missing system callback must not strand the Flutter result")
     precondition(ATTrackingManager.requestCount == 1)
-
-    reset()
-    ATTrackingManager.onRequest = { _ in UIApplication.shared.applicationState = .inactive }
-    TrackingClock.onSleep = {
-      if TrackingClock.sleepCount == 3 {
-        ATTrackingManager.trackingAuthorizationStatus = .authorized
-        UIApplication.shared.applicationState = .active
-      }
-    }
-    await expectStatus(.authorized, "A recorded decision must resolve even when the callback never arrives")
+    ATTrackingManager.trackingAuthorizationStatus = .authorized
+    UIApplication.shared.applicationState = .active
+    await expectStatus(.authorized, "A recorded decision resolves even when the callback never arrives")
     precondition(ATTrackingManager.requestCount == 1)
 
     reset()
