@@ -9,6 +9,7 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
@@ -28,6 +29,7 @@ void main() {
   const channel = MethodChannel('plugins.flutter.io/firebase_messaging');
   late SettingsLocalDataSource settings;
   late FakeAppAnalytics analytics;
+  late AdConsent savedConsent;
   late AuthorizationStatus current;
   late AuthorizationStatus requested;
   late List<MethodCall> calls;
@@ -40,6 +42,8 @@ void main() {
   });
 
   setUp(() {
+    savedConsent = AdConsent.instance;
+    AdConsent.instance = AdConsent(requestTracking: () async => true);
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
     analytics = FakeAppAnalytics();
@@ -72,6 +76,7 @@ void main() {
   });
 
   tearDown(() async {
+    AdConsent.instance = savedConsent;
     await getIt.reset();
     AnalyticsRuntime.reset();
     app_state.prismUser = constants.createGuestPrismUser();
@@ -205,6 +210,26 @@ void main() {
       expect(calls.where((call) => call.method == 'Messaging#requestPermission'), hasLength(1));
     });
   }
+
+  testOnIOS('a tracking answer that never comes asks no push prompt and stays eligible', (tester) async {
+    AdConsent.instance = AdConsent(requestTracking: () async => throw StateError('no answer'));
+    final context = await host(tester);
+    await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(context, sourceTag: 'save');
+    await settle(tester);
+    expect(find.text('Turn on notifications'), findsNothing);
+    expect(calls.where((call) => call.method == 'Messaging#requestPermission'), isEmpty);
+    expect(settings.get<bool>('notificationPermissionPromptedV2', defaultValue: false), isFalse);
+
+    AdConsent.instance = AdConsent(requestTracking: () async => true);
+    final result = NotificationPermissionPromptService.instance.maybePromptAfterValueAction(context, sourceTag: 'save');
+    await settle(tester);
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Turn on notifications'), findsOneWidget);
+    await tester.tap(find.text('Turn on notifications'));
+    await settle(tester);
+    await result;
+    expect(calls.where((call) => call.method == 'Messaging#requestPermission'), hasLength(1));
+  });
 
   testOnIOS('declining soft prompt leaves permission eligible for another session', (tester) async {
     final context = await host(tester);

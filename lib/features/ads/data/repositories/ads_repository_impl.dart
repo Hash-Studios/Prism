@@ -51,8 +51,8 @@ class AdsRepositoryImpl implements AdsRepository {
   static const int _maxFailedLoadAttempts = 3;
   static const Duration _loadRetryDelay = Duration(seconds: 2);
   static const Duration _loadTimeout = Duration(seconds: 30);
-  static const AdRequest _request = AdRequest(
-    nonPersonalizedAds: false,
+  static AdRequest get _request => AdRequest(
+    nonPersonalizedAds: AdConsent.instance.nonPersonalizedAds,
     keywords: <String>['Apps', 'Games', 'Mobile', 'Game'],
   );
 

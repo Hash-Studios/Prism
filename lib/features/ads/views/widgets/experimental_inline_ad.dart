@@ -200,7 +200,7 @@ class _ExperimentalInlineAdState extends State<ExperimentalInlineAd> with Widget
     if (widget.format == AdExperimentFormat.native) {
       ad = NativeAd(
         adUnitId: id,
-        request: const AdRequest(),
+        request: AdRequest(nonPersonalizedAds: AdConsent.instance.nonPersonalizedAds),
         nativeTemplateStyle: NativeTemplateStyle(templateType: TemplateType.medium),
         listener: NativeAdListener(
           onAdLoaded: (ad) => unawaited(loaded(ad)),
@@ -214,7 +214,7 @@ class _ExperimentalInlineAdState extends State<ExperimentalInlineAd> with Widget
       if (width <= 0) return;
       ad = BannerAd(
         adUnitId: id,
-        request: const AdRequest(),
+        request: AdRequest(nonPersonalizedAds: AdConsent.instance.nonPersonalizedAds),
         size: AdSize.getCurrentOrientationInlineAdaptiveBannerAdSize(width),
         listener: BannerAdListener(
           onAdLoaded: (ad) => unawaited(loaded(ad)),

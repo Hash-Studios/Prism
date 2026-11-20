@@ -59,7 +59,7 @@ void main() {
     testWidgets('$format waits for tracking before SDK initialization or load', (tester) async {
       final original = AdConsent.instance;
       addTearDown(() => AdConsent.instance = original);
-      final tracking = Completer<void>();
+      final tracking = Completer<bool>();
       AdConsent.instance = AdConsent(
         requestInfoUpdate: () async {},
         showFormIfRequired: () async {},
@@ -86,7 +86,7 @@ void main() {
       expect(service.initializeCalls, 0);
       expect(requested, isEmpty);
 
-      tracking.complete();
+      tracking.complete(true);
       await tester.pump();
       expect(service.initializeCalls, 1);
       expect(requested, hasLength(1));
@@ -99,7 +99,7 @@ void main() {
   testWidgets('interstitial waits for tracking before SDK initialization or load', (tester) async {
     final original = AdConsent.instance;
     addTearDown(() => AdConsent.instance = original);
-    final tracking = Completer<void>();
+    final tracking = Completer<bool>();
     AdConsent.instance = AdConsent(
       requestInfoUpdate: () async {},
       showFormIfRequired: () async {},
@@ -126,7 +126,7 @@ void main() {
     expect(service.initializeCalls, 0);
     expect(requests, isEmpty);
 
-    tracking.complete();
+    tracking.complete(true);
     await tester.pump();
     expect(service.initializeCalls, 1);
     expect(requests, [service.config.unitId(AdExperimentFormat.interstitial, android: true)]);

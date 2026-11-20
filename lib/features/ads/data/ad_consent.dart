@@ -11,7 +11,10 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 typedef ConsentStep = Future<void> Function();
 typedef CanRequestAds = Future<bool> Function();
 typedef PrivacyOptionsRequired = Future<bool> Function();
-typedef TrackingRequest = Future<void> Function();
+
+/// Resolves true when the user allows tracking, or the platform has no App Tracking Transparency.
+/// Throws while iOS has no final answer.
+typedef TrackingRequest = Future<bool> Function();
 
 /// Google UMP consent. Ads load only after [ensure] returns true. It never throws.
 class AdConsent {
@@ -44,9 +47,13 @@ class AdConsent {
 
   Future<bool>? _pending;
   Future<bool>? _tracking;
+  bool _trackingAllowed = false;
   int generation = 0;
   bool privacyOptionsOpen = false;
   final Set<void Function()> invalidationListeners = <void Function()>{};
+
+  /// True until tracking is allowed. Ad requests then ask Google for non-personalized ads.
+  bool get nonPersonalizedAds => !_trackingAllowed;
 
   /// Asks for App Tracking Transparency (iOS only). Every ad request waits for a terminal answer first.
   Future<bool> requestTracking() {
@@ -67,7 +74,7 @@ class AdConsent {
 
   Future<bool> _askTracking() async {
     try {
-      await _requestTracking();
+      _trackingAllowed = await _requestTracking();
       return true;
     } catch (error, stackTrace) {
       logger.w('Could not ask for tracking permission.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
@@ -173,10 +180,11 @@ class AdConsent {
 
   static const MethodChannel _trackingChannel = MethodChannel('prism/tracking');
 
-  static Future<void> _platformRequestTracking() async {
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return;
+  static Future<bool> _platformRequestTracking() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return true;
     final String? status = await _trackingChannel.invokeMethod<String>('request');
-    if (status == 'authorized' || status == 'denied' || status == 'restricted') return;
+    if (status == 'authorized') return true;
+    if (status == 'denied' || status == 'restricted') return false;
     throw StateError('Tracking permission did not reach a terminal status: $status');
   }
 
