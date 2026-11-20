@@ -61,7 +61,7 @@ void main() {
     app_state.prismUser = profileUser(id: '', loggedIn: false);
   });
 
-  Future<void> pumpPanel(WidgetTester tester) async {
+  Future<void> pumpPanel(WidgetTester tester, {TextDirection textDirection = TextDirection.ltr}) async {
     // A tall surface keeps every field on screen.
     tester.view.physicalSize = const Size(800, 1800);
     tester.view.devicePixelRatio = 1;
@@ -71,7 +71,7 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-
+        builder: (context, child) => Directionality(textDirection: textDirection, child: child!),
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () =>
@@ -419,6 +419,7 @@ void main() {
       Finder field() => find.byType(TextField).last;
 
       Future<void> pickKind(WidgetTester tester, String from, String to) async {
+        await tester.ensureVisible(find.bySemanticsLabel('Link type, $from'));
         await tester.tap(find.bySemanticsLabel('Link type, $from'));
         await tester.pumpAndSettle();
         await tester.ensureVisible(find.text(to).last);
@@ -451,6 +452,78 @@ void main() {
           greaterThan(tester.getTopLeft(find.widgetWithText(FilledButton, 'Save')).dx),
         );
       });
+
+      for (final TextDirection direction in TextDirection.values) {
+        testWidgets('hidden link hint stays at the header end in $direction with the keyboard open', (tester) async {
+          await pumpPanel(tester, textDirection: direction);
+          await typeInvalidTelegram(tester);
+          expect(find.text('Fix your Telegram link to save.'), findsNothing);
+          await pickKind(tester, 'Telegram', 'GitHub');
+
+          tester.view.physicalSize = const Size(800, 900);
+          tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+          addTearDown(tester.view.resetViewInsets);
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(field());
+          await tester.pumpAndSettle();
+
+          final Finder hint = find.text('Fix your Telegram link to save.');
+          final Rect hintRect = tester.getRect(hint);
+          final Rect saveRect = tester.getRect(find.widgetWithText(FilledButton, 'Save'));
+          final Finder divider = find.byType(Divider);
+          expect(hintRect.top, greaterThan(saveRect.bottom));
+          expect(hintRect.bottom, lessThanOrEqualTo(tester.getTopLeft(divider).dy));
+          expect(tester.getBottomLeft(find.byType(SingleChildScrollView)).dy, lessThanOrEqualTo(600));
+          expect(
+            direction == TextDirection.ltr ? hintRect.right : hintRect.left,
+            direction == TextDirection.ltr ? greaterThan(saveRect.left) : lessThan(saveRect.right),
+          );
+          final semantics = tester.ensureSemantics();
+          try {
+            expect(
+              tester.getSemantics(hint),
+              matchesSemantics(label: 'Fix your Telegram link to save.', isLiveRegion: true),
+            );
+          } finally {
+            semantics.dispose();
+          }
+
+          final ScrollableState scrollable = tester.state<ScrollableState>(
+            find.descendant(of: find.byType(SingleChildScrollView), matching: find.byType(Scrollable)).first,
+          );
+          expect(scrollable.position.pixels, greaterThan(2));
+          scrollable.position.jumpTo(scrollable.position.pixels - 20);
+          await tester.pumpAndSettle();
+          expect(tester.getRect(hint), hintRect);
+          expect(
+            tester.widget<AnimatedOpacity>(find.ancestor(of: divider, matching: find.byType(AnimatedOpacity))).opacity,
+            1,
+          );
+
+          await pickKind(tester, 'GitHub', 'Telegram');
+          expect(hint, findsNothing);
+          expect(find.text('Enter a valid Telegram link.'), findsOneWidget);
+          expect(tester.getTopLeft(divider).dy, lessThan(hintRect.bottom));
+          expect(
+            tester.widget<AnimatedOpacity>(find.ancestor(of: divider, matching: find.byType(AnimatedOpacity))).opacity,
+            1,
+          );
+          await pickKind(tester, 'Telegram', 'GitHub');
+          expect(hint, findsOneWidget);
+          expect(tester.getBottomLeft(hint).dy, lessThanOrEqualTo(tester.getTopLeft(divider).dy));
+          expect(
+            tester.widget<AnimatedOpacity>(find.ancestor(of: divider, matching: find.byType(AnimatedOpacity))).opacity,
+            1,
+          );
+          scrollable.position.jumpTo(0);
+          await tester.pumpAndSettle();
+          expect(
+            tester.widget<AnimatedOpacity>(find.ancestor(of: divider, matching: find.byType(AnimatedOpacity))).opacity,
+            0,
+          );
+          expect(tester.takeException(), isNull);
+        });
+      }
 
       testWidgets('invalid text is shown in the link kind sheet subtitle', (tester) async {
         await pumpPanel(tester);
