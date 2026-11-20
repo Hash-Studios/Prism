@@ -402,24 +402,27 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
             onPressed: _hasChanges ? _saveProfile : null,
           ),
         ],
+        // Pinned, so the line stays in view while the keyboard is up and the form is scrolled.
+        headerBottom: switch (_hiddenLinkError) {
+          final String hint => Padding(
+            padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
+            child: Semantics(
+              liveRegion: true,
+              child: Text(
+                hint,
+                textAlign: TextAlign.end,
+                style: PrismTextStyles.caption(context).copyWith(color: cs.error),
+              ),
+            ),
+          ),
+          null => null,
+        },
         body: SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: EdgeInsets.only(top: PrismSpace.xs, bottom: PrismSpace.xl + MediaQuery.paddingOf(context).bottom),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              if (_hiddenLinkError case final String hint)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
-                  child: Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      hint,
-                      textAlign: TextAlign.end,
-                      style: PrismTextStyles.caption(context).copyWith(color: cs.error),
-                    ),
-                  ),
-                ),
               EditProfileHeader(
                 coverUrl: app_state.prismUser.coverPhoto,
                 coverFile: _cover,

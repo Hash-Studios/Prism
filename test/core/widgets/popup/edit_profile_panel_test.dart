@@ -442,6 +442,10 @@ void main() {
 
         expect(saveEnabled(tester), isFalse);
         expect(find.text('Fix your Telegram link to save.'), findsOneWidget);
+        // Pinned under Save, outside the form that scrolls away under the keyboard.
+        final double hintTop = tester.getTopLeft(find.text('Fix your Telegram link to save.')).dy;
+        expect(hintTop, greaterThan(tester.getBottomLeft(find.widgetWithText(FilledButton, 'Save')).dy));
+        expect(hintTop, lessThan(tester.getTopLeft(find.byType(SingleChildScrollView)).dy));
       });
 
       testWidgets('invalid text is shown in the link kind sheet subtitle', (tester) async {
