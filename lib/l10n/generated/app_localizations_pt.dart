@@ -2664,7 +2664,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String coreEditFixLink(String kind) {
-    return 'Corrija o seu link do $kind para guardar.';
+    return 'Corrija seu link do $kind para salvar.';
   }
 
   @override

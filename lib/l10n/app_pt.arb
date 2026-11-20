@@ -775,7 +775,7 @@
   "coreEditDiscardTitle": "Descartar alterações?",
   "coreEditEmailInvalid": "Informe um endereço de e-mail válido.",
   "coreEditKindLinkInvalid": "Informe um link de {kind} válido.",
-  "coreEditFixLink": "Corrija o seu link do {kind} para guardar.",
+  "coreEditFixLink": "Corrija seu link do {kind} para salvar.",
   "@coreEditFixLink": {
     "placeholders": {
       "kind": {

@@ -2694,7 +2694,8 @@
       "kind": {
         "type": "String"
       }
-    }
+    },
+    "description": "Shown under Save when a profile link of another type is not valid. kind is the link type name, for example Telegram."
   },
   "coreEditLinkInvalid": "मान्य लिंक दर्ज करें।",
   "coreEditProfile": "प्रोफ़ाइल संपादित करें",
