@@ -185,7 +185,8 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
         _invalidLinks.isEmpty;
   }
 
-  bool get _hasUnsavedChanges => pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit || usernameEdit;
+  bool get _hasUnsavedChanges =>
+      pfpEdit || bioEdit || linkEdit || coverEdit || nameEdit || usernameEdit || _invalidLinks.isNotEmpty;
 
   Future<void> _saveProfile() async {
     final PrismUsersV2 user = app_state.prismUser;
@@ -300,7 +301,6 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
 
   String? get _linkError => _invalidLinks.containsKey(_link.name) ? _linkErrorText(_link) : null;
 
-  /// Names a kind that keeps Save off while its field is not on screen.
   String? get _hiddenLinkError {
     final ProfileLinkKind? hidden = profileLinkKinds
         .where((kind) => kind.name != _link.name && _invalidLinks.containsKey(kind.name))
@@ -317,7 +317,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   };
 
   Future<void> _pickLinkKind() async {
-    final ProfileLinkKind? picked = await showLinkKindSheet(context, selected: _link, values: _linkValues);
+    final ProfileLinkKind? picked = await showLinkKindSheet(
+      context,
+      selected: _link,
+      values: <String, String>{..._linkValues, ..._invalidLinks},
+    );
     if (picked == null || !mounted) return;
     setState(() => _link = picked);
     linkController.text = _invalidLinks[_link.name] ?? _linkValues[_link.name] ?? '';
@@ -515,8 +519,11 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
                           linkController.text = '';
                           _linkValues[_link.name] = '';
                           _invalidLinks.remove(_link.name);
+                          linkEdit = _linkValues.entries.any(
+                            (entry) => entry.value.isNotEmpty && entry.value != app_state.prismUser.links[entry.key],
+                          );
                         });
-                        final links = app_state.prismUser.links;
+                        final links = Map<String, String>.from(app_state.prismUser.links);
                         links.remove(_link.name);
                         app_state.prismUser.links = links;
                         app_state.persistPrismUser();

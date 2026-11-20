@@ -444,6 +444,109 @@ void main() {
         expect(find.text('Fix your Telegram link to save.'), findsOneWidget);
       });
 
+      testWidgets('invalid text is shown in the link kind sheet subtitle', (tester) async {
+        await pumpPanel(tester);
+        await typeInvalidTelegram(tester);
+        await tester.tap(find.bySemanticsLabel('Link type, Telegram'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('GitHub').last);
+        await tester.tap(find.text('GitHub').last);
+        await tester.pumpAndSettle();
+        await tester.tap(find.bySemanticsLabel('Link type, GitHub'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('https://example.com/me'), findsOneWidget);
+      });
+
+      testWidgets('invalid-only draft asks before leaving when the profile has no links', (tester) async {
+        app_state.prismUser.links = <String, String>{};
+        await pumpPanel(tester);
+        await pickKind(tester, 'Custom link', 'Telegram');
+        await tester.enterText(find.byType(TextField).last, 'https://example.com/me');
+        await tester.pump();
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+
+        expect(find.text('Discard changes?'), findsOneWidget);
+      });
+
+      testWidgets('removing an invalid hidden kind clears its hint and Save blocker', (tester) async {
+        await pumpPanel(tester);
+        await typeInvalidTelegram(tester);
+        await pickKind(tester, 'Telegram', 'GitHub');
+        await pickKind(tester, 'GitHub', 'Telegram');
+        await tester.enterText(find.widgetWithText(TextField, 'Hello'), 'Changed bio');
+        await tester.pump();
+        await tester.tap(find.byTooltip('Remove link'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Remove'));
+        await tester.pumpAndSettle();
+
+        await pickKind(tester, 'Telegram', 'GitHub');
+        expect(find.text('Fix your Telegram link to save.'), findsNothing);
+        await pickKind(tester, 'GitHub', 'Telegram');
+        expect(tester.widget<TextField>(find.byType(TextField).last).controller!.text, isEmpty);
+        expect(saveEnabled(tester), isTrue);
+      });
+
+      testWidgets('removing an invalid draft restores the clean no-links Save state', (tester) async {
+        app_state.prismUser.links = <String, String>{};
+        await pumpPanel(tester);
+        await pickKind(tester, 'Custom link', 'Telegram');
+        await tester.enterText(find.byType(TextField).last, 'https://t.me/prism');
+        await tester.pump();
+        await tester.enterText(find.byType(TextField).last, 'https://example.com/me');
+        await tester.pump();
+
+        await tester.tap(find.byTooltip('Remove link'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Remove'));
+        await tester.pumpAndSettle();
+
+        expect(saveEnabled(tester), isFalse);
+        expect(find.text('Enter a valid Telegram link.'), findsNothing);
+      });
+
+      testWidgets('removing an invalid draft does not treat an unchanged saved link as an edit', (tester) async {
+        await pumpPanel(tester);
+        await typeInvalidTelegram(tester);
+
+        await tester.tap(find.byTooltip('Remove link'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Remove'));
+        await tester.pumpAndSettle();
+
+        expect(saveEnabled(tester), isFalse);
+      });
+
+      testWidgets('valid edits on multiple link kinds save together with profile fields', (tester) async {
+        await pumpPanel(tester);
+        await tester.enterText(find.widgetWithText(TextField, 'Me Myself'), 'New Name');
+        await tester.enterText(find.widgetWithText(TextField, 'Hello'), 'New bio');
+        await tester.enterText(find.widgetWithText(TextField, 'creator_01'), 'creator_02');
+        await tester.pump(const Duration(milliseconds: 500));
+        await tester.pumpAndSettle();
+        await pickKind(tester, 'Custom link', 'Telegram');
+        await tester.enterText(find.byType(TextField).last, 'https://t.me/prism');
+        await tester.pump();
+        await pickKind(tester, 'Telegram', 'GitHub');
+        await tester.enterText(find.byType(TextField).last, 'https://github.com/prism');
+        await tester.pump();
+
+        expect(saveEnabled(tester), isTrue);
+        await tester.tap(find.text('Save'));
+        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 2));
+
+        final Map writes = firestore.writes.single.data!;
+        expect(writes['name'], 'New Name');
+        expect(writes['bio'], 'New bio');
+        expect(claims.single['username'], 'creator_02');
+        expect((writes['links'] as Map)['telegram'], 'https://t.me/prism');
+        expect((writes['links'] as Map)['github'], 'https://github.com/prism');
+      });
+
       testWidgets('coming back shows the typed text and its error again', (tester) async {
         await pumpPanel(tester);
         await typeInvalidTelegram(tester);
