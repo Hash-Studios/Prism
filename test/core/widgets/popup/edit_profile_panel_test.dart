@@ -61,7 +61,7 @@ void main() {
     app_state.prismUser = profileUser(id: '', loggedIn: false);
   });
 
-  Future<void> pumpPanel(WidgetTester tester) async {
+  Future<void> pumpPanel(WidgetTester tester, {TextDirection textDirection = TextDirection.ltr}) async {
     // A tall surface keeps every field on screen.
     tester.view.physicalSize = const Size(800, 1800);
     tester.view.devicePixelRatio = 1;
@@ -71,7 +71,7 @@ void main() {
       MaterialApp(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-
+        builder: (context, child) => Directionality(textDirection: textDirection, child: child!),
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () =>
@@ -413,6 +413,291 @@ void main() {
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 2));
       expect((firestore.writes.single.data!['links'] as Map)['custom link'], 'https://example.com/me');
+    });
+
+    group('an invalid link of another kind (#896)', () {
+      Finder field() => find.byType(TextField).last;
+
+      Future<void> pickKind(WidgetTester tester, String from, String to) async {
+        await tester.ensureVisible(find.bySemanticsLabel('Link type, $from'));
+        await tester.tap(find.bySemanticsLabel('Link type, $from'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text(to).last);
+        await tester.tap(find.text(to).last);
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> typeInvalidTelegram(WidgetTester tester) async {
+        await pickKind(tester, 'Custom link', 'Telegram');
+        await tester.enterText(field(), 'https://example.com/me');
+        await tester.pump();
+        expect(find.text('Enter a valid Telegram link.'), findsOneWidget);
+        expect(saveEnabled(tester), isFalse);
+      }
+
+      testWidgets('switching kind keeps Save off and names the invalid kind', (tester) async {
+        await pumpPanel(tester);
+        await typeInvalidTelegram(tester);
+
+        await pickKind(tester, 'Telegram', 'GitHub');
+
+        expect(saveEnabled(tester), isFalse);
+        expect(find.text('Fix your Telegram link to save.'), findsOneWidget);
+        // Pinned under Save, outside the form that scrolls away under the keyboard.
+        final double hintTop = tester.getTopLeft(find.text('Fix your Telegram link to save.')).dy;
+        expect(hintTop, greaterThan(tester.getBottomLeft(find.widgetWithText(FilledButton, 'Save')).dy));
+        expect(hintTop, lessThan(tester.getTopLeft(find.byType(SingleChildScrollView)).dy));
+        expect(
+          tester.getTopRight(find.text('Fix your Telegram link to save.')).dx,
+          greaterThan(tester.getTopLeft(find.widgetWithText(FilledButton, 'Save')).dx),
+        );
+      });
+
+      for (final TextDirection direction in TextDirection.values) {
+        testWidgets('hidden link hint stays at the header end in $direction with the keyboard open', (tester) async {
+          await pumpPanel(tester, textDirection: direction);
+          await typeInvalidTelegram(tester);
+          expect(find.text('Fix your Telegram link to save.'), findsNothing);
+          await pickKind(tester, 'Telegram', 'GitHub');
+
+          tester.view.physicalSize = const Size(800, 900);
+          tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+          addTearDown(tester.view.resetViewInsets);
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(field());
+          await tester.pumpAndSettle();
+
+          final Finder hint = find.text('Fix your Telegram link to save.');
+          final Rect hintRect = tester.getRect(hint);
+          final Rect saveRect = tester.getRect(find.widgetWithText(FilledButton, 'Save'));
+          final Finder divider = find.byType(Divider);
+          expect(hintRect.top, greaterThan(saveRect.bottom));
+          expect(hintRect.bottom, lessThanOrEqualTo(tester.getTopLeft(divider).dy));
+          expect(tester.getBottomLeft(find.byType(SingleChildScrollView)).dy, lessThanOrEqualTo(600));
+          expect(
+            direction == TextDirection.ltr ? hintRect.right : hintRect.left,
+            direction == TextDirection.ltr ? greaterThan(saveRect.left) : lessThan(saveRect.right),
+          );
+          final semantics = tester.ensureSemantics();
+          try {
+            expect(
+              tester.getSemantics(hint),
+              matchesSemantics(label: 'Fix your Telegram link to save.', isLiveRegion: true),
+            );
+          } finally {
+            semantics.dispose();
+          }
+
+          final ScrollableState scrollable = tester.state<ScrollableState>(
+            find.descendant(of: find.byType(SingleChildScrollView), matching: find.byType(Scrollable)).first,
+          );
+          expect(scrollable.position.pixels, greaterThan(2));
+          scrollable.position.jumpTo(scrollable.position.pixels - 20);
+          await tester.pumpAndSettle();
+          expect(tester.getRect(hint), hintRect);
+          expect(
+            tester.widget<AnimatedOpacity>(find.ancestor(of: divider, matching: find.byType(AnimatedOpacity))).opacity,
+            1,
+          );
+
+          await pickKind(tester, 'GitHub', 'Telegram');
+          expect(hint, findsNothing);
+          expect(find.text('Enter a valid Telegram link.'), findsOneWidget);
+          expect(tester.getTopLeft(divider).dy, lessThan(hintRect.bottom));
+          expect(
+            tester.widget<AnimatedOpacity>(find.ancestor(of: divider, matching: find.byType(AnimatedOpacity))).opacity,
+            1,
+          );
+          await pickKind(tester, 'Telegram', 'GitHub');
+          expect(hint, findsOneWidget);
+          expect(tester.getBottomLeft(hint).dy, lessThanOrEqualTo(tester.getTopLeft(divider).dy));
+          expect(
+            tester.widget<AnimatedOpacity>(find.ancestor(of: divider, matching: find.byType(AnimatedOpacity))).opacity,
+            1,
+          );
+          scrollable.position.jumpTo(0);
+          await tester.pumpAndSettle();
+          expect(
+            tester.widget<AnimatedOpacity>(find.ancestor(of: divider, matching: find.byType(AnimatedOpacity))).opacity,
+            0,
+          );
+          expect(tester.takeException(), isNull);
+        });
+      }
+
+      testWidgets('invalid text is shown in the link kind sheet subtitle', (tester) async {
+        await pumpPanel(tester);
+        await typeInvalidTelegram(tester);
+        await tester.tap(find.bySemanticsLabel('Link type, Telegram'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('GitHub').last);
+        await tester.tap(find.text('GitHub').last);
+        await tester.pumpAndSettle();
+        await tester.tap(find.bySemanticsLabel('Link type, GitHub'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('https://example.com/me'), findsOneWidget);
+      });
+
+      testWidgets('invalid-only draft asks before leaving when the profile has no links', (tester) async {
+        app_state.prismUser.links = <String, String>{};
+        await pumpPanel(tester);
+        await pickKind(tester, 'Custom link', 'Telegram');
+        await tester.enterText(find.byType(TextField).last, 'https://example.com/me');
+        await tester.pump();
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+
+        expect(find.text('Discard changes?'), findsOneWidget);
+      });
+
+      testWidgets('removing an invalid hidden kind clears its hint and Save blocker', (tester) async {
+        await pumpPanel(tester);
+        await typeInvalidTelegram(tester);
+        await pickKind(tester, 'Telegram', 'GitHub');
+        await pickKind(tester, 'GitHub', 'Telegram');
+        await tester.enterText(find.widgetWithText(TextField, 'Hello'), 'Changed bio');
+        await tester.pump();
+        await tester.tap(find.byTooltip('Remove link'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Remove'));
+        await tester.pumpAndSettle();
+
+        await pickKind(tester, 'Telegram', 'GitHub');
+        expect(find.text('Fix your Telegram link to save.'), findsNothing);
+        await pickKind(tester, 'GitHub', 'Telegram');
+        expect(tester.widget<TextField>(find.byType(TextField).last).controller!.text, isEmpty);
+        expect(saveEnabled(tester), isTrue);
+      });
+
+      testWidgets('removing an invalid draft restores the clean no-links Save state', (tester) async {
+        app_state.prismUser.links = <String, String>{};
+        await pumpPanel(tester);
+        await pickKind(tester, 'Custom link', 'Telegram');
+        await tester.enterText(find.byType(TextField).last, 'https://t.me/prism');
+        await tester.pump();
+        await tester.enterText(find.byType(TextField).last, 'https://example.com/me');
+        await tester.pump();
+
+        await tester.tap(find.byTooltip('Remove link'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Remove'));
+        await tester.pumpAndSettle();
+
+        expect(saveEnabled(tester), isFalse);
+        expect(find.text('Enter a valid Telegram link.'), findsNothing);
+      });
+
+      testWidgets('removing an invalid draft does not treat an unchanged saved link as an edit', (tester) async {
+        await pumpPanel(tester);
+        await typeInvalidTelegram(tester);
+
+        await tester.tap(find.byTooltip('Remove link'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Remove'));
+        await tester.pumpAndSettle();
+
+        expect(saveEnabled(tester), isFalse);
+      });
+
+      testWidgets('valid edits on multiple link kinds save together with profile fields', (tester) async {
+        await pumpPanel(tester);
+        await tester.enterText(find.widgetWithText(TextField, 'Me Myself'), 'New Name');
+        await tester.enterText(find.widgetWithText(TextField, 'Hello'), 'New bio');
+        await tester.enterText(find.widgetWithText(TextField, 'creator_01'), 'creator_02');
+        await tester.pump(const Duration(milliseconds: 500));
+        await tester.pumpAndSettle();
+        await pickKind(tester, 'Custom link', 'Telegram');
+        await tester.enterText(find.byType(TextField).last, 'https://t.me/prism');
+        await tester.pump();
+        await pickKind(tester, 'Telegram', 'GitHub');
+        await tester.enterText(find.byType(TextField).last, 'https://github.com/prism');
+        await tester.pump();
+
+        expect(saveEnabled(tester), isTrue);
+        await tester.tap(find.text('Save'));
+        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 2));
+
+        final Map writes = firestore.writes.single.data!;
+        expect(writes['name'], 'New Name');
+        expect(writes['bio'], 'New bio');
+        expect(claims.single['username'], 'creator_02');
+        expect((writes['links'] as Map)['telegram'], 'https://t.me/prism');
+        expect((writes['links'] as Map)['github'], 'https://github.com/prism');
+      });
+
+      testWidgets('coming back shows the typed text and its error again', (tester) async {
+        await pumpPanel(tester);
+        await typeInvalidTelegram(tester);
+        await pickKind(tester, 'Telegram', 'GitHub');
+
+        await pickKind(tester, 'GitHub', 'Telegram');
+
+        expect(tester.widget<TextField>(field()).controller!.text, 'https://example.com/me');
+        expect(find.text('Enter a valid Telegram link.'), findsOneWidget);
+        expect(find.text('Fix your Telegram link to save.'), findsNothing);
+        expect(saveEnabled(tester), isFalse);
+      });
+
+      testWidgets('fixing the field turns Save on and saves the fixed link', (tester) async {
+        await pumpPanel(tester);
+        await typeInvalidTelegram(tester);
+        await pickKind(tester, 'Telegram', 'GitHub');
+        await pickKind(tester, 'GitHub', 'Telegram');
+
+        await tester.enterText(field(), 'https://t.me/prism');
+        await tester.pump();
+
+        expect(find.text('Enter a valid Telegram link.'), findsNothing);
+        expect(saveEnabled(tester), isTrue);
+        await tester.tap(find.text('Save'));
+        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 2));
+        expect((firestore.writes.single.data!['links'] as Map)['telegram'], 'https://t.me/prism');
+      });
+
+      testWidgets('emptying the field turns Save on and keeps the saved link, as an empty field does today', (
+        tester,
+      ) async {
+        app_state.prismUser.links = <String, String>{
+          'custom link': 'https://example.com',
+          'telegram': 'https://t.me/old',
+        };
+        await pumpPanel(tester);
+        await pickKind(tester, 'Custom link', 'Telegram');
+        await tester.enterText(field(), 'https://example.com/me');
+        await tester.pump();
+        await pickKind(tester, 'Telegram', 'GitHub');
+        expect(saveEnabled(tester), isFalse);
+        await pickKind(tester, 'GitHub', 'Telegram');
+
+        await tester.enterText(field(), '');
+        await tester.pump();
+
+        expect(find.text('Enter a valid Telegram link.'), findsNothing);
+        expect(saveEnabled(tester), isTrue);
+        await tester.tap(find.text('Save'));
+        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 2));
+        expect((firestore.writes.single.data!['links'] as Map)['telegram'], 'https://t.me/old');
+      });
+
+      testWidgets('with two invalid kinds, fixing one keeps Save off', (tester) async {
+        await pumpPanel(tester);
+        await typeInvalidTelegram(tester);
+        await pickKind(tester, 'Telegram', 'GitHub');
+        await tester.enterText(field(), 'https://example.com/me');
+        await tester.pump();
+        expect(find.text('Enter a valid GitHub link.'), findsOneWidget);
+
+        await tester.enterText(field(), 'https://github.com/prism');
+        await tester.pump();
+
+        expect(saveEnabled(tester), isFalse);
+        expect(find.text('Fix your Telegram link to save.'), findsOneWidget);
+      });
     });
   });
 

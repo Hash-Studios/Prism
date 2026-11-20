@@ -4665,6 +4665,12 @@ abstract class AppLocalizations {
   /// **'Enter a valid {kind} link.'**
   String coreEditKindLinkInvalid(String kind);
 
+  /// Shown under Save when a profile link of another type is not valid. kind is the link type name, for example Telegram.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix your {kind} link to save.'**
+  String coreEditFixLink(String kind);
+
   /// No description provided for @coreEditLinkInvalid.
   ///
   /// In en, this message translates to:

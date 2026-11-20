@@ -2688,6 +2688,15 @@
     },
     "description": "Validation error for a named profile link."
   },
+  "coreEditFixLink": "सेव करने के लिए अपना {kind} लिंक ठीक करें।",
+  "@coreEditFixLink": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    },
+    "description": "Shown under Save when a profile link of another type is not valid. kind is the link type name, for example Telegram."
+  },
   "coreEditLinkInvalid": "मान्य लिंक दर्ज करें।",
   "coreEditProfile": "प्रोफ़ाइल संपादित करें",
   "coreEditProfileLink": "{kind} लिंक",

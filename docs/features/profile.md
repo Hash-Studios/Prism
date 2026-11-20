@@ -43,6 +43,7 @@ The app never shows an email address as a name. `creatorLabel` uses, in order: t
 - A link type has a rule. For example a GitHub link must hold `github`.
 - The app keeps only `https`, `http` and `mailto` links, and each needs a host. A bare domain gets `https://`. The email type stores the bare address, so builds that shipped before this change can still open it.
 - A wrong value shows an inline error ("Enter a valid link.", "Enter a valid email address.", or "Enter a valid github link."). **Update** stays off until the field is valid or empty. Before this change the app dropped the value without a message.
+- An invalid link stays invalid when the user picks a different link type. **Save** stays off until the user fixes or empties that field. When the user comes back to that type, the field shows the typed text and its error again. While the invalid field is not on screen, a line under **Save** names its type ("Fix your Telegram link to save."). Before #896, a change of link type enabled **Save** and dropped the typed text without a message.
 - A tap on a link icon opens it with `launchUrl`. If the link has an unsafe scheme or fails to open, the app shows the message "Couldn't open this link.". It does not crash.
 - Any email provider works for the email type. Before this change only `@gmail.com` opened as mail.
 

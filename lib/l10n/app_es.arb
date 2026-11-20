@@ -970,6 +970,14 @@
   "coreEditDiscardTitle": "¿Descartar los cambios?",
   "coreEditEmailInvalid": "Introduce una dirección de correo electrónico válida.",
   "coreEditKindLinkInvalid": "Introduce un enlace de {kind} válido.",
+  "coreEditFixLink": "Corrige tu enlace de {kind} para guardar.",
+  "@coreEditFixLink": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
   "coreEditLinkInvalid": "Introduce un enlace válido.",
   "coreEditProfile": "Editar perfil",
   "coreEditProfileLink": "Enlace de {kind}",

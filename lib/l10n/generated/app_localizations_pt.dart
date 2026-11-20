@@ -2663,6 +2663,11 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String coreEditFixLink(String kind) {
+    return 'Corrija seu link do $kind para salvar.';
+  }
+
+  @override
   String get coreEditLinkInvalid => 'Informe um link válido.';
 
   @override
@@ -18920,6 +18925,11 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String coreEditKindLinkInvalid(String kind) {
     return 'Informe um link de $kind válido.';
+  }
+
+  @override
+  String coreEditFixLink(String kind) {
+    return 'Corrija seu link do $kind para salvar.';
   }
 
   @override

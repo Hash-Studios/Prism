@@ -2564,6 +2564,14 @@
     },
     "description": "Validation error for a named profile link."
   },
+  "coreEditFixLink": "Korrigiere deinen {kind}-Link, um zu speichern.",
+  "@coreEditFixLink": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
   "coreEditLinkInvalid": "Gib einen gültigen Link ein.",
   "coreEditProfile": "Profil bearbeiten",
   "coreEditProfileLink": "{kind}-Link",
