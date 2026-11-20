@@ -406,12 +406,15 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
         headerBottom: switch (_hiddenLinkError) {
           final String hint => Padding(
             padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
-            child: Semantics(
-              liveRegion: true,
-              child: Text(
-                hint,
-                textAlign: TextAlign.end,
-                style: PrismTextStyles.caption(context).copyWith(color: cs.error),
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: Semantics(
+                liveRegion: true,
+                child: Text(
+                  hint,
+                  textAlign: TextAlign.end,
+                  style: PrismTextStyles.caption(context).copyWith(color: cs.error),
+                ),
               ),
             ),
           ),

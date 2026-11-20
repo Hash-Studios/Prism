@@ -446,6 +446,10 @@ void main() {
         final double hintTop = tester.getTopLeft(find.text('Fix your Telegram link to save.')).dy;
         expect(hintTop, greaterThan(tester.getBottomLeft(find.widgetWithText(FilledButton, 'Save')).dy));
         expect(hintTop, lessThan(tester.getTopLeft(find.byType(SingleChildScrollView)).dy));
+        expect(
+          tester.getTopRight(find.text('Fix your Telegram link to save.')).dx,
+          greaterThan(tester.getTopLeft(find.widgetWithText(FilledButton, 'Save')).dx),
+        );
       });
 
       testWidgets('invalid text is shown in the link kind sheet subtitle', (tester) async {
