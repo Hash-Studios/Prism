@@ -2790,6 +2790,14 @@
     },
     "description": "Validation error for a named profile link."
   },
+  "coreEditFixLink": "Perbaiki tautan {kind} kamu untuk menyimpan.",
+  "@coreEditFixLink": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
   "coreEditLinkInvalid": "Masukkan tautan yang valid.",
   "coreEditProfile": "Edit profil",
   "coreEditProfileLink": "Tautan {kind}",

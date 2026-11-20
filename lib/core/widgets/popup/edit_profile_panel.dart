@@ -65,7 +65,9 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   bool enabled = false;
   bool? available;
   String? _usernameError;
-  final Set<String> _invalidLinks = <String>{};
+
+  /// The rejected text per link kind. A kind stays here until its field is valid or empty.
+  final Map<String, String> _invalidLinks = <String, String>{};
   bool isCheckingUsername = false;
   Timer? _usernameDebounce;
   int _usernameCheckId = 0;
@@ -296,7 +298,15 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
     });
   }
 
-  String? get _linkError => _invalidLinks.contains(_link.name) ? _linkErrorText(_link) : null;
+  String? get _linkError => _invalidLinks.containsKey(_link.name) ? _linkErrorText(_link) : null;
+
+  /// Names a kind that keeps Save off while its field is not on screen.
+  String? get _hiddenLinkError {
+    final ProfileLinkKind? hidden = profileLinkKinds
+        .where((kind) => kind.name != _link.name && _invalidLinks.containsKey(kind.name))
+        .firstOrNull;
+    return hidden == null ? null : context.l10n.coreEditFixLink(_linkDisplayName(hidden));
+  }
 
   String _linkDisplayName(ProfileLinkKind kind) => profileLinkTypeLabel(context.l10n, kind.type);
 
@@ -309,17 +319,14 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
   Future<void> _pickLinkKind() async {
     final ProfileLinkKind? picked = await showLinkKindSheet(context, selected: _link, values: _linkValues);
     if (picked == null || !mounted) return;
-    setState(() {
-      _invalidLinks.remove(_link.name);
-      _link = picked;
-    });
-    linkController.text = _linkValues[_link.name] ?? '';
+    setState(() => _link = picked);
+    linkController.text = _invalidLinks[_link.name] ?? _linkValues[_link.name] ?? '';
   }
 
   void _onLinkChanged(String value) {
     final String? clean = value.trim().isEmpty ? '' : sanitizeProfileLink(_link, value);
     if (clean == null) {
-      _invalidLinks.add(_link.name);
+      _invalidLinks[_link.name] = value;
     } else {
       _invalidLinks.remove(_link.name);
       _linkValues[_link.name] = clean;
@@ -397,6 +404,18 @@ class _EditProfilePanelState extends State<EditProfilePanel> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              if (_hiddenLinkError case final String hint)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(PrismSpace.page, 0, PrismSpace.page, PrismSpace.xs),
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      hint,
+                      textAlign: TextAlign.end,
+                      style: PrismTextStyles.caption(context).copyWith(color: cs.error),
+                    ),
+                  ),
+                ),
               EditProfileHeader(
                 coverUrl: app_state.prismUser.coverPhoto,
                 coverFile: _cover,

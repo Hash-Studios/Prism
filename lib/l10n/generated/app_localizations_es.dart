@@ -2656,6 +2656,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String coreEditFixLink(String kind) {
+    return 'Corrige tu enlace de $kind para guardar.';
+  }
+
+  @override
   String get coreEditLinkInvalid => 'Introduce un enlace válido.';
 
   @override

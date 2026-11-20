@@ -2636,6 +2636,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String coreEditFixLink(String kind) {
+    return 'Perbaiki tautan $kind kamu untuk menyimpan.';
+  }
+
+  @override
   String get coreEditLinkInvalid => 'Masukkan tautan yang valid.';
 
   @override

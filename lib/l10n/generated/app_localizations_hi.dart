@@ -2638,6 +2638,11 @@ class AppLocalizationsHi extends AppLocalizations {
   }
 
   @override
+  String coreEditFixLink(String kind) {
+    return 'सेव करने के लिए अपना $kind लिंक ठीक करें।';
+  }
+
+  @override
   String get coreEditLinkInvalid => 'मान्य लिंक दर्ज करें।';
 
   @override

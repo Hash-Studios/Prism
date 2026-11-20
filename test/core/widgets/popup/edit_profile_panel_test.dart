@@ -414,6 +414,107 @@ void main() {
       await tester.pump(const Duration(seconds: 2));
       expect((firestore.writes.single.data!['links'] as Map)['custom link'], 'https://example.com/me');
     });
+
+    group('an invalid link of another kind (#896)', () {
+      Finder field() => find.byType(TextField).last;
+
+      Future<void> pickKind(WidgetTester tester, String from, String to) async {
+        await tester.tap(find.bySemanticsLabel('Link type, $from'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text(to).last);
+        await tester.tap(find.text(to).last);
+        await tester.pumpAndSettle();
+      }
+
+      Future<void> typeInvalidTelegram(WidgetTester tester) async {
+        await pickKind(tester, 'Custom link', 'Telegram');
+        await tester.enterText(field(), 'https://example.com/me');
+        await tester.pump();
+        expect(find.text('Enter a valid Telegram link.'), findsOneWidget);
+        expect(saveEnabled(tester), isFalse);
+      }
+
+      testWidgets('switching kind keeps Save off and names the invalid kind', (tester) async {
+        await pumpPanel(tester);
+        await typeInvalidTelegram(tester);
+
+        await pickKind(tester, 'Telegram', 'GitHub');
+
+        expect(saveEnabled(tester), isFalse);
+        expect(find.text('Fix your Telegram link to save.'), findsOneWidget);
+      });
+
+      testWidgets('coming back shows the typed text and its error again', (tester) async {
+        await pumpPanel(tester);
+        await typeInvalidTelegram(tester);
+        await pickKind(tester, 'Telegram', 'GitHub');
+
+        await pickKind(tester, 'GitHub', 'Telegram');
+
+        expect(tester.widget<TextField>(field()).controller!.text, 'https://example.com/me');
+        expect(find.text('Enter a valid Telegram link.'), findsOneWidget);
+        expect(find.text('Fix your Telegram link to save.'), findsNothing);
+        expect(saveEnabled(tester), isFalse);
+      });
+
+      testWidgets('fixing the field turns Save on and saves the fixed link', (tester) async {
+        await pumpPanel(tester);
+        await typeInvalidTelegram(tester);
+        await pickKind(tester, 'Telegram', 'GitHub');
+        await pickKind(tester, 'GitHub', 'Telegram');
+
+        await tester.enterText(field(), 'https://t.me/prism');
+        await tester.pump();
+
+        expect(find.text('Enter a valid Telegram link.'), findsNothing);
+        expect(saveEnabled(tester), isTrue);
+        await tester.tap(find.text('Save'));
+        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 2));
+        expect((firestore.writes.single.data!['links'] as Map)['telegram'], 'https://t.me/prism');
+      });
+
+      testWidgets('emptying the field turns Save on and keeps the saved link, as an empty field does today', (
+        tester,
+      ) async {
+        app_state.prismUser.links = <String, String>{
+          'custom link': 'https://example.com',
+          'telegram': 'https://t.me/old',
+        };
+        await pumpPanel(tester);
+        await pickKind(tester, 'Custom link', 'Telegram');
+        await tester.enterText(field(), 'https://example.com/me');
+        await tester.pump();
+        await pickKind(tester, 'Telegram', 'GitHub');
+        expect(saveEnabled(tester), isFalse);
+        await pickKind(tester, 'GitHub', 'Telegram');
+
+        await tester.enterText(field(), '');
+        await tester.pump();
+
+        expect(find.text('Enter a valid Telegram link.'), findsNothing);
+        expect(saveEnabled(tester), isTrue);
+        await tester.tap(find.text('Save'));
+        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 2));
+        expect((firestore.writes.single.data!['links'] as Map)['telegram'], 'https://t.me/old');
+      });
+
+      testWidgets('with two invalid kinds, fixing one keeps Save off', (tester) async {
+        await pumpPanel(tester);
+        await typeInvalidTelegram(tester);
+        await pickKind(tester, 'Telegram', 'GitHub');
+        await tester.enterText(field(), 'https://example.com/me');
+        await tester.pump();
+        expect(find.text('Enter a valid GitHub link.'), findsOneWidget);
+
+        await tester.enterText(field(), 'https://github.com/prism');
+        await tester.pump();
+
+        expect(saveEnabled(tester), isFalse);
+        expect(find.text('Fix your Telegram link to save.'), findsOneWidget);
+      });
+    });
   });
 
   testWidgets('bio and link can be removed, and each asks first', (tester) async {

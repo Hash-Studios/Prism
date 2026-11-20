@@ -2674,6 +2674,15 @@
     },
     "description": "Validation error for a named profile link."
   },
+  "coreEditFixLink": "Fix your {kind} link to save.",
+  "@coreEditFixLink": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    },
+    "description": "Shown under Save when a profile link of another type is not valid. kind is the link type name, for example Telegram."
+  },
   "coreEditLinkInvalid": "Enter a valid link.",
   "coreEditProfile": "Edit profile",
   "coreEditProfileLink": "{kind} link",
