@@ -27,6 +27,7 @@ No gate. All users get the same behavior.
 | Sentry `beforeSend` | `dropNetworkNoise` drops `SocketException`, `ClientException`, `TimeoutException`, `HandshakeException`, `HttpException`, `TlsException`, and Firebase errors with code `unavailable`, `deadline-exceeded` or `network-request-failed` (this covers Auth and Cloud Functions). It looks inside `FirestoreError.original` first. | `lib/core/monitoring/sentry_before_send.dart`, `lib/main.dart` |
 | Non-fatal tracking | The platform and zone handlers log the error and track `AppErrorEvent` (`app_error`) with `errorSource` `platform_dispatcher`, `zone`, or `flutter_framework`. They do not track `AppCrashFatalEvent`. | `lib/main.dart`, `lib/core/monitoring/flutter_error_handler.dart` |
 | Ad consent | `AdConsent.ensure()` asks Google UMP for a consent update (10 s timeout), shows the form if required, then reads `canRequestAds`. Ads load only when it is true. | `lib/features/ads/data/ad_consent.dart` |
+| App Tracking Transparency (iOS) | The app asks for ATT each time it becomes active, while the status is "not determined". It stops after a final answer. Ads, UMP and the push prompt wait for that answer. | `ios/Runner/AppDelegate.swift`, `lib/features/ads/data/ad_consent.dart` |
 | Remote Config at startup | The app applies cached values with `activate()` first. It then waits at most 3 s for `fetchAndActivate()`. If the last fetch worked and is less than 24 h old, the splash does not wait at all. The fetch still runs. | `lib/features/startup/data/repositories/startup_repository_impl.dart` |
 | Block list | `getBlockedCreatorEmails(waitForInitialLoad: true)` waits at most 3 s, then returns the last known set. A stream error keeps the last known set. | `lib/data/user_blocks/firebase_user_block_repository.dart` |
 | `LazyFileCache` | Writes run one after another through a chained future (`_lastWrite`). Two writes cannot overlap. A dirty flag joins changes made in the same tick into one write. | `lib/core/persistence/store_adapters/lazy_file_cache.dart` |
@@ -45,6 +46,19 @@ Ad consent:
 - A refused result is not kept. The next `ensure()` call tries again.
 - App start does not wait for consent. `_deferredStartup` runs it in the background. It calls `MobileAds.instance.initialize()` only when `canRequestAds` is true.
 - The rewarded ad load (`ads_repository_impl.dart`) calls `ensure()` too. Without consent it ends as failed and skips the load.
+
+App Tracking Transparency (iOS only):
+
+- iOS shows the ATT prompt only while the app is active and no other system prompt is open. iOS shows it only once, so a second request after an answer shows nothing.
+- `AppDelegate.installTracking` asks on every `didBecomeActive` while the status is `notDetermined`. The Flutter call (`prism/tracking`, `request`) uses the same attempt, so only one request runs at a time.
+- One attempt waits 250 ms, then asks every 250 ms for at most 10 s, because iOS can drop a request made too early. The attempt stops when the app is not active. The next activation starts a new attempt.
+- Example: on a first launch, a different system alert covers the app for 15 s. When that alert closes, the app becomes active and the ATT prompt shows. Before this rule, the app asked only in the first 10 s and then stopped until the next ad.
+- After "Allow", "Ask App Not to Track", or a restricted status, the app never asks again.
+- `AdConsent.requestTracking()` waits for a final answer before UMP runs and before any ad request. Without a final answer, no ad loads and the next ad tries again.
+- If the user does not allow tracking, every ad request sets `nonPersonalizedAds: true` (`AdConsent.nonPersonalizedAds`). Google then shows non-personalized ads.
+- The push prompt after a download or set waits for a final ATT answer. Without one, the app does not ask for push this time and asks after the next download or set.
+- Android has no ATT. `requestTracking()` returns true at once and ad requests do not change.
+- The App Review note is in `docs/development/app-review-att.md`.
 
 Remote Config:
 
@@ -145,9 +159,11 @@ After a release, set `field_diagnostics_sample_rate` in Remote Config. `0.05` is
 9. Delete the account on a second device. Wait for the first device to refresh its token. Make sure the "Your session ended" sheet shows once.
 10. On a new install, set a wallpaper. Make sure the one-line notification question shows before the system prompt, and "Not now" shows no system prompt.
 11. On a fresh install in an EEA region, make sure the consent form shows before ads load. Refuse consent and make sure the rewarded ad does not load.
-12. Leave the app in the background past midnight or for 30 min, then open it. Make sure Wall of the Day refreshes.
-13. On iOS, get a push with a badge, then open the app. Make sure the badge clears.
-14. Open a detail screen from a tab, then tap the active tab icon. Make sure the tab returns to its root.
+12. On iOS, delete the app, then install it again. Open it. Make sure the ATT prompt shows on the first screen, before sign-in, in portrait and in landscape. Do this on an iPhone and an iPad.
+13. On iOS, answer the ATT prompt, then close and open the app. Make sure the prompt does not show again.
+14. Leave the app in the background past midnight or for 30 min, then open it. Make sure Wall of the Day refreshes.
+15. On iOS, get a push with a badge, then open the app. Make sure the badge clears.
+16. Open a detail screen from a tab, then tap the active tab icon. Make sure the tab returns to its root.
 
 Automated tests:
 
@@ -165,6 +181,8 @@ Automated tests:
 - `test/core/startup/notification_channels_test.dart`
 - `test/features/startup/services/notification_permission_prompt_service_test.dart`
 - `test/features/ads/ad_consent_test.dart`
+- `test/features/ads/native_tracking_contract_test.dart`
+- `test/features/startup/services/notification_permission_value_action_test.dart`
 - `test/features/startup/remote_config_prepare_test.dart`
 - `test/features/startup/resume_refresh_policy_test.dart`
 - `test/features/user_blocks/firebase_user_block_repository_test.dart`

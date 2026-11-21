@@ -108,9 +108,53 @@ void main() {
     });
   });
 
+  test('privacy options wait for a final tracking answer', () async {
+    final answer = Completer<bool>();
+    var opened = 0;
+    final consent = AdConsent(requestTracking: () => answer.future, showPrivacyOptions: () async => opened++);
+
+    final opening = consent.showPrivacyOptions();
+    await pumpEventQueue();
+    expect(opened, 0);
+    answer.complete(false);
+    await opening;
+    expect(opened, 1);
+    expect(consent.nonPersonalizedAds, isTrue);
+  });
+
+  test('privacy options do not open without a final tracking answer', () async {
+    var opened = 0;
+    final consent = AdConsent(
+      requestTracking: () async => throw StateError('notDetermined'),
+      showPrivacyOptions: () async => opened++,
+    );
+
+    await consent.showPrivacyOptions();
+    expect(opened, 0);
+    expect(consent.privacyOptionsOpen, isFalse);
+  });
+
+  testWidgets('a late timed-out tracking answer cannot overwrite a newer denial', (tester) async {
+    final lateAnswer = Completer<bool>();
+    var attempts = 0;
+    final consent = AdConsent(requestTracking: () => attempts++ == 0 ? lateAnswer.future : Future<bool>.value(false));
+
+    bool? firstResult;
+    unawaited(consent.requestTracking().then((value) => firstResult = value));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 13));
+    expect(firstResult, isFalse);
+    expect(await consent.requestTracking(), isTrue);
+    expect(consent.nonPersonalizedAds, isTrue);
+
+    lateAnswer.complete(true);
+    await tester.pump();
+    expect(consent.nonPersonalizedAds, isTrue);
+  });
+
   test('ads wait for the tracking answer, and tracking is asked only once', () async {
     final steps = <String>[];
-    final answer = Completer<void>();
+    final answer = Completer<bool>();
     final consent = AdConsent(
       requestInfoUpdate: () async => steps.add('update'),
       showFormIfRequired: () async => steps.add('form'),
@@ -129,7 +173,7 @@ void main() {
     await pumpEventQueue();
     expect(steps, isNot(contains('can')));
 
-    answer.complete();
+    answer.complete(true);
     expect(await ensured, isTrue);
     expect(await shown, isTrue);
     expect(steps.where((step) => step == 'tracking'), hasLength(1));
@@ -143,6 +187,7 @@ void main() {
       canRequestAds: () async => true,
       requestTracking: () async {
         if (attempts++ == 0) throw StateError('no channel');
+        return true;
       },
     );
 
@@ -154,7 +199,7 @@ void main() {
   });
 
   testWidgets('pending tracking times out and a later request can succeed', (tester) async {
-    final firstAttempt = Completer<void>();
+    final firstAttempt = Completer<bool>();
     var attempts = 0;
     final consent = AdConsent(
       requestInfoUpdate: () async {},
@@ -162,7 +207,7 @@ void main() {
       canRequestAds: () async => true,
       requestTracking: () {
         attempts++;
-        return attempts == 1 ? firstAttempt.future : Future<void>.value();
+        return attempts == 1 ? firstAttempt.future : Future<bool>.value(true);
       },
     );
 
@@ -175,7 +220,7 @@ void main() {
 
     expect(ensuredResult, isFalse);
     expect(shownResult, isFalse);
-    firstAttempt.complete();
+    firstAttempt.complete(true);
     await tester.pump();
     expect(await consent.ensure(), isTrue);
     expect(await consent.canShow(), isTrue);
@@ -253,7 +298,7 @@ void main() {
 
   test('UMP form does not start while tracking is pending', () async {
     final steps = <String>[];
-    final tracking = Completer<void>();
+    final tracking = Completer<bool>();
     final consent = AdConsent(
       requestInfoUpdate: () async => steps.add('update'),
       showFormIfRequired: () async => steps.add('form'),
@@ -268,7 +313,7 @@ void main() {
     await pumpEventQueue();
 
     expect(steps, <String>['tracking']);
-    tracking.complete();
+    tracking.complete(true);
     expect(await ensured, isTrue);
     expect(steps, <String>['tracking', 'update', 'form']);
   });
@@ -329,6 +374,86 @@ void main() {
     expect(updates, 0);
     privacyForm.complete();
     await opening;
+  });
+
+  test('ads stay non-personalized until a final tracking answer', () async {
+    final answer = Completer<bool>();
+    var canRequestAsked = false;
+    final consent = AdConsent(
+      requestInfoUpdate: () async {},
+      showFormIfRequired: () async {},
+      canRequestAds: () async {
+        canRequestAsked = true;
+        return true;
+      },
+      requestTracking: () => answer.future,
+    );
+
+    expect(consent.nonPersonalizedAds, isTrue);
+    final ensured = consent.ensure();
+    await pumpEventQueue();
+    expect(canRequestAsked, isFalse);
+
+    answer.complete(true);
+    expect(await ensured, isTrue);
+    expect(consent.nonPersonalizedAds, isFalse);
+  });
+
+  testWidgets('denied or restricted tracking gives non-personalized ads on iOS', (tester) async {
+    const channel = MethodChannel('prism/tracking');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    try {
+      for (final status in <String>['denied', 'restricted']) {
+        messenger.setMockMethodCallHandler(channel, (call) async => status);
+        final consent = AdConsent(
+          requestInfoUpdate: () async {},
+          showFormIfRequired: () async {},
+          canRequestAds: () async => true,
+        );
+
+        expect(await consent.ensure(), isTrue, reason: 'status: $status');
+        expect(consent.nonPersonalizedAds, isTrue, reason: 'status: $status');
+      }
+
+      messenger.setMockMethodCallHandler(channel, (call) async => 'authorized');
+      final consent = AdConsent(
+        requestInfoUpdate: () async {},
+        showFormIfRequired: () async {},
+        canRequestAds: () async => true,
+      );
+
+      expect(await consent.ensure(), isTrue);
+      expect(consent.nonPersonalizedAds, isFalse);
+    } finally {
+      messenger.setMockMethodCallHandler(channel, null);
+      debugDefaultTargetPlatformOverride = null;
+    }
+  });
+
+  testWidgets('Android asks no tracking prompt and keeps personalized ads', (tester) async {
+    const channel = MethodChannel('prism/tracking');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final calls = <MethodCall>[];
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    try {
+      messenger.setMockMethodCallHandler(channel, (call) async {
+        calls.add(call);
+        return 'authorized';
+      });
+      final consent = AdConsent(
+        requestInfoUpdate: () async {},
+        showFormIfRequired: () async {},
+        canRequestAds: () async => true,
+      );
+
+      expect(await consent.ensure(), isTrue);
+      expect(consent.nonPersonalizedAds, isFalse);
+      expect(calls, isEmpty);
+    } finally {
+      messenger.setMockMethodCallHandler(channel, null);
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   group('analytics', () {

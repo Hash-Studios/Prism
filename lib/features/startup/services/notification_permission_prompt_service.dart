@@ -8,6 +8,7 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
@@ -93,7 +94,8 @@ class NotificationPermissionPromptService {
       return;
     }
 
-    if (!context.mounted) {
+    // Tracking goes first: iOS drops a tracking request made while another system prompt is open.
+    if (!await AdConsent.instance.requestTracking() || !context.mounted) {
       return;
     }
     final NotificationSettings? requested = await requestAfterSoftPrompt(

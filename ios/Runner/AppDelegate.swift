@@ -64,15 +64,7 @@ import WidgetKit
         result(FlutterError(code: "UNKNOWN_METHOD", message: call.method, details: nil))
       }
     }
-    FlutterMethodChannel(name: "prism/tracking", binaryMessenger: messenger).setMethodCallHandler { call, result in
-      guard call.method == "request" else {
-        result(FlutterError(code: "UNKNOWN_METHOD", message: call.method, details: nil))
-        return
-      }
-      Task { @MainActor in
-        result(Self.trackingName(await Self.requestTracking()))
-      }
-    }
+    Self.installTracking(on: messenger)
     NotificationCenter.default.addObserver(
       forName: UIApplication.didBecomeActiveNotification,
       object: nil,
@@ -85,21 +77,60 @@ import WidgetKit
     }
   }
 
-  /// Waits for an active app and retries ATT requests suppressed by another permission prompt.
+  /// iOS shows the ATT prompt only while the app is active with no other system prompt on screen, and only once.
+  /// So ask on every activation until the user gives a final answer.
+  @MainActor
+  private static func installTracking(on messenger: any FlutterBinaryMessenger) {
+    FlutterMethodChannel(name: "prism/tracking", binaryMessenger: messenger).setMethodCallHandler { call, result in
+      guard call.method == "request" else {
+        result(FlutterError(code: "UNKNOWN_METHOD", message: call.method, details: nil))
+        return
+      }
+      Task { @MainActor in
+        result(Self.trackingName(await Self.requestTracking()))
+      }
+    }
+    guard trackingObserver == nil else { return }
+    trackingObserver = NotificationCenter.default.addObserver(
+      forName: UIApplication.didBecomeActiveNotification,
+      object: nil,
+      queue: .main
+    ) { _ in
+      Task { @MainActor in
+        _ = await Self.requestTracking()
+      }
+    }
+  }
+
+  @MainActor private static var trackingObserver: (any NSObjectProtocol)?
+  @MainActor private static var trackingRequest: Task<ATTrackingManager.AuthorizationStatus, Never>?
+
   @MainActor
   private static func requestTracking() async -> ATTrackingManager.AuthorizationStatus {
-    guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else {
-      return ATTrackingManager.trackingAuthorizationStatus
-    }
+    if let pending = trackingRequest { return await pending.value }
+    let request = Task { await askForTracking() }
+    trackingRequest = request
+    let status = await request.value
+    trackingRequest = nil
+    return status
+  }
+
+  /// Asks again while iOS drops requests made too early. Leaving the active state ends the attempt;
+  /// the next activation starts a new one.
+  @MainActor
+  private static func askForTracking() async -> ATTrackingManager.AuthorizationStatus {
     for _ in 0..<40 {
+      let status = ATTrackingManager.trackingAuthorizationStatus
+      guard status == .notDetermined else { return status }
       do {
         try await Task.sleep(nanoseconds: 250_000_000)
       } catch {
         return ATTrackingManager.trackingAuthorizationStatus
       }
-      let status = ATTrackingManager.trackingAuthorizationStatus
-      guard status == .notDetermined else { return status }
-      guard UIApplication.shared.applicationState == .active else { continue }
+      guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined,
+            UIApplication.shared.applicationState == .active else {
+        return ATTrackingManager.trackingAuthorizationStatus
+      }
       // Read the persisted status on the next turn; early callbacks can precede the user's decision.
       ATTrackingManager.requestTrackingAuthorization { _ in }
     }

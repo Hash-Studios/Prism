@@ -9,6 +9,7 @@ import 'package:Prism/core/persistence/persistence_keys.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/core/startup/startup_sheet.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/features/ads/data/ad_consent.dart';
 import 'package:Prism/features/startup/services/notification_permission_prompt_service.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/notifications/notification_pref_keys.dart';
@@ -26,8 +27,10 @@ import '../../../support/in_memory_local_store.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('plugins.flutter.io/firebase_messaging');
+  const trackingChannel = MethodChannel('prism/tracking');
   late SettingsLocalDataSource settings;
   late FakeAppAnalytics analytics;
+  late AdConsent savedConsent;
   late AuthorizationStatus current;
   late AuthorizationStatus requested;
   late List<MethodCall> calls;
@@ -40,6 +43,8 @@ void main() {
   });
 
   setUp(() {
+    savedConsent = AdConsent.instance;
+    AdConsent.instance = AdConsent(requestTracking: () async => true);
     settings = SettingsLocalDataSource(InMemoryLocalStore());
     getIt.registerSingleton<SettingsLocalDataSource>(settings);
     analytics = FakeAppAnalytics();
@@ -72,6 +77,8 @@ void main() {
   });
 
   tearDown(() async {
+    AdConsent.instance = savedConsent;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(trackingChannel, null);
     await getIt.reset();
     AnalyticsRuntime.reset();
     app_state.prismUser = constants.createGuestPrismUser();
@@ -205,6 +212,58 @@ void main() {
       expect(calls.where((call) => call.method == 'Messaging#requestPermission'), hasLength(1));
     });
   }
+
+  for (final trackingStatus in <String>['authorized', 'denied', 'restricted']) {
+    testOnIOS('push waits for the final ATT $trackingStatus answer', (tester) async {
+      final tracking = Completer<String>();
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        trackingChannel,
+        (_) => tracking.future,
+      );
+      AdConsent.instance = AdConsent();
+      final context = await host(tester);
+      final result = NotificationPermissionPromptService.instance.maybePromptAfterValueAction(
+        context,
+        sourceTag: 'save',
+      );
+      await settle(tester);
+      expect(find.text('Turn on notifications'), findsNothing);
+      expect(calls.where((call) => call.method == 'Messaging#requestPermission'), isEmpty);
+      expect(settings.get<bool>('notificationPermissionPromptedV2', defaultValue: false), isFalse);
+
+      tracking.complete(trackingStatus);
+      await settle(tester);
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Turn on notifications'), findsOneWidget);
+      expect(calls.where((call) => call.method == 'Messaging#requestPermission'), isEmpty);
+      await tester.tap(find.text('Turn on notifications'));
+      await settle(tester);
+      await result;
+      expect(settings.get<bool>('notificationPermissionPromptedV2'), isTrue);
+      expect(calls.where((call) => call.method == 'Messaging#requestPermission'), hasLength(1));
+      expect(AdConsent.instance.nonPersonalizedAds, trackingStatus != 'authorized');
+    });
+  }
+
+  testOnIOS('a tracking answer that never comes asks no push prompt and stays eligible', (tester) async {
+    AdConsent.instance = AdConsent(requestTracking: () async => throw StateError('no answer'));
+    final context = await host(tester);
+    await NotificationPermissionPromptService.instance.maybePromptAfterValueAction(context, sourceTag: 'save');
+    await settle(tester);
+    expect(find.text('Turn on notifications'), findsNothing);
+    expect(calls.where((call) => call.method == 'Messaging#requestPermission'), isEmpty);
+    expect(settings.get<bool>('notificationPermissionPromptedV2', defaultValue: false), isFalse);
+
+    AdConsent.instance = AdConsent(requestTracking: () async => true);
+    final result = NotificationPermissionPromptService.instance.maybePromptAfterValueAction(context, sourceTag: 'save');
+    await settle(tester);
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Turn on notifications'), findsOneWidget);
+    await tester.tap(find.text('Turn on notifications'));
+    await settle(tester);
+    await result;
+    expect(calls.where((call) => call.method == 'Messaging#requestPermission'), hasLength(1));
+  });
 
   testOnIOS('declining soft prompt leaves permission eligible for another session', (tester) async {
     final context = await host(tester);

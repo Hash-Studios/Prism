@@ -117,7 +117,7 @@ void main() {
   });
 
   testWidgets('rewarded request waits for tracking before initializing or loading', (tester) async {
-    final tracking = Completer<void>();
+    final tracking = Completer<bool>();
     AdConsent.instance = AdConsent(
       requestInfoUpdate: () async {},
       showFormIfRequired: () async {},
@@ -130,7 +130,7 @@ void main() {
     expect(nativeMethods, isEmpty);
     expect(loadIds, isEmpty);
 
-    tracking.complete();
+    tracking.complete(true);
     await tester.pump();
     expect(nativeMethods, contains('MobileAds#initialize'));
     expect(loadIds, hasLength(1));
@@ -148,6 +148,7 @@ void main() {
       requestTracking: () async {
         trackingAttempts++;
         if (trackingAttempts == 1) throw StateError('tracking unavailable');
+        return true;
       },
       canRequestAds: () async => true,
     );

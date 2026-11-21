@@ -127,7 +127,11 @@ class _ExperimentalInterstitialReturnState extends State<ExperimentalInterstitia
         onAdFailedToLoad: (_) => _event('no_fill'),
       );
       await (widget.loadAd?.call(id, callback) ??
-          InterstitialAd.load(adUnitId: id, request: const AdRequest(), adLoadCallback: callback));
+          InterstitialAd.load(
+            adUnitId: id,
+            request: AdRequest(nonPersonalizedAds: AdConsent.instance.nonPersonalizedAds),
+            adLoadCallback: callback,
+          ));
     } catch (_) {
       _event('failed');
     }
