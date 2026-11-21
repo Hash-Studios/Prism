@@ -163,7 +163,6 @@ const String _swiftChecks = r'''
     NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
     for _ in 0..<500 {
       if trackingRequest == nil && TrackingClock.sleepCount > before { return }
-      if ATTrackingManager.trackingAuthorizationStatus != .notDetermined && trackingRequest == nil { return }
       await Task.yield()
     }
   }
