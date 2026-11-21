@@ -1,5 +1,12 @@
 ## Changelog
 
+### v3.34.0
+- A profile link you are fixing now stays when you change its link type
+- The hint for a link that needs a fix now shows right under Save
+- On iPhone and iPad, Prism asks about tracking at the right time
+- Ads are not personalized until you allow tracking on iPhone and iPad
+- Security and stability fixes
+
 ### v3.33.0
 - A new Creator stats page: one main number for this week, last week or the last 4 weeks, with a chart you can tap
 - Tap a bar or a tile on Creator stats to see the exact numbers
