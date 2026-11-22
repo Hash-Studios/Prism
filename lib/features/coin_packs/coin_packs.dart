@@ -23,10 +23,10 @@ Future<void> showCoinPacksSheet(
   CoinPackGateway? gateway,
 }) async {
   if (!CoinPacksFlag.available) return;
+  final CoinPackGateway sheetGateway = gateway ?? coinPackGatewayFactory();
   await showPrismSheet<void>(
     context,
-    builder: (BuildContext _) =>
-        CoinPacksSheet(source: source, message: message, gateway: gateway ?? coinPackGatewayFactory()),
+    builder: (_) => CoinPacksSheet(source: source, message: message, gateway: sheetGateway),
   );
 }
 

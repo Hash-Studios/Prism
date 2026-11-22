@@ -765,7 +765,8 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
       return;
     }
     if (!reservation.success || reservation.mode == AiChargeMode.insufficient) {
-      final String category = reservation.mutation.success ? 'insufficient_balance' : 'charge_failed';
+      final bool short = reservation.mutation.insufficientBalance;
+      final String category = short ? 'insufficient_balance' : 'charge_failed';
       analytics.track(
         AiGenerateFailedEvent(
           error: category,
@@ -776,15 +777,13 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
           durationMs: elapsed.elapsedMilliseconds,
         ),
       );
-      CoinsService.instance.logLowBalanceNudge(
-        sourceTag: 'coins.ai_generation.low_balance',
-        requiredCoins: qualityTier.costFor(isPro: app_state.prismUser.premium),
-      );
-      showCoinShortfall(
-        context,
-        message: context.l10n.economyAiNeedCoinsToGenerate(qualityTier.costFor(isPro: app_state.prismUser.premium)),
-        source: 'ai_wallpaper',
-      );
+      if (short) {
+        final int cost = qualityTier.costFor(isPro: app_state.prismUser.premium);
+        CoinsService.instance.logLowBalanceNudge(sourceTag: 'coins.ai_generation.low_balance', requiredCoins: cost);
+        showCoinShortfall(context, message: context.l10n.economyAiNeedCoinsToGenerate(cost), source: 'ai_wallpaper');
+      } else {
+        toasts.error(context.l10n.economyAiGenerateFailed);
+      }
       setState(() => _loadingGeneration = false);
       return;
     }
@@ -1520,20 +1519,35 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
   Widget _generateBar() {
     return ValueListenableBuilder<int>(
       valueListenable: CoinsService.instance.balanceNotifier,
-      builder: (BuildContext context, int coinBalance, _) => ListenableBuilder(
-        listenable: Listenable.merge(<Listenable>[_promptController, _foldedController, _revealedController]),
-        builder: (BuildContext context, _) => AiGenerateBar(
-          cost: _selectedQualityTier.costFor(isPro: app_state.prismUser.premium),
-          balance: coinBalance,
-          hasPrompt: _duoReveal
-              ? AiDuoComposition.isValidPrompt(_foldedController.text) &&
-                    AiDuoComposition.isValidPrompt(_revealedController.text)
-              : _promptController.text.trim().isNotEmpty,
-          loading: _loadingGeneration,
-          onGenerate: _generate,
-          onGetCoins: () => context.router.push(RewardsRoute(scrollToEarn: true)),
-        ),
-      ),
+      builder: (BuildContext context, int coinBalance, _) {
+        final int cost = _selectedQualityTier.costFor(isPro: app_state.prismUser.premium);
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ListenableBuilder(
+              listenable: Listenable.merge(<Listenable>[_promptController, _foldedController, _revealedController]),
+              builder: (BuildContext context, _) => AiGenerateBar(
+                cost: cost,
+                balance: coinBalance,
+                hasPrompt: _duoReveal
+                    ? AiDuoComposition.isValidPrompt(_foldedController.text) &&
+                          AiDuoComposition.isValidPrompt(_revealedController.text)
+                    : _promptController.text.trim().isNotEmpty,
+                loading: _loadingGeneration,
+                onGenerate: _generate,
+                onGetCoins: () => context.router.push(RewardsRoute(scrollToEarn: true)),
+              ),
+            ),
+            if (coinBalance < cost && CoinPacksFlag.available)
+              PrismButton(
+                label: context.l10n.coinPacksBuyCoins,
+                expand: true,
+                variant: PrismButtonVariant.tonal,
+                onPressed: _loadingGeneration ? null : () => showCoinPacksSheet(context, source: 'ai_wallpaper'),
+              ),
+          ],
+        );
+      },
     );
   }
 

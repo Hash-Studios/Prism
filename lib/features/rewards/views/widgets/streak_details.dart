@@ -146,7 +146,11 @@ class _StreakDetailsState extends State<StreakDetails> {
                     if (balance < kStreakRescueCost)
                       Text(context.l10n.economyStreakRestoreShort(balance, kStreakRescueCost)),
                     PrismButton(
-                      label: balance < kStreakRescueCost ? context.l10n.economyEarnCoins : context.l10n.economyRestore,
+                      label: balance >= kStreakRescueCost
+                          ? context.l10n.economyRestore
+                          : CoinPacksFlag.available
+                          ? context.l10n.coinPacksBuyCoins
+                          : context.l10n.economyEarnCoins,
                       expand: true,
                       loading: _busy,
                       onPressed: _busy ? null : _restore,

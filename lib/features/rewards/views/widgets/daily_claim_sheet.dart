@@ -330,7 +330,11 @@ class _RescueCard extends StatelessWidget {
               ],
               const SizedBox(height: PrismSpace.sm),
               PrismButton(
-                label: short ? context.l10n.economyEarnCoins : context.l10n.economyRestore,
+                label: !short
+                    ? context.l10n.economyRestore
+                    : CoinPacksFlag.available
+                    ? context.l10n.coinPacksBuyCoins
+                    : context.l10n.economyEarnCoins,
                 expand: true,
                 loading: busy,
                 size: PrismButtonSize.compact,

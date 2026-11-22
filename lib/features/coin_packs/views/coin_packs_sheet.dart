@@ -1,6 +1,7 @@
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/coin_packs/data/coin_pack_gateway.dart';
@@ -105,7 +106,9 @@ class _CoinPacksSheetState extends State<CoinPacksSheet> {
     if (phase is! _Ready) return;
     final List<CoinPack> packs = phase.packs;
     setState(() => _phase = _Purchasing(packs, pack.productId));
-    analytics.track(CoinPackPurchaseStartedEvent(pack: pack.productId, source: widget.source));
+    final String source = widget.source;
+    final String owner = app_state.prismUser.id;
+    analytics.track(CoinPackPurchaseStartedEvent(pack: pack.productId, source: source));
     final CoinPackPurchaseResult result = await widget.gateway.buy(
       pack,
       onVerifying: () {
@@ -115,8 +118,10 @@ class _CoinPacksSheetState extends State<CoinPacksSheet> {
         setState(() => _phase = _Purchasing(current.packs, current.productId, verifying: true));
       },
     );
+    if (app_state.prismUser.id == owner) {
+      analytics.track(CoinPackPurchasedEvent(pack: pack.productId, outcome: _outcomeOf(result), source: source));
+    }
     if (!mounted) return;
-    analytics.track(CoinPackPurchasedEvent(pack: pack.productId, outcome: _outcomeOf(result), source: widget.source));
     setState(() {
       _phase = switch (result) {
         final CoinPackGranted granted => _Granted(granted),

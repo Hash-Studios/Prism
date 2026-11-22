@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -17,7 +19,7 @@ Future<void> showGetCoinsSheet(
   required String upsellSource,
   int? cost,
 }) async {
-  final int? missing = cost == null ? null : (cost - CoinsService.instance.balanceNotifier.value).clamp(0, cost);
+  final int? missing = cost == null ? null : math.max(0, cost - CoinsService.instance.balanceNotifier.value);
   final int? remainder = missing == null ? null : (missing - CoinsService.instance.adsRewardNow).clamp(0, missing);
   final _ShortBalanceChoice choice =
       await showPrismSheet<_ShortBalanceChoice>(

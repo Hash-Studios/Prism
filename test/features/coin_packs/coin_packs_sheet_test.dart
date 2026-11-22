@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/economy_config.dart';
+import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism_sheet/prism_sheet_route.dart';
 import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -11,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/profile_user_fixture.dart';
 
 final AppLocalizations _l10n = lookupAppLocalizations(const Locale('en'));
 
@@ -165,6 +167,33 @@ void main() {
     expect(_rowEnabled(tester, 'prism_coins_100'), isTrue);
     expect(analytics.events.whereType<CoinPackPurchasedEvent>().single.outcome, CoinPackOutcomeValue.cancelled);
   });
+
+  for (final switched in [false, true]) {
+    testWidgets('dismissed purchase tracks its outcome only for the buyer (account switched: $switched)', (
+      tester,
+    ) async {
+      final previous = app_state.prismUser;
+      addTearDown(() => app_state.prismUser = previous);
+      app_state.prismUser = profileUser(id: 'buyer');
+      final gateway = _FakeGateway();
+      await _pumpSheet(tester, gateway);
+      await _tapPack(tester, 'prism_coins_100');
+      Navigator.of(tester.element(find.byType(CoinPacksSheet))).pop();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.byType(CoinPacksSheet), findsNothing);
+
+      if (switched) app_state.prismUser = profileUser(id: 'next-user');
+      gateway.finish(const CoinPackGranted(coins: 100, balance: 110));
+      await tester.pump();
+      final outcomes = analytics.events.whereType<CoinPackPurchasedEvent>();
+      if (switched) {
+        expect(outcomes, isEmpty);
+      } else {
+        expect(outcomes.single.outcome, CoinPackOutcomeValue.granted);
+      }
+    });
+  }
 
   testWidgets('pending purchase shows the pending text and Done', (WidgetTester tester) async {
     final _FakeGateway gateway = _FakeGateway();

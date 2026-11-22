@@ -21,6 +21,11 @@ int _int(Object? raw, int fallback, {int min = 0, int max = _maxPrice}) {
   return value < min || value > max ? fallback : value;
 }
 
+int _coinPackInt(Object? raw, int max) {
+  if (raw is! num || !raw.isFinite || raw != raw.truncateToDouble() || raw < 0 || raw > max) return 0;
+  return raw.toInt();
+}
+
 int _photoPrice(Object? raw, int fallback) {
   if (raw is! num || !raw.isFinite || raw != raw.truncateToDouble()) return fallback;
   final int value = raw.toInt();
@@ -55,9 +60,10 @@ class CoinPackDef {
     for (final Object? entry in raw) {
       if (entry is! Map) continue;
       final Object? id = entry['productId'];
-      final int coins = _int(entry['coins'], 0, max: 100000);
+      final int coins = _coinPackInt(entry['coins'], 100000);
+      final int bonusPercent = _coinPackInt(entry['bonusPercent'], 1000);
       if (id is! String || !_productId.hasMatch(id) || coins < 1 || !seen.add(id)) continue;
-      packs.add(CoinPackDef(productId: id, coins: coins, bonusPercent: _int(entry['bonusPercent'], 0, max: 1000)));
+      packs.add(CoinPackDef(productId: id, coins: coins, bonusPercent: bonusPercent));
     }
     return List<CoinPackDef>.unmodifiable(packs);
   }

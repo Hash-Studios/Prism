@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/features/coin_packs/data/coin_pack_gateway.dart';
 import 'package:Prism/features/coin_packs/domain/coin_pack.dart';
@@ -46,12 +48,14 @@ RevenueCatCoinPackGateway _gateway({
   required VerifyCall verify,
   Future<int> Function()? refreshBalance,
   String Function()? currentUserId,
+  Future<bool> Function(String owner)? purchaseIdentityMatches,
 }) => RevenueCatCoinPackGateway(
   getOfferings: getOfferings ?? () async => _offerings(_storePackages),
   purchase: purchase ?? _storeSucceeds,
   verify: verify,
   refreshBalance: refreshBalance ?? () async => 400,
   currentUserId: currentUserId ?? () => 'u',
+  purchaseIdentityMatches: purchaseIdentityMatches,
   configPacks: () => _configPacks,
   retryDelays: _noWait,
 );
@@ -103,6 +107,21 @@ void main() {
 
       await expectLater(gateway.loadPacks(), throwsA(isA<CoinPackLoadException>()));
     });
+
+    test('ignores fractional coin counts and normalizes a fractional bonus to zero like the server', () {
+      final List<CoinPackDef> packs = CoinPackDef.listFrom(
+        <Object?>[
+          <String, Object?>{'productId': 'fractional_coins', 'coins': 100.5, 'bonusPercent': 10},
+          <String, Object?>{'productId': 'fractional_bonus', 'coins': 100, 'bonusPercent': 10.5},
+          <String, Object?>{'productId': 'integer_pack', 'coins': 200, 'bonusPercent': 20},
+        ],
+        const <CoinPackDef>[],
+      );
+
+      expect(packs.map((CoinPackDef pack) => pack.productId), <String>['fractional_bonus', 'integer_pack']);
+      expect(packs.map((CoinPackDef pack) => pack.coins), <int>[100, 200]);
+      expect(packs.map((CoinPackDef pack) => pack.bonusPercent), <int>[0, 20]);
+    });
   });
 
   group('buy', () {
@@ -124,11 +143,16 @@ void main() {
 
     test('a store payment pending is CoinPackPending and never verifies', () async {
       int verifyCalls = 0;
+      int balanceCalls = 0;
       final RevenueCatCoinPackGateway gateway = _gateway(
         purchase: _storeFails(PurchasesErrorCode.paymentPendingError),
         verify: (String transactionId) async {
           verifyCalls++;
           return _reply('granted');
+        },
+        refreshBalance: () async {
+          balanceCalls++;
+          return 400;
         },
       );
 
@@ -136,6 +160,35 @@ void main() {
 
       expect(result, isA<CoinPackPending>());
       expect(verifyCalls, 0);
+      expect(balanceCalls, 1);
+    });
+
+    test('a non-plugin store error is returned instead of leaving the purchase in flight', () async {
+      final RevenueCatCoinPackGateway gateway = _gateway(
+        purchase: (Package package) => Future<String>.error(const SocketException('QA relay unavailable')),
+        verify: _neverVerify,
+      );
+
+      final CoinPackPurchaseResult result = await gateway.buy(_pack());
+
+      expect(result, isA<CoinPackPending>());
+    });
+
+    test('a blank store transaction is pending and refreshes the balance', () async {
+      int balanceCalls = 0;
+      final RevenueCatCoinPackGateway gateway = _gateway(
+        purchase: (Package package) async => '',
+        verify: _neverVerify,
+        refreshBalance: () async {
+          balanceCalls++;
+          return 400;
+        },
+      );
+
+      final CoinPackPurchaseResult result = await gateway.buy(_pack());
+
+      expect(result, isA<CoinPackPending>());
+      expect(balanceCalls, 1);
     });
 
     test('another store error is CoinPackFailed and never verifies', () async {
@@ -154,7 +207,7 @@ void main() {
       expect(verifyCalls, 0);
     });
 
-    test('a granted reply returns the server balance after a refresh, and calls onVerifying once', () async {
+    test('a granted reply keeps the verified server balance and refreshes local state', () async {
       int verifyCalls = 0;
       int balanceCalls = 0;
       int verifying = 0;
@@ -182,12 +235,28 @@ void main() {
         result,
         isA<CoinPackGranted>()
             .having((CoinPackGranted r) => r.coins, 'coins', 330)
-            .having((CoinPackGranted r) => r.balance, 'balance', 400),
+            .having((CoinPackGranted r) => r.balance, 'balance', 380),
       );
       expect(sent, <String>['txn_1']);
       expect(verifyCalls, 1);
       expect(balanceCalls, 1);
       expect(verifying, 1);
+    });
+
+    test('a balance refresh failure does not hide a confirmed grant', () async {
+      final RevenueCatCoinPackGateway gateway = _gateway(
+        verify: (String transactionId) async => _reply('granted', balance: 375),
+        refreshBalance: () => Future<int>.error(StateError('offline')),
+      );
+
+      final CoinPackPurchaseResult result = await gateway.buy(_pack());
+
+      expect(
+        result,
+        isA<CoinPackGranted>()
+            .having((CoinPackGranted granted) => granted.coins, 'coins', 330)
+            .having((CoinPackGranted granted) => granted.balance, 'balance', 375),
+      );
     });
 
     test('already_granted is CoinPackGranted', () async {
@@ -252,6 +321,23 @@ void main() {
       expect(verifyCalls, 2);
     });
 
+    test('resource exhaustion after the store purchase is pending, not a retry prompt', () async {
+      int verifyCalls = 0;
+      final RevenueCatCoinPackGateway gateway = _gateway(
+        verify: (String transactionId) {
+          verifyCalls++;
+          return Future<Map<String, Object?>>.error(
+            FirebaseFunctionsException(code: 'resource-exhausted', message: 'purchase verification throttle'),
+          );
+        },
+      );
+
+      final CoinPackPurchaseResult result = await gateway.buy(_pack());
+
+      expect(result, isA<CoinPackPending>());
+      expect(verifyCalls, 1);
+    });
+
     test('an unauthenticated error is CoinPackFailed with no retry', () async {
       int verifyCalls = 0;
       final RevenueCatCoinPackGateway gateway = _gateway(
@@ -304,6 +390,115 @@ void main() {
 
       expect(result, isA<CoinPackPending>());
       expect(verifyCalls, 0);
+    });
+
+    test('an account change during verification does not return the old account grant', () async {
+      String userId = 'u';
+      final RevenueCatCoinPackGateway gateway = _gateway(
+        currentUserId: () => userId,
+        verify: (String transactionId) async {
+          userId = 'v';
+          return _reply('granted');
+        },
+      );
+
+      final CoinPackPurchaseResult result = await gateway.buy(_pack());
+
+      expect(result, isA<CoinPackPending>());
+    });
+
+    test('an account change during balance refresh does not return the old account balance', () async {
+      String userId = 'u';
+      final RevenueCatCoinPackGateway gateway = _gateway(
+        currentUserId: () => userId,
+        verify: (String transactionId) async => _reply('granted'),
+        refreshBalance: () async {
+          userId = 'v';
+          return 400;
+        },
+      );
+
+      final CoinPackPurchaseResult result = await gateway.buy(_pack());
+
+      expect(result, isA<CoinPackPending>());
+    });
+
+    test('logged-out account cannot start a store purchase', () async {
+      int purchaseCalls = 0;
+      final RevenueCatCoinPackGateway gateway = _gateway(
+        currentUserId: () => '',
+        purchase: (Package package) async {
+          purchaseCalls++;
+          return 'txn_1';
+        },
+        verify: _neverVerify,
+      );
+
+      final CoinPackPurchaseResult result = await gateway.buy(_pack());
+
+      expect(result, isA<CoinPackFailed>());
+      expect(purchaseCalls, 0);
+    });
+
+    test('account changed since offerings loaded cannot start a store purchase', () async {
+      String userId = 'u';
+      int purchaseCalls = 0;
+      final RevenueCatCoinPackGateway gateway = _gateway(
+        currentUserId: () => userId,
+        purchase: (Package package) async {
+          purchaseCalls++;
+          return 'txn_1';
+        },
+        verify: _neverVerify,
+      );
+      final List<CoinPack> packs = await gateway.loadPacks();
+      userId = 'v';
+
+      final CoinPackPurchaseResult result = await gateway.buy(packs[1]);
+
+      expect(result, isA<CoinPackFailed>());
+      expect(purchaseCalls, 0);
+    });
+
+    test('a mismatched RevenueCat identity cannot start a store purchase', () async {
+      int purchaseCalls = 0;
+      final RevenueCatCoinPackGateway gateway = _gateway(
+        purchaseIdentityMatches: (String owner) async => false,
+        purchase: (Package package) async {
+          purchaseCalls++;
+          return 'txn_1';
+        },
+        verify: _neverVerify,
+      );
+      await gateway.loadPacks();
+
+      final CoinPackPurchaseResult result = await gateway.buy(_pack());
+
+      expect(result, isA<CoinPackFailed>());
+      expect(purchaseCalls, 0);
+    });
+
+    test('account is rechecked after the RevenueCat identity lookup', () async {
+      String userId = 'u';
+      int purchaseCalls = 0;
+      final RevenueCatCoinPackGateway gateway = _gateway(
+        currentUserId: () => userId,
+        purchaseIdentityMatches: (String owner) async {
+          userId = 'v';
+          return true;
+        },
+        purchase: (Package package) async {
+          purchaseCalls++;
+          return 'txn_1';
+        },
+        verify: _neverVerify,
+      );
+      await gateway.loadPacks();
+
+      final CoinPackPurchaseResult result = await gateway.buy(_pack());
+
+      expect(result, isA<CoinPackFailed>());
+      expect(purchaseCalls, 0);
     });
 
     test('a pack without a package is CoinPackFailed and never reaches the store', () async {

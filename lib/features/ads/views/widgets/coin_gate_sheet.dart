@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -29,7 +31,7 @@ Future<T?> showCoinGateSheet<T>(
   return showPrismSheet<T>(
     context,
     builder: (sheetContext) {
-      final int missing = (cost - CoinsService.instance.balanceNotifier.value).clamp(0, cost);
+      final int missing = math.max(0, cost - CoinsService.instance.balanceNotifier.value);
       return PrismSheetBody(
         title: title,
         message: message(missing),

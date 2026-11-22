@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/platform/app_icon_channel.dart';
@@ -240,7 +242,7 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
         final int price = shopPriceFor(item);
         final bool owned = state.isOwned(item);
         final ShopAvailability availability = state.availability(item);
-        final int missing = (price - state.balance).clamp(0, price);
+        final int missing = math.max(0, price - state.balance);
         return PrismSheetBody(
           title: shopItemName(item, context.l10n),
           message: _message(context.l10n, state, availability, owned, missing),

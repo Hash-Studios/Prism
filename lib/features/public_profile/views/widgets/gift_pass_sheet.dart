@@ -78,6 +78,13 @@ class _GiftPassSheetState extends State<GiftPassSheet> {
                 loading: _sending,
                 onPressed: short ? null : _send,
               ),
+              if (short && CoinPacksFlag.available)
+                PrismButton(
+                  label: context.l10n.coinPacksBuyCoins,
+                  expand: true,
+                  variant: PrismButtonVariant.tonal,
+                  onPressed: _sending ? null : () => showCoinPacksSheet(context, source: 'gift_pass'),
+                ),
               if (short)
                 PrismButton(
                   label: context.l10n.accountEarnCoins,
