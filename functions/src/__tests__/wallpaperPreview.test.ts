@@ -268,3 +268,10 @@ test("HTTP rejects unsupported methods and query shapes without cacheable errors
     assert.equal(headers["Cache-Control"], "no-store");
   }
 });
+
+test("a priced creator wall is never previewed, even when its original is approved and protected", async (t) => {
+  const {store, url, get} = await setup(t);
+  store.set("walls/document", {...store.get("walls/document"), creatorPrice: 40});
+  await assert.rejects(loadWallpaperPreview("asset", url), {message: "Preview unavailable"});
+  assert.equal(get.mock.callCount(), 0);
+});

@@ -84,6 +84,7 @@ interface Snap {
 interface FakeRef {
   id: string;
   path: string;
+  parent: {id: string; path: string; parent: FakeRef | null};
   get: () => Promise<Snap>;
   set: (data: Doc, options?: {merge?: boolean}) => Promise<void>;
   create: (data: Doc) => Promise<void>;
@@ -163,6 +164,13 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
     return {
       id: path.split("/").pop() as string,
       path,
+      get parent() {
+        const cut = path.lastIndexOf("/");
+        const collectionPath = path.slice(0, cut);
+        const ownerCut = collectionPath.lastIndexOf("/");
+        return {id: collectionPath.slice(ownerCut + 1), path: collectionPath,
+          parent: ownerCut < 0 ? null : ref(collectionPath.slice(0, ownerCut))};
+      },
       get: async () => {
         if (!pending || transactionReadDepth === 0) {
           if (observed?.outsideReads !== undefined) observed.outsideReads++;
