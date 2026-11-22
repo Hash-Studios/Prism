@@ -132,6 +132,26 @@ test("approval delivered before admission retains event time; reapproval never r
   assert.ok((store.get(path(key))?.approvedAt as admin.firestore.Timestamp).isEqual(at(NOW)));
 });
 
+test("creator price changes invalidate the challenge entry gate fingerprint", async (t) => {
+  const store = setup(t, {"walls/w1": wall()});
+  assert.equal((await admit()).admitted, true);
+  const wallRef = db.doc("walls/w1");
+  const snap = await wallRef.get();
+  assert.ok(snap.createTime);
+  await wallRef.update({review: true});
+  await reconcileChallengeWall("w1", CH, at(NOW), snap.createTime);
+  const key = admissionIdentity(CH, "w1", snap.createTime);
+  const entryPath = path(key);
+  const originalGate = store.get(entryPath)?.gateKey;
+  const revision = store.get(`weeklyChallenges/${CH}`)?.revision;
+
+  await wallRef.update({creatorPrice: 40});
+  await reconcileChallengeWall("w1", CH);
+
+  assert.notEqual(store.get(entryPath)?.gateKey, originalGate);
+  assert.equal(store.get(`weeklyChallenges/${CH}`)?.revision, Number(revision) + 1);
+});
+
 test("votes are deterministic, no-op retries do not change counts or rate, and self votes fail", async (t) => {
   const store = setup(t, {"walls/w1": wall()});
   const key = await approved();

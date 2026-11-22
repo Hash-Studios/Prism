@@ -15963,6 +15963,117 @@
   "@notifPushCreatorFundPaidTitle": {"description": "Push notification title for a Creator fund payout.", "placeholders": {"coins": {"type": "int", "format": "decimalPattern"}}},
   "notifPushCreatorFundPaidBody": "अपनी क्रिएटर स्टैट्स में अपना हिस्सा देखें।",
   "@notifPushCreatorFundPaidBody": {"description": "Push notification body for a Creator fund payout."},
+  "creatorWallPriceTitle": "यह वॉल बेचें",
+  "creatorWallPriceHelp": "खरीदार एक बार भुगतान करते हैं और पूरी क्वालिटी वाली मूल फ़ाइल अपने पास रखते हैं। आपको कॉइन्स का 70% मिलता है।",
+  "creatorWallPriceFree": "मुफ़्त",
+  "creatorWallPriceOption": "{price} कॉइन्स",
+  "@creatorWallPriceOption": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallPriceSaved": "कीमत सेव हो गई",
+  "creatorWallPriceRemoved": "यह वॉल अब मुफ़्त है",
+  "creatorWallPriceFailed": "कीमत सेव नहीं हो सकी। फिर से कोशिश करें।",
+  "creatorWallPriceIneligible": "जब आपका ईमेल सत्यापित हो, आपका खाता 7 दिन पुराना हो और आपके पास मंज़ूर की गई कोई वॉल हो, तब आप वॉल बेच सकते हैं।",
+  "creatorWallPriceNotOriginal": "सिर्फ़ आपकी अपनी मूल अपलोड की गई वॉल ही बेची जा सकती हैं।",
+  "creatorWallChipSemantics": "प्रीमियम वॉल, {price, plural, =1{1 कॉइन} other{{price} कॉइन्स}}",
+  "@creatorWallChipSemantics": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallUnlockTitle": "यह वॉल अनलॉक करें",
+  "creatorWallUnlockMessage": "पूरी क्वालिटी वाली मूल फ़ाइल पाएं। यह हर डिवाइस पर हमेशा के लिए आपकी होगी। {creatorName} को 70% कॉइन्स मिलते हैं।",
+  "@creatorWallUnlockMessage": {
+    "placeholders": {
+      "creatorName": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorWallUnlockButton": "{price, plural, =1{1 कॉइन} other{{price} कॉइन्स}} में अनलॉक करें",
+  "@creatorWallUnlockButton": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallBalance": "आपका बैलेंस: {balance, plural, =1{1 कॉइन} other{{balance} कॉइन्स}}",
+  "@creatorWallBalance": {
+    "placeholders": {
+      "balance": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallShortBy": "आपको {amount, plural, =1{1 और कॉइन} other{{amount} और कॉइन्स}} चाहिए।",
+  "@creatorWallShortBy": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallGetCoins": "कॉइन्स पाएं",
+  "creatorWallUnlockedTitle": "अनलॉक हो गई",
+  "creatorWallUnlockedMessage": "मूल फ़ाइल अब आपकी है। कभी भी डाउनलोड करें या सेट करें।",
+  "creatorWallUnlockedBadge": "अनलॉक",
+  "creatorWallDone": "हो गया",
+  "creatorWallPriceChanged": "कीमत बदलकर {price, plural, =1{1 कॉइन} other{{price} कॉइन्स}} हो गई है। जाँचें और फिर से कोशिश करें।",
+  "@creatorWallPriceChanged": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallDailyLimit": "आज की अनलॉक सीमा पूरी हो गई है। कल फिर कोशिश करें।",
+  "creatorWallPairLimit": "आपने आज {creatorName} की 3 वॉल अनलॉक की हैं। कल फिर कोशिश करें।",
+  "@creatorWallPairLimit": {
+    "placeholders": {
+      "creatorName": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorWallCreatorLimit": "{creatorName} की आज की बिक्री सीमा पूरी हो गई है। कल फिर कोशिश करें।",
+  "@creatorWallCreatorLimit": {
+    "placeholders": {
+      "creatorName": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorWallBuyerTooNew": "वॉल अनलॉक करने के लिए आपका खाता 7 दिन पुराना होना चाहिए।",
+  "creatorWallBuyerIneligible": "वॉल अनलॉक करने के लिए अपना ईमेल सत्यापित करें।",
+  "creatorWallUnavailable": "यह वॉल अभी बिक्री के लिए नहीं है।",
+  "creatorWallUnlockFailed": "वॉल अनलॉक नहीं हो सकी। आपसे कोई शुल्क नहीं लिया गया।",
+  "creatorWallNotEnoughCoins": "कॉइन्स पर्याप्त नहीं हैं।",
+  "creatorStatsSalesTitle": "बिक्री",
+  "creatorStatsSalesUnlocks": "अनलॉक",
+  "creatorStatsSalesCoins": "कमाए गए कॉइन्स",
+  "creatorStatsSalesEmpty": "अभी तक कोई बिक्री नहीं। बेचने के लिए अपनी किसी वॉल पर कीमत लगाएं।",
+  "creatorStatsSalesWall": "{count, plural, =1{1 अनलॉक} other{{count} अनलॉक}}, {coins, plural, =1{1 कॉइन} other{{coins} कॉइन्स}}",
+  "@creatorStatsSalesWall": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "coreCoinCreatorWallUnlock": "क्रिएटर वॉल",
+  "coreCoinCreatorWallSale": "वॉल बिक्री",
+  "coreCoinCreatorWallRefund": "क्रिएटर वॉल रिफ़ंड",
+  "coreCoinCreatorWallSaleReversal": "वॉल बिक्री रद्द हुई",
   "coinPacksTitle": "सिक्के पाएं",
   "@coinPacksTitle": {"description": "Title of the sheet that sells coin packs."},
   "coinPacksSubtitle": "डाउनलोड, AI वॉलपेपर, Drops और टिप पर सिक्के खर्च करें।",

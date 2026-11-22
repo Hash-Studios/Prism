@@ -63,6 +63,7 @@ class CreatorStats {
     required this.weeks,
     required this.walls,
     this.tips = CreatorTips.empty,
+    this.sales = CreatorTips.empty,
   });
   final DateTime generatedAt;
   final DateTime asOf;
@@ -72,6 +73,9 @@ class CreatorStats {
   final List<StatsWeek> weeks;
   final List<WallStats> walls;
   final CreatorTips tips;
+
+  /// Paid unlocks of the creator's priced walls. Same shape as [tips]; coins are the creator's share.
+  final CreatorTips sales;
   List<WallStats> ranked(StatsMetric metric, StatsPeriod period) => [...walls]
     ..sort((a, b) {
       final av = period.value(a.weeks, metric);

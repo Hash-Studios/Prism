@@ -11,6 +11,7 @@ import 'package:Prism/features/creator_fund/views/widgets/creator_fund_row.dart'
 import 'package:Prism/features/creator_stats/biz/bloc/creator_stats_bloc.j.dart';
 import 'package:Prism/features/creator_stats/domain/creator_stats.dart';
 import 'package:Prism/features/creator_stats/domain/stats_period.dart';
+import 'package:Prism/features/creator_walls/creator_walls.dart';
 import 'package:Prism/features/deep_link_input/domain/deep_link_input_workflow.dart';
 import 'package:Prism/features/session/biz/bloc/session_bloc.j.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -100,7 +101,7 @@ class _CreatorStatsViewState extends State<CreatorStatsView> {
         }
         final data = state.data;
         if (data == null) return const SizedBox.shrink();
-        if (data.approvedWallCount == 0) {
+        if (data.approvedWallCount == 0 && data.sales.count == 0) {
           return GlintState(
             kind: GlintStateKind.empty,
             title: context.l10n.statsEmptyTitle,
@@ -162,6 +163,10 @@ class _CreatorStatsViewState extends State<CreatorStatsView> {
             const SizedBox(height: PrismSpace.xxl),
             _TipsSummary(tips: data.tips, walls: data.walls),
             const SizedBox(height: PrismSpace.md),
+            if (CreatorWallsFlag.enabled || data.sales.count > 0) ...[
+              _SalesSummary(sales: data.sales, walls: data.walls),
+              const SizedBox(height: PrismSpace.md),
+            ],
             const CreatorFundRow(),
             const SizedBox(height: PrismSpace.xxl),
             _AboutNumbers(
@@ -538,6 +543,96 @@ class _TipsSummary extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Paid unlocks all time: totals, then one row per priced wall, most coins first.
+class _SalesSummary extends StatelessWidget {
+  const _SalesSummary({required this.sales, required this.walls});
+  final CreatorTips sales;
+  final List<WallStats> walls;
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final Map<String, String> titles = {for (final wall in walls) wall.wallId: wall.title};
+    final List<MapEntry<String, TipTally>> byWall = sales.walls.entries.toList()
+      ..sort((a, b) => b.value.coins.compareTo(a.value.coins));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(context.l10n.creatorStatsSalesTitle, style: PrismTextStyles.sectionTitle(context)),
+        const SizedBox(height: PrismSpace.xs),
+        PrismCard(
+          child: sales.count == 0
+              ? Text(context.l10n.creatorStatsSalesEmpty, style: PrismTextStyles.body(context))
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _SalesFigure(
+                            value: statsNumber(context, sales.count),
+                            label: context.l10n.creatorStatsSalesUnlocks,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                        Expanded(
+                          child: _SalesFigure(
+                            value: statsNumber(context, sales.coins),
+                            label: context.l10n.creatorStatsSalesCoins,
+                            color: cs.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (byWall.isNotEmpty) const SizedBox(height: PrismSpace.sm),
+                    for (final entry in byWall)
+                      LayoutBuilder(
+                        builder: (context, constraints) => PrismRow(
+                          padding: const EdgeInsets.symmetric(vertical: PrismSpace.xs),
+                          title: (titles[entry.key] ?? '').isEmpty ? context.l10n.statsUntitled : titles[entry.key]!,
+                          trailing: ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: constraints.maxWidth * 0.45),
+                            child: Text(
+                              context.l10n.creatorStatsSalesWall(entry.value.count, entry.value.coins),
+                              textAlign: TextAlign.end,
+                              style: PrismTextStyles.rowTitle(
+                                context,
+                              ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SalesFigure extends StatelessWidget {
+  const _SalesFigure({required this.value, required this.label, required this.color});
+  final String value;
+  final String label;
+  final Color color;
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: AlignmentDirectional.centerStart,
+        child: Text(
+          value,
+          style: PrismTextStyles.sectionTitle(
+            context,
+          ).copyWith(fontSize: 24, color: color, fontFeatures: const [FontFeature.tabularFigures()]),
+        ),
+      ),
+      Text(label, style: PrismTextStyles.caption(context)),
+    ],
+  );
 }
 
 class _AboutNumbers extends StatelessWidget {

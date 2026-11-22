@@ -4590,6 +4590,50 @@ class TipReceivedPushOpenedEvent extends AnalyticsEvent {
   }
 }
 
+class CreatorWallPriceSetEvent extends AnalyticsEvent {
+  const CreatorWallPriceSetEvent({required this.price, required this.source});
+
+  final int price;
+  final String source;
+
+  @override
+  String get eventName => 'creator_wall_price_set';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'price': price, 'source': source};
+  }
+}
+
+class CreatorWallUnlockViewedEvent extends AnalyticsEvent {
+  const CreatorWallUnlockViewedEvent({required this.price});
+
+  final int price;
+
+  @override
+  String get eventName => 'creator_wall_unlock_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'price': price};
+  }
+}
+
+class CreatorWallUnlockedEvent extends AnalyticsEvent {
+  const CreatorWallUnlockedEvent({required this.price, required this.outcome});
+
+  final int price;
+  final String outcome;
+
+  @override
+  String get eventName => 'creator_wall_unlocked';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'price': price, 'outcome': outcome};
+  }
+}
+
 class DrawTicketBoughtEvent extends AnalyticsEvent {
   const DrawTicketBoughtEvent({required this.weekKey, required this.tickets});
 

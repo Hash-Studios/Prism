@@ -38,6 +38,7 @@ Map<String, Object?> encodeFeedItem(FeedItemEntity item) => item.when(
       if (wall.variantIndex != null) 'variantIndex': wall.variantIndex,
       if (wall.editorsChoiceAt != null) 'editorsChoiceAt': wall.editorsChoiceAt!.toUtc().toIso8601String(),
       if (wall.byStudio) 'byStudio': true,
+      if (wall.creatorPrice > 0) 'creatorPrice': wall.creatorPrice,
     },
   },
   wallhaven: (id, wall) => <String, Object?>{
@@ -124,6 +125,7 @@ FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
             'streakShopCoinCost',
             'remixCount',
             'variantIndex',
+            'creatorPrice',
           ]) ||
           !validBools(wallpaper, const <String>['review', 'isStreakExclusive', 'isAiGenerated', 'byStudio']) ||
           !validMaps(wallpaper, const <String>['aiMetadata', 'spatial', 'live', 'desktop', 'aiSource'])) {
@@ -175,6 +177,7 @@ FeedItemEntity? decodeFeedItem(Map<String, dynamic> map) {
               ? DateTime.tryParse(wallpaper['editorsChoiceAt'] as String)
               : null,
           byStudio: wallpaper['byStudio'] == true,
+          creatorPrice: integer(wallpaper['creatorPrice']) ?? 0,
         ),
       );
     case 'wallhaven':

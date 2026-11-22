@@ -88,6 +88,8 @@ export interface EconomyConfig {
     foundersUntil: string;
     /** Until then a client without `pricingVersion: 2` pays the legacy prices. */
     legacyPricingUntil: string;
+    /** Server switch for creator premium walls. See docs/features/creator-premium-walls.md. */
+    creatorWallsEnabled: boolean;
   };
   /** Per shop item price overrides, keyed by item id. */
   shopPrices: Record<string, number>;
@@ -95,6 +97,8 @@ export interface EconomyConfig {
   events: CoinEvent[];
   weeklyEvent: WeeklyCoinEvent | null;
   creatorFund: CreatorFundConfig;
+  /** The prices a creator may put on a wall. */
+  creatorWalls: {prices: number[]};
   /** Consumable coin packs sold through RevenueCat. See docs/features/coin-packs.md. */
   coinPacks: CoinPackDef[];
 }
@@ -213,6 +217,7 @@ export const DEFAULT_ECONOMY: EconomyConfig = {
     dropsEnabled: true,
     foundersUntil: "2026-11-30T00:00:00Z",
     legacyPricingUntil: "2027-01-31T00:00:00Z",
+    creatorWallsEnabled: false,
   },
   shopPrices: {},
   events: [],
@@ -226,6 +231,7 @@ export const DEFAULT_ECONOMY: EconomyConfig = {
     minPayout: 5,
     excludedUids: [],
   },
+  creatorWalls: {prices: [20, 40, 75]},
   coinPacks: [
     {productId: "prism_coins_100", coins: 100, bonusPercent: 0},
     {productId: "prism_coins_300", coins: 330, bonusPercent: 10},
@@ -336,6 +342,17 @@ function parseCreatorFund(raw: CreatorFundConfig): CreatorFundConfig {
   };
 }
 
+const MIN_CREATOR_WALL_PRICE = 10;
+// 715 pays the creator 500 coins, the full daily creator cap. A higher price could never sell.
+const MAX_CREATOR_WALL_PRICE = 715;
+
+/** 1 to 6 distinct integer prices from 10 to 715, sorted. Anything else falls back to the default list. */
+function parseCreatorWallPrices(raw: unknown[]): number[] {
+  const valid = raw.length >= 1 && raw.length <= 6 && new Set(raw).size === raw.length &&
+    raw.every((price) => isIntIn(price, MAX_CREATOR_WALL_PRICE) && price >= MIN_CREATOR_WALL_PRICE);
+  return valid ? [...raw as number[]].sort((a, b) => a - b) : [...DEFAULT_ECONOMY.creatorWalls.prices];
+}
+
 const COIN_PACK_PRODUCT_ID = /^[a-z0-9_.]{1,100}$/;
 const MAX_COIN_PACK = 100_000;
 
@@ -396,6 +413,7 @@ export function parseEconomy(raw: unknown): EconomyConfig {
   merged.award = award;
   Object.assign(merged, parseCoinEvents(raw));
   merged.creatorFund = parseCreatorFund(merged.creatorFund);
+  merged.creatorWalls = {prices: parseCreatorWallPrices(merged.creatorWalls.prices)};
   merged.coinPacks = parseCoinPacks(merged.coinPacks);
   merged.proDiscountActions = merged.proDiscountActions.filter((a) => typeof a === "string");
   merged.proBypassActions = merged.proBypassActions.filter((a) => typeof a === "string" && !NEVER_BYPASSED.has(a));

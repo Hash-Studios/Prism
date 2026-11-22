@@ -339,4 +339,25 @@ void main() {
     expect(decoded.wallpaper.isStreakExclusive, isFalse);
     expect(decoded.wallpaper.collections, isNull);
   });
+
+  test('creator price survives a JSON round trip, and a wall without one decodes to 0', () {
+    final priced = FeedItemEntity.prism(
+      id: 'priced',
+      wallpaper: PrismWallpaper(core: _core('priced', WallpaperSource.prism), creatorPrice: 40),
+    );
+    final free = FeedItemEntity.prism(
+      id: 'free',
+      wallpaper: PrismWallpaper(core: _core('free', WallpaperSource.prism)),
+    );
+
+    expect(
+      decodeFeedItem(_viaJson(priced)),
+      isA<PrismFeedItem>().having((decoded) => decoded.wallpaper.creatorPrice, 'creatorPrice', 40),
+    );
+    expect(
+      decodeFeedItem(_viaJson(free)),
+      isA<PrismFeedItem>().having((decoded) => decoded.wallpaper.creatorPrice, 'creatorPrice', 0),
+    );
+    expect(encodeFeedItem(free)['wallpaper'], isNot(contains('creatorPrice')));
+  });
 }

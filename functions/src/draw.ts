@@ -383,6 +383,7 @@ export const settleDraw = onSchedule(
     region: REGION,
     retryCount: 1,
     secrets: [revenueCatSecret],
+    cpu: "gcf_gen1",
   },
   async () => {
     await runSettleDraw(Date.now());

@@ -72,3 +72,15 @@ The bootstrap keeps normal Firebase readiness false to suppress Remote Config, e
 After seed and assertions, run `node tool/creator_stats_qa/capacity.cjs demo-prism` once in a dedicated fresh emulator session. It creates 500 caller walls, measures callable transaction reads and retries, tests a foreign normalized alias and warm withdrawal, fills the global identity census to 20,000 walls, and verifies callable rejection at 20,001. It then measures one full daily batch at 20,000 rows (20,307 total reads and 302 writes, including lease and empty-terminal work), and verifies 100 queued items remain byte-for-byte unchanged with no checkpoints at 20,001. It checks the 15-minute cooldown, removes the overflow row, advances `notBefore` with a local Admin write, and recovers all 100 items. This proves recovery after capacity returns, not a 15-minute wall-clock wait. The script intentionally leaves the demo database over capacity. Stop and restart the dedicated emulators before app screenshots or another capacity run. No production connection or cleanup is part of this tool.
 
 `assert.cjs` also checks authenticated and unauthenticated reads and authenticated writes against all eight private creator-stats collections through REST, including the daily queue and processor state. These requests execute client rules; Admin SDK queries cannot prove that boundary.
+
+## Creator premium walls
+
+The same emulators serve `setWallPrice` and `unlockCreatorWall`. The emulator has no R2, so `bundle/index.cjs` swaps the three stored-upload identity helpers for checks that accept only the seeded `qaSeeded` manifest. Those helpers keep their unit tests. The purchase transaction, caps, ledger and marker code is the real code.
+
+1. Start the emulators and the image server as above, then `QA_IMAGE_HOST=127.0.0.1 node tool/creator_stats_qa/seed.cjs demo-prism`.
+2. `node tool/creator_stats_qa/seed_creator_walls.cjs demo-prism`: Ava (`creator`, 5 coins) owns the protected wall `walls/qa-creator` with no price. Ben (`other`, 100 coins) can buy. Both accounts are 30 days old and the server switch is on.
+3. Creator build (`CREATOR_STATS_EMULATOR_ACCOUNT=creator`): open `prism://share/qa-creator?source=prism`, open the owner menu, Edit details, pick 40. Debug emulator builds show the seller UI without Remote Config.
+4. Fan build (`other`): open the same link, see the 40-coin chip and Unlock, unlock, see Unlocked.
+5. `node tool/creator_stats_qa/assert_creator_walls.cjs demo-prism`: prints both balances and the two ledger docs, then retries with the app's requestId and with a new one. Neither may move a coin.
+
+firebase-tools 15.15 needs the `functionsEmulatorRuntime.js` patch described in `docs/features/creator-tips.md` for any callable that uses `admin.firestore.Timestamp`. Restore the file after the run.

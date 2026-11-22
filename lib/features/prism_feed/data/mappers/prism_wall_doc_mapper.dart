@@ -20,6 +20,10 @@ extension PrismWallDocMapper on PrismWallDocDto {
         : uploadedBy;
 
     final String? cleanTitle = title?.trim();
+    final int? rawCreatorPrice = creatorPrice;
+    final int resolvedCreatorPrice = rawCreatorPrice != null && rawCreatorPrice >= 10 && rawCreatorPrice <= 1000
+        ? rawCreatorPrice
+        : 0;
 
     final List<String> mergedTags = <String>[...tags];
     if (category.isNotEmpty && category.toLowerCase() != 'general') mergedTags.add(category);
@@ -72,6 +76,7 @@ extension PrismWallDocMapper on PrismWallDocDto {
       variantIndex: (variantIndex ?? -1) < 0 ? null : variantIndex,
       editorsChoiceAt: editorsChoiceAt,
       byStudio: byStudio,
+      creatorPrice: resolvedCreatorPrice,
     );
   }
 }

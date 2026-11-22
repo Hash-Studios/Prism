@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import {createHash} from "node:crypto";
 import {onCall, HttpsError, type CallableRequest} from "firebase-functions/v2/https";
 import {coinTransactionDoc, db, int, CALLABLE_REGIONS} from "./common";
+import {creatorPriceOf, unlockGrants, unlockRef} from "./creatorWalls";
 import {loadEconomy, type EconomyConfig} from "./economy";
 import {parseCollectionList} from "./wallEligibility";
 import {ownedThumbnailUrl, signOriginalDelivery, stored, verifyStoredUploadRegistry} from "./ownedAssetDelivery";
@@ -149,7 +150,7 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
         const owned = manifest.data();
         const original = owned?.original;
         const objectId = original?.objectId;
-        if (walls.size !== 1 || wall?.review !== true || wall.originalProtected !== true ||
+        if (walls.size !== 1 || wall?.review !== true || wall.heldForReview === true || wall.originalProtected !== true ||
             typeof objectId !== "string" || !/^[a-f0-9]{64}$/.test(objectId) || wall.originalObjectId !== objectId ||
             owned?.status !== "ready" || (delivery && !desktop && objectId !== delivery.objectId) ||
             !wallSnap.createTime || owned.canonicalPath !== wallSnap.ref.path ||
@@ -163,8 +164,13 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
             wall.thumb_path !== "" || wall.thumb_sha !== "") {
           throw new HttpsError("failed-precondition", "Protected original is unavailable or has changed.");
         }
+        let marker: admin.firestore.DocumentData | undefined;
         try {
-          await Promise.all([verifyStoredUploadRegistry(original, tx), verifyStoredUploadRegistry(owned.thumb, tx)]);
+          const [markerSnap] = await Promise.all([
+            tx.get(unlockRef(uid, wallSnap.id)),
+            Promise.all([verifyStoredUploadRegistry(original, tx), verifyStoredUploadRegistry(owned.thumb, tx)]),
+          ]);
+          marker = markerSnap.data();
         } catch {
           throw new HttpsError("failed-precondition", "Protected original storage identity is unavailable or has changed.");
         }
@@ -187,8 +193,25 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
           throw new HttpsError("failed-precondition", "Original collection classification is invalid.");
         }
         const isPremium = wall.collections.some((entry: string) => premium.includes(entry.trim()));
-        const {basis, cost} = priceOriginal(isPremium, originalAction, data,
-          {...privateData, graceDownloadsUsed: graceUsed}, economy);
+        // A priced creator wall is the creator's or its buyers' only. Pro, the pass and grace never open it.
+        const creatorPrice = creatorPriceOf(wall);
+        const creatorUnlocked = !!wallSnap.createTime && unlockGrants(marker, wall, wallSnap.id,
+          {millis: wallSnap.createTime.toMillis(), nanos: wallSnap.createTime.nanoseconds});
+        let creatorBasis: "owner" | "creator" | null = null;
+        if (creatorPrice > 0) {
+          if (wall.creatorUid === uid) {
+            creatorBasis = "owner";
+          } else if (creatorUnlocked) {
+            creatorBasis = "creator";
+          } else {
+            return {status: "creator_locked" as const, assetId, wallId: wallSnap.id, requiredCoins: creatorPrice,
+              currentBalance};
+          }
+        } else if (creatorUnlocked) {
+          creatorBasis = "creator";
+        }
+        const {basis, cost} = creatorBasis ? {basis: creatorBasis, cost: 0} : priceOriginal(isPremium, originalAction,
+          data, {...privateData, graceDownloadsUsed: graceUsed}, economy);
         if (basis === "grace") graceUsed++;
         checked.push({assetId, originalAction, objectId: grantedObjectId, ...(desktop ? {variant: "desktop" as const} : {}),
           isPremium, basis, cost});
@@ -212,6 +235,8 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
             }) || receipt.requestId !== requestId ||
             receipt.status !== "completed" || receipt.originalAccess !== true || receipt.revoked === true ||
             !Array.isArray(receipt.bases) || receipt.bases.length !== items.length ||
+            receipt.bases.some((saved: unknown, index: number) =>
+              (saved === "creator" || saved === "owner") && saved !== checked[index]?.basis) ||
             (receipt.bases.includes("pro") && data.premium !== true) ||
             (receipt.bases.includes("pass") && int(privateData.passes?.premiumPassUntil) <= Date.now()) ||
             typeof receipt.retryUntil !== "number" || receipt.retryUntil <= Date.now()) {

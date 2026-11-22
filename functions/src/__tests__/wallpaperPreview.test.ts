@@ -214,7 +214,7 @@ test("preview endpoint is available in both app regions with bounded concurrency
   assert.equal(wallpaperPreview.__endpoint.availableMemoryMb, 1024);
 });
 
-test("a served preview may be kept by the device for a year but never by a shared cache", async (t) => {
+test("a served preview is not cached after its access policy can change", async (t) => {
   const {url} = await setup(t);
   const headers: Record<string, string> = {};
   let body: Buffer | undefined;
@@ -236,7 +236,7 @@ test("a served preview may be kept by the device for a year but never by a share
   };
   await wallpaperPreview({method: "GET", query: {id: "asset", thumb: url}} as unknown as
     Parameters<typeof wallpaperPreview>[0], response as unknown as Parameters<typeof wallpaperPreview>[1]);
-  assert.equal(headers["Cache-Control"], "private, max-age=31536000, immutable");
+  assert.equal(headers["Cache-Control"], "no-store");
   assert.ok(body && body.length > 0);
 });
 
@@ -267,4 +267,11 @@ test("HTTP rejects unsupported methods and query shapes without cacheable errors
     assert.equal(status, expected);
     assert.equal(headers["Cache-Control"], "no-store");
   }
+});
+
+test("a priced creator wall is never previewed, even when its original is approved and protected", async (t) => {
+  const {store, url, get} = await setup(t);
+  store.set("walls/document", {...store.get("walls/document"), creatorPrice: 40});
+  await assert.rejects(loadWallpaperPreview("asset", url), {message: "Preview unavailable"});
+  assert.equal(get.mock.callCount(), 0);
 });

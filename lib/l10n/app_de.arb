@@ -15165,6 +15165,117 @@
   "coreCoinCreatorFund": "Creator-Fonds",
   "notifPushCreatorFundPaidTitle": "{coins, plural, =1{Du hast 1 Coin aus dem Creator-Fonds verdient} other{Du hast {coins} Coins aus dem Creator-Fonds verdient}}",
   "notifPushCreatorFundPaidBody": "Sieh deinen Anteil in deinen Creator-Statistiken.",
+  "creatorWallPriceTitle": "Diesen Wall verkaufen",
+  "creatorWallPriceHelp": "Käufer zahlen einmal und behalten das Original in voller Qualität. Du bekommst 70 % der Coins.",
+  "creatorWallPriceFree": "Kostenlos",
+  "creatorWallPriceOption": "{price} Coins",
+  "@creatorWallPriceOption": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallPriceSaved": "Preis gespeichert",
+  "creatorWallPriceRemoved": "Dieser Wall ist jetzt kostenlos",
+  "creatorWallPriceFailed": "Der Preis konnte nicht gespeichert werden. Versuch es noch einmal.",
+  "creatorWallPriceIneligible": "Du kannst Walls verkaufen, wenn deine E-Mail bestätigt ist, dein Konto 7 Tage alt ist und du einen genehmigten Wall hast.",
+  "creatorWallPriceNotOriginal": "Nur deine eigenen Originale können verkauft werden.",
+  "creatorWallChipSemantics": "Premium-Wall, {price, plural, =1{1 Coin} other{{price} Coins}}",
+  "@creatorWallChipSemantics": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallUnlockTitle": "Diesen Wall freischalten",
+  "creatorWallUnlockMessage": "Hol dir das Original in voller Qualität. Es gehört dir für immer, auf jedem Gerät. {creatorName} bekommt 70 % der Coins.",
+  "@creatorWallUnlockMessage": {
+    "placeholders": {
+      "creatorName": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorWallUnlockButton": "Freischalten für {price, plural, =1{1 Coin} other{{price} Coins}}",
+  "@creatorWallUnlockButton": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallBalance": "Dein Guthaben: {balance, plural, =1{1 Coin} other{{balance} Coins}}",
+  "@creatorWallBalance": {
+    "placeholders": {
+      "balance": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallShortBy": "Dir fehlen {amount, plural, =1{1 Coin} other{{amount} Coins}}.",
+  "@creatorWallShortBy": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallGetCoins": "Coins holen",
+  "creatorWallUnlockedTitle": "Freigeschaltet",
+  "creatorWallUnlockedMessage": "Das Original gehört dir. Du kannst es jederzeit herunterladen oder festlegen.",
+  "creatorWallUnlockedBadge": "Freigeschaltet",
+  "creatorWallDone": "Fertig",
+  "creatorWallPriceChanged": "Der Preis wurde auf {price, plural, =1{1 Coin} other{{price} Coins}} geändert. Prüfe ihn und versuch es noch einmal.",
+  "@creatorWallPriceChanged": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallDailyLimit": "Du hast dein Tageslimit für Freischaltungen erreicht. Versuch es morgen noch einmal.",
+  "creatorWallPairLimit": "Du hast heute 3 Walls von {creatorName} freigeschaltet. Versuch es morgen noch einmal.",
+  "@creatorWallPairLimit": {
+    "placeholders": {
+      "creatorName": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorWallCreatorLimit": "{creatorName} hat das heutige Verkaufslimit erreicht. Versuch es morgen noch einmal.",
+  "@creatorWallCreatorLimit": {
+    "placeholders": {
+      "creatorName": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorWallBuyerTooNew": "Dein Konto muss 7 Tage alt sein, um Walls freizuschalten.",
+  "creatorWallBuyerIneligible": "Bestätige deine E-Mail, um Walls freizuschalten.",
+  "creatorWallUnavailable": "Dieser Wall ist gerade nicht zum Verkauf.",
+  "creatorWallUnlockFailed": "Der Wall konnte nicht freigeschaltet werden. Dir wurde nichts berechnet.",
+  "creatorWallNotEnoughCoins": "Nicht genug Coins.",
+  "creatorStatsSalesTitle": "Verkäufe",
+  "creatorStatsSalesUnlocks": "Freischaltungen",
+  "creatorStatsSalesCoins": "Verdiente Coins",
+  "creatorStatsSalesEmpty": "Noch keine Verkäufe. Setze einen Preis für einen deiner Walls, um ihn zu verkaufen.",
+  "creatorStatsSalesWall": "{count, plural, =1{1 Freischaltung} other{{count} Freischaltungen}}, {coins, plural, =1{1 Coin} other{{coins} Coins}}",
+  "@creatorStatsSalesWall": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "coreCoinCreatorWallUnlock": "Creator-Wall",
+  "coreCoinCreatorWallSale": "Wall-Verkauf",
+  "coreCoinCreatorWallRefund": "Erstattung für Creator-Wall",
+  "coreCoinCreatorWallSaleReversal": "Wall-Verkauf rückgängig gemacht",
   "coinPacksTitle": "Münzen holen",
   "coinPacksSubtitle": "Gib Münzen für Downloads, KI-Hintergründe, Drops und Trinkgeld aus.",
   "coinPacksCoins": "{coins} Münzen",

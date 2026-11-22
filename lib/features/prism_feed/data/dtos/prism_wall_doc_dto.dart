@@ -50,6 +50,7 @@ abstract class PrismWallDocDto with _$PrismWallDocDto {
     int? variantIndex,
     @FirestoreDateTimeConverter() DateTime? editorsChoiceAt,
     @FirestoreTrueConverter() @Default(false) bool byStudio,
+    int? creatorPrice,
   }) = _PrismWallDocDto;
 
   factory PrismWallDocDto.fromJson(Map<String, dynamic> json) => _$PrismWallDocDtoFromJson(json);

@@ -70,6 +70,28 @@ class WallMetadataCubit extends Cubit<WallMetadataState> {
     }
   }
 
+  /// Reads the wall's revision again after a write that does not change metadata, such as a price change. Keeps the
+  /// draft and the form. If the metadata changed too, it keeps the old revision so the next save reports the conflict.
+  Future<void> refreshRevision() async {
+    final WallMetadataSnapshot? before = state.snapshot;
+    if (state.busy || before == null) return;
+    try {
+      final WallMetadataSnapshot snapshot = await _actions.load(wallDocId, approved: approved);
+      if (isClosed || state.busy || state.snapshot != before || snapshot.metadata != before.metadata) return;
+      emit(
+        WallMetadataState(
+          status: state.status,
+          snapshot: snapshot,
+          draft: state.draft,
+          failure: state.failure,
+          formVersion: state.formVersion,
+        ),
+      );
+    } catch (_) {
+      // The next save reports the conflict and offers a reload.
+    }
+  }
+
   void change(PendingWallMetadata draft) {
     if (state.busy || state.snapshot == null) return;
     final PendingWallMetadata next = approved

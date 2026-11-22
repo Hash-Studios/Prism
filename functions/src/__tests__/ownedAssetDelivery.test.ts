@@ -364,6 +364,16 @@ test("wall binding accepts matching GitHub receipts and redacts source URLs", as
   assert.equal(store.get("walls/wall")?.wallpaper_thumb,
     `https://images.example.com/previews/${assets[1].objectId}.img`);
   assert.deepEqual(store.get("ownedAssets/wall")?.original, assets[0]);
+
+  store.set("walls/wall", {...store.get("walls/wall"), creatorPrice: 40});
+  store.set("walls/wall2", {...records["walls/wall"], id: "wall2"});
+  await bindOwnedWall("wall2");
+  assert.equal(store.has("ownedAssets/wall2"), false, "a free alias cannot bind an original already priced elsewhere");
+
+  store.set("walls/wall", {...store.get("walls/wall"), creatorPrice: undefined});
+  store.set("walls/wall2", {...records["walls/wall"], id: "wall2", creatorPrice: 40});
+  await bindOwnedWall("wall2");
+  assert.equal(store.has("ownedAssets/wall2"), false, "a priced pending alias cannot bind another wall's original");
 });
 
 test("live rejection preserves exact protected poster incarnation for undo, not a stale archive", async (t) => {

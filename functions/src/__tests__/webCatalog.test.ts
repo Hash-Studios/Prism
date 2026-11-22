@@ -209,6 +209,25 @@ test("syncWebWall preserves the creator identity on a gated wall", async (t) => 
   assert.deepEqual(doc.creator, {username: "sam", name: "Sam K"});
 });
 
+test("pricing a wall reprojects it as gated while keeping the direct thumbnail public", async (t) => {
+  stubDeps(t);
+  const store = installFakeDb(t, {"walls/wall-doc": liveWall(), "profiles/u1": samProfile});
+  await syncWebWall("W1");
+  assert.equal(store.get("webWalls/W1")?.state, "live");
+
+  const before = liveWall();
+  const priced = liveWall({creatorPrice: 40});
+  assert.equal(isCatalogChange(before, priced), true);
+  store.set("walls/wall-doc", priced);
+  await syncWebWall("W1");
+
+  const projected = store.get("webWalls/W1");
+  assert.equal(projected?.state, "gated");
+  assert.equal(projected?.thumb, undefined);
+  assert.equal(projected?.blur, BLUR);
+  assert.equal(store.get("walls/wall-doc")?.wallpaper_thumb, THUMB);
+});
+
 test("syncWebWall may publish derived descriptive copy for gated walls but never their thumbnail", async (t) => {
   stubDeps(t);
   installFakeDb(t, {"walls/d1": liveWall({title: "", tags: [], visionLabels: ["Blue", "Triangle"],

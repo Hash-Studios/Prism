@@ -30,7 +30,7 @@ const DRAW_TICKETS = "drawTickets";
 const BOOSTS = "boosts";
 const DELETED_NAME = "Deleted Account";
 /** Docs keyed by the bare uid. The last two are legacy collections. */
-const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens", "rewardedAdUsers", "creatorTips", COMMENT_RATE,
+const UID_KEYED = ["referralStats", "subscriptionSync", "githubUploadStats", "badgeCheckRate", "users", "tokens", "rewardedAdUsers", "creatorTips", "creatorSales", COMMENT_RATE,
   PHOTO_JOB_DAILY, PHOTO_JOB_CLOSURES];
 /** Docs keyed `<uid>_<day>`. */
 const UID_PREFIX_KEYED = [
@@ -164,6 +164,7 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
   await db.recursiveDelete(userRef.collection("private"));
   await db.recursiveDelete(userRef.collection("history"));
   await db.recursiveDelete(userRef.collection("wallActionReceipts"));
+  await db.recursiveDelete(userRef.collection("creatorWallUnlocks"));
   await db.recursiveDelete(userRef.collection(FOLLOWED_FOLDERS));
   await db.recursiveDelete(db.collection(WRAPPED_COLLECTION).doc(callerUid));
   await db.recursiveDelete(db.collection(PHOTO_SEARCH_RATE).doc(callerUid));
@@ -197,6 +198,8 @@ export const deleteAccount = onCall({region: CALLABLE_REGIONS, cors: true, timeo
     await queueDeleteWhereEqual(COIN_TRANSACTIONS, "userId", callerUid, queue);
     await queueDeleteWhereEqual("tipRateDaily", "senderUid", callerUid, queue);
     await queueDeleteWhereEqual("tipRateDaily", "creatorUid", callerUid, queue);
+    await queueDeleteWhereEqual("creatorWallSaleDaily", "buyerUid", callerUid, queue);
+    await queueDeleteWhereEqual("creatorWallSaleDaily", "creatorUid", callerUid, queue);
     await queueDeleteWhereEqual("rewardedAdSessions", "uid", callerUid, queue);
     await queueDeleteWhereEqual(AI_GENERATIONS, "userId", callerUid, queue);
     await queueDeleteWhereEqual("githubUploadIntents", "uid", callerUid, queue);

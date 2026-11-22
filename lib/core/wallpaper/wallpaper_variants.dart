@@ -34,6 +34,7 @@ final class PrismWallpaper {
     this.variantIndex,
     this.editorsChoiceAt,
     this.byStudio = false,
+    this.creatorPrice = 0,
   });
 
   final WallpaperCore core;
@@ -100,7 +101,13 @@ final class PrismWallpaper {
   /// The server proved on approval that Prism Studio posted the wall. Only the server writes it.
   final bool byStudio;
 
+  /// Coin price the creator put on this wall. 0 means free.
+  final int creatorPrice;
+
   bool isBoostedAt(DateTime now) => boostedUntil?.isAfter(now) ?? false;
+
+  /// True when buyers must unlock this wall: it has a price and its original is protected (no public URL).
+  bool get isCreatorPriced => creatorPrice > 0 && core.fullUrl.isEmpty;
 
   String get id => core.id;
   WallpaperSource get source => core.source;

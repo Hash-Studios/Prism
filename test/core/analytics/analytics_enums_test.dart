@@ -88,6 +88,7 @@ void main() {
         'boost_wall',
         'gift_premium_pass',
         'tip_creator',
+        'creator_wall_unlock',
         'draw_ticket',
         'shop_item',
         'spin_wheel',

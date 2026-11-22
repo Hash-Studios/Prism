@@ -6,7 +6,8 @@ bool isFreeListableWallDoc(Map<String, dynamic> data) {
       data['originalProtected'] != true ||
       data['is_streak_exclusive'] == true ||
       data['dropReserved'] == true ||
-      _isTruthy(data['dropWeek'])) {
+      _isTruthy(data['dropWeek']) ||
+      _creatorPriceOf(data['creatorPrice']) > 0) {
     return false;
   }
   final Object? rawCollections = data['collections'];
@@ -16,3 +17,8 @@ bool isFreeListableWallDoc(Map<String, dynamic> data) {
 }
 
 bool _isTruthy(Object? value) => value != null && value != false && value != '' && value != 0;
+
+int _creatorPriceOf(Object? raw) {
+  if (raw is! num || !raw.isFinite || raw < 10 || raw > 1000 || raw != raw.roundToDouble()) return 0;
+  return raw.toInt();
+}

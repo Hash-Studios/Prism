@@ -2,6 +2,7 @@ import {createHash} from "node:crypto";
 import {logger} from "firebase-functions/v2";
 import {onRequest} from "firebase-functions/v2/https";
 import {CALLABLE_REGIONS, db} from "./common";
+import {creatorPriceOf} from "./creatorWalls";
 import {getOwnedWallDelivery, verifyStoredUpload} from "./ownedAssetDelivery";
 import {R2Storage, r2Secrets} from "./r2Storage";
 import {readyDesktopCompanion} from "./studio/desktop";
@@ -48,7 +49,7 @@ export async function loadWallpaperPreview(id: string, thumbnail: string, varian
   const rows = await db.collection("walls").where("id", "==", id).limit(2).get();
   const wall = rows.docs[0]?.data();
   if (rows.size !== 1 || wall?.review !== true || wall.wallpaper_thumb !== thumbnail ||
-      wall.is_streak_exclusive === true || wall.dropReserved === true || wall.dropWeek) {
+      wall.is_streak_exclusive === true || wall.dropReserved === true || wall.dropWeek || creatorPriceOf(wall) > 0) {
     throw new Error("Preview unavailable");
   }
   if (variant !== "phone") return loadDesktopWebRendition(id, wall, variant, version);
@@ -116,8 +117,9 @@ export const wallpaperPreview = onRequest({region: CALLABLE_REGIONS, secrets: r2
   }
   try {
     const bytes = await loadWallpaperPreview(id, thumb, variant as PreviewVariant, v);
-    // The bytes for one id and thumb never change, but a wall can be withdrawn, so only the device may keep them.
-    res.set("Cache-Control", "private, max-age=31536000, immutable").type("jpeg").send(bytes);
+    // A wall can become priced or be withdrawn after it was free. Do not let clients retain the preview as an
+    // entitlement bypass after the wall's current access policy changes.
+    res.set("Cache-Control", "no-store").type("jpeg").send(bytes);
   } catch {
     // The app keeps its thumbnail when a wall is missing, withheld, or storage is unavailable.
     res.status(404).send("Preview unavailable");

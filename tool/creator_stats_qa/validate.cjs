@@ -14,7 +14,7 @@ for (const file of ['prepare', 'local', 'seed', 'seed_tips', 'seed_fund', 'asser
 const env = {PATH: process.env.PATH, GCLOUD_PROJECT: 'demo-prism', GOOGLE_CLOUD_PROJECT: 'demo-prism'};
 run(['-e', `const assert = require('node:assert/strict');
   const bundle = require('./.runtime/index.cjs');
-  assert.deepEqual(Object.keys(bundle).sort(), ['addComment','deleteComment','getCreatorFundStatus','getCreatorStats','onCreatorStatsDailyWritten','onCreatorStatsFolderCreated','setCommentHidden','submitContentReport','tipCreator']);
+  assert.deepEqual(Object.keys(bundle).sort(), ['addComment','deleteComment','editWallMetadata','getCreatorFundStatus','getCreatorStats','getWallMetadataForEdit','onCreatorStatsDailyWritten','onCreatorStatsFolderCreated','setCommentHidden','setWallPrice','submitContentReport','tipCreator','unlockCreatorWall']);
   const daily = require('./.runtime/lib/creatorStatsDaily.js');
   assert.equal(bundle.onCreatorStatsDailyWritten, daily.onCreatorStatsDailyWritten);
   assert.equal(typeof daily.enqueueCreatorStatsDaily, 'function');

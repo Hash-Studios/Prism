@@ -84,6 +84,7 @@ interface Snap {
 interface FakeRef {
   id: string;
   path: string;
+  parent: {id: string; path: string; parent: FakeRef | null};
   get: () => Promise<Snap>;
   set: (data: Doc, options?: {merge?: boolean}) => Promise<void>;
   create: (data: Doc) => Promise<void>;
@@ -93,6 +94,7 @@ interface FakeRef {
 }
 
 const lost = (code: number) => Object.assign(new Error(`firestore ${code}`), {code});
+const RETRY_TRANSACTION = Symbol("retry transaction");
 
 /**
  * An in-memory Firestore for tests: documents, queries, transactions and the FieldValue helpers that the
@@ -100,7 +102,8 @@ const lost = (code: number) => Object.assign(new Error(`firestore ${code}`), {co
  */
 export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
   observed?: {reads: number; writes: number; outsideReads?: number; outsideWrites?: number; readRounds?: number},
-  options: {failCommits?: number; failCommitAt?: number; createTimes?: Record<string, admin.firestore.Timestamp>} = {}) {
+  options: {failCommits?: number; failCommitAt?: number; retryCommitAt?: number; beforeRetry?: () => void;
+    createTimes?: Record<string, admin.firestore.Timestamp>} = {}) {
   const store = new Map<string, Doc>(Object.entries(seed));
   const incarnations = new Map<string, number>(Object.keys(seed).map((path) => [path, 1]));
   let incarnation = 1;
@@ -159,10 +162,19 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
     else apply();
   };
 
+  function parentOf(path: string): FakeRef["parent"] {
+    const collectionPath = path.slice(0, path.lastIndexOf("/"));
+    const ownerCut = collectionPath.lastIndexOf("/");
+    return {id: collectionPath.slice(ownerCut + 1), path: collectionPath,
+      parent: ownerCut < 0 ? null : ref(collectionPath.slice(0, ownerCut))};
+  }
+
   function ref(path: string): FakeRef {
     return {
       id: path.split("/").pop() as string,
       path,
+      // A plain property, so tests that stub `ref.parent` with Object.assign can still replace it.
+      parent: parentOf(path),
       get: async () => {
         if (!pending || transactionReadDepth === 0) {
           if (observed?.outsideReads !== undefined) observed.outsideReads++;
@@ -218,6 +230,13 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
           field === "__name__" ? (state.group ? d.ref.path : d.id) :
             comparable(fieldValue(d.data() as Doc, field as string)) as never;
         docs = docs.sort((x, y) => (key(x) < key(y) ? -1 : key(x) > key(y) ? 1 : 0) * (dir === "desc" ? -1 : 1));
+      }
+      if (state.orders.length === 0) {
+        docs = docs.sort((x, y) => {
+          const xKey = state.group ? x.ref.path : x.id;
+          const yKey = state.group ? y.ref.path : y.id;
+          return xKey < yKey ? -1 : xKey > yKey ? 1 : 0;
+        });
       }
       if (state.startAt !== undefined) docs = docs.filter((d) => d.id >= (state.startAt as string));
       const startAfter = state.startAfter;
@@ -320,7 +339,16 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
   // The fake keeps one write buffer, so transactions run one at a time, like a Firestore with full contention.
   let turn: Promise<unknown> = Promise.resolve();
   t.mock.method(db, "runTransaction", (callback: (tx: unknown) => Promise<unknown>) => {
-    const run = turn.then(() => transaction(callback));
+    const run = turn.then(async () => {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          return await transaction(callback);
+        } catch (error) {
+          if (error !== RETRY_TRANSACTION) throw error;
+        }
+      }
+      throw new Error("fakeDb: transaction retry limit exceeded");
+    });
     turn = run.catch(() => undefined);
     return run;
   });
@@ -383,6 +411,11 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
       const result = await callback(tx);
       if (failure) throw failure;
       commitAttempts++;
+      if (commitAttempts === options.retryCommitAt) {
+        options.retryCommitAt = undefined;
+        options.beforeRetry?.();
+        throw RETRY_TRANSACTION;
+      }
       if (commitAttempts === options.failCommitAt) throw new Error("injected transaction commit failure");
       const failuresLeft = options.failCommits ?? 0;
       if (failuresLeft > 0) {

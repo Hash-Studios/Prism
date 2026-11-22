@@ -42,6 +42,7 @@ class _FailingUploadDraftStore extends UploadDraftStore {
     required File selectedFile,
     required SubmissionMetadata metadata,
     UploadSession? session,
+    int creatorPrice = 0,
   }) async => throw StateError('disk full');
 }
 
@@ -64,7 +65,15 @@ class _RecordingDraftStore extends UploadDraftStore {
     required File selectedFile,
     required SubmissionMetadata metadata,
     UploadSession? session,
-  }) async => UploadDraft(owner: owner, draftId: draftId, file: selectedFile, metadata: metadata, session: session);
+    int creatorPrice = 0,
+  }) async => UploadDraft(
+    owner: owner,
+    draftId: draftId,
+    file: selectedFile,
+    metadata: metadata,
+    session: session,
+    creatorPrice: creatorPrice,
+  );
 }
 
 class _SessionDraftStore extends UploadDraftStore {
@@ -81,6 +90,7 @@ class _SessionDraftStore extends UploadDraftStore {
     required File selectedFile,
     required SubmissionMetadata metadata,
     UploadSession? session,
+    int creatorPrice = 0,
   }) async {
     if (session != null) sessions.add(session);
     return saved = UploadDraft(
@@ -89,6 +99,7 @@ class _SessionDraftStore extends UploadDraftStore {
       file: selectedFile,
       metadata: metadata,
       session: session,
+      creatorPrice: creatorPrice,
     );
   }
 

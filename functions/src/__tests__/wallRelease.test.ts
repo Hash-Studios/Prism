@@ -86,11 +86,31 @@ test("a scheduled wall past its release time is published with a pending notice"
   assert.ok(wall?.publishedAt instanceof admin.firestore.Timestamp);
 });
 
+test("scheduled release keeps a priced wall hidden until its original is privately protected", async (t) => {
+  const {store} = harness(t, {"walls/w1": scheduled(A, NOW - MIN, {creatorPrice: 40})});
+  assert.deepEqual(await releaseDueWalls(NOW), {released: 0, creators: 1});
+  assert.equal(store.get("walls/w1")?.review, false);
+  assert.equal(store.get("walls/w1")?.publishedAt, undefined);
+
+  store.set("walls/w1", {...store.get("walls/w1"), originalProtected: true,
+    originalObjectId: "a".repeat(64), wallpaper_url: "", wallpaper_thumb: "https://img.example.com/thumb.img",
+    wallpaper_path: "", wallpaper_sha: "", thumb_path: "", thumb_sha: ""});
+  assert.deepEqual(await releaseDueWalls(NOW), {released: 1, creators: 1});
+  assert.equal(store.get("walls/w1")?.review, true);
+});
+
 test("a scheduled wall assigned to a Drop stays hidden after its release time", async (t) => {
   const {store} = harness(t, {"walls/w1": scheduled(A, NOW - MIN, {dropReserved: false, dropWeek: "2026-W46"})});
   assert.deepEqual(await releaseDueWalls(NOW), {released: 0, creators: 1});
   assert.equal(store.get("walls/w1")?.review, false);
   assert.equal(store.get("walls/w1")?.dropReserved, false);
+});
+
+test("a scheduled wall held for review stays hidden after its release time", async (t) => {
+  const {store} = harness(t, {"walls/w1": scheduled(A, NOW - MIN, {heldForReview: true})});
+  assert.deepEqual(await releaseDueWalls(NOW), {released: 0, creators: 1});
+  assert.equal(store.get("walls/w1")?.review, false);
+  assert.equal(store.get("walls/w1")?.publishedAt, undefined);
 });
 
 test("a reserved Drop candidate without a week is not released", async (t) => {

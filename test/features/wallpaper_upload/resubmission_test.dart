@@ -61,7 +61,15 @@ class _DraftStore extends UploadDraftStore {
     required File selectedFile,
     required SubmissionMetadata metadata,
     UploadSession? session,
-  }) async => UploadDraft(owner: owner, draftId: draftId, file: selectedFile, metadata: metadata, session: session);
+    int creatorPrice = 0,
+  }) async => UploadDraft(
+    owner: owner,
+    draftId: draftId,
+    file: selectedFile,
+    metadata: metadata,
+    session: session,
+    creatorPrice: creatorPrice,
+  );
 
   @override
   Future<void> discard({required String owner, required String draftId}) async {}

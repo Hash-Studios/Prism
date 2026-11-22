@@ -1,5 +1,10 @@
+import 'dart:async';
+
+import 'package:Prism/analytics/analytics_service.dart';
+import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/creator_walls/creator_walls.dart';
 import 'package:Prism/features/wallpaper_upload/biz/bloc/wall_metadata_cubit.dart';
 import 'package:Prism/features/wallpaper_upload/biz/submission_metadata.dart';
 import 'package:Prism/features/wallpaper_upload/data/repositories/wall_metadata_repository.dart';
@@ -14,11 +19,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// The shared submitted-wall editor. The selected authority never changes after a failed save.
 /// Returns the canonical saved metadata, or null when cancelled.
 class WallMetadataEditor extends StatefulWidget {
-  const WallMetadataEditor({super.key, required this.wall, required this.approved, this.cubit});
+  const WallMetadataEditor({super.key, required this.wall, required this.approved, this.cubit, this.creatorPrices});
 
   final FirestoreDocument wall;
   final bool approved;
   final WallMetadataCubit? cubit;
+
+  /// Test seam for the price calls. The app uses [CreatorWallPrices.instance].
+  @visibleForTesting
+  final CreatorWallPrices? creatorPrices;
 
   @override
   State<WallMetadataEditor> createState() => _WallMetadataEditorState();
@@ -36,6 +45,9 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
   int _formVersion = -1;
   bool _leaving = false;
   bool _confirming = false;
+  bool _priceChanged = false;
+  late int _creatorPrice = _creatorPriceOf(widget.wall);
+  bool _pricing = false;
 
   @override
   void initState() {
@@ -51,8 +63,51 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
 
   bool _flush() => _formKey.currentState?.flush() ?? true;
 
+  /// Saves a price at once, apart from the metadata save. The new value stays on success and goes back on failure.
+  Future<void> _setCreatorPrice(int price) async {
+    if (_pricing) return;
+    final AppLocalizations l10n = context.l10n;
+    final int previous = _creatorPrice;
+    setState(() {
+      _creatorPrice = price;
+      _pricing = true;
+    });
+    final CreatorWallPrices service = widget.creatorPrices ?? CreatorWallPrices.instance;
+    WallPriceOutcome outcome = await service.setPrice(wallDocId: widget.wall.id, price: price);
+    if (outcome == WallPriceOutcome.failed && await service.storedPrice(widget.wall.id) == price) {
+      // The reply was lost after the server saved the price.
+      outcome = price == 0 ? WallPriceOutcome.removed : WallPriceOutcome.saved;
+    }
+    if (outcome == WallPriceOutcome.saved || outcome == WallPriceOutcome.removed) {
+      _priceChanged = true;
+      unawaited(analytics.track(CreatorWallPriceSetEvent(price: price, source: 'edit')));
+    }
+    if (outcome != WallPriceOutcome.ineligible && outcome != WallPriceOutcome.notOriginal) {
+      // A price write moves the wall's revision. A failed call may still have committed. Pick up the revision so the
+      // next metadata save does not conflict.
+      await _cubit.refreshRevision();
+    }
+    if (!mounted) return;
+    setState(() {
+      _pricing = false;
+      if (outcome != WallPriceOutcome.saved && outcome != WallPriceOutcome.removed) _creatorPrice = previous;
+    });
+    switch (outcome) {
+      case WallPriceOutcome.saved:
+        toasts.success(l10n.creatorWallPriceSaved);
+      case WallPriceOutcome.removed:
+        toasts.success(l10n.creatorWallPriceRemoved);
+      case WallPriceOutcome.ineligible:
+        toasts.info(l10n.creatorWallPriceIneligible);
+      case WallPriceOutcome.notOriginal:
+        toasts.info(l10n.creatorWallPriceNotOriginal);
+      case WallPriceOutcome.disabled || WallPriceOutcome.failed:
+        toasts.error(l10n.creatorWallPriceFailed);
+    }
+  }
+
   Future<void> _leave() async {
-    if (_cubit.state.busy || _confirming || _leaving) return;
+    if (_cubit.state.busy || _confirming || _leaving || _pricing) return;
     _flush();
     if (_cubit.state.dirty) {
       _confirming = true;
@@ -72,12 +127,12 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
   void _pop([WallMetadataSnapshot? result]) {
     setState(() => _leaving = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) Navigator.of(context).pop(result);
+      if (mounted) Navigator.of(context).pop(result ?? (_priceChanged ? _cubit.state.snapshot : null));
     });
   }
 
   Future<void> _reload() async {
-    if (_cubit.state.busy || _confirming) return;
+    if (_cubit.state.busy || _confirming || _pricing) return;
     _flush();
     if (_cubit.state.dirty) {
       _confirming = true;
@@ -88,13 +143,13 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
         confirmLabel: context.l10n.wallMetadataReload,
       );
       _confirming = false;
-      if (!reload || !mounted) return;
+      if (!reload || !mounted || _pricing) return;
     }
     await _cubit.load();
   }
 
   void _save() {
-    if (_cubit.state.busy || _cubit.state.needsReload) return;
+    if (_cubit.state.busy || _cubit.state.needsReload || _pricing) return;
     if (!_flush()) return;
     FocusScope.of(context).unfocus();
     if (!_cubit.state.dirty) {
@@ -172,6 +227,21 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
                         ),
                       ),
                     ),
+                    if (CreatorWallsFlag.sellingEnabled || _creatorPrice > 0) ...<Widget>[
+                      const SizedBox(height: PrismSpace.xl),
+                      // With selling off, the picker only offers Free, so an owner can remove a price.
+                      CreatorPricePicker(
+                        value: _creatorPrice,
+                        prices: CreatorWallsFlag.sellingEnabled ? null : const <int>[],
+                        onChanged: state.busy || _pricing
+                            ? null
+                            : CreatorWallsFlag.sellingEnabled
+                            ? _setCreatorPrice
+                            : (int price) {
+                                if (price == 0) _setCreatorPrice(0);
+                              },
+                      ),
+                    ],
                     if (state.failure != null) ...<Widget>[
                       const SizedBox(height: PrismSpace.lg),
                       Semantics(
@@ -187,7 +257,7 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
                           child: PrismButton(
                             label: context.l10n.wallMetadataReload,
                             variant: PrismButtonVariant.ghost,
-                            onPressed: state.busy ? null : _reload,
+                            onPressed: state.busy || _pricing ? null : _reload,
                           ),
                         ),
                     ],
@@ -199,12 +269,19 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
                   label: context.l10n.wallMetadataSave,
                   loading: state.status == WallMetadataStatus.saving,
                   expand: true,
-                  onPressed: state.busy || state.needsReload ? null : _save,
+                  onPressed: state.busy || state.needsReload || _pricing ? null : _save,
                 ),
         ),
       );
     },
   );
+}
+
+/// The stored `creatorPrice`, when it is a price the server accepts (10 to 1000). Anything else is free.
+int _creatorPriceOf(FirestoreDocument wall) {
+  final Object? raw = wall.data()['creatorPrice'];
+  if (raw is! int) return 0;
+  return raw >= 10 && raw <= 1000 ? raw : 0;
 }
 
 String wallMetadataFailureMessage(AppLocalizations l10n, WallMetadataFailure? failure) => switch (failure) {
