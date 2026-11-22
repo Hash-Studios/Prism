@@ -248,8 +248,8 @@ async function serve() {
 }
 
 /** The viewer with 50 coins, so one 300-coin pack and one 100-coin pack can be checked against exact balances. */
-async function seed() {
-  const {admin, db} = loadDemoRuntime();
+async function seed(overrides = {}) {
+  const {admin, db} = overrides.db ? overrides : loadDemoRuntime();
   try {
     await admin.auth().createUser({uid: VIEWER, email: `${VIEWER}@example.test`, password: 'local-demo-only-password',
       displayName: VIEWER, emailVerified: true});
@@ -264,15 +264,23 @@ async function seed() {
     interestCategories: ['Nature'], onboardingV2: {completed: true}};
   // A balance reset without the purchase history would leave granted receipts behind, so a later refund would take
   // coins the reset already removed. Seed resets both.
+  const previousRcState = overrides.readRcState ? overrides.readRcState() : readJson('rc-state.json', emptyRc());
+  const rcUsers = {...previousRcState.users};
+  delete rcUsers[VIEWER];
+  const rcState = {...previousRcState, users: rcUsers,
+    ledger: previousRcState.ledger.filter((txn) => txn.appUserId !== VIEWER)};
+  if (overrides.writeRcState) overrides.writeRcState(rcState);
+  else writeJson('rc-state.json', rcState);
   const receipts = await db.collection('coinPackReceipts').where('userId', '==', VIEWER).get();
   const rows = await db.collection('coinTransactions').where('userId', '==', VIEWER).get();
   const batch = db.batch();
   for (const doc of receipts.docs) batch.delete(doc.ref);
-  for (const doc of rows.docs) if (doc.id.startsWith('ctx_coinpack_')) batch.delete(doc.ref);
+  for (const doc of rows.docs) {
+    if (doc.id.startsWith('ctx_coinpack_')) batch.delete(doc.ref);
+  }
   batch.delete(db.doc(`coinPackVerifyThrottle/${VIEWER}`));
+  batch.set(db.doc(`usersv2/${VIEWER}`), profile);
   await batch.commit();
-  writeJson('rc-state.json', emptyRc());
-  await db.doc(`usersv2/${VIEWER}`).set(profile);
   await db.doc(`usersv2/${VIEWER}/private/session`).set({postAlerts: false});
   await db.doc(`profiles/${VIEWER}`).set({...profile, followersCount: 0, followingCount: 0});
   await db.doc('usernames/qaviewer').set({uid: VIEWER});
@@ -404,3 +412,5 @@ if (require.main === module) {
   validateCommandArgs(command, process.argv.slice(3));
   Promise.resolve(commands[command]()).catch((error) => { console.error(error.stack); process.exitCode = 1; });
 }
+
+module.exports = {seed};

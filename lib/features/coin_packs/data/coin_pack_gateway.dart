@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/constants/app_functions.dart';
@@ -164,14 +166,14 @@ class RevenueCatCoinPackGateway implements CoinPackGateway {
     return false;
   }
 
-  Future<CoinPackPurchaseResult> _pending(String owner) async {
-    await _refreshBalanceIfCurrent(owner);
+  CoinPackPurchaseResult _pending(String owner) {
+    unawaited(_refreshBalanceIfCurrent(owner));
     return const CoinPackPending();
   }
 
   Future<void> _refreshBalanceIfCurrent(String owner) async {
-    if (_currentUserId().trim() != owner) return;
     try {
+      if (_currentUserId().trim() != owner) return;
       await _refreshBalance();
     } catch (error) {
       logger.w('Balance refresh after a coin pack failed.', tag: 'CoinPacks', error: error);

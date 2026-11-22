@@ -208,6 +208,12 @@ void main() {
 
     expect(find.text(_l10n.coinPacksPending), findsOneWidget);
     expect(find.text(_l10n.coinPacksDone), findsOneWidget);
+
+    await tester.tap(find.text(_l10n.coinPacksDone));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.byType(CoinPacksSheet), findsNothing);
   });
 
   testWidgets('granted purchase shows the new balance', (WidgetTester tester) async {
@@ -255,6 +261,10 @@ void main() {
 
   testWidgets('a screen reader can buy a pack through the row tap action', (WidgetTester tester) async {
     final SemanticsHandle semantics = tester.ensureSemantics();
+    bool semanticsDisposed = false;
+    addTearDown(() {
+      if (!semanticsDisposed) semantics.dispose();
+    });
     final _FakeGateway gateway = _FakeGateway();
     await _pumpSheet(tester, gateway);
 
@@ -262,11 +272,14 @@ void main() {
     await tester.pump();
 
     expect(gateway.buyCalls, 1);
-    final SemanticsData busyRow = tester
-        .getSemantics(find.byKey(const ValueKey<String>('coin-pack-prism_coins_100')))
-        .getSemanticsData();
-    expect(busyRow.hasAction(SemanticsAction.tap), isFalse);
+    for (final CoinPack pack in _packs) {
+      final SemanticsData row = tester
+          .getSemantics(find.byKey(ValueKey<String>('coin-pack-${pack.productId}')))
+          .getSemanticsData();
+      expect(row.hasAction(SemanticsAction.tap), isFalse, reason: '${pack.productId} must be disabled while buying');
+    }
     semantics.dispose();
+    semanticsDisposed = true;
   });
 
   testWidgets('a second tap while purchasing does not start another buy', (WidgetTester tester) async {

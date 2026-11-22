@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:Prism/core/coins/economy_config.dart';
@@ -189,20 +190,34 @@ void main() {
       expect(balanceCalls, 1);
     });
 
-    test('a store problem may follow a charge, so it stays pending and never verifies', () async {
+    test('a store problem resolves pending before its balance refresh completes', () async {
       int verifyCalls = 0;
+      int balanceCalls = 0;
+      final Completer<int> balanceRefresh = Completer<int>();
       final RevenueCatCoinPackGateway gateway = _gateway(
         purchase: _storeFails(PurchasesErrorCode.storeProblemError),
         verify: (String transactionId) async {
           verifyCalls++;
           return _reply('granted');
         },
+        refreshBalance: () {
+          balanceCalls++;
+          return balanceRefresh.future;
+        },
       );
 
-      final CoinPackPurchaseResult result = await gateway.buy(_pack());
+      final Future<CoinPackPurchaseResult> purchase = gateway.buy(_pack());
+      bool purchaseCompletedBeforeRefresh = false;
+      purchase.then((_) => purchaseCompletedBeforeRefresh = true);
+      await Future<void>.delayed(Duration.zero);
+      final bool settledBeforeRefresh = purchaseCompletedBeforeRefresh;
+      balanceRefresh.complete(400);
+      final CoinPackPurchaseResult result = await purchase;
 
       expect(result, isA<CoinPackPending>());
+      expect(settledBeforeRefresh, isTrue);
       expect(verifyCalls, 0);
+      expect(balanceCalls, 1);
     });
 
     test('another store error is CoinPackFailed and never verifies', () async {
