@@ -234,18 +234,21 @@ class AiGenerationRepositoryImpl {
       if (error.code != 'permission-denied') rethrow;
     }
     if (stored != null || !_isCurrentGeneration(record.userId, generation)) return;
-    // Null fields stay out, so this merge never clears a field that a submission saved in the meantime, such as
-    // submittedWallId. Local history is not written: a stale copy there could hide a newer submission too.
+    // The fields a submission sets, and null fields, stay out, so this merge never undoes a submission saved in the
+    // meantime. Local history is not written: a stale copy there could hide a newer submission too.
     await firestoreClient
         .setDoc(
           FirebaseCollections.aiGenerations,
           record.reportTargetFirestoreDocId,
-          record.toJson()..removeWhere((String _, Object? value) => value == null),
+          record.toJson()..removeWhere((String key, Object? value) => value == null || _submissionFields.contains(key)),
           merge: true,
           sourceTag: 'ai.history.report_target',
         )
         .timeout(_requestTimeout);
   }
+
+  /// The fields a community submission sets after the record is saved.
+  static const Set<String> _submissionFields = <String>{'status', 'submittedWallId', 'submittedAt'};
 
   Future<void> _saveHistoryRecord(AiGenerationRecord record, int generation) async {
     await _serializeOwnerWrite(record.userId, generation, () async {

@@ -256,13 +256,15 @@ void main() {
 
     final Future<void> ensure = repository.ensureHistoryRecordSaved(stale);
     await Future<void>.delayed(Duration.zero);
-    await repository.saveHistoryRecord(stale.copyWith(submittedWallId: 'wall-1'));
+    await repository.saveHistoryRecord(stale.copyWith(submittedWallId: 'wall-1', status: 'submitted'));
     firestore.gate.complete();
     await ensure;
 
     expect(firestore.docs['aiGenerations']!['gen']!['submittedWallId'], 'wall-1');
+    expect(firestore.docs['aiGenerations']!['gen']!['status'], 'submitted');
     final List<AiGenerationRecord> local = await repository.fetchLocalHistory(userId: 'user-1');
     expect(local.single.submittedWallId, 'wall-1');
+    expect(local.single.status, 'submitted');
   });
 
   test('ai_report_target skips the save when the owner clears during the existence read', () async {
