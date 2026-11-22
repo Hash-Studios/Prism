@@ -49,6 +49,7 @@ RevenueCatCoinPackGateway _gateway({
   Future<int> Function()? refreshBalance,
   String Function()? currentUserId,
   Future<bool> Function(String owner)? purchaseIdentityMatches,
+  List<CoinPackDef> Function()? configPacks,
 }) => RevenueCatCoinPackGateway(
   getOfferings: getOfferings ?? () async => _offerings(_storePackages),
   purchase: purchase ?? _storeSucceeds,
@@ -56,7 +57,7 @@ RevenueCatCoinPackGateway _gateway({
   refreshBalance: refreshBalance ?? () async => 400,
   currentUserId: currentUserId ?? () => 'u',
   purchaseIdentityMatches: purchaseIdentityMatches,
-  configPacks: () => _configPacks,
+  configPacks: configPacks ?? () => _configPacks,
   retryDelays: _noWait,
 );
 
@@ -457,6 +458,46 @@ void main() {
       final CoinPackPurchaseResult result = await gateway.buy(packs[1]);
 
       expect(result, isA<CoinPackFailed>());
+      expect(purchaseCalls, 0);
+    });
+
+    test('removed pack is not purchased from a stale loaded offering', () async {
+      List<CoinPackDef> config = _configPacks;
+      int purchaseCalls = 0;
+      final RevenueCatCoinPackGateway gateway = _gateway(
+        configPacks: () => config,
+        purchase: (Package package) async {
+          purchaseCalls++;
+          return 'txn_1';
+        },
+        verify: _neverVerify,
+      );
+      final List<CoinPack> packs = await gateway.loadPacks();
+      config = <CoinPackDef>[config.first];
+
+      final CoinPackPurchaseResult result = await gateway.buy(packs[1]);
+
+      expect(result, isA<CoinPackFailed>().having((CoinPackFailed r) => r.reason, 'reason', 'offer_changed'));
+      expect(purchaseCalls, 0);
+    });
+
+    test('changed pack amount is not purchased from a stale loaded offering', () async {
+      List<CoinPackDef> config = _configPacks;
+      int purchaseCalls = 0;
+      final RevenueCatCoinPackGateway gateway = _gateway(
+        configPacks: () => config,
+        purchase: (Package package) async {
+          purchaseCalls++;
+          return 'txn_1';
+        },
+        verify: _neverVerify,
+      );
+      final List<CoinPack> packs = await gateway.loadPacks();
+      config = <CoinPackDef>[...config.take(1), const CoinPackDef(productId: 'prism_coins_300', coins: 500)];
+
+      final CoinPackPurchaseResult result = await gateway.buy(packs[1]);
+
+      expect(result, isA<CoinPackFailed>().having((CoinPackFailed r) => r.reason, 'reason', 'offer_changed'));
       expect(purchaseCalls, 0);
     });
 

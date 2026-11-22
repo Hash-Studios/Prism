@@ -114,6 +114,7 @@ class RevenueCatCoinPackGateway implements CoinPackGateway {
     if (owner.isEmpty || (_loadedOwner != null && owner != _loadedOwner)) {
       return const CoinPackFailed('account_changed');
     }
+    if (!_matchesCurrentConfig(pack)) return const CoinPackFailed('offer_changed');
     try {
       if (_purchaseIdentityMatches != null) {
         final bool identityMatches = await _purchaseIdentityMatches(owner);
@@ -125,6 +126,7 @@ class RevenueCatCoinPackGateway implements CoinPackGateway {
       logger.w('Coin pack purchase identity could not be confirmed.', tag: 'CoinPacks', error: error);
       return const CoinPackFailed('purchase_identity_unavailable');
     }
+    if (!_matchesCurrentConfig(pack)) return const CoinPackFailed('offer_changed');
     final String transactionId;
     try {
       transactionId = await _purchase(package);
@@ -149,6 +151,15 @@ class RevenueCatCoinPackGateway implements CoinPackGateway {
       return _currentUserId().trim() == owner ? result : const CoinPackPending();
     }
     return result;
+  }
+
+  bool _matchesCurrentConfig(CoinPack pack) {
+    for (final CoinPackDef current in _configPacks()) {
+      if (current.productId == pack.productId) {
+        return current.coins == pack.coins && current.bonusPercent == pack.bonusPercent;
+      }
+    }
+    return false;
   }
 
   Future<CoinPackPurchaseResult> _pending(String owner) async {

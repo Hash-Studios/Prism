@@ -38,6 +38,7 @@ final List<CoinPack> _packs = <CoinPack>[
 class _FakeGateway implements CoinPackGateway {
   _FakeGateway({this.failLoads = 0});
 
+  List<CoinPack> availablePacks = _packs;
   int failLoads;
   int loadCalls = 0;
   int buyCalls = 0;
@@ -50,7 +51,7 @@ class _FakeGateway implements CoinPackGateway {
       failLoads--;
       throw const CoinPackLoadException('offline');
     }
-    return _packs;
+    return availablePacks;
   }
 
   @override
@@ -220,6 +221,21 @@ void main() {
     expect(find.text(_l10n.coinPacksSuccess(330, 380)), findsOneWidget);
     expect(find.text(_l10n.coinPacksDone), findsOneWidget);
     expect(find.text(r'$2.99'), findsNothing);
+  });
+
+  testWidgets('a changed offer reloads the remaining packs without buying again', (tester) async {
+    final gateway = _FakeGateway();
+    await _pumpSheet(tester, gateway);
+    await _tapPack(tester, 'prism_coins_100');
+
+    gateway.availablePacks = [_packs[1]];
+    gateway.finish(const CoinPackFailed('offer_changed'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.text(r'$0.99'), findsNothing);
+    expect(_rowEnabled(tester, 'prism_coins_300'), isTrue);
+    expect(gateway.buyCalls, 1);
   });
 
   testWidgets('failed purchase shows the failure under the list', (WidgetTester tester) async {

@@ -122,6 +122,10 @@ class _CoinPacksSheetState extends State<CoinPacksSheet> {
       analytics.track(CoinPackPurchasedEvent(pack: pack.productId, outcome: _outcomeOf(result), source: source));
     }
     if (!mounted) return;
+    if (result case CoinPackFailed(reason: 'offer_changed')) {
+      _retry();
+      return;
+    }
     setState(() {
       _phase = switch (result) {
         final CoinPackGranted granted => _Granted(granted),
