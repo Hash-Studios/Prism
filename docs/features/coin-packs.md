@@ -145,5 +145,6 @@ Do these in order. Nothing here is done by the PR.
 ## How to test
 
 1. `cd functions && npm run build && node --test lib/__tests__/coinPacks.test.js`
-2. `fvm flutter test test/features/coin_packs/`
-3. Manual: iOS Simulator with `ios/Runner/PrismCoins.storekit`, functions on the local emulator with `COIN_PACKS_ALLOW_SANDBOX=true`.
+2. `fvm flutter test test/features/coin_packs/ test/core/coins/economy_config_coin_packs_test.dart`
+3. Local QA (no real store, no real RevenueCat): `node tool/coin_packs_qa.cjs` runs the real `verifyCoinPurchase` and `revenueCatWebhook` in the Functions emulator. A relay on `https://localhost:19375` plays RevenueCat's REST API, and the app's local QA build replaces only the StoreKit step (`lib/core/debug/local_qa_coin_packs.dart`). Commands: `prepare`, `serve`, `emulators`, `seed`, `build-ios`, `run-ios <udid>`, `hold-on`, `hold-off`, `cancel-next`, `webhook <tx>`, `webhook-bad <tx>`, `refund <tx>`, `verify <tx>`, `ledger`.
+4. Real store, from Xcode: `ios/Runner/PrismCoins.storekit` lists the 4 consumables. Select it in the Runner scheme (Run, Options, StoreKit Configuration) and run from Xcode; `flutter run` does not apply a StoreKit file. RevenueCat accepts these local transactions only after you upload the StoreKit test certificate in the RevenueCat dashboard.
