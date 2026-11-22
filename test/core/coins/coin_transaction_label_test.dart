@@ -71,6 +71,11 @@ void main() {
     expect(_label(_tx('streakBonus')), 'Week bonus');
   });
 
+  test('coin pack purchases and refunds have their own labels', () {
+    expect(_label(_tx('coinPack')), 'Coin pack');
+    expect(_label(_tx('coinPackRefund')), 'Coin pack refund');
+  });
+
   test('shop purchases show the item name', () {
     expect(_label(_tx('shopItem', description: 'Aurora frame')), 'Aurora frame');
   });

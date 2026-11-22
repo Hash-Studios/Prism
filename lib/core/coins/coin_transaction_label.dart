@@ -64,6 +64,8 @@ String? _actionLabel(String action, AppLocalizations l10n) => switch (action) {
   'tipReceived' => l10n.coreCoinTipReceived,
   'creatorFund' => l10n.coreCoinCreatorFund,
   'drawTicket' => l10n.coreCoinDrawTicket,
+  'coinPack' => l10n.coreCoinCoinPack,
+  'coinPackRefund' => l10n.coreCoinCoinPackRefund,
   _ => null,
 };
 

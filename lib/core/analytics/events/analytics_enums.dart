@@ -99,6 +99,15 @@ enum CommentRoleValue {
   String get wireValue => _snakeCase(name);
 }
 
+enum CoinPackOutcomeValue {
+  granted,
+  pending,
+  cancelled,
+  failed;
+
+  String get wireValue => _snakeCase(name);
+}
+
 enum BinaryResultValue {
   success,
   failure;
