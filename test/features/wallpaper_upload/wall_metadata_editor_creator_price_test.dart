@@ -198,11 +198,37 @@ void main() {
   });
 
   testWidgets('a price call that fails still reads the revision again, since it may have committed', (tester) async {
-    await pump(tester, prices: CreatorWallPrices(call: (_) async => throw Exception('reply lost')));
+    await pump(
+      tester,
+      prices: CreatorWallPrices(
+        call: (_) async => throw Exception('reply lost'),
+        readWall: (_) async => <String, dynamic>{},
+      ),
+    );
     await tester.ensureVisible(find.text('40'));
     await tester.tap(find.text('40'));
     await tester.pump();
     await tester.pump();
+    verify(() => cubit.refreshRevision()).called(1);
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('a lost reply after the server saved the price keeps the saved price', (tester) async {
+    await pump(
+      tester,
+      prices: CreatorWallPrices(
+        call: (_) async => throw Exception('reply lost'),
+        readWall: (String id) async => <String, dynamic>{'creatorPrice': 40},
+      ),
+    );
+    await tester.ensureVisible(find.text('40'));
+    await tester.tap(find.text('40'));
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    expect(find.bySemanticsLabel('40 coins'), findsOneWidget);
+    expect(tester.getSemantics(find.bySemanticsLabel('40 coins')), containsSemantics(isSelected: true));
+    expect(analytics.events.map((AnalyticsEvent e) => e.eventName), contains('creator_wall_price_set'));
     verify(() => cubit.refreshRevision()).called(1);
     await tester.pump(const Duration(seconds: 1));
   });

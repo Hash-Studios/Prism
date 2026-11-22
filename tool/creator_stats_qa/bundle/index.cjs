@@ -32,3 +32,7 @@ owned.ownedThumbnailUrl = (asset) => asset.qaThumbUrl;
 const creatorWalls = require('./fnlib/creatorWalls.js');
 exports.setWallPrice = creatorWalls.setWallPrice;
 exports.unlockCreatorWall = creatorWalls.unlockCreatorWall;
+// The approved-wall editor loads and saves metadata through these. The creator prices the wall from that editor.
+const wallMetadata = require('./fnlib/wallMetadata.js');
+exports.getWallMetadataForEdit = wallMetadata.getWallMetadataForEdit;
+exports.editWallMetadata = wallMetadata.editWallMetadata;

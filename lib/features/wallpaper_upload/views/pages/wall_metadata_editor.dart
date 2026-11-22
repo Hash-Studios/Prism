@@ -72,10 +72,12 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
       _creatorPrice = price;
       _pricing = true;
     });
-    final WallPriceOutcome outcome = await (widget.creatorPrices ?? CreatorWallPrices.instance).setPrice(
-      wallDocId: widget.wall.id,
-      price: price,
-    );
+    final CreatorWallPrices service = widget.creatorPrices ?? CreatorWallPrices.instance;
+    WallPriceOutcome outcome = await service.setPrice(wallDocId: widget.wall.id, price: price);
+    if (outcome == WallPriceOutcome.failed && await service.storedPrice(widget.wall.id) == price) {
+      // The reply was lost after the server saved the price.
+      outcome = price == 0 ? WallPriceOutcome.removed : WallPriceOutcome.saved;
+    }
     if (outcome == WallPriceOutcome.saved || outcome == WallPriceOutcome.removed) {
       _priceChanged = true;
       unawaited(analytics.track(CreatorWallPriceSetEvent(price: price, source: 'edit')));
