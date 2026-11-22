@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 'use strict';
 // Coin packs local QA on top of the weekly challenge QA runtime. Commands: prepare, emulators, serve, seed, hold-on,
-// hold-off, cancel-next, webhook <tx>, webhook-bad <tx>, refund <tx>, verify <tx>, ledger, build-ios, run-ios <udid>.
+// hold-off, cancel-next, webhook <tx>, webhook-bad <tx>, refund <tx>, refund-unsigned <tx>, verify <tx>, ledger,
+// build-ios, run-ios <udid>. Every webhook is signed with RevenueCat's HMAC header, except refund-unsigned.
 //
 // The real verifyCoinPurchase callable and revenueCatWebhook HTTPS function run in the Functions emulator. Their
 // RevenueCat REST read (REVENUECAT_API_BASE, emulator only) goes to the relay in `serve`, which keeps the fake
@@ -21,6 +22,7 @@ const VIEWER = 'qa-viewer';
 const API_KEY = 'AIzaSy000000000000000000000000000000000';
 const RC_SECRET = 'qa-rc-secret';
 const WEBHOOK_AUTH = 'Bearer qa-webhook-secret';
+const SIGNING_SECRET = 'qa-signing-secret';
 const PRODUCTS = ['prism_coins_100', 'prism_coins_300', 'prism_coins_700', 'prism_coins_1600'];
 const TRANSACTION_ID = /^[A-Za-z0-9._:-]{1,128}$/;
 const file = (name) => path.join(runtime, name);
@@ -36,7 +38,7 @@ function guardDemoAdmin(admin, project) {
 
 function validateCommandArgs(command, args) {
   if (!Object.hasOwn(commands, command)) throw Error(`Commands: ${Object.keys(commands).join(', ')}`);
-  if (['webhook', 'webhook-bad', 'refund', 'verify'].includes(command)) {
+  if (['webhook', 'webhook-bad', 'refund', 'refund-unsigned', 'verify'].includes(command)) {
     assert.ok(args.length === 1 && TRANSACTION_ID.test(args[0]), `Use ${command} <transactionId>`);
     return;
   }
@@ -152,7 +154,8 @@ exports.revenueCatWebhook = coin.revenueCatWebhook;
 `);
   // The functions read these secrets. Without local values the emulator asks Secret Manager, which this runtime blocks.
   fs.writeFileSync(file('functions/.secret.local'),
-    'REVENUECAT_SECRET_KEY=qa-rc-secret\nREVENUECAT_WEBHOOK_AUTH=Bearer qa-webhook-secret\n');
+    'REVENUECAT_SECRET_KEY=qa-rc-secret\nREVENUECAT_WEBHOOK_AUTH=Bearer qa-webhook-secret\n' +
+    `REVENUECAT_WEBHOOK_SIGNING_SECRET=${SIGNING_SECRET}\n`);
   // Params read by the emulator. REVENUECAT_API_BASE is honoured only when FUNCTIONS_EMULATOR is "true".
   fs.writeFileSync(file('functions/.env.local'),
     'COIN_PACKS_ALLOW_SANDBOX=true\nREVENUECAT_API_BASE=https://localhost:19375\n');
@@ -282,12 +285,20 @@ function rcTransaction(transactionId) {
   return txn;
 }
 
-function postWebhook(authorization, body) {
+/** RevenueCat's HMAC header: t=<unix seconds>,v1=hex(HMAC-SHA256(secret, "<t>.<raw body>")). */
+function signature(payload) {
+  const t = Math.floor(Date.now() / 1000);
+  return `t=${t},v1=${crypto.createHmac('sha256', SIGNING_SECRET).update(`${t}.${payload}`).digest('hex')}`;
+}
+
+function postWebhook(authorization, body, signed = true) {
   const payload = JSON.stringify(body);
+  const headers = {'content-type': 'application/json', 'content-length': Buffer.byteLength(payload), authorization};
+  if (signed) headers['x-revenuecat-webhook-signature'] = signature(payload);
   return new Promise((resolve, reject) => {
     const req = http.request({host: '127.0.0.1', port: 19373, path: `/${PROJECT}/us-central1/revenueCatWebhook`,
       method: 'POST', timeout: 70000,
-      headers: {'content-type': 'application/json', 'content-length': Buffer.byteLength(payload), authorization}}, (res) => {
+      headers}, (res) => {
       res.resume();
       res.on('end', () => resolve(res.statusCode));
     });
@@ -298,11 +309,11 @@ function postWebhook(authorization, body) {
 }
 
 /** Sends one RevenueCat-shaped event to the real revenueCatWebhook function. The body only names the transaction. */
-async function webhook(transactionId, type, authorization) {
+async function webhook(transactionId, type, authorization, signed = true) {
   guardEnvironment();
   const txn = rcTransaction(transactionId);
   const status = await postWebhook(authorization, {api_version: '1.0', event: {type, product_id: txn.productId,
-    transaction_id: txn.transactionId, app_user_id: txn.appUserId, environment: 'SANDBOX'}});
+    transaction_id: txn.transactionId, app_user_id: txn.appUserId, store: 'APP_STORE', environment: 'SANDBOX'}}, signed);
   console.log(`${type} ${transactionId}: HTTP ${status}`);
 }
 
@@ -371,6 +382,7 @@ const commands = {
   webhook: () => webhook(process.argv[3], 'NON_RENEWING_PURCHASE', WEBHOOK_AUTH),
   'webhook-bad': () => webhook(process.argv[3], 'NON_RENEWING_PURCHASE', 'Bearer wrong'),
   refund: () => webhook(process.argv[3], 'CANCELLATION', WEBHOOK_AUTH),
+  'refund-unsigned': () => webhook(process.argv[3], 'CANCELLATION', WEBHOOK_AUTH, false),
   verify: () => verify(process.argv[3]),
 };
 const command = process.argv[2];
