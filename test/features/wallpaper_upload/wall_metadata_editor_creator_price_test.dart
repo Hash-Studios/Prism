@@ -92,9 +92,9 @@ void main() {
           builder: (BuildContext context) => Scaffold(
             body: TextButton(
               onPressed: () async {
-                final WallMetadataSnapshot? result = await Navigator.of(context).push<WallMetadataSnapshot>(
-                  MaterialPageRoute<WallMetadataSnapshot>(builder: (_) => editor()),
-                );
+                final WallMetadataSnapshot? result = await Navigator.of(
+                  context,
+                ).push<WallMetadataSnapshot>(MaterialPageRoute<WallMetadataSnapshot>(builder: (_) => editor()));
                 onPopped?.call(result);
               },
               child: const Text('Open editor'),

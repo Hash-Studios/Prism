@@ -95,11 +95,7 @@ class _CreatorWallUnlockSheetState extends State<CreatorWallUnlockSheet> {
     if (!mounted) return;
     unawaited(analytics.track(CreatorWallUnlockedEvent(price: _price, outcome: result.outcome.name)));
     if (result.unlocked) {
-      unlocks.markUnlocked(
-        _wallDocId,
-        wallId: widget.wall.id,
-        ownerUid: ownerUid,
-      );
+      unlocks.markUnlocked(_wallDocId, wallId: widget.wall.id, ownerUid: ownerUid);
       PrismHaptics.success();
       setState(() => _stage = _Stage.unlocked);
       return;

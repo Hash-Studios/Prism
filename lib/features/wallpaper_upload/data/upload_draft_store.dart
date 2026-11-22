@@ -160,7 +160,10 @@ class UploadDraftStore {
     if (previousFile != null &&
         await previousFile.exists() &&
         path.normalize(previousFile.absolute.path) == path.normalize(selectedFile.absolute.path)) {
-      await _store.write(key, _recordValue(owner, draftId, previousRelative! as String, metadata, session, creatorPrice));
+      await _store.write(
+        key,
+        _recordValue(owner, draftId, previousRelative! as String, metadata, session, creatorPrice),
+      );
       return UploadDraft(
         owner: owner,
         draftId: draftId,
@@ -278,9 +281,9 @@ class UploadDraftStore {
     String draftId,
     String file,
     SubmissionMetadata metadata,
-    UploadSession? session,
-    [int creatorPrice = 0]
-  ) => <String, Object?>{
+    UploadSession? session, [
+    int creatorPrice = 0,
+  ]) => <String, Object?>{
     'owner': owner,
     'draftId': draftId,
     'file': file,

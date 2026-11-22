@@ -33,11 +33,7 @@ Widget _app(CreatorWallUnlocks unlocks, PrismWallpaper wall) => MaterialApp(
       unlocks: unlocks,
       builder: (BuildContext context, CreatorWallAccess access) {
         if (access == CreatorWallAccess.owner || access == CreatorWallAccess.unlocked) return const Text('Set');
-        return CreatorWallUnlockButton(
-          wall: wall,
-          checking: access == CreatorWallAccess.checking,
-          unlocks: unlocks,
-        );
+        return CreatorWallUnlockButton(wall: wall, checking: access == CreatorWallAccess.checking, unlocks: unlocks);
       },
     ),
   ),
@@ -125,10 +121,7 @@ void main() {
 
   testWidgets('session reset discards late marker reads and mismatched marker wall ids', (tester) async {
     final Completer<Map<String, dynamic>?> pending = Completer<Map<String, dynamic>?>();
-    final CreatorWallUnlocks unlocks = CreatorWallUnlocks(
-      owner: () => 'fan',
-      read: (_, _) => pending.future,
-    );
+    final CreatorWallUnlocks unlocks = CreatorWallUnlocks(owner: () => 'fan', read: (_, _) => pending.future);
     await tester.pumpWidget(_app(unlocks, _wall()));
     expect(unlocks.accessFor(_wall()), CreatorWallAccess.checking);
     unlocks.resetSession();

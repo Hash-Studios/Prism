@@ -149,9 +149,7 @@ class CreatorWallUnlocks {
     } finally {
       if (generation == _sessionGeneration && entryGeneration == (_entryGeneration[key] ?? 0)) _loading.remove(key);
     }
-    if (generation != _sessionGeneration ||
-        entryGeneration != (_entryGeneration[key] ?? 0) ||
-        _owner().trim() != uid) {
+    if (generation != _sessionGeneration || entryGeneration != (_entryGeneration[key] ?? 0) || _owner().trim() != uid) {
       return;
     }
     if (failed) _failed.add(key);

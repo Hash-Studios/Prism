@@ -164,9 +164,7 @@ void main() {
     expect(popped, isTrue);
   });
 
-  testWidgets('a price change updates the displayed price for the next attempt', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('a price change updates the displayed price for the next attempt', (WidgetTester tester) async {
     final CreatorWallUnlocks unlocks = freshUnlocks();
     bool? popped;
     await pumpSheet(
