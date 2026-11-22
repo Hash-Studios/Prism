@@ -1,5 +1,10 @@
 ## Changelog
 
+### v3.35.0
+- Report an AI wallpaper or a photo result if it looks wrong or harmful: tap the flag on the result
+- The action buttons on AI results now fit on small screens and with large text
+- Security and stability fixes
+
 ### v3.34.0
 - A profile link you are fixing now stays when you change its link type
 - The hint for a link that needs a fix now shows right under Save
