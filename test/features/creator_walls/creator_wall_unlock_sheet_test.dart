@@ -112,7 +112,7 @@ void main() {
     expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Unlock for 40 coins')).onPressed, isNotNull);
   });
 
-  testWidgets('a short balance shows the short-by line, Get coins, and a disabled unlock button', (
+  testWidgets('a short balance shows the short-by line and Get coins but still allows an idempotent retry', (
     WidgetTester tester,
   ) async {
     await pumpSheet(
@@ -126,7 +126,7 @@ void main() {
     expect(find.text('Your balance: 10 coins'), findsOneWidget);
     expect(find.text('You need 30 more coins.'), findsOneWidget);
     expect(find.text('Get coins'), findsOneWidget);
-    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Unlock for 40 coins')).onPressed, isNull);
+    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Unlock for 40 coins')).onPressed, isNotNull);
   });
 
   testWidgets('a successful unlock shows the unlocked moment and marks the wall unlocked', (WidgetTester tester) async {
@@ -164,11 +164,11 @@ void main() {
     expect(popped, isTrue);
   });
 
-  testWidgets('a price change closes the sheet with false and does not mark the wall unlocked', (
+  testWidgets('a price change updates the displayed price for the next attempt', (
     WidgetTester tester,
   ) async {
     final CreatorWallUnlocks unlocks = freshUnlocks();
-    bool? popped = true;
+    bool? popped;
     await pumpSheet(
       tester,
       unlocks: unlocks,
@@ -182,9 +182,24 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
     }
 
-    expect(find.text('Unlock this wall'), findsNothing);
-    expect(popped, isFalse);
+    expect(find.text('Unlock this wall'), findsOneWidget);
+    expect(find.text('Unlock for 50 coins'), findsOneWidget);
+    expect(popped, isNull);
     expect(unlocks.accessFor(_wall()), isNot(CreatorWallAccess.unlocked));
+  });
+
+  testWidgets('a thrown unlock request returns the sheet to a retryable state', (tester) async {
+    await pumpSheet(
+      tester,
+      unlocks: freshUnlocks(),
+      unlock: ({required wallDocId, required expectedPrice}) async => throw StateError('network'),
+    );
+    await tester.tap(find.widgetWithText(PrismButton, 'Unlock for 40 coins'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Unlock this wall'), findsOneWidget);
+    expect(tester.widget<PrismButton>(find.widgetWithText(PrismButton, 'Unlock for 40 coins')).onPressed, isNotNull);
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('large text (2.0) in a 320x640 sheet does not overflow', (WidgetTester tester) async {

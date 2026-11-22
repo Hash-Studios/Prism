@@ -21,7 +21,10 @@ class CreatorPricePicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
     final ValueChanged<int>? change = onChanged;
-    final List<int> options = prices ?? EconomyConfig.current.creatorWallPrices;
+    final List<int> options = <int>{
+      ...(prices ?? EconomyConfig.current.creatorWallPrices),
+      if (value > 0) value,
+    }.toList()..sort();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[

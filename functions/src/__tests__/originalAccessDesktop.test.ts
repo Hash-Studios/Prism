@@ -103,3 +103,15 @@ test("desktop set quote and acquire use the same server price and bind replay to
   assert.equal((await resolveOriginalAccess.run(request({mode: "quote"}))).requiredCoins, 0);
   await assert.rejects(() => resolveOriginalAccess.run(request({variant: undefined})), {code: "failed-precondition"});
 });
+
+test("desktop delivery does not bypass a creator wall's unlock gate", async (t) => {
+  const {store} = setup(t, {size: 1234, sha256: DESKTOP_SHA});
+  store.set("walls/wall-doc", {...store.get("walls/wall-doc"), creatorPrice: 40});
+
+  const result = await resolveOriginalAccess.run(request());
+
+  assert.equal(result.status, "creator_locked");
+  assert.equal("requiredCoins" in result && result.requiredCoins, 40);
+  assert.equal(store.get("usersv2/user")?.coins, 100);
+  assert.equal([...store.keys()].some((key) => key.startsWith("coinTransactions/ctx_original_")), false);
+});

@@ -274,7 +274,7 @@ async function inChunks<T>(values: T[], run: (value: T) => Promise<unknown>): Pr
 /** True when a wall write can change the wall's smart keys. Counter writes return false and cost no reads. */
 export function changesSmartKeys(before: Doc | undefined, after: Doc | undefined): boolean {
   if (!before || !after) return true;
-  const fields = ["review", "originalProtected", "is_streak_exclusive", "dropReserved", "dropWeek", "collections", "colors",
+  const fields = ["review", "originalProtected", "creatorPrice", "is_streak_exclusive", "dropReserved", "dropWeek", "collections", "colors",
     "visionLabels", "tags", "spatial", "depth", "category", "creatorUid", "desktopVariant", "editorsChoiceAt",
     "wallpaper_thumb", "id", "createdAt"];
   return fields.some((field) => JSON.stringify(before[field]) !== JSON.stringify(after[field]));

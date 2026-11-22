@@ -488,7 +488,7 @@ export async function refreshWallInPublicFolders(wallId: string, before: Doc | u
 
 function isRelevantWallChange(before: Doc | undefined, after: Doc | undefined): boolean {
   if (!before || !after) return true;
-  const fields = ["review", "originalProtected", "is_streak_exclusive", "dropReserved", "dropWeek", "collections",
+  const fields = ["review", "originalProtected", "creatorPrice", "is_streak_exclusive", "dropReserved", "dropWeek", "collections",
     "wallpaper_thumb", "id"];
   return fields.some((field) => JSON.stringify(before[field]) !== JSON.stringify(after[field]));
 }

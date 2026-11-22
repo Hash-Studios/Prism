@@ -117,8 +117,9 @@ export const wallpaperPreview = onRequest({region: CALLABLE_REGIONS, secrets: r2
   }
   try {
     const bytes = await loadWallpaperPreview(id, thumb, variant as PreviewVariant, v);
-    // The bytes for one id and thumb never change, but a wall can be withdrawn, so only the device may keep them.
-    res.set("Cache-Control", "private, max-age=31536000, immutable").type("jpeg").send(bytes);
+    // A wall can become priced or be withdrawn after it was free. Do not let clients retain the preview as an
+    // entitlement bypass after the wall's current access policy changes.
+    res.set("Cache-Control", "no-store").type("jpeg").send(bytes);
   } catch {
     // The app keeps its thumbnail when a wall is missing, withheld, or storage is unavailable.
     res.status(404).send("Preview unavailable");

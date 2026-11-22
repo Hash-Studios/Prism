@@ -1,8 +1,8 @@
 # Creator premium walls
 
-A creator puts a coin price on one of their own uploads. A buyer pays once and gets the full-quality original, forever, on every device where they sign in. The creator gets 70% of the price. Prism keeps 30%. The thumbnail stays free for everyone.
+A creator puts a coin price on one of their own uploads. A buyer pays once and gets access to the full-quality original on every device where they sign in, while the wall remains available. The creator gets 70% of the price, rounded down to whole coins. The remaining coins leave circulation. The thumbnail stays free for everyone.
 
-This is the "Premium Creator Content" row in `docs/REVENUE.md`. Coins move only through the `unlockCreatorWall` callable. Prices change only through the `setWallPrice` callable. Clients cannot write `creatorPrice`, the unlock markers, the sales totals or the caps.
+This is the "Premium Creator Content" row in `docs/REVENUE.md`. The `unlockCreatorWall` callable handles purchases; a deletion trigger handles refunds. Prices change only through the `setWallPrice` callable. Clients cannot write `creatorPrice`, the unlock markers, the sales totals or the caps.
 
 ## The model
 
@@ -12,15 +12,15 @@ This is the "Premium Creator Content" row in `docs/REVENUE.md`. Coins move only 
 | Price list | `economyConfig/current.creatorWalls.prices`, default `[20, 40, 75]` | Admins |
 | Server switch | `economyConfig/current.flags.creatorWallsEnabled`, default `false` | Admins |
 | App switch | Remote Config `creator_premium_walls_enabled`, default `false` | Admins |
-| Unlock marker | `usersv2/{buyer}/creatorWallUnlocks/{wallDocId}`: `wallId`, `wallDocId`, `creatorUid`, `price`, `creatorShare`, `transactionId`, `unlockedAt`, and `refundedAt` after a refund | `unlockCreatorWall`, refund trigger |
+| Unlock marker | `usersv2/{buyer}/creatorWallUnlocks/{wallDocId}`: `wallId`, `wallDocId`, `creatorUid`, `price`, `creatorShare`, `transactionId`, `unlockedAt`, the wall creation time (millis and nanoseconds), and `pendingRefundKey`. A refund replaces that key with `refundedAt`. | `unlockCreatorWall`, refund trigger |
 | Buyer ledger | `coinTransactions/ctx_cwbuy_{buyer}_{requestId}`: `action: creatorWallUnlock`, `delta: -price` | `unlockCreatorWall` |
 | Creator ledger | `coinTransactions/ctx_cwsale_{buyer}_{requestId}`: `action: creatorWallSale`, `delta: +creatorShare` | `unlockCreatorWall` |
-| Sales totals | `creatorSales/{creator}`: `count`, `coins` (creator share), per ISO week (last 9) and per wall doc ID. Same shape as `creatorTips`. | `unlockCreatorWall` |
+| Sales totals | `creatorSales/{creator}`: `count`, `coins` (creator share), per ISO week (last 9) and per wall doc ID. Same shape as `creatorTips`. | `unlockCreatorWall`, refund trigger |
 | Caps | `creatorWallSaleDaily/{key}`: buyer, pair and creator docs per UTC day | `unlockCreatorWall` |
 
 UID parts in document IDs are escaped like tips: `encodeURIComponent`, and `_` becomes `%5F`.
 
-The original is never written to Firestore for a buyer. Creator walls are protected originals in the private R2 bucket. After an unlock, `resolveOriginalAccess` reads the marker and signs a 2-minute URL each time the buyer downloads or sets the wall, at 0 coins. So "forever, on all devices" is the marker, not a stored URL. This is stronger than `unlockDrop`, which stores a full URL in the buyer's private doc.
+The private R2 original stays out of Firestore. The app receives a signed URL valid for two minutes. Each new delivery request, including a receipt retry, checks the current wall, its protected asset and its moderation state. On a priced wall, only the owner or a buyer with an unrefunded marker for this exact wall document and creation time can get the URL. A previous free, Pro or pass receipt cannot unlock a newly priced wall. A delivery receipt issued to a buyer or owner can only be retried while that same access still applies.
 
 ## Who can sell
 
@@ -32,16 +32,16 @@ The creator rule is the tip receiver rule, with a stricter account check:
 | Track record | 1 approved wall or more (`approvedWall`: `review == true`, `wallpaper_provider == prism`, `origin != studio`). |
 | The wall | The caller owns it (`creatorUid`, or a verified email match when `creatorUid` is not set yet). |
 | Original upload | Not Studio (`origin`, `byStudio`), not AI (`isAiGenerated`, `aiGenerationId`), not a remix (`remixOf`), not a live wall (`kind == live`), not a streak or Drop wall, provider `prism` (never Wallhaven or Pexels). |
-| Protected | Approved walls: `originalProtected == true`, `wallpaper_url == ""`, and `ownedAssets/{id}` is `ready` with `provenance.kind == "owned"` from the same creator. Pending walls: `wallpaper_url == ""` (a private upload). Legacy GitHub uploads keep a public copy in the walls repo, so they cannot sell. |
+| Protected | An approved wall needs a unique share ID, a ready manifest bound to its document path and creation time, and private upload provenance for the seller. The original and public thumbnail must both be owned uploads from the seller, with distinct bytes and valid registry records. The original cannot match the original or thumbnail of another ready wall at the time of pricing or purchase. A legacy GitHub upload cannot sell. |
 | Not held | `heldForReview != true`. |
 
-A price can go on an approved wall or on the creator's own pending upload, so the upload screen can set it. A pending wall sells only after approval, when the full check passes.
+The upload screen saves the wall first, then calls `setWallPrice`. If the price write fails, the upload still exists without the requested price. The creator can retry in the metadata editor. A pending wall can carry a price, but it cannot sell until approval and verification of its protected original.
 
 ## Prices and split
 
 | Rule | Value |
 |---|---|
-| Prices | One of `creatorWalls.prices`. Default `[20, 40, 75]`. A bad list falls back to the default. Each entry is an integer from 10 to 1000. |
+| Prices | One of `creatorWalls.prices`. Default `[20, 40, 75]`. A bad list falls back to the default. The list accepts 1 to 6 distinct integers from 10 to 1000. Prices of 716 or more cannot sell under the daily creator cap. |
 | Remove a price | `setWallPrice` with `price: 0`. Buyers keep their unlocks. |
 | Creator share | `floor(price * 70 / 100)`: 20 gives 14, 40 gives 28, 75 gives 52. The share is a code constant, not config. |
 | Prism share | `price - creatorShare`: 6, 12, 23. These coins leave circulation. |
@@ -56,16 +56,11 @@ A price can go on an approved wall or on the creator's own pending upload, so th
 | Public 2560 px web preview (`wallpaperPreview`) | No. Refused for priced walls. | No |
 | Download, set, edit, desktop companion | No: `resolveOriginalAccess` returns `creator_locked` with the price | Yes, 0 coins, basis `creator` |
 
-The creator always gets their own walls at 0 coins (basis `owner`).
+The creator gets their own priced wall at 0 coins (basis `owner`). Removing the price keeps existing buyers at 0 coins (basis `creator`); others follow the normal original-access rules.
 
 ## Pro and the premium pass
 
-**My pick: they do not unlock creator walls. Pro and pass users pay the full price.** A free unlock has nobody to pay the creator. In `resolveOriginalAccess` the creator check runs before the Pro and pass checks, so `premium: true` cannot reach the original of a locked wall.
-
-**Decision for the owner (2 options):**
-
-1. Pro pays full price (shipped). Simple, and the creator gets 70% of every unlock.
-2. Pro gets a discount that comes out of Prism's 30% only. For example 20% off: a 75-coin wall costs Pro 60, the creator still gets 52, Prism keeps 8. This gives Pro a perk without cutting creator pay. It needs one more test and copy.
+Pro, premium passes and grace downloads do not unlock a priced creator wall. The server checks the creator entitlement first. These buyers pay the displayed price and the creator receives the same share.
 
 ## Caps and abuse
 
@@ -74,18 +69,18 @@ The creator always gets their own walls at 0 coins (basis `owner`).
 | Buyer account | Verified email, not anonymous, 7 days old or more, profile not deleted | The tips rule. New accounts get free coins (profile, first upload). Without the age gate, a creator could farm those through fresh alts. |
 | Buyer daily cap | 10 unlocks a UTC day | Stops a runaway client or a stolen session from draining a balance. |
 | Pair cap | 3 unlocks a UTC day from one buyer to one creator | Slows one alt moving coins into one creator. |
-| Creator daily cap | 500 coins of creator share a UTC day | Bounds coin laundering. An unlock that would pass it is refused. |
+| Creator daily cap | 500 coins of creator share a UTC day | A price of 715 pays 500 coins and uses the full daily cap. A price of 716 pays 501, so it is refused even with no earlier sales that day. |
 | Self-buy | Refused (`creator_wall_self`). The owner reads their wall free. | No reason to buy your own wall, and it would mint a fake sale. |
 | Blocks | Refused when either user blocked the other (`creator_wall_blocked`) | Same as tips. |
-| Double buy | The marker is read in the transaction. A second unlock of the same wall, with any `requestId`, returns `already_unlocked` and moves no coins. | Two devices or two taps cannot charge twice. |
-| Retry | The same `requestId` returns the stored result. | Idempotency, like tips. |
+| Double buy | The marker is read in the transaction. A second unlock of the same wall with a new `requestId` returns `already_unlocked` and moves no coins. | Two devices or two taps cannot charge twice. |
+| Retry | The original `requestId` returns the stored result only if the wall creation time and the active, unrefunded purchase marker still match that receipt. | Idempotency, like tips. |
 
 ### Farming check
 
 | Question | Verdict |
 |---|---|
-| Does an unlock mint coins? | No. The buyer's coins move. 30% is burned, so a ring of alts loses coins on every pass. |
-| Can alts pool coins into one creator? | Only coins they earned, minus 30%, at most 3 unlocks per alt per creator a day, and at most 500 coins per creator a day. Each alt must also be verified and 7 days old. |
+| Does an unlock mint coins? | No. The buyer's coins move. At least 30% is burned, so a ring of alts loses coins on every pass. |
+| Can alts pool coins into one creator? | Only coins in the buyer's balance, less Prism's share, at most 3 unlocks per alt per creator a day, and at most 500 coins per creator a day. Each alt must also be verified and 7 days old. |
 | Can a sale farm XP, quests, badges, ranks or milestones? | No. `unlockCreatorWall` never calls `grantXp`, and nothing reads `creatorWallSale` credits. |
 | Can a sale farm the Creator fund? | No. See below. |
 | Refunds | `creatorWallUnlock` is not in `REFUNDABLE_ACTIONS`, so `awardCoins` refuses a generic refund. |
@@ -93,17 +88,19 @@ The creator always gets their own walls at 0 coins (basis `owner`).
 
 ## Refunds and moderation
 
-An unlock delivers an entitlement, not a file. Download and set go through `resolveOriginalAccess` at 0 coins and can be retried forever, so a failed download is never a reason to refund. The generic refund path refuses `creatorWallUnlock`.
+An unlock delivers an entitlement, not a file. Download and set go through `resolveOriginalAccess` at 0 coins while the approved wall remains available, so a failed download is never a reason to refund. The generic refund path refuses `creatorWallUnlock`.
 
 | Case | Result |
 |---|---|
-| Wall held for review (`heldForReview`) | It cannot sell. Nobody, buyers included, gets the original until an admin decides. Re-approved: buyers get it back. |
-| Wall removed (the wall document is deleted, for example by an admin rejection) | **Buyers are refunded in full.** |
+| Wall held for review (`heldForReview`) | It cannot sell. New requests for the original are refused, including requests from buyers. Re-approved: buyers get it back. |
+| Wall removed (the wall document is deleted, for example by an admin rejection) | **Active buyers are refunded in full.** |
 | Price removed or changed | Buyers keep their unlocks. |
 
-**Why refund and not "stays readable":** a deleted wall's original is tombstoned in R2, so it cannot stay readable. And a takedown usually means the creator had no right to sell it (stolen art, policy). Keeping it readable would keep distributing it. A refund is the only promise we can keep.
+Holding or removing a wall stops new grants. It cannot recall a signed URL already issued or erase a file someone already saved.
 
-The refund trigger (`onCreatorWallDeleted`) runs when a wall with a `creatorPrice` is deleted. For each unlock marker of that wall it runs one transaction: credit the buyer the full price (`creatorWallRefund`), take back the creator share up to the creator's balance (`creatorWallSaleReversal`, never below 0), and stamp `refundedAt` on the marker. A stamped marker is skipped, so a retried trigger never refunds twice. If the creator spent the coins, Prism covers the gap.
+`onCreatorWallDeleted` runs on every wall deletion, including after a creator removed the price. It derives `pendingRefundKey` from the deleted document path and creation time and reads matching unlocks in pages of 100. Reusing the same wall ID does not carry an unlock or refund over to the replacement.
+
+Each refund transaction checks the key and creation time again, credits the active buyer the full price, and uses `creatorWallSaleReversal` to recover at most the available creator balance. It removes the sale from existing totals, including the wall and retained sale week, then replaces the pending key with `refundedAt`. Retries skip completed refunds. Prism covers any shortfall; daily caps do not rewind. A deleted buyer is not credited and the creator keeps that sale.
 
 ## Creator fund
 
@@ -133,19 +130,22 @@ The refund trigger (`onCreatorWallDeleted`) runs when a wall with a `creatorPric
 | Already unlocked | `success: true`, `reason: already_unlocked` | No |
 | Buyer cap, pair cap or creator cap | `creator_wall_daily_limit`, `creator_wall_pair_limit`, `creator_wall_creator_limit` | No |
 | Balance below the price | `creator_wall_insufficient_balance`, `insufficientBalance: true` | No |
-| Retry of a finished unlock | The stored result | No (already moved once) |
+| Retry of the same active purchase on the same wall | The stored result | No (already charged) |
+| Retry after refund, wall deletion or replacement | `creator_wall_unavailable` | No |
+| Reuse the request ID for another wall document | `already-exists` | No |
 
 ## Rules, indexes and deploy order
 
-- `creatorPrice` joins `wallServerKeysAbsent` and `wallServerKeysUntouched`.
-- `usersv2/{uid}/creatorWallUnlocks/{wallDocId}`: the owner reads, nobody writes.
-- `creatorSales` and `creatorWallSaleDaily` have no client rule, so clients cannot read or write them.
-- Index: a collection-group field override on `creatorWallUnlocks.wallDocId`, for the refund trigger.
+- Clients, including configured admin clients, cannot write `creatorPrice` or change the priced wall's original or thumbnail identity. Server code sets the price.
+- Buyers can read their own `creatorWallUnlocks` markers. Configured admin clients cannot read another buyer's markers. Clients cannot write markers or read or write `creatorSales` or `creatorWallSaleDaily`.
+- The refund query needs the ascending collection-group index on `creatorWallUnlocks.pendingRefundKey`.
 
-Deploy order:
+An earlier branch wrote unlock markers without the wall creation time or `pendingRefundKey`. The current delivery check cannot grant access from those markers, and the deletion trigger cannot find them for refunds. If that build was ever enabled with real wallets, inventory those purchases and reconcile their entitlements and refund records before rollout. No migration has been performed.
 
-1. Functions: `setWallPrice`, `unlockCreatorWall`, `onCreatorWallDeleted` (new), `resolveOriginalAccess`, `wallpaperPreview`, `getCreatorStats`, `deleteAccount`.
-2. Rules.
-3. Indexes.
-4. The app build. Wait for adoption: an app without this change shows a priced wall as a normal wall and fails at download.
-5. Turn on `economyConfig/current.flags.creatorWallsEnabled`, then Remote Config `creator_premium_walls_enabled`.
+Keep both flags off during rollout:
+
+1. Deploy the rules and index. Wait for the collection-group index to be ready before enabling refunds or sales.
+2. Deploy the purchase, delivery, refund, eligibility, public catalog, preview, creator stats and account deletion functions together.
+3. Resolve the Cloudflare Worker preview cache before enabling sales. The Firebase preview origin refuses priced walls and sends `no-store`, but the Worker can serve a cached phone rendition from when the wall was free. Its desktop-image and download routes already bypass this cache. Update that cache path to enforce current eligibility and invalidate previously cached renditions. The Worker change is outside this feature.
+4. Release the app and allow time for adoption. Older clients cannot show the unlock flow.
+5. Enable `economyConfig/current.flags.creatorWallsEnabled`, then Remote Config `creator_premium_walls_enabled`.

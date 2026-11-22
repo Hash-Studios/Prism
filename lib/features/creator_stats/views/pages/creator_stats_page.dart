@@ -101,7 +101,7 @@ class _CreatorStatsViewState extends State<CreatorStatsView> {
         }
         final data = state.data;
         if (data == null) return const SizedBox.shrink();
-        if (data.approvedWallCount == 0) {
+        if (data.approvedWallCount == 0 && data.sales.count == 0) {
           return GlintState(
             kind: GlintStateKind.empty,
             title: context.l10n.statsEmptyTitle,

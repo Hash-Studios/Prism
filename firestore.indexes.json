@@ -2310,7 +2310,7 @@
     },
     {
       "collectionGroup": "creatorWallUnlocks",
-      "fieldPath": "wallDocId",
+      "fieldPath": "pendingRefundKey",
       "indexes": [
         {"order": "ASCENDING", "queryScope": "COLLECTION"},
         {"order": "ASCENDING", "queryScope": "COLLECTION_GROUP"}

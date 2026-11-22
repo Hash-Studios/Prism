@@ -34,6 +34,7 @@ class UploadDraftStore {
     required File selectedFile,
     required SubmissionMetadata metadata,
     UploadSession? session,
+    int creatorPrice = 0,
   }) {
     final int generation = _ownerGenerations[owner] ?? 0;
     return _serialize(
@@ -43,6 +44,7 @@ class UploadDraftStore {
         selectedFile: selectedFile,
         metadata: metadata,
         session: session,
+        creatorPrice: creatorPrice,
         generation: generation,
       ),
     );
@@ -64,6 +66,7 @@ class UploadDraftStore {
         file: file,
         metadata: _metadataFrom(value['metadata']),
         session: UploadSession.fromJson(value['session']),
+        creatorPrice: value['creatorPrice'] is int ? value['creatorPrice']! as int : 0,
       );
     });
   }
@@ -93,6 +96,7 @@ class UploadDraftStore {
           file: file,
           metadata: _metadataFrom(entry.value['metadata']),
           session: UploadSession.fromJson(entry.value['session']),
+          creatorPrice: entry.value['creatorPrice'] is int ? entry.value['creatorPrice']! as int : 0,
         );
       }
       return null;
@@ -136,6 +140,7 @@ class UploadDraftStore {
     required File selectedFile,
     required SubmissionMetadata metadata,
     required UploadSession? session,
+    required int creatorPrice,
     required int generation,
   }) async {
     if (owner.isEmpty || draftId.isEmpty) throw ArgumentError('An upload draft needs an owner and id.');
@@ -155,8 +160,15 @@ class UploadDraftStore {
     if (previousFile != null &&
         await previousFile.exists() &&
         path.normalize(previousFile.absolute.path) == path.normalize(selectedFile.absolute.path)) {
-      await _store.write(key, _recordValue(owner, draftId, previousRelative! as String, metadata, session));
-      return UploadDraft(owner: owner, draftId: draftId, file: previousFile, metadata: metadata, session: session);
+      await _store.write(key, _recordValue(owner, draftId, previousRelative! as String, metadata, session, creatorPrice));
+      return UploadDraft(
+        owner: owner,
+        draftId: draftId,
+        file: previousFile,
+        metadata: metadata,
+        session: session,
+        creatorPrice: creatorPrice,
+      );
     }
     final int previousLength = previousFile != null && await previousFile.exists() ? await previousFile.length() : 0;
     final bool addingNew = previous == null;
@@ -197,7 +209,7 @@ class UploadDraftStore {
       await temporary.rename(destination.path);
       _checkGeneration(owner, generation);
       final String relativeFile = path.relative(destination.path, from: root.path);
-      await _store.write(key, _recordValue(owner, draftId, relativeFile, metadata, session));
+      await _store.write(key, _recordValue(owner, draftId, relativeFile, metadata, session, creatorPrice));
     } catch (_) {
       if (await temporary.exists()) await temporary.delete();
       if (await destination.exists()) await destination.delete();
@@ -206,7 +218,14 @@ class UploadDraftStore {
     if (previousFile != null && previousFile.path != destination.path && await previousFile.exists()) {
       await previousFile.delete();
     }
-    return UploadDraft(owner: owner, draftId: draftId, file: destination, metadata: metadata, session: session);
+    return UploadDraft(
+      owner: owner,
+      draftId: draftId,
+      file: destination,
+      metadata: metadata,
+      session: session,
+      creatorPrice: creatorPrice,
+    );
   }
 
   Future<({int count, int bytes, int ownerCount, int ownerBytes})> _repairFiles({String? owner}) async {
@@ -260,10 +279,12 @@ class UploadDraftStore {
     String file,
     SubmissionMetadata metadata,
     UploadSession? session,
+    [int creatorPrice = 0]
   ) => <String, Object?>{
     'owner': owner,
     'draftId': draftId,
     'file': file,
+    if (creatorPrice > 0) 'creatorPrice': creatorPrice,
     if (session != null) 'session': session.toJson(),
     'metadata': <String, Object?>{
       'title': metadata.title,
@@ -350,6 +371,7 @@ class UploadDraft {
     required this.file,
     required this.metadata,
     this.session,
+    this.creatorPrice = 0,
   });
 
   final String owner;
@@ -357,6 +379,7 @@ class UploadDraft {
   final File file;
   final SubmissionMetadata metadata;
   final UploadSession? session;
+  final int creatorPrice;
 }
 
 class UploadDraftLimitException implements Exception {

@@ -10,6 +10,7 @@ import {folderSignalDeps} from "../folderSignals";
 import {changesPublicFolder} from "../folders";
 import {
   publicFolderDeps,
+  onWallPublicGateChanged,
   publicFolderName,
   publicFolderSections,
   removeFolderFollowsBetween,
@@ -991,6 +992,23 @@ test("a previously projected wall is removed when it loses the protected-origina
     wallpaperDocumentId: "W1", projectedAt: at(1)});
 
   await refreshWallInPublicFolders("W1", before, after);
+
+  assert.equal(store.has("publicFolders/f1/items/prism_w1"), false);
+  assert.equal(store.get("publicFolders/f1")?.itemCount, 0);
+});
+
+test("a creator price change removes a previously projected public folder wall", async (t) => {
+  const store = setup(t);
+  await syncPublicFolder("f1");
+  assert.equal(store.has("publicFolders/f1/items/prism_w1"), true);
+  const before = store.get("walls/W1");
+  assert.ok(before);
+  const after = {...before, creatorPrice: 40};
+  store.set("walls/W1", after);
+
+  await onWallPublicGateChanged.run({params: {wallId: "W1"}, data: {
+    before: {data: () => before}, after: {data: () => after},
+  }} as unknown as Parameters<typeof onWallPublicGateChanged.run>[0]);
 
   assert.equal(store.has("publicFolders/f1/items/prism_w1"), false);
   assert.equal(store.get("publicFolders/f1")?.itemCount, 0);

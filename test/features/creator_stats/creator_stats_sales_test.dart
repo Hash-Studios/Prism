@@ -151,6 +151,17 @@ void main() {
     expect(find.text('No sales yet. Put a price on one of your walls to sell it.'), findsNothing);
   });
 
+  testWidgets('sales remain visible when no walls are currently approved', (tester) async {
+    CreatorWallsFlag.debugEnabled = false;
+    final raw = _stats()..['approvedWallCount'] = 0;
+    raw['walls'] = <Object?>[];
+    raw['sales'] = _salesFixture(_stats());
+    await pump(tester, CreatorStatsState(data: parseCreatorStats(raw)));
+    await tester.scrollUntilVisible(find.text('Sales'), 300);
+    expect(find.text('Sales'), findsOneWidget);
+    expect(find.text('70'), findsOneWidget);
+  });
+
   testWidgets('sales section is hidden when the flag is off and there are no sales', (tester) async {
     CreatorWallsFlag.debugEnabled = false;
     await pump(tester, CreatorStatsState(data: parseCreatorStats(_stats())));

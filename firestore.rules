@@ -166,6 +166,28 @@ service cloud.firestore {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'heldForReview', 'heldAt', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantOf', 'variantGroupId', 'variantIndex', 'variantLink', 'releaseApprovedAt', 'creatorPrice']);
     }
 
+    // Creator prices are callable-owned. While priced, no client (including a configured admin client) can replace
+    // the private original or its provenance with a public URL. The public thumbnail stays readable but its delivery
+    // identity cannot be changed by a client while the wall is priced.
+    function pricedOriginalUntouched() {
+      return !('creatorPrice' in resource.data && resource.data.creatorPrice is int && resource.data.creatorPrice > 0)
+          || !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'id', 'creatorUid', 'wallpaper_provider', 'wallpaper_url', 'wallpaper_thumb', 'wallpaper_path',
+            'wallpaper_sha', 'wallpaper_source_kind', 'originalProtected', 'originalObjectId',
+            'thumb_path', 'thumb_sha', 'thumb_source_kind'
+          ]);
+    }
+
+    function pricedWallProtectedBeforeApproval() {
+      return !('creatorPrice' in request.resource.data && request.resource.data.creatorPrice is int
+          && request.resource.data.creatorPrice > 0)
+          || request.resource.data.review != true
+          || (request.resource.data.originalProtected == true && request.resource.data.wallpaper_url == ''
+              && request.resource.data.wallpaper_path == '' && request.resource.data.wallpaper_sha == ''
+              && request.resource.data.thumb_path == '' && request.resource.data.thumb_sha == ''
+              && request.resource.data.wallpaper_thumb is string && request.resource.data.wallpaper_thumb != '');
+    }
+
     // Optional creator release time: 15 minutes to 30 days after the write. The server checks it again.
     function validReleaseAt() {
       return !('releaseAt' in request.resource.data)
@@ -319,7 +341,7 @@ service cloud.firestore {
       allow list: if resource == null || wallReadable();
       // Admins re-create a rejected wall when they undo the rejection.
       allow create: if !request.resource.data.keys().hasAny(['editorsChoiceAt', 'editorsChoiceBy', 'byStudio',
-            'publishedAt', 'releaseNotice'])
+            'publishedAt', 'releaseNotice', 'creatorPrice'])
           && validChallengeId() && notReleasedEarly() && liveReviewOk() && validLiveCreate() && (isConfiguredAdmin()
           || (isSignedIn()
               && isEmailOwner(request.resource.data.email)
@@ -336,6 +358,9 @@ service cloud.firestore {
           ])
           && notReleasedEarly()
           && liveReviewOk()
+          && pricedOriginalUntouched()
+          && pricedWallProtectedBeforeApproval()
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorPrice'])
           && livePosterUntouched()
           && ((isConfiguredAdmin()
                 && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['releaseAt']))
@@ -432,7 +457,7 @@ service cloud.firestore {
 
       // Creator wall unlocks: owner read, only unlockCreatorWall and its refund write.
       match /creatorWallUnlocks/{wallDocId} {
-        allow read: if isOwner(userId) || isConfiguredAdmin();
+        allow read: if isOwner(userId);
         allow write: if false;
       }
 

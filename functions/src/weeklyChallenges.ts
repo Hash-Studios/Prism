@@ -95,7 +95,7 @@ async function all(query: admin.firestore.Query, tx?: Tx): Promise<admin.firesto
 function gateKey(wall: Snap): string {
   const w = wall.data();
   return createHash("sha256").update(JSON.stringify(w ? [w.review, w.rejected, w.moderation, w.challengeId, w.email, w.creatorUid, w.originalProtected,
-    w.collections, w.is_streak_exclusive, w.dropReserved, w.dropWeek, w.id, w.originalObjectId,
+    w.collections, w.creatorPrice, w.is_streak_exclusive, w.dropReserved, w.dropWeek, w.id, w.originalObjectId,
     w.wallpaper_url, w.wallpaper_path, w.wallpaper_sha, w.thumb_path, w.thumb_sha] : null)).digest("hex");
 }
 function moderation(wall: Snap): string {

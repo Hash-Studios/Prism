@@ -6,8 +6,11 @@ import {HttpsError, onCall, type CallableRequest} from "firebase-functions/v2/ht
 import {isValidRequestId} from "./coinsCallables";
 import {coinTransactionDoc, db, int, readDailyCount, CALLABLE_REGIONS, REGION, str, utcDateString} from "./common";
 import {approvedWall} from "./creatorProgress";
+import {isoWeek} from "./creatorStatsHistory";
 import {loadEconomy} from "./economy";
+import {ownedThumbnailUrl, stored, verifyStoredUploadRegistry} from "./ownedAssetDelivery";
 import {addTip} from "./tips";
+import {STUDIO_ACCOUNT} from "./studio/account";
 
 /** Integer percent of the price that goes to the creator, rounded down. Code, not config: it is the promise to creators. */
 export const CREATOR_SHARE_PERCENT = 70;
@@ -36,12 +39,15 @@ export const unlockRef = (uid: string, wallDocId: string) =>
 
 /** True when the marker grants this buyer the wall: it names the wall and was not refunded. */
 export function unlockGrants(marker: admin.firestore.DocumentData | undefined, wall: admin.firestore.DocumentData,
-  wallDocId: string): boolean {
-  return !!marker && marker.wallDocId === wallDocId && marker.wallId === wall.id && marker.refundedAt === undefined;
+  wallDocId: string, incarnation: {millis: number; nanos: number}): boolean {
+  return !!marker && marker.wallDocId === wallDocId && marker.wallId === wall.id && marker.refundedAt === undefined &&
+    marker.wallIncarnation === incarnation.millis && marker.wallIncarnationNanos === incarnation.nanos;
 }
 
 const key = (uid: string) => encodeURIComponent(uid).replace(/_/g, "%5F");
 const sha = (text: string) => createHash("sha256").update(text).digest("hex");
+const refundKey = (wallDocId: string, incarnation: {millis: number; nanos: number}) =>
+  sha(`walls/${wallDocId}\0${incarnation.millis}:${incarnation.nanos}`);
 
 /** Overridable in tests. */
 export const creatorWallIo = {
@@ -65,19 +71,45 @@ export const creatorWallIo = {
 
 /** Studio, AI, remix, live, streak and Drop walls, and walls from other providers, are never for sale. */
 function originalUpload(wall: admin.firestore.DocumentData): boolean {
-  return str(wall.wallpaper_provider).toLowerCase() === "prism" && wall.origin !== "studio" && wall.byStudio !== true &&
-    wall.isAiGenerated !== true && !wall.aiGenerationId && !wall.remixOf && wall.kind !== "live" &&
+  const aiMetadata = wall.aiMetadata;
+  const hasAiMetadata = !!aiMetadata && (typeof aiMetadata !== "object" || Object.keys(aiMetadata).length > 0);
+  return str(wall.wallpaper_provider).toLowerCase() === "prism" && wall.origin !== "studio" &&
+    wall.byStudio !== true && wall.email !== STUDIO_ACCOUNT.email && !wall.studioRunId && !wall.studioCandidateId &&
+    wall.isAiGenerated !== true && !wall.aiGenerationId && !hasAiMetadata && !wall.remixOf && wall.kind !== "live" &&
     wall.is_streak_exclusive !== true && wall.dropReserved !== true && !wall.dropWeek && wall.heldForReview !== true &&
     wall.wallpaper_url === "";
 }
 
 /** An approved wall whose protected original is the creator's own private upload. */
-function sellable(wall: admin.firestore.DocumentData, manifest: admin.firestore.DocumentData | undefined,
-  wallRef: admin.firestore.DocumentReference, creatorUid: string): boolean {
-  return originalUpload(wall) && approvedWall(wall) && wall.originalProtected === true &&
+async function sellable(wall: admin.firestore.DocumentData, manifest: admin.firestore.DocumentData | undefined,
+  wallRef: admin.firestore.DocumentReference, wallSnap: admin.firestore.DocumentSnapshot,
+  creatorUid: string, aliases: admin.firestore.QuerySnapshot, tx: admin.firestore.Transaction): Promise<boolean> {
+  if (!(originalUpload(wall) && approvedWall(wall) && wall.originalProtected === true &&
+    aliases.size === 1 && aliases.docs[0].ref.path === wallRef.path && !!wallSnap.createTime &&
     manifest?.status === "ready" && manifest.canonicalPath === wallRef.path &&
+    manifest.incarnation === wallSnap.createTime.toMillis() &&
+    manifest.incarnationNanos === wallSnap.createTime.nanoseconds &&
     manifest.provenance?.kind === "owned" && manifest.provenance?.uid === creatorUid &&
-    wall.originalObjectId === manifest.original?.objectId;
+    stored(manifest.original) && stored(manifest.thumb) && manifest.original.previewObjectId === undefined &&
+    manifest.original.sourceKind === "owned" && manifest.original.uid === creatorUid &&
+    manifest.thumb.sourceKind === "owned" && manifest.thumb.uid === creatorUid &&
+    !!manifest.thumb.previewObjectId && manifest.original.objectId !== manifest.thumb.objectId &&
+    manifest.original.object !== manifest.thumb.object && wall.originalObjectId === manifest.original.objectId &&
+    manifest.original.sha256 !== manifest.thumb.sha256 &&
+    wall.wallpaper_thumb === ownedThumbnailUrl(manifest.thumb) && wall.wallpaper_path === "" &&
+    wall.wallpaper_sha === "" && wall.thumb_path === "" && wall.thumb_sha === "" &&
+    Array.isArray(wall.collections) && wall.collections.every((entry: unknown) => typeof entry === "string"))) return false;
+  try {
+    await Promise.all([verifyStoredUploadRegistry(manifest.original, tx), verifyStoredUploadRegistry(manifest.thumb, tx)]);
+  } catch {
+    return false;
+  }
+  const sameHashRows = await Promise.all([
+    tx.get(db.collection("ownedAssets").where("original.sha256", "==", manifest.original.sha256)),
+    tx.get(db.collection("ownedAssets").where("thumb.sha256", "==", manifest.original.sha256)),
+  ]);
+  return !sameHashRows.flatMap((rows) => rows.docs)
+    .some((doc) => doc.id !== wall.id && doc.data().status === "ready");
 }
 
 function wallDocIdFrom(raw: unknown): string {
@@ -141,15 +173,30 @@ export const setWallPrice = onCall(
       }
       if (!originalUpload(wall)) return refused("creator_wall_not_original");
       if (wall.review === true) {
-        const manifest = (await tx.get(db.collection("ownedAssets").doc(str(wall.id) || "-"))).data();
-        if (!sellable(wall, manifest, wallRef, uid)) return refused("creator_wall_not_original");
+        const [manifestSnap, aliases] = await Promise.all([
+          tx.get(db.collection("ownedAssets").doc(str(wall.id) || "-")),
+          tx.get(db.collection("walls").where("id", "==", wall.id).limit(2)),
+        ]);
+        if (!await sellable(wall, manifestSnap.data(), wallRef, wallSnap, uid, aliases, tx)) {
+          return refused("creator_wall_not_original");
+        }
       }
-      const approved = await tx.get(db.collection("walls").where("creatorUid", "==", uid)
-        .where("review", "==", true).limit(20));
-      if (!approved.docs.some((doc) => approvedWall(doc.data())) && !(wall.review === true && approvedWall(wall))) {
+      let hasApprovedWall = wall.review === true && approvedWall(wall);
+      let cursor: admin.firestore.QueryDocumentSnapshot | undefined;
+      while (!hasApprovedWall) {
+        let query = db.collection("walls").where("creatorUid", "==", uid).where("review", "==", true).limit(20);
+        if (cursor) query = query.startAfter(cursor);
+        const page = await tx.get(query);
+        hasApprovedWall = page.docs.some((doc) => approvedWall(doc.data()));
+        if (hasApprovedWall || page.size < 20) break;
+        cursor = page.docs[page.size - 1];
+      }
+      if (!hasApprovedWall) {
         return refused("creator_wall_seller_no_approved_wall");
       }
-      if (wall.creatorPrice !== price) tx.update(wallRef, {creatorPrice: price});
+      if (wall.creatorPrice !== price || !str(wall.creatorUid)) {
+        tx.update(wallRef, {creatorPrice: price, ...(!str(wall.creatorUid) ? {creatorUid: uid} : {})});
+      }
       return {success: true, reason: "creator_wall_price_set", price};
     });
   },
@@ -180,6 +227,22 @@ function storedUnlock(data: admin.firestore.DocumentData, txId: string): UnlockR
   };
 }
 
+function replayUnlock(receiptSnap: admin.firestore.DocumentSnapshot, wallSnap: admin.firestore.DocumentSnapshot,
+  markerSnap: admin.firestore.DocumentSnapshot, wallDocId: string, txId: string): UnlockResponse | null {
+  if (!receiptSnap.exists) return null;
+  const receipt = receiptSnap.data() ?? {};
+  if (receipt.wallId !== wallDocId) throw new HttpsError("already-exists", "requestId was used for another wall.");
+  const wall = wallSnap.data();
+  const marker = markerSnap.data();
+  if (wall && wallSnap.createTime && int(receipt.wallIncarnation, -1) === wallSnap.createTime.toMillis() &&
+    int(receipt.wallIncarnationNanos, -1) === wallSnap.createTime.nanoseconds && marker?.transactionId === txId &&
+    unlockGrants(marker, wall, wallDocId,
+      {millis: wallSnap.createTime.toMillis(), nanos: wallSnap.createTime.nanoseconds})) {
+    return storedUnlock(receipt, txId);
+  }
+  return refusal("creator_wall_unavailable");
+}
+
 /** One paid unlock of a creator wall: both balances, both ledger docs, the marker, the sales totals and the caps. */
 export const unlockCreatorWall = onCall(
   {region: CALLABLE_REGIONS, cors: true},
@@ -199,8 +262,15 @@ export const unlockCreatorWall = onCall(
     const buyerKey = key(uid);
     const txId = `ctx_cwbuy_${buyerKey}_${requestId}`;
     const txRef = db.collection("coinTransactions").doc(txId);
-    const done = await txRef.get();
-    if (done.exists) return storedUnlock(done.data() ?? {}, txId);
+    const requestedWallRef = db.collection("walls").doc(wallDocId);
+    const requestedMarkerRef = unlockRef(uid, wallDocId);
+    const replay = await db.runTransaction(async (tx) => {
+      const [done, wallSnap, markerSnap] = await Promise.all([
+        tx.get(txRef), tx.get(requestedWallRef), tx.get(requestedMarkerRef),
+      ]);
+      return replayUnlock(done, wallSnap, markerSnap, wallDocId, txId);
+    });
+    if (replay) return replay;
 
     const economy = await loadEconomy();
     if (!economy.flags.creatorWallsEnabled) return refusal("creator_wall_disabled");
@@ -237,7 +307,7 @@ export const unlockCreatorWall = onCall(
         tx.get(salesRef),
       ]);
       if (txSnap.exists) {
-        response = storedUnlock(txSnap.data() ?? {}, txId);
+        response = replayUnlock(txSnap, wallSnap, markerSnap, wallDocId, txId);
         return;
       }
       const buyer = buyerSnap.data();
@@ -247,8 +317,13 @@ export const unlockCreatorWall = onCall(
       const balance = Math.max(0, int(buyer.coins, 0));
       const wall = wallSnap.data();
       const price = creatorPriceOf(wall);
-      if (wall && markerSnap.exists && unlockGrants(markerSnap.data(), wall, wallDocId)) {
+      if (wall && markerSnap.exists && wallSnap.createTime && unlockGrants(markerSnap.data(), wall, wallDocId,
+        {millis: wallSnap.createTime.toMillis(), nanos: wallSnap.createTime.nanoseconds})) {
         response = {...refusal("already_unlocked", balance, price), success: true};
+        return;
+      }
+      if (markerSnap.exists && markerSnap.data()?.refundedAt === undefined) {
+        response = refusal("creator_wall_unavailable", balance, price);
         return;
       }
       const creator = creatorSnap.data();
@@ -257,8 +332,12 @@ export const unlockCreatorWall = onCall(
         response = refusal("creator_wall_unavailable", balance);
         return;
       }
-      const manifest = (await tx.get(db.collection("ownedAssets").doc(str(wall.id) || "-"))).data();
-      if (!sellable(wall, manifest, wallRef, creatorUid)) {
+      const [manifestSnap, aliases] = await Promise.all([
+        tx.get(db.collection("ownedAssets").doc(str(wall.id) || "-")),
+        tx.get(db.collection("walls").where("id", "==", wall.id).limit(2)),
+      ]);
+      const manifest = manifestSnap.data();
+      if (!await sellable(wall, manifest, wallRef, wallSnap, creatorUid, aliases, tx)) {
         response = refusal("creator_wall_unavailable", balance);
         return;
       }
@@ -292,8 +371,14 @@ export const unlockCreatorWall = onCall(
       }
 
       const at = admin.firestore.Timestamp.fromMillis(nowMs);
+      const wallCreated = wallSnap.createTime;
+      if (!wallCreated) {
+        response = refusal("creator_wall_unavailable", balance, price);
+        return;
+      }
       const creatorBalance = Math.max(0, int(creator.coins, 0));
-      const link = {wallId: wallDocId, price, creatorShare: share, unlockId: `${buyerKey}_${requestId}`};
+      const link = {wallId: wallDocId, price, creatorShare: share, unlockId: `${buyerKey}_${requestId}`,
+        wallIncarnation: wallCreated.toMillis(), wallIncarnationNanos: wallCreated.nanoseconds};
       const buyerLedger = coinTransactionDoc({id: txId, userId: uid, at, delta: -price, balanceBefore: balance,
         action: "creatorWallUnlock", description: `Creator wall: ${price} coins`, sourceTag: "creatorWalls.unlock",
         reason: `creator_wall_${wallDocId}`});
@@ -304,8 +389,10 @@ export const unlockCreatorWall = onCall(
       tx.update(creatorRef, {coins: creatorBalance + share});
       tx.set(txRef, {...buyerLedger, ...link, counterpartyUid: creatorUid});
       tx.set(creatorTxRef, {...creatorLedger, ...link, counterpartyUid: uid});
-      tx.set(markerRef, {wallId: str(wall.id), wallDocId, creatorUid, price, creatorShare: share, transactionId: txId,
-        unlockedAt: at});
+      tx.set(markerRef, {wallId: str(wall.id), wallDocId, creatorUid, price, creatorShare: share,
+        wallIncarnation: wallCreated.toMillis(), wallIncarnationNanos: wallCreated.nanoseconds,
+        pendingRefundKey: refundKey(wallDocId, {millis: wallCreated.toMillis(), nanos: wallCreated.nanoseconds}),
+        transactionId: txId, unlockedAt: at});
       tx.set(buyerCapRef, {day: today, count: boughtToday + 1, buyerUid: uid});
       tx.set(pairCapRef, {day: today, count: pairToday + 1, buyerUid: uid, creatorUid});
       tx.set(creatorCapRef, {day: today, coins: soldToday + share, creatorUid});
@@ -319,25 +406,30 @@ export const unlockCreatorWall = onCall(
 );
 
 /** Refunds one unlock of a deleted wall. A stamped marker is skipped, so a retry never pays twice. */
-export async function refundUnlock(markerRef: admin.firestore.DocumentReference): Promise<boolean> {
+export async function refundUnlock(markerRef: admin.firestore.DocumentReference,
+  incarnation: {millis: number; nanos: number}, pendingKey: string): Promise<boolean> {
   return db.runTransaction(async (tx) => {
     const marker = (await tx.get(markerRef)).data();
     const buyerUid = markerRef.parent.parent?.id ?? "";
-    if (!marker || marker.refundedAt !== undefined || !buyerUid) return false;
+    if (!marker || marker.refundedAt !== undefined || !buyerUid || marker.pendingRefundKey !== pendingKey ||
+      marker.wallIncarnation !== incarnation.millis || marker.wallIncarnationNanos !== incarnation.nanos) return false;
     const price = Math.max(0, int(marker.price, 0));
     const share = Math.max(0, Math.min(price, int(marker.creatorShare, 0)));
     const creatorUid = str(marker.creatorUid);
     const buyerRef = db.collection("usersv2").doc(buyerUid);
     const creatorRef = creatorUid && !creatorUid.includes("/") ? db.collection("usersv2").doc(creatorUid) : null;
     const salesRef = creatorRef ? db.collection(SALES).doc(creatorUid) : null;
-    const [buyerSnap, creatorSnap, salesSnap] = await Promise.all([
+    const [buyerSnap, creatorSnap, salesSnap, buyerBarrier, creatorBarrier] = await Promise.all([
       tx.get(buyerRef), creatorRef ? tx.get(creatorRef) : null, salesRef ? tx.get(salesRef) : null,
+      tx.get(db.collection("creatorDeletionState").doc(buyerUid)),
+      creatorUid ? tx.get(db.collection("creatorDeletionState").doc(creatorUid)) : null,
     ]);
     const at = admin.firestore.Timestamp.now();
     const id = sha(markerRef.path + "\0" + str(marker.transactionId));
     const link = {wallId: str(marker.wallDocId), price, creatorShare: share, refundOf: str(marker.transactionId)};
     const buyer = buyerSnap.data();
-    if (buyer && buyer.deleted !== true && price > 0) {
+    const buyerActive = !!buyer && buyer.deleted !== true && buyerBarrier.data()?.closed !== true;
+    if (buyerActive && price > 0) {
       const balance = Math.max(0, int(buyer.coins, 0));
       tx.update(buyerRef, {coins: balance + price});
       tx.set(db.collection("coinTransactions").doc(`ctx_cwrefund_${id}`), {...coinTransactionDoc({
@@ -346,7 +438,8 @@ export async function refundUnlock(markerRef: admin.firestore.DocumentReference)
         reason: "creator_wall_removed"}), ...link, counterpartyUid: creatorUid});
     }
     const creator = creatorSnap?.data();
-    if (creatorRef && creator && creator.deleted !== true && share > 0) {
+    if (buyerActive && creatorRef && creator && creator.deleted !== true &&
+      creatorBarrier?.data()?.closed !== true && share > 0) {
       const balance = Math.max(0, int(creator.coins, 0));
       const taken = Math.min(share, balance);
       if (taken > 0) {
@@ -358,40 +451,51 @@ export async function refundUnlock(markerRef: admin.firestore.DocumentReference)
       }
     }
     const sales = salesSnap?.data();
-    if (salesRef && sales) {
+    if (buyerActive && salesRef && sales) {
       const walls = {...(typeof sales.walls === "object" && sales.walls !== null ? sales.walls : {})};
       const row = walls[link.wallId];
       if (row) {
         walls[link.wallId] = {count: Math.max(0, int(row.count, 0) - 1), coins: Math.max(0, int(row.coins, 0) - share)};
       }
+      const weeks = {...(typeof sales.weeks === "object" && sales.weeks !== null ? sales.weeks : {})};
+      const week = marker.unlockedAt instanceof admin.firestore.Timestamp ? isoWeek(marker.unlockedAt.toMillis()) :
+        str(marker.saleWeek);
+      if (week && weeks[week]) {
+        weeks[week] = {count: Math.max(0, int(weeks[week].count, 0) - 1),
+          coins: Math.max(0, int(weeks[week].coins, 0) - share)};
+      }
       tx.update(salesRef, {count: Math.max(0, int(sales.count, 0) - 1), coins: Math.max(0, int(sales.coins, 0) - share),
-        walls});
+        walls, weeks});
     }
-    tx.update(markerRef, {refundedAt: at});
+    tx.update(markerRef, {refundedAt: at, pendingRefundKey: admin.firestore.FieldValue.delete()});
     return true;
   });
 }
 
 /** Every unlock of a deleted wall is refunded. Pages through the markers, so a retry resumes where it stopped. */
-export async function refundDeletedWall(wallDocId: string): Promise<number> {
+export async function refundDeletedWall(wallDocId: string,
+  incarnation: {millis: number; nanos: number}): Promise<number> {
   let refunded = 0;
-  let cursor: admin.firestore.QueryDocumentSnapshot | undefined;
+  const pendingKey = refundKey(wallDocId, incarnation);
   for (;;) {
-    let query = db.collectionGroup(UNLOCKS).where("wallDocId", "==", wallDocId).limit(100);
-    if (cursor) query = query.startAfter(cursor);
-    const page = await query.get();
+    const page = await db.collectionGroup(UNLOCKS).where("pendingRefundKey", "==", pendingKey).limit(100).get();
     for (const doc of page.docs) {
-      if (doc.data().refundedAt === undefined && await refundUnlock(doc.ref)) refunded++;
+      const marker = doc.data();
+      if (marker.wallIncarnation === incarnation.millis && marker.wallIncarnationNanos === incarnation.nanos &&
+        marker.refundedAt === undefined && await refundUnlock(doc.ref, incarnation, pendingKey)) refunded++;
     }
     if (page.size < 100) break;
-    cursor = page.docs[page.docs.length - 1];
   }
   return refunded;
 }
 
-const deletedWallOptions = {document: "walls/{wallId}", region: REGION, retry: true, cpu: "gcf_gen1" as const};
+const deletedWallOptions = {document: "walls/{wallId}", region: REGION, retry: true, cpu: "gcf_gen1" as const,
+  timeoutSeconds: 540};
 
 export const onCreatorWallDeleted = onDocumentDeleted(deletedWallOptions, async (event) => {
-  const refunded = await refundDeletedWall(event.params.wallId);
+  const created = event.data?.createTime;
+  if (!created) throw new HttpsError("failed-precondition", "Deleted wall incarnation is unavailable.");
+  const refunded = await refundDeletedWall(event.params.wallId,
+    {millis: created.toMillis(), nanos: created.nanoseconds});
   if (refunded > 0) logger.info("onCreatorWallDeleted: refunded buyers.", {wallId: event.params.wallId, refunded});
 });

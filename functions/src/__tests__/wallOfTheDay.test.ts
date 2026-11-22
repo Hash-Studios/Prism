@@ -84,6 +84,7 @@ test("streak-exclusive and premium-collection walls are not eligible", () => {
   assert.equal(isWotdEligible({originalProtected: true, collections: []}, PREMIUM), true);
   assert.equal(isWotdEligible({originalProtected: true, is_streak_exclusive: true, collections: ["nature"]}, PREMIUM), false);
   assert.equal(isWotdEligible({originalProtected: true, collections: ["nature", " space "]}, PREMIUM), false);
+  assert.equal(isWotdEligible({originalProtected: true, collections: ["nature"], creatorPrice: 40}, PREMIUM), false);
   assert.equal(isWotdEligible({originalProtected: true, collections: ["nature"], dropReserved: true}, PREMIUM), false);
   assert.equal(isWotdEligible({originalProtected: true, collections: ["nature"], dropWeek: "2026-W42"}, PREMIUM), false);
 });

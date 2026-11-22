@@ -243,7 +243,7 @@ export async function rebuildCreatorDirectory(nowMs = Date.now()): Promise<{list
   const [wallSnap, dailySnap, edgeSnap, existing] = await Promise.all([
     db.collection("walls").where("review", "==", true).select(
       "id", "creatorUid", "wallpaper_thumb", "category", "createdAt", "review", "originalProtected",
-      "is_streak_exclusive", "dropReserved", "dropWeek", "collections",
+      "creatorPrice", "is_streak_exclusive", "dropReserved", "dropWeek", "collections",
     ).limit(MAX_WALLS).get(),
     db.collection(WALLPAPER_STATS_DAILY).where("day", "in", trendingDays(nowMs)).select("wallId", "day", "favs", "sets").limit(MAX_DAILY_DOCS).get(),
     db.collectionGroup("following").orderBy("createdAt", "desc").select("createdAt").limit(MAX_FOLLOW_EDGES).get(),

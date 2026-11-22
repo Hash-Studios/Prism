@@ -253,6 +253,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
 
   void _restoreDraft(UploadDraft draft) {
     _draftImage = draft.file;
+    _creatorPrice = draft.creatorPrice;
     _restoreMetadata(draft.metadata);
     final session = draft.session;
     if (session == null) return;
@@ -829,7 +830,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
     }
     _submitted = true;
     if (_creatorPrice > 0) {
-      unawaited(_applyCreatorPrice(_wallDocId ?? 'wall_${_fileName ?? id}', _creatorPrice));
+      await _applyCreatorPrice(_wallDocId ?? 'wall_${_fileName ?? id}', _creatorPrice);
     }
     try {
       if (_activeDraftOwner == _draftOwner) await _defaultsStore.save(_draftOwner, _metadata);
@@ -1037,6 +1038,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
         draftId: draftId,
         selectedFile: _selectedImage,
         metadata: _metadata,
+        creatorPrice: _creatorPrice,
         session: UploadSession(
           operationId: _operationId,
           logicalId: id,
@@ -1319,7 +1321,12 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                   const SizedBox(height: PrismSpace.md),
                   CreatorPricePicker(
                     value: _creatorPrice,
-                    onChanged: _isBusy ? null : (int price) => setState(() => _creatorPrice = price),
+                    onChanged: _isBusy
+                        ? null
+                        : (int price) {
+                            setState(() => _creatorPrice = price);
+                            unawaited(_persistDraft().then<void>((_) {}));
+                          },
                   ),
                 ],
                 const SizedBox(height: PrismSpace.md),

@@ -214,7 +214,7 @@ test("preview endpoint is available in both app regions with bounded concurrency
   assert.equal(wallpaperPreview.__endpoint.availableMemoryMb, 1024);
 });
 
-test("a served preview may be kept by the device for a year but never by a shared cache", async (t) => {
+test("a served preview is not cached after its access policy can change", async (t) => {
   const {url} = await setup(t);
   const headers: Record<string, string> = {};
   let body: Buffer | undefined;
@@ -236,7 +236,7 @@ test("a served preview may be kept by the device for a year but never by a share
   };
   await wallpaperPreview({method: "GET", query: {id: "asset", thumb: url}} as unknown as
     Parameters<typeof wallpaperPreview>[0], response as unknown as Parameters<typeof wallpaperPreview>[1]);
-  assert.equal(headers["Cache-Control"], "private, max-age=31536000, immutable");
+  assert.equal(headers["Cache-Control"], "no-store");
   assert.ok(body && body.length > 0);
 });
 

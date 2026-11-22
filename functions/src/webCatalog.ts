@@ -36,7 +36,7 @@ const USERNAME = /^[A-Za-z0-9._-]{1,40}$/;
 const HIDDEN_TEXT = /[\p{Cc}\p{Cf}\p{Co}\p{Cn}\p{Zl}\p{Zp}]/gu;
 const PALETTE_HEX = new Map(PALETTE.map(({id, hex}) => [id, `#${hex}`]));
 const RELEVANT_FIELDS = ["id", "review", "originalProtected", "is_streak_exclusive", "dropReserved", "dropWeek",
-  "collections", "wallpaper_thumb", "title", "desc", "tags", "category", "colors", "resolution", "by", "creatorUid",
+  "creatorPrice", "collections", "wallpaper_thumb", "title", "desc", "tags", "category", "colors", "resolution", "by", "creatorUid",
   "createdAt", "desktopVariant", "visionLabels"];
 
 type Doc = admin.firestore.DocumentData;

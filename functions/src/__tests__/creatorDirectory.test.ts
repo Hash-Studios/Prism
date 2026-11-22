@@ -89,6 +89,7 @@ test("walls that are not public do not count toward the minimum", async (t) => {
     ["drop", {dropReserved: true}],
     ["streak", {is_streak_exclusive: true}],
     ["premium", {collections: ["pro"]}],
+    ["creator-priced", {creatorPrice: 40}],
   ];
   const mixed = bad.map(([name, extra]) => seedOf(
     wall(`${name}-1`, `k-${name}`, 10), wall(`${name}-2`, `k-${name}`, 11),

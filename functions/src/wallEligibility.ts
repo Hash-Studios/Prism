@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import {logger} from "firebase-functions/v2";
 import {db} from "./common";
 import {getOwnedWallDelivery} from "./ownedAssetDelivery";
+import {creatorPriceOf} from "./creatorWalls";
 
 const DEFAULT_PREMIUM_COLLECTIONS = [
   "space",
@@ -27,7 +28,8 @@ export function isWotdEligible(
   wall: admin.firestore.DocumentData,
   premiumCollections: string[],
 ): boolean {
-  if (wall.originalProtected !== true || wall.is_streak_exclusive === true || wall.dropReserved === true || wall.dropWeek) return false;
+  if (wall.originalProtected !== true || wall.is_streak_exclusive === true || wall.dropReserved === true || wall.dropWeek ||
+    creatorPriceOf(wall) > 0) return false;
   if (!Array.isArray(wall.collections) || wall.collections.some((entry) => typeof entry !== "string")) return false;
   const collections: string[] = wall.collections;
   return !collections.some((c) =>
@@ -77,4 +79,4 @@ export async function premiumCollections(): Promise<string[]> {
 }
 
 export const SIMILAR_FIELDS = ["id", "review", "createdAt", "colors", "visionLabels", "collections", "category", "spatial",
-  "depth", "originalProtected", "is_streak_exclusive", "dropReserved", "dropWeek", "wallpaper_thumb"];
+  "depth", "originalProtected", "creatorPrice", "is_streak_exclusive", "dropReserved", "dropWeek", "wallpaper_thumb"];

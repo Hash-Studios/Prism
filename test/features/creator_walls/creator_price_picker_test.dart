@@ -57,6 +57,18 @@ void main() {
     expect(find.text('75'), findsOneWidget);
   });
 
+  testWidgets('keeps a grandfathered current price visible after prices change', (tester) async {
+    EconomyConfig.current = EconomyConfig.fromMap(<String, dynamic>{
+      'creatorWalls': <String, dynamic>{'prices': <int>[40, 75]},
+    });
+    await _pump(tester, value: 20, onChanged: (_) {});
+    expect(find.text('20'), findsOneWidget);
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('20 coins')),
+      matchesSemantics(label: '20 coins', isButton: true, hasSelectedState: true, isSelected: true, hasTapAction: true),
+    );
+  });
+
   testWidgets('tapping 40 calls onChanged with 40', (tester) async {
     final List<int> picked = <int>[];
     await _pump(tester, value: 0, onChanged: picked.add);
@@ -86,7 +98,6 @@ void main() {
         label: '20 coins',
         isButton: true,
         hasSelectedState: true,
-        isSelected: false,
         hasTapAction: true,
       ),
     );

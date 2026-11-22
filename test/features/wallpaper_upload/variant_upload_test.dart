@@ -3,8 +3,10 @@ import 'dart:io';
 
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/cache/prism_image_cache.dart';
+import 'package:Prism/core/coins/economy_config.dart';
 import 'package:Prism/core/firestore/firestore_document.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
+import 'package:Prism/features/creator_walls/creator_walls.dart';
 import 'package:Prism/features/wallpaper_upload/data/upload_draft_store.dart';
 import 'package:Prism/features/wallpaper_upload/views/pages/upload_wall_screen.dart';
 import 'package:Prism/features/wallpaper_upload/views/widgets/wall_tile.dart';
@@ -77,6 +79,7 @@ void main() {
           variantThumb: 'https://example.com/original.jpg',
           variantTitle: 'Dusk Sea',
         ),
+        creatorPrice: 40,
       );
       final UploadDraftStore restarted = UploadDraftStore(
         store: DurableJsonStore('variant_draft_test', directory: recordsDirectory),
@@ -89,6 +92,7 @@ void main() {
       expect(restored.metadata.variantThumb, 'https://example.com/original.jpg');
       expect(restored.metadata.variantTitle, 'Dusk Sea');
       expect(restored.metadata.variantRemoved, isFalse);
+      expect(restored.creatorPrice, 40);
     });
   });
 
@@ -110,8 +114,60 @@ void main() {
       PrismImageCache.testOverride = imageCache;
     });
     tearDown(() {
+      CreatorWallsFlag.debugEnabled = null;
+      EconomyConfig.resetForTest();
       PrismImageCache.testOverride = null;
       AnalyticsRuntime.reset();
+    });
+
+    testWidgets('resumed upload draft restores the selected creator price', (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+        disableAnimations: true,
+      );
+      addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      CreatorWallsFlag.debugEnabled = true;
+      EconomyConfig.current = EconomyConfig.fromMap(<String, dynamic>{
+        'flags': <String, dynamic>{'creatorWallsEnabled': true},
+      });
+      final File image = await _makeImage(tester);
+      final UploadDraft resumed = UploadDraft(
+        owner: UploadDraftStore.guestOwner,
+        draftId: 'resume-price',
+        file: image,
+        metadata: const SubmissionMetadata(),
+        creatorPrice: 20,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: UploadWallScreen(
+            image: image,
+            resumedDraft: resumed,
+            prepareImageForTesting: () async {},
+            imageSizeForTesting: const Size(1, 1),
+            deleteFileForTesting: ({required path, required sha}) async {},
+          ),
+        ),
+      );
+      await _pumpImagePreparation(tester);
+      await tester.ensureVisible(find.text('20').first);
+      await tester.pump();
+      expect(
+        tester.getSemantics(find.bySemanticsLabel('20 coins')),
+        matchesSemantics(
+          label: '20 coins',
+          isButton: true,
+          hasSelectedState: true,
+          isSelected: true,
+          hasTapAction: true,
+        ),
+      );
+      await tester.pumpWidget(const SizedBox());
     });
 
     testWidgets('variant chip shows the wall title and its remove button hides it', (tester) async {

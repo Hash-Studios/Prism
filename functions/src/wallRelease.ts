@@ -30,6 +30,16 @@ export function isScheduledWall(wall: Wall | undefined): boolean {
   return approved !== null && (wall.publishedAt == null || (published !== null && approved > published));
 }
 
+/** A priced pending wall must finish private-original binding before scheduled approval makes it public. */
+function creatorWallReadyForRelease(wall: Wall): boolean {
+  const price = wall.creatorPrice;
+  if (!(typeof price === "number" && Number.isInteger(price) && price >= 10 && price <= 1000)) return true;
+  return wall.originalProtected === true && typeof wall.originalObjectId === "string" &&
+    /^[a-f0-9]{64}$/.test(wall.originalObjectId) && wall.wallpaper_url === "" &&
+    typeof wall.wallpaper_thumb === "string" && wall.wallpaper_thumb !== "" &&
+    ["wallpaper_path", "wallpaper_sha", "thumb_path", "thumb_sha"].every((field) => wall[field] === "");
+}
+
 /** The release time a client may ask for at `nowMs` (epoch ms), or null when it is not 15 minutes to 30 days ahead. */
 export function validReleaseAt(value: unknown, nowMs: number): admin.firestore.Timestamp | null {
   const ms = typeof value === "number" ? value : millis(value);
@@ -82,7 +92,9 @@ export async function publishCreatorWalls(email: string, refs: admin.firestore.D
     const snaps = await Promise.all(refs.map((ref) => tx.get(ref)));
     const due = snaps.filter((snap) => {
       const wall = snap.data();
-      return wall && str(wall.email) === email && wall.dropReserved !== true && wall.dropWeek == null && isScheduledWall(wall) &&
+      return wall && str(wall.email) === email && wall.dropReserved !== true && wall.dropWeek == null &&
+        wall.heldForReview !== true && isScheduledWall(wall) &&
+        creatorWallReadyForRelease(wall) &&
         (millis(wall.releaseAt) ?? Infinity) <= nowMs &&
         (wall.kind !== "live" || wall.live?.verified === true);
     });

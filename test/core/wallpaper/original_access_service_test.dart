@@ -1,13 +1,39 @@
+import 'dart:io';
+
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/constants/app_constants.dart' as app_constants;
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/original_access_service.dart';
+import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
+import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
+import 'package:Prism/features/creator_walls/data/creator_wall_unlocks.dart';
+import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/in_memory_local_store.dart';
+
+PrismWallpaper _pricedWall(String id, String docId) => PrismWallpaper(
+  core: WallpaperCore(
+    id: id,
+    source: WallpaperSource.prism,
+    fullUrl: '',
+    thumbnailUrl: 'https://example.com/thumb.jpg',
+    authorUid: 'maker',
+  ),
+  firestoreDocumentId: docId,
+  creatorPrice: 40,
+);
+
+class _LocalDownloadedWallIndex extends DownloadedWallIndex {
+  _LocalDownloadedWallIndex() : super(SettingsLocalDataSource(InMemoryLocalStore()));
+
+  @override
+  Future<File?> localFileForIdentity({required String id, required WallpaperSource source}) async =>
+      File('/local/$id.jpg');
+}
 
 void main() {
   final now = DateTime.utc(2026);
@@ -144,6 +170,128 @@ void main() {
     expect(inputs.single['mode'], 'quote');
     expect(inputs.single.keys, unorderedEquals(['assetId', 'action', 'requestId', 'mode']));
   });
+
+  test('desktop creator_locked clears only that buyer cached unlock and notifies the gate', () async {
+    var markerReads = 0;
+    final CreatorWallUnlocks unlocks = CreatorWallUnlocks(
+      owner: () => 'alice',
+      read: (_, _) async {
+        markerReads++;
+        return <String, dynamic>{'wallDocId': 'doc-asset', 'wallId': 'asset'};
+      },
+    );
+    unlocks.markUnlocked('doc-asset', wallId: 'asset', ownerUid: 'alice');
+    final int before = unlocks.changes.value;
+    final OriginalAccessService service = OriginalAccessService(
+      owner: () => 'alice',
+      creatorWallUnlocks: unlocks,
+      call: (_) async => <String, dynamic>{
+        'status': 'creator_locked',
+        'assetId': 'asset',
+        'wallId': 'doc-asset',
+        'requiredCoins': 40,
+        'currentBalance': 10,
+      },
+    );
+
+    await expectLater(
+      service.resolve(
+        url: '',
+        wallpaperId: 'asset',
+        wallpaperSource: WallpaperSource.prism,
+        action: OriginalAccessAction.set,
+        desktop: true,
+        desktopVersion: 'v2',
+      ),
+      throwsA(isA<OriginalAccessCreatorLocked>()),
+    );
+
+    expect(unlocks.changes.value, before + 1);
+    expect(unlocks.accessFor(_pricedWall('asset', 'doc-asset')), CreatorWallAccess.locked);
+    expect(unlocks.changes.value, before + 1);
+    expect(markerReads, 0);
+  });
+
+  test('pair creator_locked clears only the refused wall and local-only resolves do not clear cache', () async {
+    var markerReads = 0;
+    final CreatorWallUnlocks unlocks = CreatorWallUnlocks(
+      owner: () => 'alice',
+      read: (_, _) async {
+        markerReads++;
+        return <String, dynamic>{'wallDocId': 'doc-lock', 'wallId': 'lock'};
+      },
+    );
+    unlocks.markUnlocked('doc-home', wallId: 'home', ownerUid: 'alice');
+    unlocks.markUnlocked('doc-lock', wallId: 'lock', ownerUid: 'alice');
+    final OriginalAccessService service = OriginalAccessService(
+      owner: () => 'alice',
+      creatorWallUnlocks: unlocks,
+      call: (_) async => <String, dynamic>{
+        'status': 'creator_locked',
+        'assetId': 'lock',
+        'wallId': 'doc-lock',
+        'requiredCoins': 40,
+        'currentBalance': 10,
+      },
+    );
+    final int before = unlocks.changes.value;
+
+    await expectLater(
+      service.resolvePair(<String>['home', 'lock'], maxCoins: 80),
+      throwsA(isA<OriginalAccessCreatorLocked>()),
+    );
+    expect(unlocks.changes.value, before + 1);
+    expect(unlocks.accessFor(_pricedWall('home', 'doc-home')), CreatorWallAccess.unlocked);
+    expect(unlocks.accessFor(_pricedWall('lock', 'doc-lock')), CreatorWallAccess.locked);
+    expect(unlocks.changes.value, before + 1);
+    expect(markerReads, 0);
+
+    getIt.registerSingleton<DownloadedWallIndex>(_LocalDownloadedWallIndex());
+    addTearDown(getIt.reset);
+    final int beforeLocal = unlocks.changes.value;
+    final String localPath = await service.resolve(
+      url: '',
+      wallpaperId: 'home',
+      wallpaperSource: WallpaperSource.prism,
+      action: OriginalAccessAction.download,
+    );
+    expect(localPath, '/local/home.jpg');
+    expect(unlocks.changes.value, beforeLocal);
+  });
+
+  test('a late creator_locked reply cannot clear the replacement signed-in buyer cache', () async {
+    var owner = 'alice';
+    final CreatorWallUnlocks unlocks = CreatorWallUnlocks(owner: () => owner);
+    owner = 'bob';
+    unlocks.markUnlocked('doc-asset', wallId: 'asset', ownerUid: 'bob');
+    owner = 'alice';
+    final OriginalAccessService service = OriginalAccessService(
+      owner: () => owner,
+      creatorWallUnlocks: unlocks,
+      call: (_) async {
+        owner = 'bob';
+        return <String, dynamic>{
+          'status': 'creator_locked',
+          'assetId': 'asset',
+          'wallId': 'doc-asset',
+          'requiredCoins': 40,
+        };
+      },
+    );
+
+    await expectLater(
+      service.resolve(
+        url: '',
+        wallpaperId: 'asset',
+        wallpaperSource: WallpaperSource.prism,
+        action: OriginalAccessAction.download,
+        desktop: true,
+      ),
+      throwsStateError,
+    );
+    expect(unlocks.accessFor(_pricedWall('asset', 'doc-asset')), CreatorWallAccess.unlocked);
+  });
+
   for (final action in OriginalAccessAction.values) {
     test('${action.name}: denied access never invokes the original consumer', () async {
       var consumed = false;

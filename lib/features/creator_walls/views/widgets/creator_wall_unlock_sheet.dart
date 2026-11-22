@@ -15,11 +15,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Opens the unlock sheet for a priced [wall]. Resolves true when the wall was unlocked, false otherwise.
-Future<bool> showCreatorWallUnlockSheet(BuildContext context, {required PrismWallpaper wall}) async {
+Future<bool> showCreatorWallUnlockSheet(
+  BuildContext context, {
+  required PrismWallpaper wall,
+  CreatorWallUnlocks? unlocks,
+}) async {
   PrismHaptics.tap();
   final bool? unlocked = await showPrismSheet<bool>(
     context,
-    builder: (BuildContext sheetContext) => CreatorWallUnlockSheet(wall: wall),
+    builder: (BuildContext sheetContext) => CreatorWallUnlockSheet(wall: wall, unlocks: unlocks),
   );
   return unlocked ?? false;
 }
@@ -54,8 +58,9 @@ class CreatorWallUnlockSheet extends StatefulWidget {
 
 class _CreatorWallUnlockSheetState extends State<CreatorWallUnlockSheet> {
   _Stage _stage = _Stage.choose;
+  late int _currentPrice = widget.wall.creatorPrice;
 
-  int get _price => widget.wall.creatorPrice;
+  int get _price => _currentPrice;
   String get _wallDocId => widget.wall.firestoreDocumentId ?? '';
 
   @override
@@ -73,14 +78,28 @@ class _CreatorWallUnlockSheetState extends State<CreatorWallUnlockSheet> {
     setState(() => _stage = _Stage.sending);
     final AppLocalizations l10n = context.l10n;
     final String name = _creatorName(l10n);
-    final CreatorWallUnlockResult result = await (widget.unlock ?? CoinsService.instance.unlockCreatorWall)(
-      wallDocId: _wallDocId,
-      expectedPrice: _price,
-    );
+    final CreatorWallUnlocks unlocks = widget.unlocks ?? CreatorWallUnlocks.instance;
+    final String ownerUid = unlocks.currentOwner;
+    late final CreatorWallUnlockResult result;
+    try {
+      result = await (widget.unlock ?? CoinsService.instance.unlockCreatorWall)(
+        wallDocId: _wallDocId,
+        expectedPrice: _price,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _stage = _Stage.choose);
+      toasts.error(l10n.creatorWallUnlockFailed);
+      return;
+    }
     if (!mounted) return;
     unawaited(analytics.track(CreatorWallUnlockedEvent(price: _price, outcome: result.outcome.name)));
     if (result.unlocked) {
-      (widget.unlocks ?? CreatorWallUnlocks.instance).markUnlocked(_wallDocId);
+      unlocks.markUnlocked(
+        _wallDocId,
+        wallId: widget.wall.id,
+        ownerUid: ownerUid,
+      );
       PrismHaptics.success();
       setState(() => _stage = _Stage.unlocked);
       return;
@@ -91,7 +110,17 @@ class _CreatorWallUnlockSheetState extends State<CreatorWallUnlockSheet> {
         toasts.error(l10n.creatorWallNotEnoughCoins);
         return;
       case CreatorWallUnlockOutcome.priceChanged:
-        toasts.info(l10n.creatorWallPriceChanged(result.price));
+        if (result.price >= 10 && result.price <= 1000) {
+          setState(() {
+            _currentPrice = result.price;
+            _stage = _Stage.choose;
+          });
+          toasts.info(l10n.creatorWallPriceChanged(result.price));
+          return;
+        }
+        toasts.info(l10n.creatorWallUnlockFailed);
+        Navigator.of(context).pop(false);
+        return;
       case CreatorWallUnlockOutcome.dailyLimit:
         toasts.info(l10n.creatorWallDailyLimit);
       case CreatorWallUnlockOutcome.pairLimit:
@@ -149,7 +178,8 @@ class _CreatorWallUnlockSheetState extends State<CreatorWallUnlockSheet> {
                 label: l10n.creatorWallUnlockButton(_price),
                 expand: true,
                 loading: sending,
-                onPressed: short || sending ? null : _unlock,
+                // Let the server answer idempotent retries even when the displayed balance is stale.
+                onPressed: sending ? null : _unlock,
               ),
               if (short)
                 PrismButton(

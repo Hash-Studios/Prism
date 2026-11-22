@@ -37,6 +37,7 @@ import 'package:Prism/core/wallpaper/parse_helpers.dart';
 import 'package:Prism/features/ads/domain/entities/rewarded_session.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_charge_mode.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_quality_tier.dart';
+import 'package:Prism/features/creator_walls/data/creator_wall_unlocks.dart';
 import 'package:Prism/features/rewards/domain/creator_progress.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -533,6 +534,7 @@ class CoinsService with WidgetsBindingObserver {
   /// Clears every per-user value at once. Sign-out calls it; the next sign-in loads the new user's state.
   void resetSession() {
     _economySessionGeneration++;
+    CreatorWallUnlocks.instance.resetSession();
     consumeLastClaim();
     balanceNotifier.value = app_state.prismUser.coins;
     streakNotifier.value = StreakStatus.empty;

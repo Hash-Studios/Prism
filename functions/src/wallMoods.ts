@@ -135,7 +135,7 @@ export function moodLists(
 export async function refreshMoods(): Promise<Record<string, number>> {
   const snap = await protectedWalls()
     .select("id", "review", "createdAt", "colors", "visionLabels", "collections", "category", "spatial", "depth", "tags",
-      "originalProtected", "is_streak_exclusive", "dropReserved", "dropWeek")
+      "originalProtected", "creatorPrice", "is_streak_exclusive", "dropReserved", "dropWeek")
     .get();
   const premium = await premiumCollections();
   const lists = moodLists(snap.docs.map((d) => ({id: d.id, data: d.data()})), premium);

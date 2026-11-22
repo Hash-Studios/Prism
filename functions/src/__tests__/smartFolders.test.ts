@@ -354,6 +354,28 @@ test("changesSmartKeys ignores counter-only writes and reacts to key fields and 
     "a colour change must change smart keys");
   assert.equal(changesSmartKeys(undefined, {review: true}), true, "a created wall must change smart keys");
   assert.equal(changesSmartKeys({review: true}, undefined), true, "a deleted wall must change smart keys");
+  assert.equal(changesSmartKeys({review: true, creatorPrice: undefined}, {review: true, creatorPrice: 40}), true,
+    "pricing a wall changes its smart eligibility");
+});
+
+test("a creator price change removes an existing wall from smart folders", async (t) => {
+  const store = setup(t, {
+    ...seedWall("W1", gatedWall({id: "w1", colors: ["blue"]})),
+    ...smartFolderSeed("sf1", [{kind: "colour", value: "blue"}], "colour", ["colour:blue"]),
+  });
+  await syncWallSmartFolders("W1");
+  assert.deepEqual(itemIds(store, "sf1"), ["prism_w1"]);
+  const before = store.get("walls/W1");
+  assert.ok(before);
+  const after = {...before, creatorPrice: 40};
+  store.set("walls/W1", after);
+
+  await onWallSmartFolders.run({params: {wallId: "W1"}, data: {
+    before: {data: () => before}, after: {data: () => after},
+  }} as unknown as Parameters<typeof onWallSmartFolders.run>[0]);
+
+  assert.deepEqual(itemIds(store, "sf1"), []);
+  assert.equal(store.has("smartWallKeys/W1"), false);
 });
 
 test("counter-only trigger events do no database or premium reads", async (t) => {

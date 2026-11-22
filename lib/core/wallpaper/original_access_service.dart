@@ -6,6 +6,7 @@ import 'package:Prism/core/persistence/data_sources/settings_local_data_source.d
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/data/offline/bundled_wallpapers.dart';
+import 'package:Prism/features/creator_walls/data/creator_wall_unlocks.dart';
 import 'package:Prism/features/wallpaper_detail/data/downloaded_wall_index.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 
@@ -34,14 +35,17 @@ class OriginalAccessService {
     Future<Map<String, dynamic>> Function(Map<String, dynamic>)? call,
     String Function()? owner,
     DateTime Function()? now,
+    CreatorWallUnlocks? creatorWallUnlocks,
   }) : _call = call ?? _resolve,
        _owner = owner ?? (() => app_state.prismUser.id),
-       _now = now ?? DateTime.now;
+       _now = now ?? DateTime.now,
+       _creatorWallUnlocks = creatorWallUnlocks ?? CreatorWallUnlocks.instance;
 
   static final OriginalAccessService instance = OriginalAccessService();
   final Future<Map<String, dynamic>> Function(Map<String, dynamic>) _call;
   final String Function() _owner;
   final DateTime Function() _now;
+  final CreatorWallUnlocks _creatorWallUnlocks;
   String get ownerId => _owner();
   final Map<String, String> _pending = {};
   final Map<String, int> _pendingUntil = {};
@@ -143,6 +147,7 @@ class OriginalAccessService {
       key,
       action,
     );
+    _clearStaleCreatorUnlock(reply, owner: owner, requestedIds: <String>[wallpaperId]);
     _throwIfCreatorLocked(reply);
     if (_owner() != owner ||
         reply['status'] != 'quoted' ||
@@ -156,6 +161,18 @@ class OriginalAccessService {
   static void _throwIfCreatorLocked(Map<String, dynamic> reply) {
     final Object? price = reply['requiredCoins'];
     if (reply['status'] == 'creator_locked') throw OriginalAccessCreatorLocked(price is num ? price.toInt() : 0);
+  }
+
+  void _clearStaleCreatorUnlock(
+    Map<String, dynamic> reply, {
+    required String owner,
+    required List<String> requestedIds,
+  }) {
+    if (reply['status'] != 'creator_locked' || _owner() != owner) return;
+    final Object? assetId = reply['assetId'];
+    final Object? wallDocId = reply['wallId'];
+    if (assetId is! String || !requestedIds.contains(assetId) || wallDocId is! String) return;
+    _creatorWallUnlocks.serverDenied(ownerUid: owner, wallDocId: wallDocId, wallId: assetId);
   }
 
   String _pairId(List<String> ids) => 'pair:${ids.join(',')}';
@@ -184,6 +201,7 @@ class OriginalAccessService {
       _pairId(assetIds),
       OriginalAccessAction.set,
     );
+    _clearStaleCreatorUnlock(reply, owner: owner, requestedIds: assetIds);
     _throwIfCreatorLocked(reply);
     if (owner != _owner() ||
         reply['status'] != 'quoted' ||
@@ -236,7 +254,10 @@ class OriginalAccessService {
       OriginalAccessAction.set,
     );
     if (owner != _owner()) throw StateError('Original access unavailable');
-    if (reply['status'] == 'creator_locked') await completePair(assetIds, owner: owner);
+    if (reply['status'] == 'creator_locked') {
+      _clearStaleCreatorUnlock(reply, owner: owner, requestedIds: assetIds);
+      await completePair(assetIds, owner: owner);
+    }
     _throwIfCreatorLocked(reply);
     if (reply['status'] == 'insufficient_balance' || reply['status'] == 'price_changed') {
       await completePair(assetIds, owner: owner);
@@ -342,7 +363,10 @@ class OriginalAccessService {
       action,
     );
     if (_owner() != owner) throw StateError('Original access unavailable');
-    if (reply['status'] == 'creator_locked') await complete(owner: owner, wallpaperId: key, action: action);
+    if (reply['status'] == 'creator_locked') {
+      _clearStaleCreatorUnlock(reply, owner: owner, requestedIds: <String>[wallpaperId]);
+      await complete(owner: owner, wallpaperId: key, action: action);
+    }
     _throwIfCreatorLocked(reply);
     if (reply['status'] == 'insufficient_balance' || reply['status'] == 'price_changed') {
       await complete(owner: owner, wallpaperId: key, action: action);

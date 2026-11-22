@@ -400,6 +400,20 @@ export async function bindOwnedWall(wallId: string, expected?: WallBindingExpect
     if (original.upload.previewObjectId || original.upload.path.split("/").pop()?.startsWith("thumb_") ||
       original.upload.path === thumb.upload.path || original.upload.object === thumb.upload.object || !thumb.upload.previewObjectId ||
       !thumb.upload.path.split("/").pop()?.startsWith("thumb_")) return;
+    // A second logical wall must not become a free route to an original already sold on another share ID.
+    // Conversely, a priced pending wall cannot bind an original that is already attached to another wall.
+    const aliases = await tx.get(db.collection("ownedAssets").where("original.objectId", "==", original.upload.objectId));
+    const otherAliases = aliases.docs.filter((doc) => doc.id !== wallId && doc.data().status === "ready");
+    const currentPriced = Number.isSafeInteger(data.creatorPrice) && (data.creatorPrice as number) > 0;
+    if (otherAliases.length > 0) {
+      if (currentPriced) return;
+      for (const alias of otherAliases) {
+        const aliasPath = alias.data().canonicalPath;
+        if (typeof aliasPath !== "string" || !aliasPath.startsWith("walls/")) continue;
+        const aliasWall = (await tx.get(db.doc(aliasPath))).data();
+        if (Number.isSafeInteger(aliasWall?.creatorPrice) && (aliasWall?.creatorPrice as number) > 0) return;
+      }
+    }
     let author: admin.auth.UserRecord;
     try {
       author = await admin.auth().getUser(original.upload.uid);

@@ -184,6 +184,7 @@ test("walls that are reserved, dropped, streak exclusive, premium or unprotected
     {id: "streak", data: eligible({id: "streak", spatial: {tier: "great"}, is_streak_exclusive: true})},
     {id: "premium", data: eligible({id: "premium", spatial: {tier: "great"}, collections: ["space"]})},
     {id: "unprotected", data: eligible({id: "unprotected", spatial: {tier: "great"}, originalProtected: false})},
+    {id: "creator-priced", data: eligible({id: "creator-priced", spatial: {tier: "great"}, creatorPrice: 40})},
   ];
   const [list] = moodLists([...good, ...excluded], ["space"]);
   assert.deepEqual([...list.wallIds].sort(), good.map((w) => w.id).sort());

@@ -45,6 +45,7 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
   int _formVersion = -1;
   bool _leaving = false;
   bool _confirming = false;
+  bool _priceChanged = false;
   late int _creatorPrice = _creatorPriceOf(widget.wall);
   bool _pricing = false;
 
@@ -76,6 +77,7 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
       price: price,
     );
     if (outcome == WallPriceOutcome.saved || outcome == WallPriceOutcome.removed) {
+      _priceChanged = true;
       unawaited(analytics.track(CreatorWallPriceSetEvent(price: price, source: 'edit')));
     }
     if (!mounted) return;
@@ -98,7 +100,7 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
   }
 
   Future<void> _leave() async {
-    if (_cubit.state.busy || _confirming || _leaving) return;
+    if (_cubit.state.busy || _confirming || _leaving || _pricing) return;
     _flush();
     if (_cubit.state.dirty) {
       _confirming = true;
@@ -118,7 +120,7 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
   void _pop([WallMetadataSnapshot? result]) {
     setState(() => _leaving = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) Navigator.of(context).pop(result);
+      if (mounted) Navigator.of(context).pop(result ?? (_priceChanged ? _cubit.state.snapshot : null));
     });
   }
 
@@ -140,7 +142,7 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
   }
 
   void _save() {
-    if (_cubit.state.busy || _cubit.state.needsReload) return;
+    if (_cubit.state.busy || _cubit.state.needsReload || _pricing) return;
     if (!_flush()) return;
     FocusScope.of(context).unfocus();
     if (!_cubit.state.dirty) {
@@ -252,7 +254,7 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
                   label: context.l10n.wallMetadataSave,
                   loading: state.status == WallMetadataStatus.saving,
                   expand: true,
-                  onPressed: state.busy || state.needsReload ? null : _save,
+                  onPressed: state.busy || state.needsReload || _pricing ? null : _save,
                 ),
         ),
       );
