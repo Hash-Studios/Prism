@@ -79,7 +79,10 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
     if (outcome == WallPriceOutcome.saved || outcome == WallPriceOutcome.removed) {
       _priceChanged = true;
       unawaited(analytics.track(CreatorWallPriceSetEvent(price: price, source: 'edit')));
-      // The price write moved the wall's revision. Pick it up so the next metadata save does not conflict.
+    }
+    if (outcome != WallPriceOutcome.ineligible && outcome != WallPriceOutcome.notOriginal) {
+      // A price write moves the wall's revision. A failed call may still have committed. Pick up the revision so the
+      // next metadata save does not conflict.
       await _cubit.refreshRevision();
     }
     if (!mounted) return;
@@ -127,7 +130,7 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
   }
 
   Future<void> _reload() async {
-    if (_cubit.state.busy || _confirming) return;
+    if (_cubit.state.busy || _confirming || _pricing) return;
     _flush();
     if (_cubit.state.dirty) {
       _confirming = true;
@@ -138,7 +141,7 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
         confirmLabel: context.l10n.wallMetadataReload,
       );
       _confirming = false;
-      if (!reload || !mounted) return;
+      if (!reload || !mounted || _pricing) return;
     }
     await _cubit.load();
   }
@@ -224,9 +227,17 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
                     ),
                     if (CreatorWallsFlag.sellingEnabled || _creatorPrice > 0) ...<Widget>[
                       const SizedBox(height: PrismSpace.xl),
+                      // With selling off, the picker only offers Free, so an owner can remove a price.
                       CreatorPricePicker(
                         value: _creatorPrice,
-                        onChanged: state.busy || _pricing ? null : _setCreatorPrice,
+                        prices: CreatorWallsFlag.sellingEnabled ? null : const <int>[],
+                        onChanged: state.busy || _pricing
+                            ? null
+                            : CreatorWallsFlag.sellingEnabled
+                            ? _setCreatorPrice
+                            : (int price) {
+                                if (price == 0) _setCreatorPrice(0);
+                              },
                       ),
                     ],
                     if (state.failure != null) ...<Widget>[
@@ -244,7 +255,7 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
                           child: PrismButton(
                             label: context.l10n.wallMetadataReload,
                             variant: PrismButtonVariant.ghost,
-                            onPressed: state.busy ? null : _reload,
+                            onPressed: state.busy || _pricing ? null : _reload,
                           ),
                         ),
                     ],

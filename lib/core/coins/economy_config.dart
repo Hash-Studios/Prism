@@ -390,7 +390,8 @@ class EconomyFlags {
   /// ISO 8601 end of legacy prices for clients that send no `pricingVersion`.
   final String legacyPricingUntil;
 
-  /// Server switch for creator premium walls. `setWallPrice` and `unlockCreatorWall` refuse while it is off.
+  /// Server switch for creator premium walls. While it is off, `setWallPrice` refuses a new price and
+  /// `unlockCreatorWall` refuses a new purchase. Removing a price (price 0) and replaying an existing receipt still work.
   final bool creatorWallsEnabled;
 
   DateTime? get foundersUntilAt => DateTime.tryParse(foundersUntil)?.toUtc();

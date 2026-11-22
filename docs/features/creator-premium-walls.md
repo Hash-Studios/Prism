@@ -119,7 +119,7 @@ Each refund transaction checks the key and creation time again, credits the acti
 |---|---|---|
 | Not signed in | `unauthenticated` | No |
 | Bad `wallId`, `expectedPrice` or `requestId` | `invalid-argument` | No |
-| Server switch off | `creator_wall_disabled` | No |
+| Server switch off, new purchase | `creator_wall_disabled`. A retry that matches an existing receipt still returns the stored success. | No |
 | Buyer is the creator | `creator_wall_self` | No |
 | Guest, anonymous or unverified buyer | `creator_wall_buyer_ineligible` | No |
 | Buyer younger than 7 days | `creator_wall_buyer_too_new` | No |

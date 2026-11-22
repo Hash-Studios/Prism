@@ -60,6 +60,7 @@ void main() {
     messenger.setMockMethodCallHandler(toastChannel, null);
     CreatorWallsFlag.debugEnabled = null;
     EconomyConfig.resetForTest();
+    AnalyticsRuntime.reset();
   });
 
   Future<void> pump(
@@ -68,6 +69,11 @@ void main() {
     CreatorWallPrices? prices,
     ValueChanged<WallMetadataSnapshot?>? onPopped,
   }) async {
+    // A tall view keeps the whole picker on screen.
+    tester.view.physicalSize = const Size(800, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     whenListen(cubit, const Stream<WallMetadataState>.empty(), initialState: ready);
     Widget editor() => WallMetadataEditor(
       wall: FirestoreDocument('doc', wallData),
@@ -129,6 +135,19 @@ void main() {
     });
     await pump(tester, wallData: <String, dynamic>{'creatorPrice': 40});
     expect(find.text('Sell this wall'), findsOneWidget);
+    // Only Free and the current price show. The current price cannot be changed.
+    expect(find.text('75'), findsNothing);
+    await tester.ensureVisible(find.text('40'));
+    await tester.tap(find.text('40'));
+    await tester.pump();
+    expect(priceCalls, isEmpty);
+    await tester.tap(find.text('Free'));
+    await tester.pump();
+    await tester.pump();
+    expect(priceCalls, <Map<String, dynamic>>[
+      <String, dynamic>{'wallId': 'doc', 'price': 0},
+    ]);
+    await tester.pump(const Duration(seconds: 1));
   });
 
   testWidgets('a tap on 40 calls setWallPrice with the wall doc id and 40', (tester) async {
@@ -175,6 +194,16 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(returned, snapshot);
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('a price call that fails still reads the revision again, since it may have committed', (tester) async {
+    await pump(tester, prices: CreatorWallPrices(call: (_) async => throw Exception('reply lost')));
+    await tester.ensureVisible(find.text('40'));
+    await tester.tap(find.text('40'));
+    await tester.pump();
+    await tester.pump();
+    verify(() => cubit.refreshRevision()).called(1);
     await tester.pump(const Duration(seconds: 1));
   });
 }
