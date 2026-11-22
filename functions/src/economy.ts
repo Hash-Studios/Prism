@@ -13,6 +13,8 @@ export type WheelSegment =
   ({kind: "coins"; coins: number} | {kind: "cosmetic"; fallbackCoins: number}) &
   {weight: number};
 export interface RankDef { id: string; min: number }
+/** One coin pack: the store product and the coins the server grants for it. Mirrored by `CoinPackDef` in the app. */
+export interface CoinPackDef { productId: string; coins: number; bonusPercent: number }
 
 export interface EconomyConfig {
   version: number;
@@ -97,6 +99,8 @@ export interface EconomyConfig {
   creatorFund: CreatorFundConfig;
   /** The prices a creator may put on a wall. */
   creatorWalls: {prices: number[]};
+  /** Consumable coin packs sold through RevenueCat. See docs/features/coin-packs.md. */
+  coinPacks: CoinPackDef[];
 }
 
 export const CREATOR_FUND_METRICS = ["saves", "sets", "downloads", "remixes", "folderAdds"] as const;
@@ -228,6 +232,12 @@ export const DEFAULT_ECONOMY: EconomyConfig = {
     excludedUids: [],
   },
   creatorWalls: {prices: [20, 40, 75]},
+  coinPacks: [
+    {productId: "prism_coins_100", coins: 100, bonusPercent: 0},
+    {productId: "prism_coins_300", coins: 330, bonusPercent: 10},
+    {productId: "prism_coins_700", coins: 840, bonusPercent: 20},
+    {productId: "prism_coins_1600", coins: 2080, bonusPercent: 30},
+  ],
 };
 
 const MAX_PRICE = 10_000;
@@ -333,13 +343,34 @@ function parseCreatorFund(raw: CreatorFundConfig): CreatorFundConfig {
 }
 
 const MIN_CREATOR_WALL_PRICE = 10;
-const MAX_CREATOR_WALL_PRICE = 1000;
+// 715 pays the creator 500 coins, the full daily creator cap. A higher price could never sell.
+const MAX_CREATOR_WALL_PRICE = 715;
 
-/** 1 to 6 distinct integer prices from 10 to 1000, sorted. Anything else falls back to the default list. */
+/** 1 to 6 distinct integer prices from 10 to 715, sorted. Anything else falls back to the default list. */
 function parseCreatorWallPrices(raw: unknown[]): number[] {
   const valid = raw.length >= 1 && raw.length <= 6 && new Set(raw).size === raw.length &&
     raw.every((price) => isIntIn(price, MAX_CREATOR_WALL_PRICE) && price >= MIN_CREATOR_WALL_PRICE);
   return valid ? [...raw as number[]].sort((a, b) => a - b) : [...DEFAULT_ECONOMY.creatorWalls.prices];
+}
+
+const COIN_PACK_PRODUCT_ID = /^[a-z0-9_.]{1,100}$/;
+const MAX_COIN_PACK = 100_000;
+
+/** Valid packs only, first entry per product id. An empty list sells nothing. */
+function parseCoinPacks(raw: unknown[]): CoinPackDef[] {
+  const seen = new Set<string>();
+  const packs: CoinPackDef[] = [];
+  for (const entry of raw) {
+    if (!isRecord(entry) || typeof entry.productId !== "string" || !COIN_PACK_PRODUCT_ID.test(entry.productId)) continue;
+    if (!isIntIn(entry.coins, MAX_COIN_PACK) || entry.coins < 1 || seen.has(entry.productId)) continue;
+    seen.add(entry.productId);
+    packs.push({
+      productId: entry.productId,
+      coins: entry.coins,
+      bonusPercent: isIntIn(entry.bonusPercent, 1000) ? entry.bonusPercent : 0,
+    });
+  }
+  return packs;
 }
 
 /** Config from a raw Firestore doc, with defaults for anything missing or malformed. */
@@ -383,6 +414,7 @@ export function parseEconomy(raw: unknown): EconomyConfig {
   Object.assign(merged, parseCoinEvents(raw));
   merged.creatorFund = parseCreatorFund(merged.creatorFund);
   merged.creatorWalls = {prices: parseCreatorWallPrices(merged.creatorWalls.prices)};
+  merged.coinPacks = parseCoinPacks(merged.coinPacks);
   merged.proDiscountActions = merged.proDiscountActions.filter((a) => typeof a === "string");
   merged.proBypassActions = merged.proBypassActions.filter((a) => typeof a === "string" && !NEVER_BYPASSED.has(a));
   const ranks = merged.xp.ranks;
@@ -420,6 +452,12 @@ export async function loadEconomy(nowMs = Date.now()): Promise<EconomyConfig> {
   }
   cached = {at: nowMs, config};
   return config;
+}
+
+/** Live coin-pack catalog for purchase/refund decisions. Unlike the display cache, read failures must not use defaults. */
+export async function loadCoinPacks(): Promise<CoinPackDef[]> {
+  const snap = await db.doc(ECONOMY_CONFIG_DOC).get();
+  return parseEconomy(snap.exists ? snap.data() : null).coinPacks;
 }
 
 /** UTC calendar day, `YYYY-MM-DD`. */

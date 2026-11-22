@@ -16091,4 +16091,81 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get coreCoinCreatorWallSaleReversal => 'Penjualan wall dibatalkan';
+
+  @override
+  String get coinPacksTitle => 'Dapatkan koin';
+
+  @override
+  String get coinPacksSubtitle => 'Gunakan koin untuk unduhan, wallpaper AI, Drops, dan tip.';
+
+  @override
+  String coinPacksCoins(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    return '$coinsString koin';
+  }
+
+  @override
+  String coinPacksBonus(int percent) {
+    final intl.NumberFormat percentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String percentString = percentNumberFormat.format(percent);
+
+    return 'Bonus +$percentString%';
+  }
+
+  @override
+  String coinPacksBuyLabel(int coins, String price) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    return 'Beli $coinsString koin seharga $price';
+  }
+
+  @override
+  String get coinPacksLoadFailed => 'Paket koin gagal dimuat. Periksa koneksi Anda lalu coba lagi.';
+
+  @override
+  String get coinPacksRetry => 'Coba lagi';
+
+  @override
+  String get coinPacksEmpty => 'Belum ada paket koin yang dijual.';
+
+  @override
+  String get coinPacksPurchasing => 'Menunggu toko…';
+
+  @override
+  String get coinPacksVerifying => 'Menambahkan koin Anda…';
+
+  @override
+  String coinPacksSuccess(int coins, int balance) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+    final intl.NumberFormat balanceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String balanceString = balanceNumberFormat.format(balance);
+
+    return '$coinsString koin ditambahkan. Saldo Anda $balanceString.';
+  }
+
+  @override
+  String get coinPacksPending => 'Pembelian Anda tertunda. Koin masuk setelah toko mengonfirmasinya.';
+
+  @override
+  String get coinPacksFailed =>
+      'Kami tidak dapat menambahkan koin untuk pembelian ini. Jika toko menagih Anda, hubungi dukungan di Setelan.';
+
+  @override
+  String get coinPacksDone => 'Selesai';
+
+  @override
+  String get coinPacksBuyCoins => 'Beli koin';
+
+  @override
+  String get coinPacksEarnInRewards => 'Dapatkan koin gratis di Hadiah';
+
+  @override
+  String get coreCoinCoinPack => 'Paket koin';
+
+  @override
+  String get coreCoinCoinPackRefund => 'Pengembalian paket koin';
 }

@@ -30,6 +30,7 @@ import 'package:Prism/features/ai_wallpaper/views/ai_wallpaper_helpers.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_decoded_image.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_pickers.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widgets.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/views/widgets/folder_sheet.dart';
 import 'package:Prism/features/session/domain/repositories/session_repository.dart';
@@ -836,7 +837,9 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
                 onPressed: _picking || _checkingPending
                     ? null
                     : short
-                    ? () => context.router.push(RewardsRoute(scrollToEarn: true))
+                    ? () => CoinPacksFlag.available
+                          ? showCoinPacksSheet(context, source: 'photo_wallpaper')
+                          : context.router.push(RewardsRoute(scrollToEarn: true))
                     : _run,
               ),
             PrismButton(

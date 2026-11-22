@@ -106,6 +106,13 @@ enums:
       - author
       - creator
       - admin
+  - name: coin_pack_outcome
+    dart_type: CoinPackOutcomeValue
+    values:
+      - granted
+      - pending
+      - cancelled
+      - failed
   - name: binary_result
     dart_type: BinaryResultValue
     values:
@@ -2330,6 +2337,34 @@ events:
         key: result
         type: string
   - id: coin_history_opened
+  - id: coin_pack_viewed
+    fields:
+      - name: source
+        key: source
+        type: string
+      - name: pack_count
+        key: pack_count
+        type: int
+  - id: coin_pack_purchase_started
+    fields:
+      - name: pack
+        key: pack
+        type: string
+      - name: source
+        key: source
+        type: string
+  - id: coin_pack_purchased
+    fields:
+      - name: pack
+        key: pack
+        type: string
+      - name: outcome
+        key: outcome
+        type: enum
+        enum: CoinPackOutcomeValue
+      - name: source
+        key: source
+        type: string
   - id: push_opened
     fields:
       - name: kind

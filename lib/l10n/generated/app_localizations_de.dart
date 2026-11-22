@@ -16294,4 +16294,82 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get coreCoinCreatorWallSaleReversal => 'Wall-Verkauf rückgängig gemacht';
+
+  @override
+  String get coinPacksTitle => 'Münzen holen';
+
+  @override
+  String get coinPacksSubtitle => 'Gib Münzen für Downloads, KI-Hintergründe, Drops und Trinkgeld aus.';
+
+  @override
+  String coinPacksCoins(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    return '$coinsString Münzen';
+  }
+
+  @override
+  String coinPacksBonus(int percent) {
+    final intl.NumberFormat percentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String percentString = percentNumberFormat.format(percent);
+
+    return '+$percentString% Bonus';
+  }
+
+  @override
+  String coinPacksBuyLabel(int coins, String price) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    return '$coinsString Münzen für $price kaufen';
+  }
+
+  @override
+  String get coinPacksLoadFailed =>
+      'Die Münzpakete wurden nicht geladen. Prüfe deine Verbindung und versuche es erneut.';
+
+  @override
+  String get coinPacksRetry => 'Erneut versuchen';
+
+  @override
+  String get coinPacksEmpty => 'Gerade gibt es keine Münzpakete.';
+
+  @override
+  String get coinPacksPurchasing => 'Warte auf den Store…';
+
+  @override
+  String get coinPacksVerifying => 'Deine Münzen werden gutgeschrieben…';
+
+  @override
+  String coinPacksSuccess(int coins, int balance) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+    final intl.NumberFormat balanceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String balanceString = balanceNumberFormat.format(balance);
+
+    return '$coinsString Münzen gutgeschrieben. Dein Guthaben: $balanceString.';
+  }
+
+  @override
+  String get coinPacksPending => 'Dein Kauf ist ausstehend. Deine Münzen kommen, sobald der Store ihn bestätigt.';
+
+  @override
+  String get coinPacksFailed =>
+      'Für diesen Kauf konnten wir keine Münzen gutschreiben. Wenn der Store dir etwas berechnet hat, wende dich in den Einstellungen an den Support.';
+
+  @override
+  String get coinPacksDone => 'Fertig';
+
+  @override
+  String get coinPacksBuyCoins => 'Münzen kaufen';
+
+  @override
+  String get coinPacksEarnInRewards => 'Verdiene Münzen kostenlos unter Belohnungen';
+
+  @override
+  String get coreCoinCoinPack => 'Münzpaket';
+
+  @override
+  String get coreCoinCoinPackRefund => 'Münzpaket erstattet';
 }

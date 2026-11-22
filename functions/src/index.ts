@@ -64,6 +64,7 @@ export {
   createFolderInvite, getFolderInvite, joinFolder, leaveFolder, removeFolderMember, sendFolderActivityPushes,
 } from "./sharedFolders";
 export {syncSubscription, reconcileSubscriptions} from "./syncSubscription";
+export {verifyCoinPurchase, revenueCatWebhook} from "./coinPacks";
 export {resolveOriginalAccess} from "./originalAccess";
 
 export {recordWallpaperAction, onFavouriteWritten} from "./wallStats";

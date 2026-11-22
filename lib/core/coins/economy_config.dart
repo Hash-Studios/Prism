@@ -21,6 +21,11 @@ int _int(Object? raw, int fallback, {int min = 0, int max = _maxPrice}) {
   return value < min || value > max ? fallback : value;
 }
 
+int _coinPackInt(Object? raw, int max) {
+  if (raw is! num || !raw.isFinite || raw != raw.truncateToDouble() || raw < 0 || raw > max) return 0;
+  return raw.toInt();
+}
+
 int _photoPrice(Object? raw, int fallback) {
   if (raw is! num || !raw.isFinite || raw != raw.truncateToDouble()) return fallback;
   final int value = raw.toInt();
@@ -35,6 +40,34 @@ String _string(Object? raw, String fallback) => raw is String ? raw : fallback;
 
 List<String> _strings(Object? raw, List<String> fallback) =>
     raw is List && raw.every((Object? e) => e is String) ? List<String>.unmodifiable(raw.cast<String>()) : fallback;
+
+/// One coin pack: the store product id and the coins the server grants for it. Mirrors `CoinPackDef` in
+/// functions/src/economy.ts. The server decides the grant; the app only shows these numbers.
+@immutable
+class CoinPackDef {
+  const CoinPackDef({required this.productId, required this.coins, this.bonusPercent = 0});
+
+  final String productId;
+  final int coins;
+  final int bonusPercent;
+
+  static final RegExp _productId = RegExp(r'^[a-z0-9_.]{1,100}$');
+
+  static List<CoinPackDef> listFrom(Object? raw, List<CoinPackDef> fallback) {
+    if (raw is! List) return fallback;
+    final Set<String> seen = <String>{};
+    final List<CoinPackDef> packs = <CoinPackDef>[];
+    for (final Object? entry in raw) {
+      if (entry is! Map) continue;
+      final Object? id = entry['productId'];
+      final int coins = _coinPackInt(entry['coins'], 100000);
+      final int bonusPercent = _coinPackInt(entry['bonusPercent'], 1000);
+      if (id is! String || !_productId.hasMatch(id) || coins < 1 || !seen.add(id)) continue;
+      packs.add(CoinPackDef(productId: id, coins: coins, bonusPercent: bonusPercent));
+    }
+    return List<CoinPackDef>.unmodifiable(packs);
+  }
+}
 
 /// UTC calendar day, `YYYY-MM-DD`. Mirrors `dayKey` in functions/src/economy.ts.
 String economyDayKey(DateTime time) => time.toUtc().toIso8601String().substring(0, 10);
@@ -393,6 +426,12 @@ class EconomyConfig {
     this.shopPrices = const <String, int>{},
     this.coinEvents = CoinEventSchedule.none,
     this.creatorWallPrices = defaultCreatorWallPrices,
+    this.coinPacks = const <CoinPackDef>[
+      CoinPackDef(productId: 'prism_coins_100', coins: 100),
+      CoinPackDef(productId: 'prism_coins_300', coins: 330, bonusPercent: 10),
+      CoinPackDef(productId: 'prism_coins_700', coins: 840, bonusPercent: 20),
+      CoinPackDef(productId: 'prism_coins_1600', coins: 2080, bonusPercent: 30),
+    ],
   });
 
   /// Reads a raw `economyConfig/current` doc. Each missing or malformed field falls back to its default.
@@ -421,17 +460,18 @@ class EconomyConfig {
       creatorWallPrices: raw['creatorWalls'] is Map
           ? _creatorWallPrices(toJsonMap(raw['creatorWalls'])['prices'])
           : defaults.creatorWallPrices,
+      coinPacks: CoinPackDef.listFrom(raw['coinPacks'], defaults.coinPacks),
     );
   }
 
   static const List<int> defaultCreatorWallPrices = <int>[20, 40, 75];
 
-  /// 1 to 6 distinct whole prices from 10 to 1000, sorted. Anything else is the default list, as on the server.
+  /// 1 to 6 distinct whole prices from 10 to 715, sorted. Anything else is the default list, as on the server.
   static List<int> _creatorWallPrices(Object? raw) {
     if (raw is! List || raw.isEmpty || raw.length > 6) return defaultCreatorWallPrices;
     final List<int> prices = <int>[];
     for (final Object? value in raw) {
-      if (value is! int || value < 10 || value > 1000 || prices.contains(value)) return defaultCreatorWallPrices;
+      if (value is! int || value < 10 || value > 715 || prices.contains(value)) return defaultCreatorWallPrices;
       prices.add(value);
     }
     return List<int>.unmodifiable(prices..sort());
@@ -461,6 +501,9 @@ class EconomyConfig {
 
   /// The prices a creator may put on a wall, from `creatorWalls.prices`.
   final List<int> creatorWallPrices;
+
+  /// Coin packs for sale. See docs/features/coin-packs.md.
+  final List<CoinPackDef> coinPacks;
 
   Rank rankFor(int xpTotal) {
     RankDef rank = xp.ranks.first;

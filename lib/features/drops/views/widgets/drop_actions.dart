@@ -5,6 +5,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/biz/coin_gate.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/features/drops/biz/bloc/drops_bloc.j.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/features/drops/views/widgets/unlock_sheet.dart';
@@ -63,7 +64,7 @@ void toastUnlockResult(BuildContext context, DropUnlockResult result) {
     case DropUnlockOutcome.notLive:
       toasts.error(l10n.economyDropOver);
     case DropUnlockOutcome.insufficient:
-      toasts.error(l10n.economyNotEnoughCoins);
+      showCoinShortfall(context, message: l10n.economyNotEnoughCoins, source: 'drops');
     case DropUnlockOutcome.failed:
       toasts.error(l10n.economyDropUnlockFailed);
   }

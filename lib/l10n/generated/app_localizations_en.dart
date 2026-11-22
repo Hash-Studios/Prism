@@ -16022,4 +16022,81 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coreCoinCreatorWallSaleReversal => 'Wall sale reversed';
+
+  @override
+  String get coinPacksTitle => 'Get coins';
+
+  @override
+  String get coinPacksSubtitle => 'Spend coins on downloads, AI wallpapers, Drops and tips.';
+
+  @override
+  String coinPacksCoins(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    return '$coinsString coins';
+  }
+
+  @override
+  String coinPacksBonus(int percent) {
+    final intl.NumberFormat percentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String percentString = percentNumberFormat.format(percent);
+
+    return '+$percentString% bonus';
+  }
+
+  @override
+  String coinPacksBuyLabel(int coins, String price) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    return 'Buy $coinsString coins for $price';
+  }
+
+  @override
+  String get coinPacksLoadFailed => 'Coin packs did not load. Check your connection and try again.';
+
+  @override
+  String get coinPacksRetry => 'Try again';
+
+  @override
+  String get coinPacksEmpty => 'No coin packs are for sale right now.';
+
+  @override
+  String get coinPacksPurchasing => 'Waiting for the store…';
+
+  @override
+  String get coinPacksVerifying => 'Adding your coins…';
+
+  @override
+  String coinPacksSuccess(int coins, int balance) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+    final intl.NumberFormat balanceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String balanceString = balanceNumberFormat.format(balance);
+
+    return '$coinsString coins added. Your balance is $balanceString.';
+  }
+
+  @override
+  String get coinPacksPending => 'Your purchase is pending. Your coins arrive when the store confirms it.';
+
+  @override
+  String get coinPacksFailed =>
+      'We could not add coins for this purchase. If the store charged you, contact support in Settings.';
+
+  @override
+  String get coinPacksDone => 'Done';
+
+  @override
+  String get coinPacksBuyCoins => 'Buy coins';
+
+  @override
+  String get coinPacksEarnInRewards => 'Earn coins for free in Rewards';
+
+  @override
+  String get coreCoinCoinPack => 'Coin pack';
+
+  @override
+  String get coreCoinCoinPackRefund => 'Coin pack refund';
 }

@@ -16182,4 +16182,81 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get coreCoinCreatorWallSaleReversal => 'वॉल बिक्री रद्द हुई';
+
+  @override
+  String get coinPacksTitle => 'सिक्के पाएं';
+
+  @override
+  String get coinPacksSubtitle => 'डाउनलोड, AI वॉलपेपर, Drops और टिप पर सिक्के खर्च करें।';
+
+  @override
+  String coinPacksCoins(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    return '$coinsString सिक्के';
+  }
+
+  @override
+  String coinPacksBonus(int percent) {
+    final intl.NumberFormat percentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String percentString = percentNumberFormat.format(percent);
+
+    return '+$percentString% बोनस';
+  }
+
+  @override
+  String coinPacksBuyLabel(int coins, String price) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    return '$price में $coinsString सिक्के खरीदें';
+  }
+
+  @override
+  String get coinPacksLoadFailed => 'सिक्का पैक लोड नहीं हुए। अपना कनेक्शन जांचें और फिर से कोशिश करें।';
+
+  @override
+  String get coinPacksRetry => 'फिर से कोशिश करें';
+
+  @override
+  String get coinPacksEmpty => 'अभी कोई सिक्का पैक उपलब्ध नहीं है।';
+
+  @override
+  String get coinPacksPurchasing => 'स्टोर का इंतज़ार…';
+
+  @override
+  String get coinPacksVerifying => 'आपके सिक्के जोड़े जा रहे हैं…';
+
+  @override
+  String coinPacksSuccess(int coins, int balance) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+    final intl.NumberFormat balanceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String balanceString = balanceNumberFormat.format(balance);
+
+    return '$coinsString सिक्के जोड़े गए। आपका बैलेंस $balanceString है।';
+  }
+
+  @override
+  String get coinPacksPending => 'आपकी खरीद बाकी है। स्टोर के पुष्टि करने पर सिक्के आ जाएंगे।';
+
+  @override
+  String get coinPacksFailed =>
+      'इस खरीद के सिक्के हम नहीं जोड़ पाए। अगर स्टोर ने पैसे लिए हैं, तो सेटिंग्स में सपोर्ट से संपर्क करें।';
+
+  @override
+  String get coinPacksDone => 'हो गया';
+
+  @override
+  String get coinPacksBuyCoins => 'सिक्के खरीदें';
+
+  @override
+  String get coinPacksEarnInRewards => 'रिवॉर्ड्स में मुफ़्त सिक्के कमाएं';
+
+  @override
+  String get coreCoinCoinPack => 'सिक्का पैक';
+
+  @override
+  String get coreCoinCoinPackRefund => 'सिक्का पैक रिफ़ंड';
 }

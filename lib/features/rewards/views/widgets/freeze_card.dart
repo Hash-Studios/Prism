@@ -8,6 +8,7 @@ import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -34,12 +35,14 @@ Future<void> buyStreakFreezeFlow(
     case _FreezeSheetResult.bought:
       showGlintToast(context);
       toasts.success(l10n.economyFreezeAdded);
+    case _FreezeSheetResult.buy:
+      await showCoinPacksSheet(context, source: 'streak_freeze');
     case _FreezeSheetResult.earn:
       onEarnCoins();
   }
 }
 
-enum _FreezeSheetResult { bought, earn }
+enum _FreezeSheetResult { bought, buy, earn }
 
 /// How many streak freezes you hold, and the way to buy one.
 class FreezeCard extends StatelessWidget {
@@ -208,6 +211,13 @@ class _FreezeSheetState extends State<_FreezeSheet> {
               title: l10n.economyFreezeNeedCoins(cost),
               message: l10n.economyYouHaveCoins(balance),
               actions: <Widget>[
+                if (CoinPacksFlag.available)
+                  PrismButton(
+                    label: l10n.coinPacksBuyCoins,
+                    expand: true,
+                    variant: PrismButtonVariant.tonal,
+                    onPressed: () => Navigator.of(context).pop(_FreezeSheetResult.buy),
+                  ),
                 PrismButton(
                   label: l10n.economyEarnCoins,
                   expand: true,

@@ -1,0 +1,88 @@
+{
+  "appPolicies": {
+    "eula": "",
+    "policies": [
+      {
+        "locale": "en_US",
+        "policyText": "",
+        "policyURL": ""
+      }
+    ]
+  },
+  "identifier": "4437BBAD-CD45-58A1-B608-18B9B3CA9904",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "0.99",
+      "familyShareable": false,
+      "internalID": "6740000000",
+      "localizations": [
+        {
+          "description": "100 Prism Coins",
+          "displayName": "100 Coins",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "prism_coins_100",
+      "referenceName": "prism_coins_100",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "2.99",
+      "familyShareable": false,
+      "internalID": "6740000001",
+      "localizations": [
+        {
+          "description": "330 Prism Coins",
+          "displayName": "330 Coins",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "prism_coins_300",
+      "referenceName": "prism_coins_300",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "6.99",
+      "familyShareable": false,
+      "internalID": "6740000002",
+      "localizations": [
+        {
+          "description": "840 Prism Coins",
+          "displayName": "840 Coins",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "prism_coins_700",
+      "referenceName": "prism_coins_700",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "14.99",
+      "familyShareable": false,
+      "internalID": "6740000003",
+      "localizations": [
+        {
+          "description": "2080 Prism Coins",
+          "displayName": "2080 Coins",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "prism_coins_1600",
+      "referenceName": "prism_coins_1600",
+      "type": "Consumable"
+    }
+  ],
+  "settings": {
+    "_applicationInternalID": "1",
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_storefront": "USA",
+    "_storeKitErrors": []
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}

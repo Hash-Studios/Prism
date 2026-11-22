@@ -34,6 +34,7 @@ Map<String, List<String>> analyticsEnumWireValues() => <String, List<String>>{
   'watch_format': WatchFormat.values.map((value) => value.wireValue).toList(),
   'watch_guide_source': WatchGuideSourceValue.values.map((value) => value.wireValue).toList(),
   'comment_role': CommentRoleValue.values.map((value) => value.wireValue).toList(),
+  'coin_pack_outcome': CoinPackOutcomeValue.values.map((value) => value.wireValue).toList(),
   'binary_result': BinaryResultValue.values.map((value) => value.wireValue).toList(),
   'ai_apply_from': AiApplyFromValue.values.map((value) => value.wireValue).toList(),
   'ai_style_pick_source': AiStylePickSource.values.map((value) => value.wireValue).toList(),
@@ -2798,6 +2799,52 @@ class CoinHistoryOpenedEvent extends AnalyticsEvent {
   @override
   Map<String, Object?> toWireParameters() {
     return const <String, Object?>{};
+  }
+}
+
+class CoinPackViewedEvent extends AnalyticsEvent {
+  const CoinPackViewedEvent({required this.source, required this.packCount});
+
+  final String source;
+  final int packCount;
+
+  @override
+  String get eventName => 'coin_pack_viewed';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'source': source, 'pack_count': packCount};
+  }
+}
+
+class CoinPackPurchaseStartedEvent extends AnalyticsEvent {
+  const CoinPackPurchaseStartedEvent({required this.pack, required this.source});
+
+  final String pack;
+  final String source;
+
+  @override
+  String get eventName => 'coin_pack_purchase_started';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'pack': pack, 'source': source};
+  }
+}
+
+class CoinPackPurchasedEvent extends AnalyticsEvent {
+  const CoinPackPurchasedEvent({required this.pack, required this.outcome, required this.source});
+
+  final String pack;
+  final CoinPackOutcomeValue outcome;
+  final String source;
+
+  @override
+  String get eventName => 'coin_pack_purchased';
+
+  @override
+  Map<String, Object?> toWireParameters() {
+    return <String, Object?>{'pack': pack, 'outcome': outcome.wireValue, 'source': source};
   }
 }
 
