@@ -140,7 +140,7 @@ Home screen setups were removed from the app. Items H1 to H3 and J10 are closed 
 | # | Item | Why | Effort | When |
 |---|------|-----|--------|------|
 | J1 | [ ] **Creator fund** | Top creators earn coins from engagement on their wallpapers | High | Month 3 |
-| J2 | [ ] **Coin purchase packs (IAP)** | ₹29-199 / $0.99-6.99 — additional revenue stream | Medium | Month 3 |
+| J2 | [-] **Coin purchase packs (IAP)** | ₹29-199 / $0.99-6.99 — additional revenue stream. Built behind `coin_packs_enabled`, see features/coin-packs.md. | Medium | Month 3 |
 | J3 | [ ] **Tip jar** | Users tip creators with Prism Coins | Medium | Month 4 |
 | J4 | [ ] **Comments on wallpapers** | Social proof, community, engagement depth | Medium | Month 3 |
 | J5 | [ ] **Home screen widget** | Shows Wall of the Day or rotates wallpapers. Keeps app visible. | High | Month 3 |
