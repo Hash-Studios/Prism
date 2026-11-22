@@ -140,8 +140,6 @@ Each refund transaction checks the key and creation time again, credits the acti
 - Buyers can read their own `creatorWallUnlocks` markers. Configured admin clients cannot read another buyer's markers. Clients cannot write markers or read or write `creatorSales` or `creatorWallSaleDaily`.
 - The refund query needs the ascending collection-group index on `creatorWallUnlocks.pendingRefundKey`.
 
-An earlier branch wrote unlock markers without the wall creation time or `pendingRefundKey`. The current delivery check cannot grant access from those markers, and the deletion trigger cannot find them for refunds. If that build was ever enabled with real wallets, inventory those purchases and reconcile their entitlements and refund records before rollout. No migration has been performed.
-
 Keep both flags off during rollout:
 
 1. Deploy the rules and index. Wait for the collection-group index to be ready before enabling refunds or sales.
