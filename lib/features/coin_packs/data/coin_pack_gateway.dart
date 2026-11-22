@@ -6,7 +6,6 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/coin_packs/domain/coin_pack.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
