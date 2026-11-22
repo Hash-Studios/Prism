@@ -22,6 +22,7 @@ export type CreatorStats = {
   schemaVersion: 1; generatedAt: string; asOf: string; timezone: "UTC";
   approvedWallCount: number; totals: Counts; coverage: Record<Metric, Coverage>; weeks: Week[]; walls: WallStats[];
   tips: Tips;
+  sales: Tips;
 };
 type CachedWall = {at: number; row: WallStats; from: string | null};
 const counts = (value: (metric: Metric) => number | null): Counts => Object.fromEntries(
@@ -36,7 +37,7 @@ function sum(rows: Counts[]): Counts {
     return total;
   });
 }
-/** Tips from `creatorTips/{uid}`, cut to the stats weeks and to the creator's approved walls. */
+/** Tips from `creatorTips/{uid}`, or sales from `creatorSales/{uid}`, cut to the stats weeks and the approved walls. */
 function tipsOf(raw: admin.firestore.DocumentData | undefined, now: number, wallIds: string[]): Tips {
   const tally = (value: unknown): TipTally => {
     const row = (typeof value === "object" && value !== null ? value : {}) as Record<string, unknown>;
@@ -112,7 +113,7 @@ export async function readCreatorStats(uid: string, input: unknown, now = Date.n
     if (!await activeOwner(tx, uid)) throw new HttpsError("failed-precondition", "The creator account is unavailable.");
     const walls = await tx.get(db.collection("walls").where("creatorUid", "==", uid).where("review", "==", true).limit(MAX_WALLS + 1));
     if (walls.size > MAX_WALLS) throw capacity();
-    const tipsSnap = await tx.get(db.doc(`creatorTips/${uid}`));
+    const [tipsSnap, salesSnap] = await Promise.all([tx.get(db.doc(`creatorTips/${uid}`)), tx.get(db.doc(`creatorSales/${uid}`))]);
     const identities = walls.empty ? new Map() : await readWallIdentities(tx);
     const results: Awaited<ReturnType<typeof wallStats>>[] = [];
     for (let i = 0; i < walls.size; i += 10) {
@@ -129,7 +130,8 @@ export async function readCreatorStats(uid: string, input: unknown, now = Date.n
       asOf: new Date(Math.min(now, ...results.map(({cache}) => cache.at))).toISOString(), timezone: "UTC",
       approvedWallCount: rows.length, totals: sum(rows.map((row) => row.totals)), coverage,
       weeks: weekWindows(now).map((window, i) => ({...window, metrics: sum(rows.map((row) => row.weeks[i].metrics))})), walls: rows,
-      tips: tipsOf(tipsSnap.data(), now, rows.map((row) => row.wallId))};
+      tips: tipsOf(tipsSnap.data(), now, rows.map((row) => row.wallId)),
+      sales: tipsOf(salesSnap.data(), now, rows.map((row) => row.wallId))};
     if (Buffer.byteLength(JSON.stringify(response)) > 3 * 1024 * 1024) throw capacity();
     for (const result of results) {
       if (result.write) {

@@ -2307,6 +2307,14 @@
           "queryScope": "COLLECTION_GROUP"
         }
       ]
+    },
+    {
+      "collectionGroup": "creatorWallUnlocks",
+      "fieldPath": "wallDocId",
+      "indexes": [
+        {"order": "ASCENDING", "queryScope": "COLLECTION"},
+        {"order": "ASCENDING", "queryScope": "COLLECTION_GROUP"}
+      ]
     }
   ]
 }

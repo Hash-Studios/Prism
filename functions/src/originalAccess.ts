@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import {createHash} from "node:crypto";
 import {onCall, HttpsError, type CallableRequest} from "firebase-functions/v2/https";
 import {coinTransactionDoc, db, int, CALLABLE_REGIONS} from "./common";
+import {creatorPriceOf, unlockGrants, unlockRef} from "./creatorWalls";
 import {loadEconomy, type EconomyConfig} from "./economy";
 import {parseCollectionList} from "./wallEligibility";
 import {ownedThumbnailUrl, signOriginalDelivery, stored, verifyStoredUploadRegistry} from "./ownedAssetDelivery";
@@ -187,8 +188,21 @@ export const resolveOriginalAccess = onCall({region: CALLABLE_REGIONS, cors: tru
           throw new HttpsError("failed-precondition", "Original collection classification is invalid.");
         }
         const isPremium = wall.collections.some((entry: string) => premium.includes(entry.trim()));
-        const {basis, cost} = priceOriginal(isPremium, originalAction, data,
-          {...privateData, graceDownloadsUsed: graceUsed}, economy);
+        // A priced creator wall is the creator's or its buyers' only. Pro, the pass and grace never open it.
+        const creatorPrice = creatorPriceOf(wall);
+        let creatorBasis: "owner" | "creator" | null = null;
+        if (creatorPrice > 0) {
+          if (wall.creatorUid === uid) {
+            creatorBasis = "owner";
+          } else if (unlockGrants((await tx.get(unlockRef(uid, wallSnap.id))).data(), wall, wallSnap.id)) {
+            creatorBasis = "creator";
+          } else {
+            return {status: "creator_locked" as const, assetId, wallId: wallSnap.id, requiredCoins: creatorPrice,
+              currentBalance};
+          }
+        }
+        const {basis, cost} = creatorBasis ? {basis: creatorBasis, cost: 0} : priceOriginal(isPremium, originalAction,
+          data, {...privateData, graceDownloadsUsed: graceUsed}, economy);
         if (basis === "grace") graceUsed++;
         checked.push({assetId, originalAction, objectId: grantedObjectId, ...(desktop ? {variant: "desktop" as const} : {}),
           isPremium, basis, cost});

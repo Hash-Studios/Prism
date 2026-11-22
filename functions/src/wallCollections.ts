@@ -90,6 +90,7 @@ export const refreshCollections = onSchedule(
     timeZone: "UTC",
     region: REGION,
     retryCount: 2,
+    cpu: "gcf_gen1",
   },
   async () => {
     const changed = await refreshCollectionCovers();

@@ -159,11 +159,11 @@ service cloud.firestore {
     }
 
     function wallServerKeysAbsent() {
-      return !request.resource.data.keys().hasAny(['creatorUid', 'heldForReview', 'heldAt', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantGroupId', 'variantIndex', 'variantLink', 'releaseApprovedAt']);
+      return !request.resource.data.keys().hasAny(['creatorUid', 'heldForReview', 'heldAt', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantGroupId', 'variantIndex', 'variantLink', 'releaseApprovedAt', 'creatorPrice']);
     }
 
     function wallServerKeysUntouched() {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'heldForReview', 'heldAt', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantOf', 'variantGroupId', 'variantIndex', 'variantLink', 'releaseApprovedAt']);
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['creatorUid', 'heldForReview', 'heldAt', 'dropReserved', 'dropWeek', 'boostedUntil', 'depth', 'spatial', 'desktopVariant', 'originalProtected', 'originalObjectId', 'moderation', 'visionLabels', 'searchTerms', 'remixCount', 'remixOf', 'resubmitOf', 'challengeId', 'editorsChoiceAt', 'editorsChoiceBy', 'byStudio', 'variantOf', 'variantGroupId', 'variantIndex', 'variantLink', 'releaseApprovedAt', 'creatorPrice']);
     }
 
     // Optional creator release time: 15 minutes to 30 days after the write. The server checks it again.
@@ -426,6 +426,12 @@ service cloud.firestore {
 
       // Coin economy state (quests, inventory, unlocked drops, passes): owner read, server write.
       match /private/economy {
+        allow read: if isOwner(userId) || isConfiguredAdmin();
+        allow write: if false;
+      }
+
+      // Creator wall unlocks: owner read, only unlockCreatorWall and its refund write.
+      match /creatorWallUnlocks/{wallDocId} {
         allow read: if isOwner(userId) || isConfiguredAdmin();
         allow write: if false;
       }
@@ -997,6 +1003,8 @@ service cloud.firestore {
     // getCreatorFundStatus.
     match /creatorFund/{document=**} { allow read, write: if false; }
     match /creatorFundEvents/{document=**} { allow read, write: if false; }
+    match /creatorSales/{document=**} { allow read, write: if false; }
+    match /creatorWallSaleDaily/{document=**} { allow read, write: if false; }
 
     // Deny everything else by default.
     match /{document=**} {
