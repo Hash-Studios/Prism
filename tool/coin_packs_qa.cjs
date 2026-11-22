@@ -262,13 +262,23 @@ async function seed() {
     createdAt: now, lastLoginAt: now, premium: false, subscriptionTier: 'free', links: {}, followers: [], following: [],
     profilePhoto: image, coverPhoto: image, bio: 'Local QA fixture', badges: [], subPrisms: [], coins: 50, transactions: [],
     interestCategories: ['Nature'], onboardingV2: {completed: true}};
+  // A balance reset without the purchase history would leave granted receipts behind, so a later refund would take
+  // coins the reset already removed. Seed resets both.
+  const receipts = await db.collection('coinPackReceipts').where('userId', '==', VIEWER).get();
+  const rows = await db.collection('coinTransactions').where('userId', '==', VIEWER).get();
+  const batch = db.batch();
+  for (const doc of receipts.docs) batch.delete(doc.ref);
+  for (const doc of rows.docs) if (doc.id.startsWith('ctx_coinpack_')) batch.delete(doc.ref);
+  batch.delete(db.doc(`coinPackVerifyThrottle/${VIEWER}`));
+  await batch.commit();
+  writeJson('rc-state.json', emptyRc());
   await db.doc(`usersv2/${VIEWER}`).set(profile);
   await db.doc(`usersv2/${VIEWER}/private/session`).set({postAlerts: false});
   await db.doc(`profiles/${VIEWER}`).set({...profile, followersCount: 0, followingCount: 0});
   await db.doc('usernames/qaviewer').set({uid: VIEWER});
   const balance = (await db.doc(`usersv2/${VIEWER}`).get()).get('coins');
   assert.equal(balance, 50);
-  console.log(`Seeded ${VIEWER}. Coins balance: ${balance}.`);
+  console.log(`Seeded ${VIEWER}. Coins balance: ${balance}. Coin pack receipts, ledger rows and RevenueCat state cleared.`);
 }
 
 function setFlag(name, on) {
