@@ -1511,7 +1511,7 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         record.userId == app_state.prismUser.id &&
         ownerSession == CoinsService.instance.economySession;
     try {
-      await _repository.saveHistoryRecord(record);
+      await _repository.ensureHistoryRecordSaved(record);
     } on Object catch (error, stackTrace) {
       logger.w('AI generation report target is not synced', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
       if (mounted && ownsSession()) toasts.error(context.l10n.coreSomethingWentWrong);

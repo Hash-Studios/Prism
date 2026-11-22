@@ -177,13 +177,45 @@ void main() {
       requestTimeout: const Duration(milliseconds: 20),
       providerRetryDelays: const <Duration>[Duration.zero, Duration.zero],
     );
-    final AiGenerationRecord record = AiGenerationRecord.fromJson(<String, dynamic>{
+    final AiGenerationRecord record = AiGenerationRecord.fromJson(<String, Object?>{
       'id': 'api-id',
       'userId': 'user-1',
     }, fallbackId: 'firestore-id');
     await repository.saveHistoryRecord(record);
 
     expect(firestore.writes.single.id, 'firestore-id');
+  });
+
+  test('ai_report_target creates a missing doc but never overwrites a stored one', () async {
+    final Directory directory = await Directory.systemTemp.createTemp('ai_report_target_ensure');
+    addTearDown(() => directory.delete(recursive: true));
+    final FakeFirestoreClient firestore = FakeFirestoreClient(
+      docs: <String, Map<String, Map<String, dynamic>>>{
+        'aiGenerations': <String, Map<String, dynamic>>{
+          'stored': <String, dynamic>{'id': 'stored', 'userId': 'user-1', 'submittedWallId': 'wall-1'},
+        },
+      },
+    );
+    await getIt.unregister<FirestoreClient>();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    final AiGenerationRepositoryImpl repository = AiGenerationRepositoryImpl.forTest(
+      client: MockClient((_) async => http.Response(_okBody, 200)),
+      auth: _FakeAuth(),
+      localStore: DurableJsonStore('ai_report_target_ensure', directory: directory),
+      requestTimeout: const Duration(seconds: 1),
+      providerRetryDelays: const <Duration>[Duration.zero, Duration.zero],
+    );
+
+    await repository.ensureHistoryRecordSaved(
+      AiGenerationRecord.fromJson(<String, Object?>{'id': 'stored', 'userId': 'user-1'}),
+    );
+    expect(firestore.writes, isEmpty);
+    expect(firestore.docs['aiGenerations']!['stored']!['submittedWallId'], 'wall-1');
+
+    await repository.ensureHistoryRecordSaved(
+      AiGenerationRecord.fromJson(<String, Object?>{'id': 'missing', 'userId': 'user-1'}),
+    );
+    expect(firestore.writes.single.id, 'missing');
   });
 
   test('Duo request, restored history and variation preserve composition and tier', () async {

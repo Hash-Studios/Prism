@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('AI report target Firestore identity', () {
     test('history document identity wins over a different record id', () {
-      final AiGenerationRecord record = AiGenerationRecord.fromJson(<String, dynamic>{
+      final AiGenerationRecord record = AiGenerationRecord.fromJson(<String, Object?>{
         'id': 'api-generation-id',
         'userId': 'user-1',
         'format': 'duo-reveal',
@@ -17,7 +17,7 @@ void main() {
     });
 
     test('locally cached record retains its Firestore report target', () {
-      final AiGenerationRecord original = AiGenerationRecord.fromJson(<String, dynamic>{
+      final AiGenerationRecord original = AiGenerationRecord.fromJson(<String, Object?>{
         'id': 'api-generation-id',
         'firestoreDocId': 'actual-document-id',
       });
@@ -29,7 +29,7 @@ void main() {
     });
 
     test('new generations default report target to their id', () {
-      final AiGenerationRecord record = AiGenerationRecord.fromJson(<String, dynamic>{'id': 'new-generation'});
+      final AiGenerationRecord record = AiGenerationRecord.fromJson(<String, Object?>{'id': 'new-generation'});
 
       expect(record.reportTargetFirestoreDocId, 'new-generation');
     });

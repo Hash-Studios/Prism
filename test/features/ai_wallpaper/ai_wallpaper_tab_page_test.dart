@@ -133,6 +133,9 @@ class _FakeAiGenerationRepository extends Fake implements AiGenerationRepository
   }) => metadata.future;
 
   @override
+  Future<void> ensureHistoryRecordSaved(AiGenerationRecord record) => saveHistoryRecord(record);
+
+  @override
   Future<void> saveHistoryRecord(AiGenerationRecord record) async {
     savedRecords.add(record);
     if (failHistorySave) throw StateError('history save failed');
