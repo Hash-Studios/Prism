@@ -226,7 +226,13 @@ class AiGenerationRepositoryImpl {
   Future<void> ensureHistoryRecordSaved(AiGenerationRecord record) async {
     // Read the owner generation first, so an account switch during the read skips the save.
     final int generation = _generationFor(record.userId);
-    final AiGenerationRecord? stored = await _fetchById(record.reportTargetFirestoreDocId).timeout(_requestTimeout);
+    AiGenerationRecord? stored;
+    try {
+      stored = await _fetchById(record.reportTargetFirestoreDocId).timeout(_requestTimeout);
+    } on FirestoreError catch (error) {
+      // The read rule checks resource.data.userId, so the owner reads a missing doc as permission-denied.
+      if (error.code != 'permission-denied') rethrow;
+    }
     if (stored == null) await _saveHistoryRecord(record, generation);
   }
 

@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
+import 'package:Prism/core/firestore/firestore_error.dart';
 import 'package:Prism/core/firestore/firestore_query_specs.dart';
 import 'package:Prism/core/offline/durable_json_store.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
@@ -211,6 +212,26 @@ void main() {
     );
     expect(firestore.writes, isEmpty);
     expect(firestore.docs['aiGenerations']!['stored']!['submittedWallId'], 'wall-1');
+
+    await repository.ensureHistoryRecordSaved(
+      AiGenerationRecord.fromJson(<String, Object?>{'id': 'missing', 'userId': 'user-1'}),
+    );
+    expect(firestore.writes.single.id, 'missing');
+  });
+
+  test('ai_report_target saves a doc that the read rule hides as permission-denied', () async {
+    final Directory directory = await Directory.systemTemp.createTemp('ai_report_target_denied');
+    addTearDown(() => directory.delete(recursive: true));
+    final _DeniedReadFirestoreClient firestore = _DeniedReadFirestoreClient();
+    await getIt.unregister<FirestoreClient>();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    final AiGenerationRepositoryImpl repository = AiGenerationRepositoryImpl.forTest(
+      client: MockClient((_) async => http.Response(_okBody, 200)),
+      auth: _FakeAuth(),
+      localStore: DurableJsonStore('ai_report_target_denied', directory: directory),
+      requestTimeout: const Duration(seconds: 1),
+      providerRetryDelays: const <Duration>[Duration.zero, Duration.zero],
+    );
 
     await repository.ensureHistoryRecordSaved(
       AiGenerationRecord.fromJson(<String, Object?>{'id': 'missing', 'userId': 'user-1'}),
@@ -1222,4 +1243,15 @@ class _GatedReadFirestoreClient extends FakeFirestoreClient {
     await gate.future;
     return super.getById(collection, id, map, sourceTag: sourceTag, preferCacheFirst: preferCacheFirst);
   }
+}
+
+class _DeniedReadFirestoreClient extends FakeFirestoreClient {
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async => throw FirestoreError(message: 'denied', code: 'permission-denied');
 }
