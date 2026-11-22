@@ -61,6 +61,7 @@ extension CoinSpendActionWire on CoinSpendAction {
     CoinSpendAction.boostWall => 'boost_wall',
     CoinSpendAction.giftPremiumPass => 'gift_premium_pass',
     CoinSpendAction.tipCreator => 'tip_creator',
+    CoinSpendAction.creatorWallUnlock => 'creator_wall_unlock',
     CoinSpendAction.drawTicket => 'draw_ticket',
     CoinSpendAction.shopItem => 'shop_item',
     CoinSpendAction.spinWheel => 'spin_wheel',

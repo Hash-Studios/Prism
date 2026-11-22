@@ -289,6 +289,33 @@ class TipResult {
   final String reason;
 }
 
+enum CreatorWallUnlockOutcome {
+  unlocked,
+  alreadyUnlocked,
+  insufficient,
+  priceChanged,
+  dailyLimit,
+  pairLimit,
+  creatorLimit,
+  buyerTooNew,
+  buyerIneligible,
+  unavailable,
+  failed,
+}
+
+class CreatorWallUnlockResult {
+  const CreatorWallUnlockResult(this.outcome, {this.price = 0, this.reason = ''});
+
+  final CreatorWallUnlockOutcome outcome;
+
+  /// The price the server charged, or the current price when it refused with [CreatorWallUnlockOutcome.priceChanged].
+  final int price;
+  final String reason;
+
+  bool get unlocked =>
+      outcome == CreatorWallUnlockOutcome.unlocked || outcome == CreatorWallUnlockOutcome.alreadyUnlocked;
+}
+
 enum DrawTicketOutcome { bought, limit, disabled, closed, proNotEligible, insufficient, failed }
 
 class DrawTicketResult {

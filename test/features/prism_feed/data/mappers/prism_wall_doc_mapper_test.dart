@@ -201,4 +201,24 @@ void main() {
       expect(PrismWallDocDto.fromJson(original.toJson()).toDomain(docId: 'a').depthTier, WallDepthTier.menu);
     });
   });
+
+  group('creatorPrice', () {
+    test('maps a price inside the 10 to 1000 range', () {
+      expect(const PrismWallDocDto(creatorPrice: 40).toDomain(docId: 'a').creatorPrice, 40);
+    });
+
+    test('maps an out-of-range or missing price to 0', () {
+      expect(const PrismWallDocDto(creatorPrice: 5).toDomain(docId: 'a').creatorPrice, 0);
+      expect(const PrismWallDocDto(creatorPrice: 2000).toDomain(docId: 'a').creatorPrice, 0);
+      expect(const PrismWallDocDto().toDomain(docId: 'a').creatorPrice, 0);
+    });
+
+    test('isCreatorPriced is false when the wall has a public URL', () {
+      final PrismWallpaper wall = PrismWallDocDto(
+        wallpaperUrl: 'https://x/y.jpg',
+        creatorPrice: 40,
+      ).toDomain(docId: 'a');
+      expect(wall.isCreatorPriced, isFalse);
+    });
+  });
 }

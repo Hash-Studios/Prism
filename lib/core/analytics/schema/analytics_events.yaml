@@ -246,6 +246,7 @@ enums:
       - boost_wall
       - gift_premium_pass
       - tip_creator
+      - creator_wall_unlock
       - draw_ticket
       - shop_item
       - spin_wheel
@@ -3205,6 +3206,27 @@ events:
         type: string
   - id: tip_received_push_opened
     fields: []
+  - id: creator_wall_price_set
+    fields:
+      - name: price
+        key: price
+        type: int
+      - name: source
+        key: source
+        type: string
+  - id: creator_wall_unlock_viewed
+    fields:
+      - name: price
+        key: price
+        type: int
+  - id: creator_wall_unlocked
+    fields:
+      - name: price
+        key: price
+        type: int
+      - name: outcome
+        key: outcome
+        type: string
   - id: draw_ticket_bought
     fields:
       - name: week_key

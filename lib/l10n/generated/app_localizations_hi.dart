@@ -16039,4 +16039,147 @@ class AppLocalizationsHi extends AppLocalizations {
 
   @override
   String get notifPushCreatorFundPaidBody => 'अपनी क्रिएटर स्टैट्स में अपना हिस्सा देखें।';
+
+  @override
+  String get creatorWallPriceTitle => 'यह वॉल बेचें';
+
+  @override
+  String get creatorWallPriceHelp =>
+      'खरीदार एक बार भुगतान करते हैं और पूरी क्वालिटी वाली मूल फ़ाइल अपने पास रखते हैं। आपको कॉइन्स का 70% मिलता है।';
+
+  @override
+  String get creatorWallPriceFree => 'मुफ़्त';
+
+  @override
+  String creatorWallPriceOption(int price) {
+    return '$price कॉइन्स';
+  }
+
+  @override
+  String get creatorWallPriceSaved => 'कीमत सेव हो गई';
+
+  @override
+  String get creatorWallPriceRemoved => 'यह वॉल अब मुफ़्त है';
+
+  @override
+  String get creatorWallPriceFailed => 'कीमत सेव नहीं हो सकी। फिर से कोशिश करें।';
+
+  @override
+  String get creatorWallPriceIneligible =>
+      'जब आपका ईमेल सत्यापित हो, आपका खाता 7 दिन पुराना हो और आपके पास मंज़ूर की गई कोई वॉल हो, तब आप वॉल बेच सकते हैं।';
+
+  @override
+  String get creatorWallPriceNotOriginal => 'सिर्फ़ आपकी अपनी मूल अपलोड की गई वॉल ही बेची जा सकती हैं।';
+
+  @override
+  String creatorWallChipSemantics(int price) {
+    String _temp0 = intl.Intl.pluralLogic(price, locale: localeName, other: '$price कॉइन्स', one: '1 कॉइन');
+    return 'प्रीमियम वॉल, $_temp0';
+  }
+
+  @override
+  String get creatorWallUnlockTitle => 'यह वॉल अनलॉक करें';
+
+  @override
+  String creatorWallUnlockMessage(String creatorName) {
+    return 'पूरी क्वालिटी वाली मूल फ़ाइल पाएं। यह हर डिवाइस पर हमेशा के लिए आपकी होगी। $creatorName को 70% कॉइन्स मिलते हैं।';
+  }
+
+  @override
+  String creatorWallUnlockButton(int price) {
+    String _temp0 = intl.Intl.pluralLogic(price, locale: localeName, other: '$price कॉइन्स', one: '1 कॉइन');
+    return '$_temp0 में अनलॉक करें';
+  }
+
+  @override
+  String creatorWallBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance कॉइन्स', one: '1 कॉइन');
+    return 'आपका बैलेंस: $_temp0';
+  }
+
+  @override
+  String creatorWallShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount और कॉइन्स', one: '1 और कॉइन');
+    return 'आपको $_temp0 चाहिए।';
+  }
+
+  @override
+  String get creatorWallGetCoins => 'कॉइन्स पाएं';
+
+  @override
+  String get creatorWallUnlockedTitle => 'अनलॉक हो गई';
+
+  @override
+  String get creatorWallUnlockedMessage => 'मूल फ़ाइल अब आपकी है। कभी भी डाउनलोड करें या सेट करें।';
+
+  @override
+  String get creatorWallUnlockedBadge => 'अनलॉक';
+
+  @override
+  String get creatorWallDone => 'हो गया';
+
+  @override
+  String creatorWallPriceChanged(int price) {
+    String _temp0 = intl.Intl.pluralLogic(price, locale: localeName, other: '$price कॉइन्स', one: '1 कॉइन');
+    return 'कीमत बदलकर $_temp0 हो गई है। जाँचें और फिर से कोशिश करें।';
+  }
+
+  @override
+  String get creatorWallDailyLimit => 'आज की अनलॉक सीमा पूरी हो गई है। कल फिर कोशिश करें।';
+
+  @override
+  String creatorWallPairLimit(String creatorName) {
+    return 'आपने आज $creatorName की 3 वॉल अनलॉक की हैं। कल फिर कोशिश करें।';
+  }
+
+  @override
+  String creatorWallCreatorLimit(String creatorName) {
+    return '$creatorName की आज की बिक्री सीमा पूरी हो गई है। कल फिर कोशिश करें।';
+  }
+
+  @override
+  String get creatorWallBuyerTooNew => 'वॉल अनलॉक करने के लिए आपका खाता 7 दिन पुराना होना चाहिए।';
+
+  @override
+  String get creatorWallBuyerIneligible => 'वॉल अनलॉक करने के लिए अपना ईमेल सत्यापित करें।';
+
+  @override
+  String get creatorWallUnavailable => 'यह वॉल अभी बिक्री के लिए नहीं है।';
+
+  @override
+  String get creatorWallUnlockFailed => 'वॉल अनलॉक नहीं हो सकी। आपसे कोई शुल्क नहीं लिया गया।';
+
+  @override
+  String get creatorWallNotEnoughCoins => 'कॉइन्स पर्याप्त नहीं हैं।';
+
+  @override
+  String get creatorStatsSalesTitle => 'बिक्री';
+
+  @override
+  String get creatorStatsSalesUnlocks => 'अनलॉक';
+
+  @override
+  String get creatorStatsSalesCoins => 'कमाए गए कॉइन्स';
+
+  @override
+  String get creatorStatsSalesEmpty => 'अभी तक कोई बिक्री नहीं। बेचने के लिए अपनी किसी वॉल पर कीमत लगाएं।';
+
+  @override
+  String creatorStatsSalesWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count अनलॉक', one: '1 अनलॉक');
+    String _temp1 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins कॉइन्स', one: '1 कॉइन');
+    return '$_temp0, $_temp1';
+  }
+
+  @override
+  String get coreCoinCreatorWallUnlock => 'क्रिएटर वॉल';
+
+  @override
+  String get coreCoinCreatorWallSale => 'वॉल बिक्री';
+
+  @override
+  String get coreCoinCreatorWallRefund => 'क्रिएटर वॉल रिफ़ंड';
+
+  @override
+  String get coreCoinCreatorWallSaleReversal => 'वॉल बिक्री रद्द हुई';
 }

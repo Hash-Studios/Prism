@@ -16092,4 +16092,147 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get notifPushCreatorFundPaidBody => 'Mira tu parte en tus estadísticas de creador.';
+
+  @override
+  String get creatorWallPriceTitle => 'Vender este fondo';
+
+  @override
+  String get creatorWallPriceHelp =>
+      'Los compradores pagan una vez y se quedan con el original en calidad completa. Tú recibes el 70 % de las monedas.';
+
+  @override
+  String get creatorWallPriceFree => 'Gratis';
+
+  @override
+  String creatorWallPriceOption(int price) {
+    return '$price monedas';
+  }
+
+  @override
+  String get creatorWallPriceSaved => 'Precio guardado';
+
+  @override
+  String get creatorWallPriceRemoved => 'Este fondo ahora es gratis';
+
+  @override
+  String get creatorWallPriceFailed => 'No se pudo guardar el precio. Inténtalo de nuevo.';
+
+  @override
+  String get creatorWallPriceIneligible =>
+      'Puedes vender fondos cuando verifiques tu correo, tu cuenta tenga 7 días y tengas un fondo aprobado.';
+
+  @override
+  String get creatorWallPriceNotOriginal => 'Solo se pueden vender tus propias subidas originales.';
+
+  @override
+  String creatorWallChipSemantics(int price) {
+    String _temp0 = intl.Intl.pluralLogic(price, locale: localeName, other: '$price monedas', one: '1 moneda');
+    return 'Fondo premium, $_temp0';
+  }
+
+  @override
+  String get creatorWallUnlockTitle => 'Desbloquear este fondo';
+
+  @override
+  String creatorWallUnlockMessage(String creatorName) {
+    return 'Obtén el original en calidad completa. Será tuyo para siempre, en todos tus dispositivos. $creatorName recibe el 70 % de las monedas.';
+  }
+
+  @override
+  String creatorWallUnlockButton(int price) {
+    String _temp0 = intl.Intl.pluralLogic(price, locale: localeName, other: '$price monedas', one: '1 moneda');
+    return 'Desbloquear por $_temp0';
+  }
+
+  @override
+  String creatorWallBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance monedas', one: '1 moneda');
+    return 'Tu saldo: $_temp0';
+  }
+
+  @override
+  String creatorWallShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount monedas', one: '1 moneda');
+    return 'Te faltan $_temp0.';
+  }
+
+  @override
+  String get creatorWallGetCoins => 'Obtener monedas';
+
+  @override
+  String get creatorWallUnlockedTitle => 'Desbloqueado';
+
+  @override
+  String get creatorWallUnlockedMessage => 'El original es tuyo. Puedes descargarlo o establecerlo cuando quieras.';
+
+  @override
+  String get creatorWallUnlockedBadge => 'Desbloqueado';
+
+  @override
+  String get creatorWallDone => 'Listo';
+
+  @override
+  String creatorWallPriceChanged(int price) {
+    String _temp0 = intl.Intl.pluralLogic(price, locale: localeName, other: '$price monedas', one: '1 moneda');
+    return 'El precio cambió a $_temp0. Revísalo e inténtalo de nuevo.';
+  }
+
+  @override
+  String get creatorWallDailyLimit => 'Llegaste al límite de desbloqueos de hoy. Inténtalo mañana.';
+
+  @override
+  String creatorWallPairLimit(String creatorName) {
+    return 'Hoy desbloqueaste 3 fondos de $creatorName. Inténtalo mañana.';
+  }
+
+  @override
+  String creatorWallCreatorLimit(String creatorName) {
+    return '$creatorName llegó al límite de ventas de hoy. Inténtalo mañana.';
+  }
+
+  @override
+  String get creatorWallBuyerTooNew => 'Tu cuenta debe tener 7 días para desbloquear fondos.';
+
+  @override
+  String get creatorWallBuyerIneligible => 'Verifica tu correo para desbloquear fondos.';
+
+  @override
+  String get creatorWallUnavailable => 'Este fondo no está a la venta en este momento.';
+
+  @override
+  String get creatorWallUnlockFailed => 'No se pudo desbloquear el fondo. No se te cobró nada.';
+
+  @override
+  String get creatorWallNotEnoughCoins => 'No tienes suficientes monedas.';
+
+  @override
+  String get creatorStatsSalesTitle => 'Ventas';
+
+  @override
+  String get creatorStatsSalesUnlocks => 'Desbloqueos';
+
+  @override
+  String get creatorStatsSalesCoins => 'Monedas ganadas';
+
+  @override
+  String get creatorStatsSalesEmpty => 'Aún no hay ventas. Pon un precio a uno de tus fondos para venderlo.';
+
+  @override
+  String creatorStatsSalesWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count desbloqueos', one: '1 desbloqueo');
+    String _temp1 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins monedas', one: '1 moneda');
+    return '$_temp0, $_temp1';
+  }
+
+  @override
+  String get coreCoinCreatorWallUnlock => 'Fondo de creador';
+
+  @override
+  String get coreCoinCreatorWallSale => 'Venta de fondo';
+
+  @override
+  String get coreCoinCreatorWallRefund => 'Reembolso de fondo de creador';
+
+  @override
+  String get coreCoinCreatorWallSaleReversal => 'Venta de fondo revertida';
 }

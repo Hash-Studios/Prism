@@ -15292,5 +15292,116 @@
   "creatorFundError": "Dana kreator tidak dapat dimuat. Periksa koneksi Anda lalu coba lagi.",
   "coreCoinCreatorFund": "Dana kreator",
   "notifPushCreatorFundPaidTitle": "{coins, plural, =1{Anda mendapat 1 koin dari Dana kreator} other{Anda mendapat {coins} koin dari Dana kreator}}",
-  "notifPushCreatorFundPaidBody": "Lihat bagian Anda di statistik kreator."
+  "notifPushCreatorFundPaidBody": "Lihat bagian Anda di statistik kreator.",
+  "creatorWallPriceTitle": "Jual wall ini",
+  "creatorWallPriceHelp": "Pembeli membayar sekali dan menyimpan versi asli dengan kualitas penuh. Anda mendapat 70% koin.",
+  "creatorWallPriceFree": "Gratis",
+  "creatorWallPriceOption": "{price} koin",
+  "@creatorWallPriceOption": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallPriceSaved": "Harga disimpan",
+  "creatorWallPriceRemoved": "Wall ini sekarang gratis",
+  "creatorWallPriceFailed": "Harga tidak dapat disimpan. Coba lagi.",
+  "creatorWallPriceIneligible": "Anda dapat menjual wall saat email Anda terverifikasi, akun Anda berusia 7 hari, dan Anda punya wall yang disetujui.",
+  "creatorWallPriceNotOriginal": "Hanya unggahan asli Anda yang dapat dijual.",
+  "creatorWallChipSemantics": "Wall premium, {price, plural, =1{1 koin} other{{price} koin}}",
+  "@creatorWallChipSemantics": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallUnlockTitle": "Buka wall ini",
+  "creatorWallUnlockMessage": "Dapatkan versi asli dengan kualitas penuh. Wall ini milik Anda selamanya, di setiap perangkat. {creatorName} mendapat 70% koin.",
+  "@creatorWallUnlockMessage": {
+    "placeholders": {
+      "creatorName": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorWallUnlockButton": "Buka dengan {price, plural, =1{1 koin} other{{price} koin}}",
+  "@creatorWallUnlockButton": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallBalance": "Saldo Anda: {balance, plural, =1{1 koin} other{{balance} koin}}",
+  "@creatorWallBalance": {
+    "placeholders": {
+      "balance": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallShortBy": "Anda perlu {amount, plural, =1{1 koin lagi} other{{amount} koin lagi}}.",
+  "@creatorWallShortBy": {
+    "placeholders": {
+      "amount": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallGetCoins": "Dapatkan koin",
+  "creatorWallUnlockedTitle": "Terbuka",
+  "creatorWallUnlockedMessage": "Versi asli sekarang milik Anda. Unduh atau atur kapan saja.",
+  "creatorWallUnlockedBadge": "Terbuka",
+  "creatorWallDone": "Selesai",
+  "creatorWallPriceChanged": "Harga berubah menjadi {price, plural, =1{1 koin} other{{price} koin}}. Periksa lalu coba lagi.",
+  "@creatorWallPriceChanged": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "creatorWallDailyLimit": "Anda sudah mencapai batas buka hari ini. Coba lagi besok.",
+  "creatorWallPairLimit": "Anda sudah membuka 3 wall dari {creatorName} hari ini. Coba lagi besok.",
+  "@creatorWallPairLimit": {
+    "placeholders": {
+      "creatorName": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorWallCreatorLimit": "{creatorName} sudah mencapai batas penjualan hari ini. Coba lagi besok.",
+  "@creatorWallCreatorLimit": {
+    "placeholders": {
+      "creatorName": {
+        "type": "String"
+      }
+    }
+  },
+  "creatorWallBuyerTooNew": "Akun Anda harus berusia 7 hari untuk membuka wall.",
+  "creatorWallBuyerIneligible": "Verifikasi email Anda untuk membuka wall.",
+  "creatorWallUnavailable": "Wall ini sedang tidak dijual.",
+  "creatorWallUnlockFailed": "Wall tidak dapat dibuka. Anda tidak dikenai biaya.",
+  "creatorWallNotEnoughCoins": "Koin tidak cukup.",
+  "creatorStatsSalesTitle": "Penjualan",
+  "creatorStatsSalesUnlocks": "Pembukaan",
+  "creatorStatsSalesCoins": "Koin didapat",
+  "creatorStatsSalesEmpty": "Belum ada penjualan. Beri harga pada salah satu wall Anda untuk menjualnya.",
+  "creatorStatsSalesWall": "{count, plural, =1{1 pembukaan} other{{count} pembukaan}}, {coins, plural, =1{1 koin} other{{coins} koin}}",
+  "@creatorStatsSalesWall": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "coins": {
+        "type": "int"
+      }
+    }
+  },
+  "coreCoinCreatorWallUnlock": "Wall kreator",
+  "coreCoinCreatorWallSale": "Penjualan wall",
+  "coreCoinCreatorWallRefund": "Pengembalian dana wall kreator",
+  "coreCoinCreatorWallSaleReversal": "Penjualan wall dibatalkan"
 }

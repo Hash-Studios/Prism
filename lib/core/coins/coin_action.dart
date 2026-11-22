@@ -29,6 +29,7 @@ enum CoinSpendAction {
   boostWall,
   giftPremiumPass,
   tipCreator,
+  creatorWallUnlock,
   drawTicket,
   shopItem,
   spinWheel,
@@ -93,6 +94,7 @@ extension CoinSpendActionX on CoinSpendAction {
       case CoinSpendAction.giftPremiumPass:
         return CoinPolicy.giftPremiumPass;
       case CoinSpendAction.tipCreator:
+      case CoinSpendAction.creatorWallUnlock:
         return 0;
       case CoinSpendAction.drawTicket:
         return CoinPolicy.drawTicket;

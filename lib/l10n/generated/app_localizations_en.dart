@@ -15880,4 +15880,146 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notifPushCreatorFundPaidBody => 'See your share in Creator stats.';
+
+  @override
+  String get creatorWallPriceTitle => 'Sell this wall';
+
+  @override
+  String get creatorWallPriceHelp => 'Buyers pay once and keep the full-quality original. You get 70% of the coins.';
+
+  @override
+  String get creatorWallPriceFree => 'Free';
+
+  @override
+  String creatorWallPriceOption(int price) {
+    return '$price coins';
+  }
+
+  @override
+  String get creatorWallPriceSaved => 'Price saved';
+
+  @override
+  String get creatorWallPriceRemoved => 'This wall is free now';
+
+  @override
+  String get creatorWallPriceFailed => 'Could not save the price. Try again.';
+
+  @override
+  String get creatorWallPriceIneligible =>
+      'You can sell walls when your email is verified, your account is 7 days old, and you have an approved wall.';
+
+  @override
+  String get creatorWallPriceNotOriginal => 'Only your own original uploads can be sold.';
+
+  @override
+  String creatorWallChipSemantics(int price) {
+    String _temp0 = intl.Intl.pluralLogic(price, locale: localeName, other: '$price coins', one: '1 coin');
+    return 'Premium wall, $_temp0';
+  }
+
+  @override
+  String get creatorWallUnlockTitle => 'Unlock this wall';
+
+  @override
+  String creatorWallUnlockMessage(String creatorName) {
+    return 'Get the full-quality original. It is yours forever, on every device. $creatorName gets 70% of the coins.';
+  }
+
+  @override
+  String creatorWallUnlockButton(int price) {
+    String _temp0 = intl.Intl.pluralLogic(price, locale: localeName, other: '$price coins', one: '1 coin');
+    return 'Unlock for $_temp0';
+  }
+
+  @override
+  String creatorWallBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance coins', one: '1 coin');
+    return 'Your balance: $_temp0';
+  }
+
+  @override
+  String creatorWallShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount more coins', one: '1 more coin');
+    return 'You need $_temp0.';
+  }
+
+  @override
+  String get creatorWallGetCoins => 'Get coins';
+
+  @override
+  String get creatorWallUnlockedTitle => 'Unlocked';
+
+  @override
+  String get creatorWallUnlockedMessage => 'The original is yours. Download or set it any time.';
+
+  @override
+  String get creatorWallUnlockedBadge => 'Unlocked';
+
+  @override
+  String get creatorWallDone => 'Done';
+
+  @override
+  String creatorWallPriceChanged(int price) {
+    String _temp0 = intl.Intl.pluralLogic(price, locale: localeName, other: '$price coins', one: '1 coin');
+    return 'The price changed to $_temp0. Check it and try again.';
+  }
+
+  @override
+  String get creatorWallDailyLimit => 'You reached today\'s unlock limit. Try again tomorrow.';
+
+  @override
+  String creatorWallPairLimit(String creatorName) {
+    return 'You unlocked 3 walls from $creatorName today. Try again tomorrow.';
+  }
+
+  @override
+  String creatorWallCreatorLimit(String creatorName) {
+    return '$creatorName reached today\'s sales limit. Try again tomorrow.';
+  }
+
+  @override
+  String get creatorWallBuyerTooNew => 'Your account must be 7 days old to unlock walls.';
+
+  @override
+  String get creatorWallBuyerIneligible => 'Verify your email to unlock walls.';
+
+  @override
+  String get creatorWallUnavailable => 'This wall is not for sale right now.';
+
+  @override
+  String get creatorWallUnlockFailed => 'Could not unlock the wall. You were not charged.';
+
+  @override
+  String get creatorWallNotEnoughCoins => 'Not enough coins.';
+
+  @override
+  String get creatorStatsSalesTitle => 'Sales';
+
+  @override
+  String get creatorStatsSalesUnlocks => 'Unlocks';
+
+  @override
+  String get creatorStatsSalesCoins => 'Coins earned';
+
+  @override
+  String get creatorStatsSalesEmpty => 'No sales yet. Put a price on one of your walls to sell it.';
+
+  @override
+  String creatorStatsSalesWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count unlocks', one: '1 unlock');
+    String _temp1 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins coins', one: '1 coin');
+    return '$_temp0, $_temp1';
+  }
+
+  @override
+  String get coreCoinCreatorWallUnlock => 'Creator wall';
+
+  @override
+  String get coreCoinCreatorWallSale => 'Wall sale';
+
+  @override
+  String get coreCoinCreatorWallRefund => 'Creator wall refund';
+
+  @override
+  String get coreCoinCreatorWallSaleReversal => 'Wall sale reversed';
 }

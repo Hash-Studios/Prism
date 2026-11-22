@@ -2822,7 +2822,7 @@ class CoinsService with WidgetsBindingObserver {
         applyRoutineXpReply(data, userId: userId, session: generation);
       }
       final bool shopReplay = shopSuccess && data['reason'] == 'duplicate';
-      if (name != 'tipCreator' && !shopReplay && data['currentBalance'] is num) {
+      if (name != 'tipCreator' && name != 'unlockCreatorWall' && !shopReplay && data['currentBalance'] is num) {
         _applyLocalBalance(parseIntOr(data['currentBalance']), delta: parseIntOr(data['delta']));
       }
       if (!_isCurrentOwner(userId, generation)) return null;
@@ -3449,6 +3449,62 @@ class CoinsService with WidgetsBindingObserver {
               'tip_creator_unavailable' || 'tip_wall_invalid' => TipOutcome.unavailable,
               _ => TipOutcome.failed,
             },
+      reason: reason,
+    );
+  }
+
+  /// Unlocks creator wall [wallDocId] (the wall document ID) at [expectedPrice], the price the user saw. The server
+  /// refuses with `priceChanged` when the price moved, so the user never pays a price they did not see.
+  Future<CreatorWallUnlockResult> unlockCreatorWall({required String wallDocId, required int expectedPrice}) async {
+    if (!_canMutateCoins()) {
+      return const CreatorWallUnlockResult(CreatorWallUnlockOutcome.failed, reason: 'not_logged_in');
+    }
+    final String userId = app_state.prismUser.id;
+    _ensureEconomyUser(userId);
+    final int generation = _economySessionGeneration;
+    // The scope leaves out the price, so a retry after a lost reply replays the first unlock instead of a second one.
+    final _EconomyReply? reply = await _economyPurchase('unlockCreatorWall', wallDocId, <String, Object?>{
+      'wallId': wallDocId,
+      'expectedPrice': expectedPrice,
+    }, sourceTag: 'coins.creator_wall');
+    if (reply == null) return const CreatorWallUnlockResult(CreatorWallUnlockOutcome.failed, reason: 'session_changed');
+    // A replayed receipt carries the first balance, and refusals carry a placeholder, so read the real one.
+    try {
+      await refreshBalance();
+    } catch (error, stackTrace) {
+      logCoinError(sourceTag: 'coins.creator_wall.balance_refresh', error: error, stackTrace: stackTrace);
+    }
+    if (!_isCurrentOwner(userId, generation)) {
+      return const CreatorWallUnlockResult(CreatorWallUnlockOutcome.failed, reason: 'session_changed');
+    }
+    final String reason = reply.reason;
+    final int price = parseIntOr(reply.data['price']);
+    if (reply.success) {
+      if (reason == 'already_unlocked') {
+        return CreatorWallUnlockResult(CreatorWallUnlockOutcome.alreadyUnlocked, price: price, reason: reason);
+      }
+      if (reply.changed) {
+        _logSpend(action: CoinSpendAction.creatorWallUnlock, amount: price, sourceTag: 'coins.creator_wall');
+      }
+      return CreatorWallUnlockResult(CreatorWallUnlockOutcome.unlocked, price: price, reason: reason);
+    }
+    return CreatorWallUnlockResult(
+      reply.insufficient
+          ? CreatorWallUnlockOutcome.insufficient
+          : switch (reason) {
+              'creator_wall_price_changed' => CreatorWallUnlockOutcome.priceChanged,
+              'creator_wall_daily_limit' => CreatorWallUnlockOutcome.dailyLimit,
+              'creator_wall_pair_limit' => CreatorWallUnlockOutcome.pairLimit,
+              'creator_wall_creator_limit' => CreatorWallUnlockOutcome.creatorLimit,
+              'creator_wall_buyer_too_new' => CreatorWallUnlockOutcome.buyerTooNew,
+              'creator_wall_buyer_ineligible' => CreatorWallUnlockOutcome.buyerIneligible,
+              'creator_wall_unavailable' ||
+              'creator_wall_blocked' ||
+              'creator_wall_self' ||
+              'creator_wall_disabled' => CreatorWallUnlockOutcome.unavailable,
+              _ => CreatorWallUnlockOutcome.failed,
+            },
+      price: price,
       reason: reason,
     );
   }

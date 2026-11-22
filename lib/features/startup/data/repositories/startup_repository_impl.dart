@@ -14,6 +14,7 @@ import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/data/notifications/notifications.dart';
 import 'package:Prism/features/ads/data/ad_experiment_config.dart';
 import 'package:Prism/features/ads/data/ad_experiment_service.dart';
+import 'package:Prism/features/creator_walls/domain/creator_walls_flag.dart';
 import 'package:Prism/features/in_app_notifications/biz/bloc/in_app_notifications_bloc.j.dart';
 import 'package:Prism/features/ios_shortcuts/data/ios_shortcuts_support.dart';
 import 'package:Prism/features/onboarding_v2/src/utils/onboarding_v2_config.dart';
@@ -68,6 +69,7 @@ Future<void> prepareRemoteConfig(
     iosShortcutLinkRemoteConfigKey: '',
     FieldDiagnostics.sampleRateKey: FieldDiagnostics.defaultSampleRate,
     RankingRules.remoteConfigKey: RankingRules.defaultEnabled,
+    CreatorWallsFlag.remoteConfigKey: CreatorWallsFlag.defaultEnabled,
   });
   try {
     await remoteConfig.activate();

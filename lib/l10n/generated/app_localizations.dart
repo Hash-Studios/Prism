@@ -25236,6 +25236,234 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'See your share in Creator stats.'**
   String get notifPushCreatorFundPaidBody;
+
+  /// No description provided for @creatorWallPriceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sell this wall'**
+  String get creatorWallPriceTitle;
+
+  /// No description provided for @creatorWallPriceHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Buyers pay once and keep the full-quality original. You get 70% of the coins.'**
+  String get creatorWallPriceHelp;
+
+  /// No description provided for @creatorWallPriceFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get creatorWallPriceFree;
+
+  /// No description provided for @creatorWallPriceOption.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} coins'**
+  String creatorWallPriceOption(int price);
+
+  /// No description provided for @creatorWallPriceSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Price saved'**
+  String get creatorWallPriceSaved;
+
+  /// No description provided for @creatorWallPriceRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'This wall is free now'**
+  String get creatorWallPriceRemoved;
+
+  /// No description provided for @creatorWallPriceFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the price. Try again.'**
+  String get creatorWallPriceFailed;
+
+  /// No description provided for @creatorWallPriceIneligible.
+  ///
+  /// In en, this message translates to:
+  /// **'You can sell walls when your email is verified, your account is 7 days old, and you have an approved wall.'**
+  String get creatorWallPriceIneligible;
+
+  /// No description provided for @creatorWallPriceNotOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Only your own original uploads can be sold.'**
+  String get creatorWallPriceNotOriginal;
+
+  /// No description provided for @creatorWallChipSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium wall, {price, plural, =1{1 coin} other{{price} coins}}'**
+  String creatorWallChipSemantics(int price);
+
+  /// No description provided for @creatorWallUnlockTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock this wall'**
+  String get creatorWallUnlockTitle;
+
+  /// No description provided for @creatorWallUnlockMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Get the full-quality original. It is yours forever, on every device. {creatorName} gets 70% of the coins.'**
+  String creatorWallUnlockMessage(String creatorName);
+
+  /// No description provided for @creatorWallUnlockButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock for {price, plural, =1{1 coin} other{{price} coins}}'**
+  String creatorWallUnlockButton(int price);
+
+  /// No description provided for @creatorWallBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Your balance: {balance, plural, =1{1 coin} other{{balance} coins}}'**
+  String creatorWallBalance(int balance);
+
+  /// No description provided for @creatorWallShortBy.
+  ///
+  /// In en, this message translates to:
+  /// **'You need {amount, plural, =1{1 more coin} other{{amount} more coins}}.'**
+  String creatorWallShortBy(int amount);
+
+  /// No description provided for @creatorWallGetCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Get coins'**
+  String get creatorWallGetCoins;
+
+  /// No description provided for @creatorWallUnlockedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked'**
+  String get creatorWallUnlockedTitle;
+
+  /// No description provided for @creatorWallUnlockedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The original is yours. Download or set it any time.'**
+  String get creatorWallUnlockedMessage;
+
+  /// No description provided for @creatorWallUnlockedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocked'**
+  String get creatorWallUnlockedBadge;
+
+  /// No description provided for @creatorWallDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get creatorWallDone;
+
+  /// No description provided for @creatorWallPriceChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'The price changed to {price, plural, =1{1 coin} other{{price} coins}}. Check it and try again.'**
+  String creatorWallPriceChanged(int price);
+
+  /// No description provided for @creatorWallDailyLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You reached today\'s unlock limit. Try again tomorrow.'**
+  String get creatorWallDailyLimit;
+
+  /// No description provided for @creatorWallPairLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You unlocked 3 walls from {creatorName} today. Try again tomorrow.'**
+  String creatorWallPairLimit(String creatorName);
+
+  /// No description provided for @creatorWallCreatorLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'{creatorName} reached today\'s sales limit. Try again tomorrow.'**
+  String creatorWallCreatorLimit(String creatorName);
+
+  /// No description provided for @creatorWallBuyerTooNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account must be 7 days old to unlock walls.'**
+  String get creatorWallBuyerTooNew;
+
+  /// No description provided for @creatorWallBuyerIneligible.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify your email to unlock walls.'**
+  String get creatorWallBuyerIneligible;
+
+  /// No description provided for @creatorWallUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This wall is not for sale right now.'**
+  String get creatorWallUnavailable;
+
+  /// No description provided for @creatorWallUnlockFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not unlock the wall. You were not charged.'**
+  String get creatorWallUnlockFailed;
+
+  /// No description provided for @creatorWallNotEnoughCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough coins.'**
+  String get creatorWallNotEnoughCoins;
+
+  /// No description provided for @creatorStatsSalesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sales'**
+  String get creatorStatsSalesTitle;
+
+  /// No description provided for @creatorStatsSalesUnlocks.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlocks'**
+  String get creatorStatsSalesUnlocks;
+
+  /// No description provided for @creatorStatsSalesCoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Coins earned'**
+  String get creatorStatsSalesCoins;
+
+  /// No description provided for @creatorStatsSalesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No sales yet. Put a price on one of your walls to sell it.'**
+  String get creatorStatsSalesEmpty;
+
+  /// No description provided for @creatorStatsSalesWall.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 unlock} other{{count} unlocks}}, {coins, plural, =1{1 coin} other{{coins} coins}}'**
+  String creatorStatsSalesWall(int count, int coins);
+
+  /// No description provided for @coreCoinCreatorWallUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Creator wall'**
+  String get coreCoinCreatorWallUnlock;
+
+  /// No description provided for @coreCoinCreatorWallSale.
+  ///
+  /// In en, this message translates to:
+  /// **'Wall sale'**
+  String get coreCoinCreatorWallSale;
+
+  /// No description provided for @coreCoinCreatorWallRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Creator wall refund'**
+  String get coreCoinCreatorWallRefund;
+
+  /// No description provided for @coreCoinCreatorWallSaleReversal.
+  ///
+  /// In en, this message translates to:
+  /// **'Wall sale reversed'**
+  String get coreCoinCreatorWallSaleReversal;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

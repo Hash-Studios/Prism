@@ -15948,4 +15948,147 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get notifPushCreatorFundPaidBody => 'Lihat bagian Anda di statistik kreator.';
+
+  @override
+  String get creatorWallPriceTitle => 'Jual wall ini';
+
+  @override
+  String get creatorWallPriceHelp =>
+      'Pembeli membayar sekali dan menyimpan versi asli dengan kualitas penuh. Anda mendapat 70% koin.';
+
+  @override
+  String get creatorWallPriceFree => 'Gratis';
+
+  @override
+  String creatorWallPriceOption(int price) {
+    return '$price koin';
+  }
+
+  @override
+  String get creatorWallPriceSaved => 'Harga disimpan';
+
+  @override
+  String get creatorWallPriceRemoved => 'Wall ini sekarang gratis';
+
+  @override
+  String get creatorWallPriceFailed => 'Harga tidak dapat disimpan. Coba lagi.';
+
+  @override
+  String get creatorWallPriceIneligible =>
+      'Anda dapat menjual wall saat email Anda terverifikasi, akun Anda berusia 7 hari, dan Anda punya wall yang disetujui.';
+
+  @override
+  String get creatorWallPriceNotOriginal => 'Hanya unggahan asli Anda yang dapat dijual.';
+
+  @override
+  String creatorWallChipSemantics(int price) {
+    String _temp0 = intl.Intl.pluralLogic(price, locale: localeName, other: '$price koin', one: '1 koin');
+    return 'Wall premium, $_temp0';
+  }
+
+  @override
+  String get creatorWallUnlockTitle => 'Buka wall ini';
+
+  @override
+  String creatorWallUnlockMessage(String creatorName) {
+    return 'Dapatkan versi asli dengan kualitas penuh. Wall ini milik Anda selamanya, di setiap perangkat. $creatorName mendapat 70% koin.';
+  }
+
+  @override
+  String creatorWallUnlockButton(int price) {
+    String _temp0 = intl.Intl.pluralLogic(price, locale: localeName, other: '$price koin', one: '1 koin');
+    return 'Buka dengan $_temp0';
+  }
+
+  @override
+  String creatorWallBalance(int balance) {
+    String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance koin', one: '1 koin');
+    return 'Saldo Anda: $_temp0';
+  }
+
+  @override
+  String creatorWallShortBy(int amount) {
+    String _temp0 = intl.Intl.pluralLogic(amount, locale: localeName, other: '$amount koin lagi', one: '1 koin lagi');
+    return 'Anda perlu $_temp0.';
+  }
+
+  @override
+  String get creatorWallGetCoins => 'Dapatkan koin';
+
+  @override
+  String get creatorWallUnlockedTitle => 'Terbuka';
+
+  @override
+  String get creatorWallUnlockedMessage => 'Versi asli sekarang milik Anda. Unduh atau atur kapan saja.';
+
+  @override
+  String get creatorWallUnlockedBadge => 'Terbuka';
+
+  @override
+  String get creatorWallDone => 'Selesai';
+
+  @override
+  String creatorWallPriceChanged(int price) {
+    String _temp0 = intl.Intl.pluralLogic(price, locale: localeName, other: '$price koin', one: '1 koin');
+    return 'Harga berubah menjadi $_temp0. Periksa lalu coba lagi.';
+  }
+
+  @override
+  String get creatorWallDailyLimit => 'Anda sudah mencapai batas buka hari ini. Coba lagi besok.';
+
+  @override
+  String creatorWallPairLimit(String creatorName) {
+    return 'Anda sudah membuka 3 wall dari $creatorName hari ini. Coba lagi besok.';
+  }
+
+  @override
+  String creatorWallCreatorLimit(String creatorName) {
+    return '$creatorName sudah mencapai batas penjualan hari ini. Coba lagi besok.';
+  }
+
+  @override
+  String get creatorWallBuyerTooNew => 'Akun Anda harus berusia 7 hari untuk membuka wall.';
+
+  @override
+  String get creatorWallBuyerIneligible => 'Verifikasi email Anda untuk membuka wall.';
+
+  @override
+  String get creatorWallUnavailable => 'Wall ini sedang tidak dijual.';
+
+  @override
+  String get creatorWallUnlockFailed => 'Wall tidak dapat dibuka. Anda tidak dikenai biaya.';
+
+  @override
+  String get creatorWallNotEnoughCoins => 'Koin tidak cukup.';
+
+  @override
+  String get creatorStatsSalesTitle => 'Penjualan';
+
+  @override
+  String get creatorStatsSalesUnlocks => 'Pembukaan';
+
+  @override
+  String get creatorStatsSalesCoins => 'Koin didapat';
+
+  @override
+  String get creatorStatsSalesEmpty => 'Belum ada penjualan. Beri harga pada salah satu wall Anda untuk menjualnya.';
+
+  @override
+  String creatorStatsSalesWall(int count, int coins) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count pembukaan', one: '1 pembukaan');
+    String _temp1 = intl.Intl.pluralLogic(coins, locale: localeName, other: '$coins koin', one: '1 koin');
+    return '$_temp0, $_temp1';
+  }
+
+  @override
+  String get coreCoinCreatorWallUnlock => 'Wall kreator';
+
+  @override
+  String get coreCoinCreatorWallSale => 'Penjualan wall';
+
+  @override
+  String get coreCoinCreatorWallRefund => 'Pengembalian dana wall kreator';
+
+  @override
+  String get coreCoinCreatorWallSaleReversal => 'Penjualan wall dibatalkan';
 }

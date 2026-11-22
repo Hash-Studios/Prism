@@ -17,6 +17,12 @@ class OriginalAccessInsufficientBalance implements Exception {
   final int currentBalance;
 }
 
+/// A priced creator wall the user has not unlocked. The unlock sheet opens instead of a download.
+class OriginalAccessCreatorLocked implements Exception {
+  const OriginalAccessCreatorLocked(this.price);
+  final int price;
+}
+
 class OriginalAccessQuote {
   const OriginalAccessQuote(this.requiredCoins, this.currentBalance);
   final int requiredCoins;
@@ -137,6 +143,7 @@ class OriginalAccessService {
       key,
       action,
     );
+    _throwIfCreatorLocked(reply);
     if (_owner() != owner ||
         reply['status'] != 'quoted' ||
         reply['requiredCoins'] is! num ||
@@ -144,6 +151,11 @@ class OriginalAccessService {
       throw StateError('Original access unavailable');
     }
     return OriginalAccessQuote((reply['requiredCoins'] as num).toInt(), (reply['currentBalance'] as num).toInt());
+  }
+
+  static void _throwIfCreatorLocked(Map<String, dynamic> reply) {
+    final Object? price = reply['requiredCoins'];
+    if (reply['status'] == 'creator_locked') throw OriginalAccessCreatorLocked(price is num ? price.toInt() : 0);
   }
 
   String _pairId(List<String> ids) => 'pair:${ids.join(',')}';
@@ -172,6 +184,7 @@ class OriginalAccessService {
       _pairId(assetIds),
       OriginalAccessAction.set,
     );
+    _throwIfCreatorLocked(reply);
     if (owner != _owner() ||
         reply['status'] != 'quoted' ||
         reply['requiredCoins'] is! num ||
@@ -223,6 +236,8 @@ class OriginalAccessService {
       OriginalAccessAction.set,
     );
     if (owner != _owner()) throw StateError('Original access unavailable');
+    if (reply['status'] == 'creator_locked') await completePair(assetIds, owner: owner);
+    _throwIfCreatorLocked(reply);
     if (reply['status'] == 'insufficient_balance' || reply['status'] == 'price_changed') {
       await completePair(assetIds, owner: owner);
       throw OriginalAccessInsufficientBalance(
@@ -327,6 +342,8 @@ class OriginalAccessService {
       action,
     );
     if (_owner() != owner) throw StateError('Original access unavailable');
+    if (reply['status'] == 'creator_locked') await complete(owner: owner, wallpaperId: key, action: action);
+    _throwIfCreatorLocked(reply);
     if (reply['status'] == 'insufficient_balance' || reply['status'] == 'price_changed') {
       await complete(owner: owner, wallpaperId: key, action: action);
       throw OriginalAccessInsufficientBalance(

@@ -334,6 +334,7 @@ class EconomyFlags {
     this.dropsEnabled = true,
     this.foundersUntil = '2026-11-30T00:00:00Z',
     this.legacyPricingUntil = '2027-01-31T00:00:00Z',
+    this.creatorWallsEnabled = false,
   });
 
   factory EconomyFlags.fromMap(Map<String, dynamic> m) {
@@ -343,6 +344,7 @@ class EconomyFlags {
       dropsEnabled: _bool(m['dropsEnabled'], d.dropsEnabled),
       foundersUntil: _string(m['foundersUntil'], d.foundersUntil),
       legacyPricingUntil: _string(m['legacyPricingUntil'], d.legacyPricingUntil),
+      creatorWallsEnabled: _bool(m['creatorWallsEnabled'], d.creatorWallsEnabled),
     );
   }
 
@@ -354,6 +356,9 @@ class EconomyFlags {
 
   /// ISO 8601 end of legacy prices for clients that send no `pricingVersion`.
   final String legacyPricingUntil;
+
+  /// Server switch for creator premium walls. `setWallPrice` and `unlockCreatorWall` refuse while it is off.
+  final bool creatorWallsEnabled;
 
   DateTime? get foundersUntilAt => DateTime.tryParse(foundersUntil)?.toUtc();
 }
@@ -387,6 +392,7 @@ class EconomyConfig {
     this.flags = const EconomyFlags(),
     this.shopPrices = const <String, int>{},
     this.coinEvents = CoinEventSchedule.none,
+    this.creatorWallPrices = defaultCreatorWallPrices,
   });
 
   /// Reads a raw `economyConfig/current` doc. Each missing or malformed field falls back to its default.
@@ -412,7 +418,23 @@ class EconomyConfig {
             })
           : defaults.shopPrices,
       coinEvents: CoinEventSchedule.fromConfig(raw),
+      creatorWallPrices: raw['creatorWalls'] is Map
+          ? _creatorWallPrices(toJsonMap(raw['creatorWalls'])['prices'])
+          : defaults.creatorWallPrices,
     );
+  }
+
+  static const List<int> defaultCreatorWallPrices = <int>[20, 40, 75];
+
+  /// 1 to 6 distinct whole prices from 10 to 1000, sorted. Anything else is the default list, as on the server.
+  static List<int> _creatorWallPrices(Object? raw) {
+    if (raw is! List || raw.isEmpty || raw.length > 6) return defaultCreatorWallPrices;
+    final List<int> prices = <int>[];
+    for (final Object? value in raw) {
+      if (value is! int || value < 10 || value > 1000 || prices.contains(value)) return defaultCreatorWallPrices;
+      prices.add(value);
+    }
+    return List<int>.unmodifiable(prices..sort());
   }
 
   static const EconomyConfig defaults = EconomyConfig();
@@ -436,6 +458,9 @@ class EconomyConfig {
 
   /// Coin doubler events, from the doc's `events` and `weeklyEvent`.
   final CoinEventSchedule coinEvents;
+
+  /// The prices a creator may put on a wall, from `creatorWalls.prices`.
+  final List<int> creatorWallPrices;
 
   Rank rankFor(int xpTotal) {
     RankDef rank = xp.ranks.first;
