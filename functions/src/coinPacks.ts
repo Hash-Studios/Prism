@@ -1,12 +1,13 @@
 import * as admin from "firebase-admin";
-import {timingSafeEqual} from "node:crypto";
+import {createHmac, timingSafeEqual} from "node:crypto";
 import {defineBoolean, defineSecret} from "firebase-functions/params";
 import {logger} from "firebase-functions/v2";
 import {HttpsError, onCall, onRequest, type CallableRequest} from "firebase-functions/v2/https";
 import {coinTransactionDoc, db, US_REGION} from "./common";
-import {type CoinPackDef, loadEconomy} from "./economy";
+import {type CoinPackDef, loadCoinPacks} from "./economy";
 
 const USERS = "usersv2";
+const DELETION_STATE = "creatorDeletionState";
 const TRANSACTIONS = "coinTransactions";
 const RECEIPTS = "coinPackReceipts";
 const THROTTLE = "coinPackVerifyThrottle";
@@ -16,10 +17,26 @@ const TRANSACTION_ID = /^[A-Za-z0-9._:-]{1,128}$/;
 const ANONYMOUS_RC_ID = "$RCAnonymousID:";
 const REAL_STORES = new Set(["app_store", "play_store"]);
 const SANDBOX_STORES = new Set(["test_store"]);
+const SIGNATURE_TOLERANCE_MS = 5 * 60_000;
 
 const revenueCatSecret = defineSecret("REVENUECAT_SECRET_KEY");
 const webhookAuth = defineSecret("REVENUECAT_WEBHOOK_AUTH");
+const webhookSigningSecret = defineSecret("REVENUECAT_WEBHOOK_SIGNING_SECRET");
 const allowSandbox = defineBoolean("COIN_PACKS_ALLOW_SANDBOX", {default: false});
+
+function validTransactionId(value: string): boolean {
+  return TRANSACTION_ID.test(value) && value !== "." && value !== ".." && !/^__.*__$/.test(value) &&
+    !value.startsWith("refund_");
+}
+
+function normalizeStore(store: unknown): string {
+  switch (store) {
+  case "app_store": case "APP_STORE": return "app_store";
+  case "play_store": case "PLAY_STORE": return "play_store";
+  case "test_store": case "TEST_STORE": return "test_store";
+  default: return typeof store === "string" ? store : "";
+  }
+}
 
 /** One store transaction as RevenueCat's customer record lists it. */
 export interface StorePurchase {
@@ -51,22 +68,32 @@ function revenueCatBase(): string {
 export function findStorePurchase(json: unknown, transactionId: string): StorePurchase | null {
   const nonSubscriptions = (json as {subscriber?: {non_subscriptions?: unknown}})?.subscriber?.non_subscriptions;
   if (typeof nonSubscriptions !== "object" || nonSubscriptions === null) return null;
+  const exact: StorePurchase[] = [];
+  const aliases: StorePurchase[] = [];
   for (const [productId, entries] of Object.entries(nonSubscriptions as Record<string, unknown>)) {
     if (!Array.isArray(entries)) continue;
     for (const entry of entries as Doc[]) {
       if (typeof entry !== "object" || entry === null) continue;
-      const storeId = entry.store_transaction_id == null ? "" : String(entry.store_transaction_id);
+      const rawStoreId = entry.store_transaction_id;
+      const storeId = typeof rawStoreId === "string" ? rawStoreId :
+        typeof rawStoreId === "number" && Number.isSafeInteger(rawStoreId) && rawStoreId > 0 ? String(rawStoreId) : "";
       const rcId = entry.id == null ? "" : String(entry.id);
-      if (storeId !== transactionId && rcId !== transactionId) continue;
-      return {
-        transactionId,
+      if (!storeId || !validTransactionId(storeId) || (storeId !== transactionId && rcId !== transactionId)) continue;
+      if (typeof entry.is_sandbox !== "boolean") continue;
+      const purchase = {
+        transactionId: storeId,
         productId,
-        store: typeof entry.store === "string" ? entry.store : "",
+        store: normalizeStore(entry.store),
         sandbox: entry.is_sandbox === true,
       };
+      (storeId === transactionId ? exact : aliases).push(purchase);
     }
   }
-  return null;
+  const matches = exact.length > 0 ? exact : aliases;
+  if (matches.length === 0) return null;
+  const first = matches[0];
+  return matches.every((match) => match.productId === first.productId && match.store === first.store &&
+    match.sandbox === first.sandbox && match.transactionId === first.transactionId) ? first : null;
 }
 
 /** The coins a verified purchase earns, or why it earns none. Pure: no I/O. */
@@ -77,9 +104,11 @@ export function decideGrant(
 ): {coins: number} | {reason: Exclude<RefuseReason, "other_user">} {
   const pack = packs.find((p) => p.productId === purchase.productId);
   if (!pack) return {reason: "unknown_product"};
-  if (!REAL_STORES.has(purchase.store) && !(sandboxAllowed && SANDBOX_STORES.has(purchase.store))) {
+  const store = normalizeStore(purchase.store);
+  if (!REAL_STORES.has(store) && !(sandboxAllowed && SANDBOX_STORES.has(store))) {
     return {reason: "store_not_allowed"};
   }
+  if (SANDBOX_STORES.has(store) && !purchase.sandbox) return {reason: "sandbox_not_allowed"};
   if (purchase.sandbox && !sandboxAllowed) return {reason: "sandbox_not_allowed"};
   return {coins: pack.coins};
 }
@@ -94,7 +123,11 @@ async function readCustomer(uid: string): Promise<unknown> {
     throw new HttpsError("unavailable", "RevenueCat request failed.");
   }
   if (!response.ok) throw new HttpsError("unavailable", `RevenueCat request failed (${response.status}).`);
-  return response.json();
+  try {
+    return await response.json();
+  } catch {
+    throw new HttpsError("unavailable", "RevenueCat response was invalid.");
+  }
 }
 
 function balanceOf(user: Doc | undefined): number {
@@ -110,13 +143,18 @@ export async function grantPurchase(
 ): Promise<GrantResult> {
   const userRef = db.collection(USERS).doc(uid);
   const receiptRef = db.collection(RECEIPTS).doc(purchase.transactionId);
+  const deletionRef = db.collection(DELETION_STATE).doc(uid);
   const ledgerId = `ctx_coinpack_${purchase.transactionId}`;
   return db.runTransaction(async (tx): Promise<GrantResult> => {
-    const [userSnap, receiptSnap] = await tx.getAll(userRef, receiptRef);
+    const [userSnap, receiptSnap, deletionSnap] = await tx.getAll(userRef, receiptRef, deletionRef);
     if (!userSnap.exists) throw new HttpsError("not-found", "User profile was not found.");
+    if (userSnap.data()?.deleted === true || deletionSnap.data()?.closed === true) {
+      throw new HttpsError("failed-precondition", "Account is unavailable.");
+    }
     const balance = balanceOf(userSnap.data());
     const receipt = receiptSnap.data();
     if (receipt) {
+      if (receipt.userId != null && receipt.userId !== uid) return {status: "refused", reason: "other_user"};
       if (receipt.state === "revoked") return {status: "revoked"};
       if (receipt.userId !== uid) return {status: "refused", reason: "other_user"};
       return {status: "already_granted", coins: Number(receipt.coins) || 0, balance};
@@ -160,22 +198,36 @@ export async function grantPurchase(
  * Takes a refunded pack back from the user its receipt names. The balance may go negative (see the doc). A refund that
  * arrives before any grant leaves a tombstone, so that transaction can never be granted later.
  */
-export async function revokePurchase(transactionId: string, productId: string): Promise<RevokeResult> {
+export async function revokePurchase(
+  transactionId: string,
+  productId: string,
+  store: string,
+  environment: "sandbox" | "production",
+  sandboxAllowed: boolean,
+  configuredPack: boolean,
+  tombstoneUserId: string | null,
+): Promise<RevokeResult> {
   const receiptRef = db.collection(RECEIPTS).doc(transactionId);
   return db.runTransaction(async (tx): Promise<RevokeResult> => {
     const receipt = (await tx.get(receiptRef)).data();
     const now = admin.firestore.Timestamp.now();
     if (!receipt) {
-      tx.set(receiptRef, {state: "revoked", productId, coins: 0, revokedAt: now});
+      if (!configuredPack) return "unchanged";
+      if (environment === "sandbox" && !sandboxAllowed) return "unchanged";
+      tx.set(receiptRef, {
+        state: "revoked", userId: tombstoneUserId, productId, store, environment, coins: 0, revokedAt: now,
+      });
       return "tombstoned";
     }
     if (receipt.state !== "granted") return "unchanged";
+    if (receipt.productId !== productId || receipt.store !== store || receipt.environment !== environment) return "unchanged";
     const uid = String(receipt.userId);
     const coins = Number(receipt.coins) || 0;
     const userRef = db.collection(USERS).doc(uid);
-    const userSnap = await tx.get(userRef);
+    const deletionRef = db.collection(DELETION_STATE).doc(uid);
+    const [userSnap, deletionSnap] = await tx.getAll(userRef, deletionRef);
     tx.update(receiptRef, {state: "revoked", revokedAt: now});
-    if (!userSnap.exists) return "revoked";
+    if (!userSnap.exists || userSnap.data()?.deleted === true || deletionSnap.data()?.closed === true) return "revoked";
     const balance = balanceOf(userSnap.data());
     const ledgerId = `ctx_coinpack_refund_${transactionId}`;
     tx.update(userRef, {coins: balance - coins});
@@ -200,12 +252,58 @@ export async function revokePurchase(transactionId: string, productId: string): 
 }
 
 /** Reads RevenueCat for `uid`, then grants once if the purchase is real and allowed. */
-export async function verifyAndGrant(uid: string, transactionId: string, via: "callable" | "webhook"): Promise<GrantResult> {
+export async function verifyAndGrant(
+  uid: string,
+  transactionId: string,
+  via: "callable" | "webhook",
+  configuredPacks?: CoinPackDef[],
+): Promise<GrantResult> {
+  const terminal = await readReceiptStatus(uid, transactionId, true);
+  if (terminal) return terminal;
   const purchase = findStorePurchase(await readCustomer(uid), transactionId);
   if (!purchase) return {status: "not_found"};
-  const decision = decideGrant(purchase, (await loadEconomy()).coinPacks, allowSandbox.value());
+  const canonicalTerminal = await readReceiptStatus(uid, purchase.transactionId, false);
+  if (canonicalTerminal) return canonicalTerminal;
+  let packs = configuredPacks;
+  if (!packs) {
+    try {
+      packs = await loadCoinPacks();
+    } catch {
+      throw new HttpsError("unavailable", "Coin pack catalog is unavailable.");
+    }
+  }
+  const decision = decideGrant(purchase, packs, allowSandbox.value());
   if ("reason" in decision) return {status: "refused", reason: decision.reason};
   return grantPurchase(uid, purchase, decision.coins, via);
+}
+
+/** Read a terminal receipt and matching balance from one Firestore transaction. */
+async function readReceiptStatus(
+  uid: string,
+  transactionId: string,
+  onlyKnownOwner: boolean,
+): Promise<GrantResult | null> {
+  const receiptRef = db.collection(RECEIPTS).doc(transactionId);
+  const userRef = db.collection(USERS).doc(uid);
+  const deletionRef = db.collection(DELETION_STATE).doc(uid);
+  return db.runTransaction(async (tx) => {
+    const [receiptSnap, userSnap, deletionSnap] = await tx.getAll(receiptRef, userRef, deletionRef);
+    const receipt = receiptSnap.data();
+    if (receipt?.state !== "granted" && receipt?.state !== "revoked") return null;
+    if (receipt.state === "revoked" && receipt.userId == null) {
+      return onlyKnownOwner ? null : {status: "revoked"};
+    }
+    if (receipt.userId !== uid) {
+      if (onlyKnownOwner) return null;
+      return {status: "refused", reason: "other_user"};
+    }
+    if (receipt.state === "revoked") return {status: "revoked"};
+    if (userSnap.data()?.deleted === true || deletionSnap.data()?.closed === true) {
+      throw new HttpsError("failed-precondition", "Account is unavailable.");
+    }
+    if (!userSnap.exists) throw new HttpsError("not-found", "User profile was not found.");
+    return {status: "already_granted", coins: Number(receipt.coins) || 0, balance: balanceOf(userSnap.data())};
+  });
 }
 
 async function claimVerifyCall(uid: string, nowMs: number): Promise<boolean> {
@@ -233,11 +331,17 @@ export const verifyCoinPurchase = onCall(
       throw new HttpsError("unauthenticated", "Sign in to buy coins.");
     }
     const transactionId = request.data?.transactionId;
-    if (typeof transactionId !== "string" || !TRANSACTION_ID.test(transactionId)) {
+    if (typeof transactionId !== "string" || !validTransactionId(transactionId)) {
       throw new HttpsError("invalid-argument", "transactionId is invalid.");
     }
-    if (!(await db.collection(USERS).doc(uid).get()).exists) {
+    const [user, deletion] = await Promise.all([
+      db.collection(USERS).doc(uid).get(), db.collection(DELETION_STATE).doc(uid).get(),
+    ]);
+    if (!user.exists) {
       throw new HttpsError("not-found", "User profile was not found.");
+    }
+    if (user.data()?.deleted === true || deletion.data()?.closed === true) {
+      throw new HttpsError("failed-precondition", "Account is unavailable.");
     }
     if (!await claimVerifyCall(uid, Date.now())) {
       throw new HttpsError("resource-exhausted", "Too many checks. Try again in a few minutes.");
@@ -253,6 +357,8 @@ interface WebhookEvent {
   app_user_id?: unknown;
   original_app_user_id?: unknown;
   aliases?: unknown;
+  store?: unknown;
+  environment?: unknown;
 }
 
 /** The first non-anonymous app user id on the event that has a Prism profile. */
@@ -261,9 +367,13 @@ async function webhookUser(event: WebhookEvent): Promise<string | null> {
   const seen = new Set<string>();
   for (const candidate of candidates) {
     if (typeof candidate !== "string" || candidate === "" || candidate.startsWith(ANONYMOUS_RC_ID)) continue;
-    if (candidate.includes("/") || seen.has(candidate)) continue;
+    if (candidate.includes("/") || candidate === "." || candidate === ".." || /^__.*__$/.test(candidate) ||
+      Buffer.byteLength(candidate, "utf8") > 1500 || seen.has(candidate)) continue;
     seen.add(candidate);
-    if ((await db.collection(USERS).doc(candidate).get()).exists) return candidate;
+    const [user, deletion] = await Promise.all([
+      db.collection(USERS).doc(candidate).get(), db.collection(DELETION_STATE).doc(candidate).get(),
+    ]);
+    if (user.exists && user.data()?.deleted !== true && deletion.data()?.closed !== true) return candidate;
   }
   return null;
 }
@@ -274,32 +384,69 @@ export function webhookAuthorized(header: string | undefined, expected: string):
   return wanted.length > 0 && supplied.length === wanted.length && timingSafeEqual(supplied, wanted);
 }
 
+/** Verify RevenueCat's timestamped HMAC over the exact raw request bytes. */
+export function webhookSignatureAuthorized(
+  header: string | undefined,
+  rawBody: Buffer | undefined,
+  expected: string,
+  nowMs = Date.now(),
+): boolean {
+  if (!header || !rawBody || !expected) return false;
+  const match = /^t=(\d+),v1=([a-f0-9]{64})$/.exec(header);
+  if (!match) return false;
+  const timestamp = Number(match[1]);
+  if (!Number.isSafeInteger(timestamp) || Math.abs(nowMs - timestamp * 1000) > SIGNATURE_TOLERANCE_MS) return false;
+  const digest = createHmac("sha256", expected).update(`${match[1]}.`).update(rawBody).digest();
+  const supplied = Buffer.from(match[2], "hex");
+  return digest.length === supplied.length && timingSafeEqual(digest, supplied);
+}
+
 /** What the webhook does with one event. Returns the HTTP status RevenueCat should see. */
 export async function handleWebhookEvent(event: WebhookEvent): Promise<number> {
   const productId = typeof event.product_id === "string" ? event.product_id : "";
   const transactionId = typeof event.transaction_id === "string" ? event.transaction_id : "";
-  const packs = (await loadEconomy()).coinPacks;
-  if (!packs.some((p) => p.productId === productId) || !TRANSACTION_ID.test(transactionId)) return 200;
+  if (!validTransactionId(transactionId)) return 200;
   if (event.type === "CANCELLATION" || event.type === "REFUND") {
-    const result = await revokePurchase(transactionId, productId);
-    logger.info("coinPacks: refund", {transactionId, result});
+    let packs: CoinPackDef[];
+    try {
+      packs = await loadCoinPacks();
+    } catch {
+      throw new HttpsError("unavailable", "Coin pack catalog is unavailable.");
+    }
+    const store = normalizeStore(event.store);
+    const environment = event.environment === "SANDBOX" ? "sandbox" : event.environment === "PRODUCTION" ? "production" : null;
+    if ((!REAL_STORES.has(store) && !SANDBOX_STORES.has(store)) || !environment ||
+      (SANDBOX_STORES.has(store) && environment !== "sandbox")) return 200;
+    const tombstoneUserId = await webhookUser(event);
+    const result = await revokePurchase(
+      transactionId, productId, store, environment, allowSandbox.value(), packs.some((p) => p.productId === productId),
+      tombstoneUserId,
+    );
+    logger.info("coinPacks: refund", {result});
     return 200;
   }
   if (event.type !== "NON_RENEWING_PURCHASE") return 200;
+  let packs: CoinPackDef[];
+  try {
+    packs = await loadCoinPacks();
+  } catch {
+    throw new HttpsError("unavailable", "Coin pack catalog is unavailable.");
+  }
+  if (!packs.some((p) => p.productId === productId)) return 200;
   const uid = await webhookUser(event);
   if (!uid) {
-    logger.warn("coinPacks: unknown_user", {transactionId});
+    logger.warn("coinPacks: unknown_user");
     return 200;
   }
-  const result = await verifyAndGrant(uid, transactionId, "webhook");
-  logger.info("coinPacks: webhook grant", {transactionId, status: result.status});
+  const result = await verifyAndGrant(uid, transactionId, "webhook", packs);
+  logger.info("coinPacks: webhook grant", {status: result.status});
   return result.status === "not_found" ? 503 : 200;
 }
 
 /** RevenueCat calls this for every event. Only requests with the configured Authorization header count. */
 export const revenueCatWebhook = onRequest(
   {region: US_REGION, invoker: "public", maxInstances: 2, cpu: "gcf_gen1", memory: "256MiB", timeoutSeconds: 60,
-    secrets: [revenueCatSecret, webhookAuth]},
+    secrets: [revenueCatSecret, webhookAuth, webhookSigningSecret]},
   async (req, res) => {
     if (req.method !== "POST") {
       res.sendStatus(405);
@@ -314,10 +461,15 @@ export const revenueCatWebhook = onRequest(
       res.sendStatus(200);
       return;
     }
+    if ((event.type === "CANCELLATION" || event.type === "REFUND") &&
+      !webhookSignatureAuthorized(req.get("X-RevenueCat-Webhook-Signature"), req.rawBody, webhookSigningSecret.value())) {
+      res.sendStatus(401);
+      return;
+    }
     try {
       res.sendStatus(await handleWebhookEvent(event));
     } catch (error) {
-      logger.error("coinPacks: webhook failed", {err: error instanceof Error ? error.message : String(error)});
+      logger.error("coinPacks: webhook failed", {errorType: error instanceof Error ? error.name : "unknown"});
       res.sendStatus(503);
     }
   },

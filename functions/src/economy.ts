@@ -436,6 +436,12 @@ export async function loadEconomy(nowMs = Date.now()): Promise<EconomyConfig> {
   return config;
 }
 
+/** Live coin-pack catalog for purchase/refund decisions. Unlike the display cache, read failures must not use defaults. */
+export async function loadCoinPacks(): Promise<CoinPackDef[]> {
+  const snap = await db.doc(ECONOMY_CONFIG_DOC).get();
+  return parseEconomy(snap.exists ? snap.data() : null).coinPacks;
+}
+
 /** UTC calendar day, `YYYY-MM-DD`. */
 export function dayKey(nowMs: number): string {
   return new Date(nowMs).toISOString().slice(0, 10);
