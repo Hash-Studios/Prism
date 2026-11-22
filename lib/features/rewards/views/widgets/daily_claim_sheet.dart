@@ -10,6 +10,7 @@ import 'package:Prism/core/widgets/glint/glint.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/features/rewards/views/widgets/streak_cycle_strip.dart';
 import 'package:Prism/features/streak/data/streak_rescue_service.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -39,6 +40,10 @@ Future<void> showDailyClaimSheet(
     case _ClaimSheetExit.seeRewards:
       onSeeRewards?.call();
     case _ClaimSheetExit.earnCoins:
+      if (CoinPacksFlag.available && context.mounted) {
+        showCoinPacksSheet(context, source: 'streak_rescue_daily');
+        return;
+      }
       (onEarnCoins ?? onSeeRewards)?.call();
     case _ClaimSheetExit.dismissed:
     case null:

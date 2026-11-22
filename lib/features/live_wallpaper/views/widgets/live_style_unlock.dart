@@ -5,6 +5,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/purchases/paywall_orchestrator.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/features/live_wallpaper/domain/entities/live_style.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
@@ -69,7 +70,7 @@ Future<void> offerLiveStyleUnlock(
       if (result.success) {
         toasts.success(context.l10n.wallpaperLiveStyleUnlocked(label));
       } else if (result.insufficientBalance) {
-        toasts.error(context.l10n.wallpaperInsufficientCoins);
+        showCoinShortfall(context, message: context.l10n.wallpaperInsufficientCoins, source: 'live_style');
       } else {
         toasts.error(context.l10n.wallpaperLiveUnlockError(label));
       }

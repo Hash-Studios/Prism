@@ -58,6 +58,7 @@ import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_view.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_sheets.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_style_sheet.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/photo_wallpaper_widgets.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/hints/domain/feature_hint.dart';
 import 'package:Prism/features/hints/views/feature_hint.dart';
@@ -779,7 +780,11 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         sourceTag: 'coins.ai_generation.low_balance',
         requiredCoins: qualityTier.costFor(isPro: app_state.prismUser.premium),
       );
-      toasts.error(context.l10n.economyAiNeedCoinsToGenerate(qualityTier.costFor(isPro: app_state.prismUser.premium)));
+      showCoinShortfall(
+        context,
+        message: context.l10n.economyAiNeedCoinsToGenerate(qualityTier.costFor(isPro: app_state.prismUser.premium)),
+        source: 'ai_wallpaper',
+      );
       setState(() => _loadingGeneration = false);
       return;
     }

@@ -4,6 +4,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/features/drops/domain/entities/drop_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
@@ -66,6 +67,11 @@ class DropUnlockSheet extends StatefulWidget {
 
 class _DropUnlockSheetState extends State<DropUnlockSheet> {
   bool _watching = false;
+
+  void _buyCoins() {
+    Navigator.of(context).pop();
+    showCoinPacksSheet(context, source: 'drops_unlock');
+  }
 
   Future<void> _watch() async {
     setState(() => _watching = true);
@@ -168,6 +174,15 @@ class _DropUnlockSheetState extends State<DropUnlockSheet> {
                 Text(l10n.economyCoinsMissing(missing), style: PrismTextStyles.caption(context)),
                 if (remainder > 0 && CoinsService.instance.adsRemainingToday != 0)
                   Text(l10n.economyCoinsRemainAfterAd(remainder), style: PrismTextStyles.caption(context)),
+              ],
+              if (short && CoinPacksFlag.available) ...<Widget>[
+                const SizedBox(height: PrismSpace.xs),
+                PrismButton(
+                  label: l10n.coinPacksBuyCoins,
+                  expand: true,
+                  variant: PrismButtonVariant.tonal,
+                  onPressed: _buyCoins,
+                ),
               ],
               Wrap(
                 alignment: WrapAlignment.center,

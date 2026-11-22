@@ -8,6 +8,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/user_blocks/blocked_creators.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -120,6 +121,11 @@ class _TipSheetState extends State<TipSheet> {
     router.pushPath('/rewards');
   }
 
+  void _buyCoins() {
+    Navigator.of(context).pop();
+    showCoinPacksSheet(context, source: 'tip');
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = context.l10n;
@@ -151,6 +157,13 @@ class _TipSheetState extends State<TipSheet> {
                 loading: sending,
                 onPressed: short || sending ? null : _send,
               ),
+              if (short && CoinPacksFlag.available)
+                PrismButton(
+                  label: l10n.coinPacksBuyCoins,
+                  expand: true,
+                  variant: PrismButtonVariant.tonal,
+                  onPressed: _buyCoins,
+                ),
               if (short)
                 PrismButton(
                   label: l10n.tipEarnCoins,

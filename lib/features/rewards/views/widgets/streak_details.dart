@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/features/rewards/views/widgets/streak_cycle_strip.dart';
 import 'package:Prism/features/streak/data/streak_rescue_service.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -55,6 +56,10 @@ class _StreakDetailsState extends State<StreakDetails> {
   Future<void> _restore() async {
     if (_busy) return;
     if (CoinsService.instance.balanceNotifier.value < kStreakRescueCost) {
+      if (CoinPacksFlag.available) {
+        showCoinPacksSheet(context, source: 'streak_rescue');
+        return;
+      }
       Navigator.of(context).pop(true);
       return;
     }
@@ -71,6 +76,10 @@ class _StreakDetailsState extends State<StreakDetails> {
         });
       case StreakRescueOutcome.insufficientBalance:
         PrismHaptics.warning();
+        if (CoinPacksFlag.available) {
+          showCoinPacksSheet(context, source: 'streak_rescue');
+          return;
+        }
         Navigator.of(context).pop(true);
       case StreakRescueOutcome.unavailable:
         toasts.error(switch (result.reason) {

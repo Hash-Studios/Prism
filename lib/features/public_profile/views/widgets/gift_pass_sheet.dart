@@ -5,6 +5,7 @@ import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/coins/coin_policy.dart';
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:auto_route/auto_route.dart';
@@ -38,7 +39,7 @@ class _GiftPassSheetState extends State<GiftPassSheet> {
       case GiftOutcome.sent:
         toasts.success(l10n.accountPassSentToPerson(name));
       case GiftOutcome.insufficient:
-        toasts.error(l10n.accountNotEnoughCoinsEarnInRewards);
+        showCoinShortfall(context, message: l10n.accountNotEnoughCoinsEarnInRewards, source: 'gift_pass');
       case GiftOutcome.limit:
         toasts.info(l10n.accountGiftLimitReached);
       case GiftOutcome.recipientPremium:

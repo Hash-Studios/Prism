@@ -1,6 +1,7 @@
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
@@ -50,7 +51,11 @@ Future<T?> showCoinGateSheet<T>(
               onPressed: () {
                 final StackRouter router = context.router;
                 Navigator.of(sheetContext).pop();
-                router.pushPath('/rewards');
+                if (CoinPacksFlag.available) {
+                  showCoinPacksSheet(context, source: 'coin_gate');
+                } else {
+                  router.pushPath('/rewards');
+                }
               },
             ),
         ],

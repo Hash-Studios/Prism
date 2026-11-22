@@ -6,6 +6,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/biz/coin_gate.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_preview.dart';
@@ -89,6 +90,11 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
     final StackRouter router = context.router;
     Navigator.of(context).pop();
     router.pushPath('/rewards');
+  }
+
+  void _buyCoins() {
+    Navigator.of(context).pop();
+    showCoinPacksSheet(context, source: 'shop');
   }
 
   Future<void> _getPro() async {
@@ -202,6 +208,13 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
             onPressed: _watching
                 ? null
                 : () => _watchAndBuy(buyAfter: CoinsService.instance.adsRewardNow >= price - state.balance),
+          ),
+        if (CoinPacksFlag.available)
+          PrismButton(
+            label: context.l10n.coinPacksBuyCoins,
+            expand: true,
+            variant: PrismButtonVariant.tonal,
+            onPressed: _buyCoins,
           ),
         PrismButton(
           label: context.l10n.economyEarnCoins,
