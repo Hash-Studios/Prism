@@ -267,6 +267,41 @@ void main() {
     expect(local.single.status, 'submitted');
   });
 
+  test('ai_report_target syncs a pending local submission instead of hiding it', () async {
+    final Directory directory = await Directory.systemTemp.createTemp('ai_report_target_pending');
+    addTearDown(() => directory.delete(recursive: true));
+    final FakeFirestoreClient firestore = FakeFirestoreClient();
+    await getIt.unregister<FirestoreClient>();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    final DurableJsonStore store = DurableJsonStore('ai_report_target_pending', directory: directory);
+    final AiGenerationRepositoryImpl repository = AiGenerationRepositoryImpl.forTest(
+      client: MockClient((_) async => http.Response(_okBody, 200)),
+      auth: _FakeAuth(),
+      localStore: store,
+      requestTimeout: const Duration(seconds: 1),
+      providerRetryDelays: const <Duration>[Duration.zero, Duration.zero],
+    );
+    // Both Firestore saves failed, so the submission lives only in pending local history.
+    await store.write('history/user-1/gen', <String, Object?>{
+      'id': 'gen',
+      'userId': 'user-1',
+      'createdAt': DateTime.utc(2026, 11, 22).toIso8601String(),
+      'status': 'submitted',
+      'submittedWallId': 'wall-1',
+      '_syncState': 'pending',
+    });
+
+    await repository.ensureHistoryRecordSaved(
+      AiGenerationRecord.fromJson(<String, Object?>{'id': 'gen', 'userId': 'user-1'}),
+    );
+
+    expect(firestore.docs['aiGenerations']!['gen']!['submittedWallId'], 'wall-1');
+    expect(firestore.docs['aiGenerations']!['gen']!['status'], 'submitted');
+    final Map<String, Object?> local = (await store.readAll())['history/user-1/gen']!;
+    expect(local['_syncState'], 'synced');
+    expect(local['submittedWallId'], 'wall-1');
+  });
+
   test('ai_report_target skips the save when the owner clears during the existence read', () async {
     final Directory directory = await Directory.systemTemp.createTemp('ai_report_target_clear');
     addTearDown(() => directory.delete(recursive: true));

@@ -233,19 +233,34 @@ class AiGenerationRepositoryImpl {
       // The read rule checks resource.data.userId, so the owner reads a missing doc as permission-denied.
       if (error.code != 'permission-denied') rethrow;
     }
-    if (stored != null || !_isCurrentGeneration(record.userId, generation)) return;
-    // The fields a submission sets, and null fields, stay out, so this merge never undoes a submission saved in the
-    // meantime. Local history is not written: a stale copy there could hide a newer submission too.
-    await firestoreClient
-        .setDoc(
-          FirebaseCollections.aiGenerations,
-          record.reportTargetFirestoreDocId,
-          record.toJson()..removeWhere((String key, Object? value) => value == null || _submissionFields.contains(key)),
-          merge: true,
-          sourceTag: 'ai.history.report_target',
-        )
-        .timeout(_requestTimeout);
+    if (stored != null) return;
+    // Runs in the owner's write queue, so a history save, such as a submission, either lands first and is seen here,
+    // or runs after this create.
+    await _serializeOwnerWrite(record.userId, generation, () async {
+      final String key = _historyKey(record.userId, record.id);
+      final Map<String, Object?>? local = (await _localStore.readAll())[key];
+      if (local?['_syncState'] == 'pending') {
+        // The local copy never synced. It is the newest one, with any submission, so sync it whole.
+        final AiGenerationRecord pending = AiGenerationRecord.fromJson(local!);
+        await _setRemoteRecord(record.reportTargetFirestoreDocId, pending.toJson(), 'ai.history.report_target');
+        if (_isCurrentGeneration(record.userId, generation)) {
+          await _localStore.write(key, _recordJson(pending, pending: false));
+        }
+        return;
+      }
+      // The fields a submission sets, and null fields, stay out, so this create never undoes a submission.
+      // Local history is not written: a stale copy there could hide a newer submission.
+      await _setRemoteRecord(
+        record.reportTargetFirestoreDocId,
+        record.toJson()..removeWhere((String key, Object? value) => value == null || _submissionFields.contains(key)),
+        'ai.history.report_target',
+      );
+    });
   }
+
+  Future<void> _setRemoteRecord(String docId, Map<String, dynamic> data, String sourceTag) => firestoreClient
+      .setDoc(FirebaseCollections.aiGenerations, docId, data, merge: true, sourceTag: sourceTag)
+      .timeout(_requestTimeout);
 
   /// The fields a community submission sets after the record is saved.
   static const Set<String> _submissionFields = <String>{'status', 'submittedWallId', 'submittedAt'};
