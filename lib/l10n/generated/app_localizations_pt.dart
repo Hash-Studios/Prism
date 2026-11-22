@@ -16274,7 +16274,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get coinPacksTitle => 'Obter moedas';
 
   @override
-  String get coinPacksSubtitle => 'Usa moedas em transferências, fundos com IA, Drops e gorjetas.';
+  String get coinPacksSubtitle => 'Use moedas em downloads, papéis de parede com IA, Drops e gorjetas.';
 
   @override
   String coinPacksCoins(int coins) {
@@ -16289,7 +16289,7 @@ class AppLocalizationsPt extends AppLocalizations {
     final intl.NumberFormat percentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String percentString = percentNumberFormat.format(percent);
 
-    return '+$percentString% de bónus';
+    return '+$percentString% de bônus';
   }
 
   @override
@@ -16301,19 +16301,19 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get coinPacksLoadFailed => 'Os pacotes de moedas não carregaram. Verifica a ligação e tenta novamente.';
+  String get coinPacksLoadFailed => 'Os pacotes de moedas não carregaram. Confira sua conexão e tente de novo.';
 
   @override
-  String get coinPacksRetry => 'Tentar novamente';
+  String get coinPacksRetry => 'Tentar de novo';
 
   @override
-  String get coinPacksEmpty => 'De momento não há pacotes de moedas à venda.';
+  String get coinPacksEmpty => 'No momento não há pacotes de moedas à venda.';
 
   @override
-  String get coinPacksPurchasing => 'A aguardar a loja…';
+  String get coinPacksPurchasing => 'Aguardando a loja…';
 
   @override
-  String get coinPacksVerifying => 'A adicionar as tuas moedas…';
+  String get coinPacksVerifying => 'Adicionando suas moedas…';
 
   @override
   String coinPacksSuccess(int coins, int balance) {
@@ -16322,24 +16322,24 @@ class AppLocalizationsPt extends AppLocalizations {
     final intl.NumberFormat balanceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
     final String balanceString = balanceNumberFormat.format(balance);
 
-    return '$coinsString moedas adicionadas. O teu saldo é $balanceString.';
+    return '$coinsString moedas adicionadas. Seu saldo é $balanceString.';
   }
 
   @override
-  String get coinPacksPending => 'A tua compra está pendente. As moedas chegam quando a loja a confirmar.';
+  String get coinPacksPending => 'Sua compra está pendente. As moedas chegam quando a loja confirmar.';
 
   @override
   String get coinPacksFailed =>
-      'Não conseguimos adicionar moedas desta compra. Se a loja te cobrou, contacta o suporte nas Definições.';
+      'Não conseguimos adicionar moedas desta compra. Se a loja cobrou você, fale com o suporte em Configurações.';
 
   @override
-  String get coinPacksDone => 'Concluído';
+  String get coinPacksDone => 'Concluir';
 
   @override
   String get coinPacksBuyCoins => 'Comprar moedas';
 
   @override
-  String get coinPacksEarnInRewards => 'Ganha moedas grátis nas Recompensas';
+  String get coinPacksEarnInRewards => 'Ganhe moedas grátis em Recompensas';
 
   @override
   String get coreCoinCoinPack => 'Pacote de moedas';
