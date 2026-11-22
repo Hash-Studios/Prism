@@ -160,17 +160,19 @@ export function installFakeDb(t: TestContext, seed: Record<string, Doc> = {},
     else apply();
   };
 
+  function parentOf(path: string): FakeRef["parent"] {
+    const collectionPath = path.slice(0, path.lastIndexOf("/"));
+    const ownerCut = collectionPath.lastIndexOf("/");
+    return {id: collectionPath.slice(ownerCut + 1), path: collectionPath,
+      parent: ownerCut < 0 ? null : ref(collectionPath.slice(0, ownerCut))};
+  }
+
   function ref(path: string): FakeRef {
     return {
       id: path.split("/").pop() as string,
       path,
-      get parent() {
-        const cut = path.lastIndexOf("/");
-        const collectionPath = path.slice(0, cut);
-        const ownerCut = collectionPath.lastIndexOf("/");
-        return {id: collectionPath.slice(ownerCut + 1), path: collectionPath,
-          parent: ownerCut < 0 ? null : ref(collectionPath.slice(0, ownerCut))};
-      },
+      // A plain property, so tests that stub `ref.parent` with Object.assign can still replace it.
+      parent: parentOf(path),
       get: async () => {
         if (!pending || transactionReadDepth === 0) {
           if (observed?.outsideReads !== undefined) observed.outsideReads++;

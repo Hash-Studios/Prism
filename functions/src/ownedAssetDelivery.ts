@@ -706,8 +706,8 @@ export async function sweepR2Tombstones(nowMs = Date.now()): Promise<number> {
   if (rows.size < 100) await stateRef.set({cursorId: ""}, {merge: true});
   return cleaned;
 }
-export const onR2TombstoneCleanup = onSchedule({schedule: "every 24 hours", region: REGION, secrets: r2Secrets,
-  cpu: "gcf_gen1"},
+export const onR2TombstoneCleanup = onSchedule(
+  {schedule: "every 24 hours", region: REGION, secrets: r2Secrets, cpu: "gcf_gen1"},
   async () => {
     await sweepR2Tombstones();
   });

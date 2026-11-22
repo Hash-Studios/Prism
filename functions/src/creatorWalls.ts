@@ -389,9 +389,9 @@ export async function refundDeletedWall(wallDocId: string): Promise<number> {
   return refunded;
 }
 
-export const onCreatorWallDeleted = onDocumentDeleted({document: "walls/{wallId}", region: REGION, retry: true,
-  cpu: "gcf_gen1"},
-  async (event) => {
-    const refunded = await refundDeletedWall(event.params.wallId);
-    if (refunded > 0) logger.info("onCreatorWallDeleted: refunded buyers.", {wallId: event.params.wallId, refunded});
-  });
+const deletedWallOptions = {document: "walls/{wallId}", region: REGION, retry: true, cpu: "gcf_gen1" as const};
+
+export const onCreatorWallDeleted = onDocumentDeleted(deletedWallOptions, async (event) => {
+  const refunded = await refundDeletedWall(event.params.wallId);
+  if (refunded > 0) logger.info("onCreatorWallDeleted: refunded buyers.", {wallId: event.params.wallId, refunded});
+});
