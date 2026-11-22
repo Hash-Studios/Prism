@@ -145,8 +145,9 @@ export const setWallPrice = onCall(
       throw new HttpsError("invalid-argument", "price is invalid.");
     }
     const refused = (reason: string): SetWallPriceResponse => ({success: false, reason, price: 0});
-    if (!economy.flags.creatorWallsEnabled) return refused("creator_wall_disabled");
     if (price !== 0) {
+      // Removing a price stays open when sales are off, so an owner can still free a wall during a rollback.
+      if (!economy.flags.creatorWallsEnabled) return refused("creator_wall_disabled");
       const account = await eligibleAccount(uid);
       if (account) return refused(`creator_wall_seller_${account}`);
     }

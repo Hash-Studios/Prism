@@ -41,7 +41,7 @@ The upload screen saves the wall first, then calls `setWallPrice`. If the price 
 
 | Rule | Value |
 |---|---|
-| Prices | One of `creatorWalls.prices`. Default `[20, 40, 75]`. A bad list falls back to the default. The list accepts 1 to 6 distinct integers from 10 to 1000. Prices of 716 or more cannot sell under the daily creator cap. |
+| Prices | One of `creatorWalls.prices`. Default `[20, 40, 75]`. A bad list falls back to the default. The list accepts 1 to 6 distinct integers from 10 to 715. A price of 716 or more pays more than the daily creator cap, so it could never sell. |
 | Remove a price | `setWallPrice` with `price: 0`. Buyers keep their unlocks. |
 | Creator share | `floor(price * 70 / 100)`: 20 gives 14, 40 gives 28, 75 gives 52. The share is a code constant, not config. |
 | Prism share | `price - creatorShare`: 6, 12, 23. These coins leave circulation. |

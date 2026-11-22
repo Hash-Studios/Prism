@@ -79,6 +79,8 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
     if (outcome == WallPriceOutcome.saved || outcome == WallPriceOutcome.removed) {
       _priceChanged = true;
       unawaited(analytics.track(CreatorWallPriceSetEvent(price: price, source: 'edit')));
+      // The price write moved the wall's revision. Pick it up so the next metadata save does not conflict.
+      await _cubit.refreshRevision();
     }
     if (!mounted) return;
     setState(() {
@@ -220,7 +222,7 @@ class _WallMetadataEditorState extends State<WallMetadataEditor> {
                         ),
                       ),
                     ),
-                    if (CreatorWallsFlag.sellingEnabled) ...<Widget>[
+                    if (CreatorWallsFlag.sellingEnabled || _creatorPrice > 0) ...<Widget>[
                       const SizedBox(height: PrismSpace.xl),
                       CreatorPricePicker(
                         value: _creatorPrice,

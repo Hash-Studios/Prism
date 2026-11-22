@@ -44,6 +44,7 @@ void main() {
     cubit = _Cubit();
     when(() => cubit.load()).thenAnswer((_) async {});
     when(() => cubit.save()).thenAnswer((_) async {});
+    when(() => cubit.refreshRevision()).thenAnswer((_) async {});
     analytics = FakeAppAnalytics();
     AnalyticsRuntime.instance = analytics;
     priceCalls = <Map<String, dynamic>>[];
@@ -120,6 +121,16 @@ void main() {
     expect(find.text('Sell this wall'), findsNothing);
   });
 
+  testWidgets('with selling off, a priced wall still shows the picker so the owner can remove the price', (
+    tester,
+  ) async {
+    EconomyConfig.current = EconomyConfig.fromMap(<String, dynamic>{
+      'flags': <String, dynamic>{'creatorWallsEnabled': false},
+    });
+    await pump(tester, wallData: <String, dynamic>{'creatorPrice': 40});
+    expect(find.text('Sell this wall'), findsOneWidget);
+  });
+
   testWidgets('a tap on 40 calls setWallPrice with the wall doc id and 40', (tester) async {
     await pump(tester);
     await tester.ensureVisible(find.text('40'));
@@ -131,6 +142,8 @@ void main() {
       <String, dynamic>{'wallId': 'doc', 'price': 40},
     ]);
     expect(analytics.events.map((AnalyticsEvent e) => e.eventName), contains('creator_wall_price_set'));
+    // The price write moves the wall revision, so the editor reads it again before the next metadata save.
+    verify(() => cubit.refreshRevision()).called(1);
     // The success toast holds a one second timer.
     await tester.pump(const Duration(seconds: 1));
   });

@@ -7,7 +7,7 @@ import {
   CREATOR_SALE_COINS_PER_DAY, CREATOR_SHARE_PERCENT, UNLOCKS_PER_BUYER_PER_DAY, UNLOCKS_PER_PAIR_PER_DAY,
   creatorShareOf, creatorWallIo, refundDeletedWall, setWallPrice, unlockCreatorWall,
 } from "../creatorWalls";
-import {resetEconomyCache} from "../economy";
+import {parseEconomy, resetEconomyCache} from "../economy";
 import {ownedThumbnailUrl} from "../ownedAssetDelivery";
 import {r2ObjectId} from "../r2Storage";
 import {type Doc, installFakeDb} from "./fakeDb";
@@ -522,6 +522,20 @@ test("with the server switch off, setting a price is refused", async (t) => {
   assert.equal(result.success, false);
   assert.equal(result.reason, "creator_wall_disabled");
   assert.equal(store.get("walls/neon")?.creatorPrice, undefined);
+});
+
+test("with the server switch off, the owner can still remove a price", async (t) => {
+  const {store} = setup(t, {"economyConfig/current": {flags: {creatorWallsEnabled: false}}}, {creatorPrice: 40});
+  const result = await setPrice({wallId: "neon", price: 0});
+  assert.equal(result.success, true);
+  assert.equal(result.reason, "creator_wall_price_removed");
+  assert.equal("creatorPrice" in (store.get("walls/neon") ?? {}), false);
+});
+
+test("the price list keeps 715 and refuses any price whose share is over the daily creator cap", () => {
+  assert.deepEqual(parseEconomy({creatorWalls: {prices: [715, 20]}}).creatorWalls.prices, [20, 715]);
+  assert.deepEqual(parseEconomy({creatorWalls: {prices: [20, 716]}}).creatorWalls.prices, [20, 40, 75]);
+  assert.equal(creatorShareOf(715), CREATOR_SALE_COINS_PER_DAY);
 });
 
 test("a seller younger than 7 days cannot set a price", async (t) => {

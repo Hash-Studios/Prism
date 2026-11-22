@@ -193,4 +193,26 @@ void main() {
     expect(cubit.state.status, WallMetadataStatus.saved);
     expect(cubit.state.snapshot!.metadata.text.title, emojiText.text.title);
   });
+
+  test('refreshRevision takes the new revision after a price write and keeps the draft', () async {
+    await cubit.load();
+    cubit.change(next);
+    final PendingWallMetadata? draft = cubit.state.draft;
+    when(
+      () => actions.load('doc', approved: true),
+    ).thenAnswer((_) async => const WallMetadataSnapshot(metadata: initial, approved: true, revision: 'rev-price'));
+    await cubit.refreshRevision();
+    expect(cubit.state.snapshot!.revision, 'rev-price');
+    expect(cubit.state.draft, draft);
+    expect(cubit.state.dirty, isTrue);
+  });
+
+  test('refreshRevision keeps the old revision when the metadata changed elsewhere', () async {
+    await cubit.load();
+    when(
+      () => actions.load('doc', approved: true),
+    ).thenAnswer((_) async => const WallMetadataSnapshot(metadata: next, approved: true, revision: 'rev-other'));
+    await cubit.refreshRevision();
+    expect(cubit.state.snapshot!.revision, 'rev-1');
+  });
 }
