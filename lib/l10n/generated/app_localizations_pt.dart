@@ -16286,20 +16286,20 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get creatorWallPriceSaved => 'Preço guardado';
+  String get creatorWallPriceSaved => 'Preço salvo';
 
   @override
-  String get creatorWallPriceRemoved => 'Este wall agora é grátis';
+  String get creatorWallPriceRemoved => 'Este wall agora é gratuito';
 
   @override
-  String get creatorWallPriceFailed => 'Não foi possível guardar o preço. Tente novamente.';
+  String get creatorWallPriceFailed => 'Não foi possível salvar o preço. Tente de novo.';
 
   @override
   String get creatorWallPriceIneligible =>
-      'Pode vender walls quando o seu email estiver verificado, a sua conta tiver 7 dias e tiver um wall aprovado.';
+      'Você pode vender walls quando seu e-mail estiver verificado, sua conta tiver 7 dias e você tiver um wall aprovado.';
 
   @override
-  String get creatorWallPriceNotOriginal => 'Só pode vender os seus uploads originais.';
+  String get creatorWallPriceNotOriginal => 'Só é possível vender seus uploads originais.';
 
   @override
   String creatorWallChipSemantics(int price) {
@@ -16312,7 +16312,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String creatorWallUnlockMessage(String creatorName) {
-    return 'Obtenha o original em qualidade total. É seu para sempre, em todos os dispositivos. $creatorName recebe 70% das moedas.';
+    return 'Tenha o original em qualidade total. Ele é seu para sempre, em todos os dispositivos. $creatorName recebe 70% das moedas.';
   }
 
   @override
@@ -16324,7 +16324,7 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String creatorWallBalance(int balance) {
     String _temp0 = intl.Intl.pluralLogic(balance, locale: localeName, other: '$balance moedas', one: '1 moeda');
-    return 'O seu saldo: $_temp0';
+    return 'Seu saldo: $_temp0';
   }
 
   @override
@@ -16340,7 +16340,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get creatorWallUnlockedTitle => 'Desbloqueado';
 
   @override
-  String get creatorWallUnlockedMessage => 'O original é seu. Pode descarregá-lo ou defini-lo a qualquer momento.';
+  String get creatorWallUnlockedMessage => 'O original é seu. Baixe ou defina quando quiser.';
 
   @override
   String get creatorWallUnlockedBadge => 'Desbloqueado';
@@ -16351,15 +16351,15 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String creatorWallPriceChanged(int price) {
     String _temp0 = intl.Intl.pluralLogic(price, locale: localeName, other: '$price moedas', one: '1 moeda');
-    return 'O preço mudou para $_temp0. Verifique e tente novamente.';
+    return 'O preço mudou para $_temp0. Confira e tente de novo.';
   }
 
   @override
-  String get creatorWallDailyLimit => 'Atingiu o limite de desbloqueios de hoje. Tente amanhã.';
+  String get creatorWallDailyLimit => 'Você atingiu o limite de desbloqueios de hoje. Tente amanhã.';
 
   @override
   String creatorWallPairLimit(String creatorName) {
-    return 'Desbloqueou 3 walls de $creatorName hoje. Tente amanhã.';
+    return 'Você desbloqueou 3 walls de $creatorName hoje. Tente amanhã.';
   }
 
   @override
@@ -16368,16 +16368,16 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get creatorWallBuyerTooNew => 'A sua conta tem de ter 7 dias para desbloquear walls.';
+  String get creatorWallBuyerTooNew => 'Sua conta precisa ter 7 dias para desbloquear walls.';
 
   @override
-  String get creatorWallBuyerIneligible => 'Verifique o seu email para desbloquear walls.';
+  String get creatorWallBuyerIneligible => 'Verifique seu e-mail para desbloquear walls.';
 
   @override
-  String get creatorWallUnavailable => 'Este wall não está à venda neste momento.';
+  String get creatorWallUnavailable => 'Este wall não está à venda agora.';
 
   @override
-  String get creatorWallUnlockFailed => 'Não foi possível desbloquear o wall. Não foi cobrado.';
+  String get creatorWallUnlockFailed => 'Não foi possível desbloquear o wall. Você não foi cobrado.';
 
   @override
   String get creatorWallNotEnoughCoins => 'Moedas insuficientes.';
@@ -16392,7 +16392,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get creatorStatsSalesCoins => 'Moedas ganhas';
 
   @override
-  String get creatorStatsSalesEmpty => 'Ainda não há vendas. Defina um preço para um dos seus walls para o vender.';
+  String get creatorStatsSalesEmpty => 'Nenhuma venda ainda. Coloque um preço em um dos seus walls para vendê-lo.';
 
   @override
   String creatorStatsSalesWall(int count, int coins) {
