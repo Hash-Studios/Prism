@@ -20,6 +20,7 @@ import 'package:Prism/core/wallpaper/wallpaper_core.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
+import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/photo_wallpaper_repository.dart';
@@ -781,12 +782,29 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
               ),
             ],
           ),
-          PrismButton(
-            label: l10n.photoWallStartOver,
-            variant: PrismButtonVariant.ghost,
-            expand: true,
-            maxLines: null,
-            onPressed: _startOver,
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: PrismButton(
+                  label: l10n.photoWallStartOver,
+                  variant: PrismButtonVariant.ghost,
+                  expand: true,
+                  maxLines: null,
+                  onPressed: _startOver,
+                ),
+              ),
+              // Google Play requires an in-app way to flag AI output. showContentReportSheet plays the tap haptic.
+              if (done.jobId.isNotEmpty) ...<Widget>[
+                const SizedBox(width: PrismSpace.xs),
+                PrismIconButton(
+                  icon: Icons.flag_rounded,
+                  tooltip: l10n.coreReport,
+                  filled: true,
+                  onPressed: () =>
+                      showContentReportSheet(context, contentType: 'photoJob', targetFirestoreDocId: done.jobId),
+                ),
+              ],
+            ],
           ),
         ],
       );

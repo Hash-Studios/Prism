@@ -6,7 +6,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
-/// The result's actions: Apply as the one primary button, and save, share, submit and try another as icons.
+/// The result's actions: Apply as the one primary button, and save, share, submit, try another and report as icons.
 class AiResultActions extends StatelessWidget {
   const AiResultActions({
     super.key,
@@ -20,6 +20,7 @@ class AiResultActions extends StatelessWidget {
     required this.onShare,
     required this.onRefine,
     required this.onSubmit,
+    required this.onReport,
   });
 
   /// False on iOS, where Apply already saves to Photos.
@@ -37,6 +38,9 @@ class AiResultActions extends StatelessWidget {
   final VoidCallback onShare;
   final VoidCallback onRefine;
   final VoidCallback onSubmit;
+
+  /// Opens the report sheet. Google Play requires an in-app way to flag AI output.
+  final VoidCallback onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -90,6 +94,9 @@ class AiResultActions extends StatelessWidget {
           filled: true,
         ),
       ],
+      const SizedBox(width: PrismSpace.xs),
+      // showContentReportSheet plays the tap haptic.
+      PrismIconButton(icon: Icons.flag_rounded, tooltip: l10n.coreReport, onPressed: onReport, filled: true),
     ];
     final Widget apply = PrismButton(
       label: l10n.aiResultApply,
@@ -100,7 +107,7 @@ class AiResultActions extends StatelessWidget {
     );
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints box) {
-        final int icons = 1 + (showSave ? 1 : 0) + (canSubmit ? 1 : 0) + (showRefine ? 1 : 0);
+        final int icons = 2 + (showSave ? 1 : 0) + (canSubmit ? 1 : 0) + (showRefine ? 1 : 0);
         final double applyMin = MediaQuery.textScalerOf(context).scale(_applyMinWidth);
         if (icons * (44 + PrismSpace.xs) + PrismSpace.xs + applyMin <= box.maxWidth) {
           return Row(

@@ -46,6 +46,7 @@ void main() {
             onShare: () => calls.add('share'),
             onRefine: () => calls.add('refine'),
             onSubmit: () => calls.add('submit'),
+            onReport: () => calls.add('report'),
           ),
         ),
       ),
@@ -56,6 +57,11 @@ void main() {
       await tester.pump();
       expect(haptics, hasLength(tooltip == 'Save' ? 0 : 1), reason: tooltip);
     }
-    expect(calls, <String>['save', 'share', 'submit', 'refine']);
+    // Report opens the report sheet, which plays its own tap.
+    haptics.clear();
+    await tester.tap(find.byTooltip('Report'));
+    await tester.pump();
+    expect(haptics, isEmpty);
+    expect(calls, <String>['save', 'share', 'submit', 'refine', 'report']);
   });
 }

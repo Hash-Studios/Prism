@@ -588,6 +588,15 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('a result offers Report, as Google Play requires for AI output', (tester) async {
+    await _pumpPage(tester, _Harness());
+    await _pickPhoto(tester);
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+
+    expect(find.byTooltip('Report'), findsOneWidget);
+  });
+
   testWidgets('a blocked output shows the refund line and Try again', (tester) async {
     final _Harness harness = _Harness();
     harness.onCall = (Map<String, Object?> payload) async => <String, Object?>{
