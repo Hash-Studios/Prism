@@ -221,8 +221,8 @@ class AiGenerationRepositoryImpl {
   Future<void> saveHistoryRecord(AiGenerationRecord record) =>
       _saveHistoryRecord(record, _generationFor(record.userId));
 
-  /// Saves [record] only when its Firestore doc is missing, so a report target exists. An existing doc is left as is,
-  /// because a stale cached copy could clear newer fields, such as a submission link saved on another device.
+  /// Creates [record]'s Firestore doc only when it is missing, so a report target exists. An existing doc is left as is,
+  /// because a stale cached copy could clear newer fields, such as a submission link.
   Future<void> ensureHistoryRecordSaved(AiGenerationRecord record) async {
     // Read the owner generation first, so an account switch during the read skips the save.
     final int generation = _generationFor(record.userId);
@@ -233,7 +233,18 @@ class AiGenerationRepositoryImpl {
       // The read rule checks resource.data.userId, so the owner reads a missing doc as permission-denied.
       if (error.code != 'permission-denied') rethrow;
     }
-    if (stored == null) await _saveHistoryRecord(record, generation);
+    if (stored != null || !_isCurrentGeneration(record.userId, generation)) return;
+    // Null fields stay out, so this merge never clears a field that a submission saved in the meantime, such as
+    // submittedWallId. Local history is not written: a stale copy there could hide a newer submission too.
+    await firestoreClient
+        .setDoc(
+          FirebaseCollections.aiGenerations,
+          record.reportTargetFirestoreDocId,
+          record.toJson()..removeWhere((String _, Object? value) => value == null),
+          merge: true,
+          sourceTag: 'ai.history.report_target',
+        )
+        .timeout(_requestTimeout);
   }
 
   Future<void> _saveHistoryRecord(AiGenerationRecord record, int generation) async {

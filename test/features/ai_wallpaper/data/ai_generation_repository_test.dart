@@ -239,6 +239,32 @@ void main() {
     expect(firestore.writes.single.id, 'missing');
   });
 
+  test('ai_report_target keeps a submission link saved during the existence read', () async {
+    final Directory directory = await Directory.systemTemp.createTemp('ai_report_target_submit');
+    addTearDown(() => directory.delete(recursive: true));
+    final _GatedReadFirestoreClient firestore = _GatedReadFirestoreClient();
+    await getIt.unregister<FirestoreClient>();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    final AiGenerationRepositoryImpl repository = AiGenerationRepositoryImpl.forTest(
+      client: MockClient((_) async => http.Response(_okBody, 200)),
+      auth: _FakeAuth(),
+      localStore: DurableJsonStore('ai_report_target_submit', directory: directory),
+      requestTimeout: const Duration(seconds: 1),
+      providerRetryDelays: const <Duration>[Duration.zero, Duration.zero],
+    );
+    final AiGenerationRecord stale = AiGenerationRecord.fromJson(<String, Object?>{'id': 'gen', 'userId': 'user-1'});
+
+    final Future<void> ensure = repository.ensureHistoryRecordSaved(stale);
+    await Future<void>.delayed(Duration.zero);
+    await repository.saveHistoryRecord(stale.copyWith(submittedWallId: 'wall-1'));
+    firestore.gate.complete();
+    await ensure;
+
+    expect(firestore.docs['aiGenerations']!['gen']!['submittedWallId'], 'wall-1');
+    final List<AiGenerationRecord> local = await repository.fetchLocalHistory(userId: 'user-1');
+    expect(local.single.submittedWallId, 'wall-1');
+  });
+
   test('ai_report_target skips the save when the owner clears during the existence read', () async {
     final Directory directory = await Directory.systemTemp.createTemp('ai_report_target_clear');
     addTearDown(() => directory.delete(recursive: true));
@@ -1240,8 +1266,16 @@ class _GatedReadFirestoreClient extends FakeFirestoreClient {
     required String sourceTag,
     bool preferCacheFirst = false,
   }) async {
+    // Read now, answer later: a write that lands while the answer is in flight is not seen.
+    final T? result = await super.getById(
+      collection,
+      id,
+      map,
+      sourceTag: sourceTag,
+      preferCacheFirst: preferCacheFirst,
+    );
     await gate.future;
-    return super.getById(collection, id, map, sourceTag: sourceTag, preferCacheFirst: preferCacheFirst);
+    return result;
   }
 }
 
