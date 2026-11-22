@@ -109,7 +109,11 @@ class AiResultActions extends StatelessWidget {
       builder: (BuildContext context, BoxConstraints box) {
         final int icons = 2 + (showSave ? 1 : 0) + (canSubmit ? 1 : 0) + (showRefine ? 1 : 0);
         final double applyMin = _applyMinWidth(context, l10n.aiResultApply);
-        if (icons * (44 + PrismSpace.xs) + PrismSpace.xs + applyMin <= box.maxWidth) {
+        // Android pads each icon's tap target to 48.
+        final double iconWidth = Theme.of(context).materialTapTargetSize == MaterialTapTargetSize.padded
+            ? kMinInteractiveDimension
+            : 44;
+        if (icons * iconWidth + (icons - 1) * PrismSpace.xs + PrismSpace.sm + applyMin <= box.maxWidth) {
           return Row(
             children: <Widget>[
               ...secondary,

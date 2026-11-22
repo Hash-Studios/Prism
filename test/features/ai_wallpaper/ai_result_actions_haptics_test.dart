@@ -139,4 +139,37 @@ void main() {
     expect(tester.renderObject<RenderParagraph>(label).didExceedMaxLines, isFalse);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('Apply takes its own row when Android pads five icons to 48', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.android),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 420,
+              child: AiResultActions(
+                showSave: true,
+                showRefine: true,
+                canSubmit: true,
+                sharing: false,
+                applying: false,
+                onApply: () {},
+                onSave: () {},
+                onShare: () {},
+                onRefine: () {},
+                onSubmit: () {},
+                onReport: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final Finder label = find.text('Apply');
+    expect(tester.renderObject<RenderParagraph>(label).didExceedMaxLines, isFalse);
+    expect(tester.takeException(), isNull);
+  });
 }
