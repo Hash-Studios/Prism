@@ -113,6 +113,7 @@ void main() {
           onShare: () {},
           onRefine: () {},
           onSubmit: () {},
+          onReport: () {},
         ),
       );
 
@@ -218,6 +219,7 @@ void main() {
         onShare: () {},
         onRefine: () {},
         onSubmit: () {},
+        onReport: () {},
       ),
     );
 

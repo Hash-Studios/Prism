@@ -231,7 +231,7 @@ class AiGenerationRepositoryImpl {
     await firestoreClient
         .setDoc(
           FirebaseCollections.aiGenerations,
-          record.id,
+          record.reportTargetFirestoreDocId,
           record.toJson(),
           merge: true,
           sourceTag: 'ai.history.save',

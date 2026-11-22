@@ -27,6 +27,7 @@ import 'package:Prism/core/utils/ai_target_size.dart';
 import 'package:Prism/core/utils/url_utils.dart';
 import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/widgets/coins/coin_balance_chip.dart';
+import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/menu_button/set_wallpaper_button.dart';
 import 'package:Prism/core/widgets/popup/sign_in_pop_up.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
@@ -1496,7 +1497,18 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         onShare: () => _share(hero),
         onRefine: _openRefineSheet,
         onSubmit: () => _submitToCommunity(hero),
+        onReport: () => _reportGeneration(hero),
       ),
+    );
+  }
+
+  void _reportGeneration(AiGenerationRecord record) {
+    if (!_isLoggedIn || record.userId != app_state.prismUser.id) return;
+    // A result whose history save failed has no doc yet. The server answers not found, and the sheet shows its error.
+    showContentReportSheet(
+      context,
+      contentType: 'aiGeneration',
+      targetFirestoreDocId: record.reportTargetFirestoreDocId,
     );
   }
 

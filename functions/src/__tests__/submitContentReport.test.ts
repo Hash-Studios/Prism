@@ -95,3 +95,18 @@ test("a wall request report for a missing request is not found, and an unknown t
   await assert.rejects(() => submitContentReport.run(request({contentType: "board"})), {code: "invalid-argument"});
   assert.deepEqual([...store.entries()], before);
 });
+
+for (const [contentType, collection] of [["aiGeneration", "aiGenerations"], ["photoJob", "photoJobs"]]) {
+  test(`the owner can report their own ${contentType}, and nobody else can`, async (t) => {
+    const store = setup(t, {[`${collection}/mine`]: {userId: "reporter"}, [`${collection}/theirs`]: {userId: "other"}});
+    const before = [...store.entries()];
+    await assert.rejects(() => submitContentReport.run(request({contentType, targetFirestoreDocId: "theirs"})),
+      {code: "not-found"});
+    await assert.rejects(() => submitContentReport.run(request({contentType, targetFirestoreDocId: "missing"})),
+      {code: "not-found"});
+    assert.deepEqual([...store.entries()], before);
+    const result = await submitContentReport.run(request({contentType, targetFirestoreDocId: "mine"}));
+    assert.equal(store.get(`contentReports/${result.reportId}`)?.contentType, contentType);
+    assert.equal(store.get(`contentReports/${result.reportId}`)?.targetCollection, collection);
+  });
+}

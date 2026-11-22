@@ -15,6 +15,7 @@ import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/utils/result.dart';
 import 'package:Prism/core/utils/status.dart';
+import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/photo_wallpaper_repository.dart';
 import 'package:Prism/features/ai_wallpaper/domain/entities/ai_style_preset.dart';
@@ -38,6 +39,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../support/fake_app_analytics.dart';
+import '../../support/test_firebase_auth.dart';
 
 /// A 1 x 1 PNG. The picker and the measure step are faked, so the bytes only need to decode.
 final Uint8List _png = base64Decode(
@@ -272,6 +274,8 @@ Future<void> _pickPhoto(WidgetTester tester) async {
 }
 
 void main() {
+  setUpAll(() => TestFirebaseAuth.instance.install('report-viewer'));
+
   testWidgets('empty state offers a photo and the fal.ai privacy note', (tester) async {
     final _Harness harness = _Harness();
     await _pumpPage(tester, harness);
@@ -585,6 +589,35 @@ void main() {
       final Finder text = find.text(label);
       expect(tester.renderObject<RenderParagraph>(text).didExceedMaxLines, isFalse, reason: label);
     }
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a result offers Report, as Google Play requires for AI output', (tester) async {
+    await _pumpPage(tester, _Harness());
+    await _pickPhoto(tester);
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+
+    expect(find.byTooltip('Report'), findsOneWidget);
+  });
+
+  testWidgets('a stale result cannot open Report after the account changes', (tester) async {
+    final _Harness harness = _Harness();
+    await _pumpPage(tester, harness);
+    await _pickPhoto(tester);
+    await tester.tap(find.byKey(_runKey));
+    await _settle(tester);
+    final PrismIconButton report = tester.widget<PrismIconButton>(
+      find.ancestor(of: find.byTooltip('Report'), matching: find.byType(PrismIconButton)),
+    );
+
+    harness.session.switchTo(null);
+    report.onPressed!();
+    for (int i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(find.byType(ContentReportSheetBody), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

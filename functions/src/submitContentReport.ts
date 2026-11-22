@@ -32,7 +32,10 @@ function normalizeTargetDocId(raw: unknown): string {
   return t;
 }
 
-type ContentType = "wall" | "setup" | "user" | "folder" | "wallRequest" | "comment";
+type ContentType = "wall" | "setup" | "user" | "folder" | "wallRequest" | "comment" | "aiGeneration" | "photoJob";
+
+/** Private AI output. Only its owner sees it, so only its owner can report it. */
+const OWNER_ONLY_CONTENT_TYPES = new Set<ContentType>(["aiGeneration", "photoJob"]);
 
 const COLLECTION_BY_CONTENT_TYPE: Record<ContentType, string> = {
   wall: "walls",
@@ -43,11 +46,14 @@ const COLLECTION_BY_CONTENT_TYPE: Record<ContentType, string> = {
   wallRequest: "wallRequests",
   // The target is `<wallId>:<commentId>` because a comment lives under its wall.
   comment: "comments",
+  // Google Play AI-Generated Content policy: users must be able to flag AI output in the app.
+  aiGeneration: "aiGenerations",
+  photoJob: "photoJobs",
 };
 
 function normalizeContentType(raw: unknown): ContentType {
   if (typeof raw !== "string" || !Object.prototype.hasOwnProperty.call(COLLECTION_BY_CONTENT_TYPE, raw)) {
-    throw new HttpsError("invalid-argument", "contentType must be 'wall', 'setup', 'user', 'folder', 'wallRequest', or 'comment'.");
+    throw new HttpsError("invalid-argument", "contentType is invalid.");
   }
   return raw as ContentType;
 }
@@ -123,7 +129,8 @@ export const submitContentReport = onCall(
     const targetSnap = await (comment ?
       db.collection("walls").doc(comment.wallId).collection(collection).doc(comment.commentId) :
       db.collection(collection).doc(targetFirestoreDocId)).get();
-    if (!targetSnap.exists) {
+    // Someone else's private AI output reads as missing, so a report cannot probe which ids exist.
+    if (!targetSnap.exists || (OWNER_ONLY_CONTENT_TYPES.has(contentType) && targetSnap.data()?.userId !== uid)) {
       throw new HttpsError("not-found", "Content was not found.");
     }
 

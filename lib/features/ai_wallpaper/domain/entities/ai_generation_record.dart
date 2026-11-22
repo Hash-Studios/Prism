@@ -30,9 +30,15 @@ class AiGenerationRecord {
     this.revealedPrompt,
     this.challengeId,
     this.challengeTheme,
+    this.firestoreDocId,
   });
 
   final String id;
+
+  /// The Firestore document path identity, which can differ from the API/history id.
+  final String? firestoreDocId;
+
+  String get reportTargetFirestoreDocId => firestoreDocId ?? id;
   final String userId;
   final DateTime createdAt;
   final String prompt;
@@ -67,6 +73,7 @@ class AiGenerationRecord {
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'id': id,
+      if (firestoreDocId != null) 'firestoreDocId': firestoreDocId,
       'userId': userId,
       'createdAt': createdAt.toUtc(),
       'prompt': prompt,
@@ -99,6 +106,7 @@ class AiGenerationRecord {
 
     return AiGenerationRecord(
       id: parseString(json['id'] ?? fallbackId),
+      firestoreDocId: fallbackId ?? _nonEmptyOrNull(json['firestoreDocId']),
       userId: parseString(json['userId']),
       createdAt: parseDate(json['createdAt']),
       prompt: parseString(json['prompt']),
@@ -138,6 +146,7 @@ class AiGenerationRecord {
   }) {
     return AiGenerationRecord(
       id: id,
+      firestoreDocId: firestoreDocId,
       userId: userId,
       createdAt: createdAt,
       prompt: prompt,

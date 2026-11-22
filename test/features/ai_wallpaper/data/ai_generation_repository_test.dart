@@ -164,6 +164,28 @@ void main() {
     expect(result.revealedPrompt, isNull);
   });
 
+  test('ai_report_target saves to the Firestore document id rather than the API id', () async {
+    final Directory directory = await Directory.systemTemp.createTemp('ai_report_target_retry');
+    addTearDown(() => directory.delete(recursive: true));
+    final FakeFirestoreClient firestore = FakeFirestoreClient();
+    await getIt.unregister<FirestoreClient>();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    final AiGenerationRepositoryImpl repository = AiGenerationRepositoryImpl.forTest(
+      client: MockClient((_) async => http.Response(_okBody, 200)),
+      auth: _FakeAuth(),
+      localStore: DurableJsonStore('ai_report_target_retry', directory: directory),
+      requestTimeout: const Duration(milliseconds: 20),
+      providerRetryDelays: const <Duration>[Duration.zero, Duration.zero],
+    );
+    final AiGenerationRecord record = AiGenerationRecord.fromJson(<String, Object?>{
+      'id': 'api-id',
+      'userId': 'user-1',
+    }, fallbackId: 'firestore-id');
+    await repository.saveHistoryRecord(record);
+
+    expect(firestore.writes.single.id, 'firestore-id');
+  });
+
   test('Duo request, restored history and variation preserve composition and tier', () async {
     final Directory directory = await Directory.systemTemp.createTemp('prism-ai-duo-test');
     addTearDown(() => directory.delete(recursive: true));

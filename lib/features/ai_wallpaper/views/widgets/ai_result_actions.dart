@@ -6,7 +6,7 @@ import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
-/// The result's actions: Apply as the one primary button, and save, share, submit and try another as icons.
+/// The result's actions: Apply as the one primary button, and save, share, submit, try another and report as icons.
 class AiResultActions extends StatelessWidget {
   const AiResultActions({
     super.key,
@@ -20,6 +20,7 @@ class AiResultActions extends StatelessWidget {
     required this.onShare,
     required this.onRefine,
     required this.onSubmit,
+    required this.onReport,
   });
 
   /// False on iOS, where Apply already saves to Photos.
@@ -37,6 +38,9 @@ class AiResultActions extends StatelessWidget {
   final VoidCallback onShare;
   final VoidCallback onRefine;
   final VoidCallback onSubmit;
+
+  /// Opens the report sheet. Google Play requires an in-app way to flag AI output.
+  final VoidCallback onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +66,8 @@ class AiResultActions extends StatelessWidget {
               onPressed: sharing ? null : tap(onShare),
               filled: true,
             ),
-            if (sharing) IgnorePointer(child: const Center(child: PrismLoader(size: 22))),
+            // The Stack centres the spinner. A Center would fill the Wrap's width when the icons wrap.
+            if (sharing) const IgnorePointer(child: PrismLoader(size: 22)),
           ],
         ),
       ),
@@ -90,6 +95,9 @@ class AiResultActions extends StatelessWidget {
           filled: true,
         ),
       ],
+      const SizedBox(width: PrismSpace.xs),
+      // showContentReportSheet plays the tap haptic.
+      PrismIconButton(icon: Icons.flag_rounded, tooltip: l10n.coreReport, onPressed: onReport, filled: true),
     ];
     final Widget apply = PrismButton(
       label: l10n.aiResultApply,
@@ -100,9 +108,13 @@ class AiResultActions extends StatelessWidget {
     );
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints box) {
-        final int icons = 1 + (showSave ? 1 : 0) + (canSubmit ? 1 : 0) + (showRefine ? 1 : 0);
-        final double applyMin = MediaQuery.textScalerOf(context).scale(_applyMinWidth);
-        if (icons * (44 + PrismSpace.xs) + PrismSpace.xs + applyMin <= box.maxWidth) {
+        final int icons = 2 + (showSave ? 1 : 0) + (canSubmit ? 1 : 0) + (showRefine ? 1 : 0);
+        final double applyMin = _applyMinWidth(context, l10n.aiResultApply);
+        // Android pads each icon's tap target to 48.
+        final double iconWidth = Theme.of(context).materialTapTargetSize == MaterialTapTargetSize.padded
+            ? kMinInteractiveDimension
+            : 44;
+        if (icons * iconWidth + (icons - 1) * PrismSpace.xs + PrismSpace.sm + applyMin <= box.maxWidth) {
           return Row(
             children: <Widget>[
               ...secondary,
@@ -115,7 +127,12 @@ class AiResultActions extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: secondary),
+            Wrap(
+              spacing: PrismSpace.xs,
+              runSpacing: PrismSpace.xs,
+              alignment: WrapAlignment.center,
+              children: secondary.where((Widget child) => child is! SizedBox).toList(),
+            ),
             const SizedBox(height: PrismSpace.sm),
             apply,
           ],
@@ -124,8 +141,19 @@ class AiResultActions extends StatelessWidget {
     );
   }
 
-  /// Apply's icon, label and padding at 1x text. Narrower than this, Apply takes its own row.
-  static const double _applyMinWidth = 132;
+  /// Apply's padding, icon and measured label. Narrower than this, Apply takes its own row, so a long translation
+  /// such as German `Übernehmen` is never cut off.
+  static double _applyMinWidth(BuildContext context, String label) {
+    final TextPainter painter = TextPainter(
+      text: TextSpan(text: label, style: PrismTextStyles.button),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final double width = 2 * PrismSpace.xl + 20 + PrismSpace.xs + painter.width;
+    painter.dispose();
+    return width;
+  }
 }
 
 /// Shown when a submission may have gone through but was not confirmed.

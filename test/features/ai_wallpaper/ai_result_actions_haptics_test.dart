@@ -2,6 +2,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_actions.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -46,6 +47,7 @@ void main() {
             onShare: () => calls.add('share'),
             onRefine: () => calls.add('refine'),
             onSubmit: () => calls.add('submit'),
+            onReport: () => calls.add('report'),
           ),
         ),
       ),
@@ -56,6 +58,154 @@ void main() {
       await tester.pump();
       expect(haptics, hasLength(tooltip == 'Save' ? 0 : 1), reason: tooltip);
     }
-    expect(calls, <String>['save', 'share', 'submit', 'refine']);
+    // Report opens the report sheet, which plays its own tap.
+    haptics.clear();
+    await tester.tap(find.byTooltip('Report'));
+    await tester.pump();
+    expect(haptics, isEmpty);
+    expect(calls, <String>['save', 'share', 'submit', 'refine', 'report']);
+  });
+
+  for (final bool showSave in <bool>[false, true]) {
+    testWidgets('narrow large-text actions fit with showSave=$showSave', (tester) async {
+      tester.view.physicalSize = const Size(240, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: AiResultActions(
+              showSave: showSave,
+              showRefine: true,
+              canSubmit: true,
+              sharing: false,
+              applying: false,
+              onApply: () {},
+              onSave: () {},
+              onShare: () {},
+              onRefine: () {},
+              onSubmit: () {},
+              onReport: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byTooltip('Report'), findsOneWidget);
+      expect(find.byTooltip('Share'), findsOneWidget);
+      expect(find.byTooltip('Save'), showSave ? findsOneWidget : findsNothing);
+      expect(find.text('Apply'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('a long Apply label takes its own row instead of being cut off', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('de'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 358,
+              child: AiResultActions(
+                // iOS hides Save, which leaves four icons in the row.
+                showSave: false,
+                showRefine: true,
+                canSubmit: true,
+                sharing: false,
+                applying: false,
+                onApply: () {},
+                onSave: () {},
+                onShare: () {},
+                onRefine: () {},
+                onSubmit: () {},
+                onReport: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final Finder label = find.text('Übernehmen');
+    expect(label, findsOneWidget);
+    expect(tester.renderObject<RenderParagraph>(label).didExceedMaxLines, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Apply takes its own row when Android pads five icons to 48', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.android),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 420,
+              child: AiResultActions(
+                showSave: true,
+                showRefine: true,
+                canSubmit: true,
+                sharing: false,
+                applying: false,
+                onApply: () {},
+                onSave: () {},
+                onShare: () {},
+                onRefine: () {},
+                onSubmit: () {},
+                onReport: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final Finder label = find.text('Apply');
+    expect(tester.renderObject<RenderParagraph>(label).didExceedMaxLines, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the Share spinner keeps the wrapped icons in place', (tester) async {
+    Widget actions({required bool sharing}) => MaterialApp(
+      theme: ThemeData(platform: TargetPlatform.android),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: Center(
+          child: SizedBox(
+            width: 390,
+            child: AiResultActions(
+              showSave: true,
+              showRefine: true,
+              canSubmit: true,
+              sharing: sharing,
+              applying: false,
+              onApply: () {},
+              onSave: () {},
+              onShare: () {},
+              onRefine: () {},
+              onSubmit: () {},
+              onReport: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpWidget(actions(sharing: false));
+    final Size idleSize = tester.getSize(find.byType(AiResultActions));
+    final Offset idleReport = tester.getCenter(find.byTooltip('Report'));
+
+    await tester.pumpWidget(actions(sharing: true));
+    await tester.pump();
+    expect(tester.getSize(find.byType(AiResultActions)), idleSize);
+    expect(tester.getCenter(find.byTooltip('Report')), idleReport);
   });
 }
