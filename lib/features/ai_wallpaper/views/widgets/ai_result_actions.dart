@@ -108,7 +108,7 @@ class AiResultActions extends StatelessWidget {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints box) {
         final int icons = 2 + (showSave ? 1 : 0) + (canSubmit ? 1 : 0) + (showRefine ? 1 : 0);
-        final double applyMin = MediaQuery.textScalerOf(context).scale(_applyMinWidth);
+        final double applyMin = _applyMinWidth(context, l10n.aiResultApply);
         if (icons * (44 + PrismSpace.xs) + PrismSpace.xs + applyMin <= box.maxWidth) {
           return Row(
             children: <Widget>[
@@ -136,8 +136,19 @@ class AiResultActions extends StatelessWidget {
     );
   }
 
-  /// Apply's icon, label and padding at 1x text. Narrower than this, Apply takes its own row.
-  static const double _applyMinWidth = 132;
+  /// Apply's padding, icon and measured label. Narrower than this, Apply takes its own row, so a long translation
+  /// such as German `Übernehmen` is never cut off.
+  static double _applyMinWidth(BuildContext context, String label) {
+    final TextPainter painter = TextPainter(
+      text: TextSpan(text: label, style: PrismTextStyles.button),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final double width = 2 * PrismSpace.xl + 20 + PrismSpace.xs + painter.width;
+    painter.dispose();
+    return width;
+  }
 }
 
 /// Shown when a submission may have gone through but was not confirmed.

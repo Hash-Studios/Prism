@@ -2,6 +2,7 @@ import 'package:Prism/core/haptics/prism_haptics.dart';
 import 'package:Prism/features/ai_wallpaper/views/widgets/ai_result_actions.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -103,4 +104,39 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  testWidgets('a long Apply label takes its own row instead of being cut off', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('de'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 358,
+              child: AiResultActions(
+                // iOS hides Save, which leaves four icons in the row.
+                showSave: false,
+                showRefine: true,
+                canSubmit: true,
+                sharing: false,
+                applying: false,
+                onApply: () {},
+                onSave: () {},
+                onShare: () {},
+                onRefine: () {},
+                onSubmit: () {},
+                onReport: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final Finder label = find.text('Übernehmen');
+    expect(label, findsOneWidget);
+    expect(tester.renderObject<RenderParagraph>(label).didExceedMaxLines, isFalse);
+    expect(tester.takeException(), isNull);
+  });
 }
