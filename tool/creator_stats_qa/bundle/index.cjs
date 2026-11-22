@@ -21,3 +21,14 @@ exports.addComment = comments.addComment;
 exports.deleteComment = comments.deleteComment;
 exports.setCommentHidden = comments.setCommentHidden;
 exports.submitContentReport = require('./fnlib/submitContentReport.js').submitContentReport;
+// Creator premium walls. The emulator has no R2, so the stored-upload identity checks read a seeded manifest instead
+// (seed_creator_walls.cjs). Those checks keep their unit tests; the purchase transaction below is the real code.
+const owned = require('./fnlib/ownedAssetDelivery.js');
+owned.stored = (value) => !!value && typeof value === 'object' && value.qaSeeded === true;
+owned.verifyStoredUploadRegistry = async (asset) => {
+  if (!asset || asset.qaSeeded !== true) throw new Error('Not a seeded QA asset');
+};
+owned.ownedThumbnailUrl = (asset) => asset.qaThumbUrl;
+const creatorWalls = require('./fnlib/creatorWalls.js');
+exports.setWallPrice = creatorWalls.setWallPrice;
+exports.unlockCreatorWall = creatorWalls.unlockCreatorWall;
