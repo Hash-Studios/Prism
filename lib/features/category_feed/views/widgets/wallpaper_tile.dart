@@ -14,6 +14,7 @@ import 'package:Prism/core/widgets/live_tag.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/spatial_tag.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/creator_walls/creator_walls.dart';
 import 'package:Prism/features/favourite_walls/views/widgets/favourite_wallpaper_card.dart';
 import 'package:Prism/features/personalized_feed/views/pages/personalized_feed_screen.dart';
 import 'package:Prism/features/wallpaper_detail/views/wallpaper_feed.dart';
@@ -98,6 +99,12 @@ class WallpaperTile extends StatelessWidget {
       ?liveFeedLayerFor(item, radius: PrismWallGrid.tileRadius),
       ?depthTagFor(depthTierOf(item)),
       ?spatialTagFor(spatialOf(item)?.tier),
+      if (item case PrismFeedItem(:final wallpaper) when wallpaper.isCreatorPriced)
+        PositionedDirectional(
+          top: 6,
+          start: 6,
+          child: IgnorePointer(child: CreatorPriceChip(price: wallpaper.creatorPrice)),
+        ),
       if (holdHint)
         ClipRRect(
           borderRadius: PrismWallGrid.tileRadius,

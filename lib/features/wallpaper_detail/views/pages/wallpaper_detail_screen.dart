@@ -66,6 +66,7 @@ import 'package:Prism/features/ai_wallpaper/domain/ai_rollout.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
 import 'package:Prism/features/category_feed/views/widgets/wallpaper_quick_actions.dart';
 import 'package:Prism/features/creator_tips/views/widgets/tip_sheet.dart';
+import 'package:Prism/features/creator_walls/creator_walls.dart';
 import 'package:Prism/features/daily_flow/daily_moment_config.dart';
 import 'package:Prism/features/desktop_submission/desktop_submission.dart';
 import 'package:Prism/features/editors_choice/biz/editors_choice_cubit.dart';
@@ -2891,6 +2892,18 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             padding: EdgeInsets.only(bottom: 6),
             child: Align(alignment: AlignmentDirectional.centerStart, child: EditorsChoiceLabel()),
           ),
+        if (wallpaper.isCreatorPriced)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: CreatorWallGate(
+                wall: wallpaper,
+                builder: (context, access) =>
+                    CreatorPriceChip(price: wallpaper.creatorPrice, unlocked: access == CreatorWallAccess.unlocked),
+              ),
+            ),
+          ),
       ],
       credit: WallCredit.of(state.entity),
       facts: [
@@ -3116,10 +3129,15 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
           ),
       ],
     );
-    _saveAction = hideSetWallpaperUi
+    // A priced creator wall the user has not unlocked shows the unlock button in place of Save, Set and Download.
+    final PrismWallpaper? creatorWall = localFile == null && entity is PrismFeedItem ? entity.wallpaper : null;
+    final bool creatorLocked = creatorWall != null && CreatorWallUnlocks.instance.accessFor(creatorWall).locked;
+    _saveAction = hideSetWallpaperUi && !creatorLocked
         ? (label, fixes) => downloadButton(label: label, expand: true, fixes: fixes)
         : null;
-    _headerSave = hideSetWallpaperUi ? () => downloadButton(label: context.l10n.wallpaperSave, compact: true) : null;
+    _headerSave = hideSetWallpaperUi && !creatorLocked
+        ? () => downloadButton(label: context.l10n.wallpaperSave, compact: true)
+        : null;
     final primary = hideSetWallpaperUi
         ? WallpaperBarAction(
             label: live == null ? context.l10n.wallpaperSaveToPhotos : context.l10n.liveWallSetPoster,
@@ -3142,84 +3160,100 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
     // The bar keeps 8 at its end. This brings Save in to the page margin, in line with the rows under it.
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: _sheetHPad - 8),
-      child: WallpaperActionBar(
-        primary: primary,
-        secondary: [
-          if (!hideSetWallpaperUi) WallpaperBarAction(label: context.l10n.wallpaperDownload, child: downloadButton()),
-          if (hideSetWallpaperUi && live != null)
+      child: CreatorWallGate(
+        wall: creatorWall,
+        builder: (context, access) => WallpaperActionBar(
+          primary: access.locked
+              ? WallpaperBarAction(
+                  label: context.l10n.creatorWallUnlockButton(creatorWall!.creatorPrice),
+                  child: CreatorWallUnlockButton(
+                    wall: creatorWall,
+                    checking: access == CreatorWallAccess.checking,
+                    onUnlocked: () {
+                      if (mounted) setState(() {});
+                    },
+                  ),
+                )
+              : primary,
+          secondary: [
+            if (!hideSetWallpaperUi && !access.locked)
+              WallpaperBarAction(label: context.l10n.wallpaperDownload, child: downloadButton()),
+            if (hideSetWallpaperUi && live != null)
+              WallpaperBarAction(
+                label: context.l10n.liveWallSaveVideo,
+                child: LiveSaveVideoButton(live: live),
+              ),
+          ],
+          actions: [
             WallpaperBarAction(
-              label: context.l10n.liveWallSaveVideo,
-              child: LiveSaveVideoButton(live: live),
-            ),
-        ],
-        actions: [
-          WallpaperBarAction(
-            label: context.l10n.wallpaperFavourite,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FeatureHint(
-                  id: HintId.folderHold,
-                  enabled: app_state.prismUser.loggedIn,
-                  child: PressScale(
-                    child: FavouriteWallpaperButton(
-                      wall: FavouriteWallEntity.fromFeedItem(entity),
-                      trash: false,
-                      onFavourited: () {
-                        _recordTaste(TasteAction.favourite, entity);
-                        _actedOn(entity);
-                      },
+              label: context.l10n.wallpaperFavourite,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FeatureHint(
+                    id: HintId.folderHold,
+                    enabled: app_state.prismUser.loggedIn,
+                    child: PressScale(
+                      child: FavouriteWallpaperButton(
+                        wall: FavouriteWallEntity.fromFeedItem(entity),
+                        trash: false,
+                        onFavourited: () {
+                          _recordTaste(TasteAction.favourite, entity);
+                          _actedOn(entity);
+                        },
+                      ),
                     ),
                   ),
-                ),
-                // The published total sits beside the heart.
-                ..._favouriteCount(context, entity),
-              ],
-            ),
-          ),
-          if (_commentsWall(entity) case final CommentsWall wall)
-            WallpaperBarAction(
-              label: context.l10n.commentsAction,
-              child: CommentsButton(wall: wall),
-            ),
-          WallpaperBarAction(
-            label: context.l10n.wallpaperShare,
-            child: ShareButton(
-              id: entity.id,
-              source: entity.source,
-              url: entity.fullUrl,
-              thumbUrl: entity.thumbnailUrl,
-              creator: entity.wallpaperCore.authorName,
-              palette: _sharePalette(entity),
-              duoReveal: isDuoWallpaper(entity),
-              onShareTapped: () => _recordTaste(TasteAction.share, entity),
-              createLink: (id, source, url, thumbUrl) => createDynamicLink(
-                id,
-                source,
-                url,
-                thumbUrl,
-                l10n: context.l10n,
-                title: previewTitle,
-                core: entity.wallpaperCore,
+                  // The published total sits beside the heart.
+                  ..._favouriteCount(context, entity),
+                ],
               ),
             ),
-          ),
-          if (_remixSeedOf(state) case final AiRemixSeed seed)
+            if (_commentsWall(entity) case final CommentsWall wall)
+              WallpaperBarAction(
+                label: context.l10n.commentsAction,
+                child: CommentsButton(wall: wall),
+              ),
             WallpaperBarAction(
-              label: context.l10n.wallRemixActionTooltip,
-              child: RemixActionButton(seed: seed),
+              label: context.l10n.wallpaperShare,
+              child: ShareButton(
+                id: entity.id,
+                source: entity.source,
+                url: entity.fullUrl,
+                thumbUrl: entity.thumbnailUrl,
+                creator: entity.wallpaperCore.authorName,
+                palette: _sharePalette(entity),
+                duoReveal: isDuoWallpaper(entity),
+                onShareTapped: () => _recordTaste(TasteAction.share, entity),
+                createLink: (id, source, url, thumbUrl) => createDynamicLink(
+                  id,
+                  source,
+                  url,
+                  thumbUrl,
+                  l10n: context.l10n,
+                  title: previewTitle,
+                  core: entity.wallpaperCore,
+                ),
+              ),
             ),
-          WallpaperBarAction(
-            label: context.l10n.wallpaperEdit,
-            child: EditButton(
-              url: source,
-              wallpaperId: entity.id,
-              wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
-              prepareSource: prepareSource ?? localSource,
-              prepareAuthorized: prepareAuthorized,
-            ),
-          ),
-        ],
+            if (_remixSeedOf(state) case final AiRemixSeed seed)
+              WallpaperBarAction(
+                label: context.l10n.wallRemixActionTooltip,
+                child: RemixActionButton(seed: seed),
+              ),
+            if (!access.locked)
+              WallpaperBarAction(
+                label: context.l10n.wallpaperEdit,
+                child: EditButton(
+                  url: source,
+                  wallpaperId: entity.id,
+                  wallpaperSource: localFile == null ? entity.source : WallpaperSource.downloaded,
+                  prepareSource: prepareSource ?? localSource,
+                  prepareAuthorized: prepareAuthorized,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -3364,6 +3398,7 @@ class _WallpaperDetailScreenState extends State<WallpaperDetailScreen> with Sing
             'tags': wall.tags ?? const <String>[],
             'email': wall.core.authorEmail ?? '',
             'creatorUid': wall.core.authorUid ?? '',
+            'creatorPrice': wall.creatorPrice,
           }),
           approved: true,
         ),

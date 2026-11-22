@@ -15,6 +15,7 @@ import 'package:Prism/data/upload/upload_failure.dart';
 import 'package:Prism/data/upload/upload_id.dart';
 import 'package:Prism/data/upload/wallpaper/wallfirestore.dart' as wall_store;
 import 'package:Prism/env/env.dart';
+import 'package:Prism/features/creator_walls/creator_walls.dart';
 import 'package:Prism/features/wall_requests/domain/entities/wall_request.dart';
 import 'package:Prism/features/wallpaper_upload/biz/live_upload_input.dart';
 import 'package:Prism/features/wallpaper_upload/biz/live_upload_limits.dart';
@@ -176,6 +177,7 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   UploadSourceKind? thumbSourceKind;
   String? _fileName;
   String? _wallDocId;
+  int _creatorPrice = 0;
   bool _oversize = false;
   int? _imageWidth;
   int? _imageHeight;
@@ -698,6 +700,24 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
   late int _uploadAwardCoins = widget.batch?.confirmedUploadAward?.coins ?? 0;
   late String? _uploadAwardOwner = widget.batch?.confirmedUploadAward?.ownerId;
 
+  Future<void> _applyCreatorPrice(String wallDocId, int price) async {
+    // Messages are read before the first await. A closed screen has no context to read them from.
+    final AppLocalizations l10n = mounted ? context.l10n : await loadDeviceAppLocalizations();
+    final WallPriceOutcome outcome = await CreatorWallPrices.instance.setPrice(wallDocId: wallDocId, price: price);
+    switch (outcome) {
+      case WallPriceOutcome.saved:
+        unawaited(analytics.track(CreatorWallPriceSetEvent(price: price, source: 'upload')));
+      case WallPriceOutcome.removed:
+        break;
+      case WallPriceOutcome.ineligible:
+        toasts.info(l10n.creatorWallPriceIneligible);
+      case WallPriceOutcome.notOriginal:
+        toasts.info(l10n.creatorWallPriceNotOriginal);
+      case WallPriceOutcome.disabled || WallPriceOutcome.failed:
+        toasts.error(l10n.creatorWallPriceFailed);
+    }
+  }
+
   Future<void> _saveRecord() async {
     setState(() {
       _stage = _UploadStage.saving;
@@ -808,6 +828,9 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
       }
     }
     _submitted = true;
+    if (_creatorPrice > 0) {
+      unawaited(_applyCreatorPrice(_wallDocId ?? 'wall_${_fileName ?? id}', _creatorPrice));
+    }
     try {
       if (_activeDraftOwner == _draftOwner) await _defaultsStore.save(_draftOwner, _metadata);
     } catch (error, stackTrace) {
@@ -1292,6 +1315,13 @@ class _UploadWallScreenState extends State<UploadWallScreen> {
                     unawaited(_persistDraft().then<void>((_) {}));
                   },
                 ),
+                if (CreatorWallsFlag.sellingEnabled && widget.live == null && _rejectedDocId.isEmpty) ...<Widget>[
+                  const SizedBox(height: PrismSpace.md),
+                  CreatorPricePicker(
+                    value: _creatorPrice,
+                    onChanged: _isBusy ? null : (int price) => setState(() => _creatorPrice = price),
+                  ),
+                ],
                 const SizedBox(height: PrismSpace.md),
                 if (_metadata.challengeSeed case final seed?)
                   ChallengeContextChip(

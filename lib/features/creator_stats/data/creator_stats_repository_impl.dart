@@ -166,5 +166,6 @@ CreatorStats parseCreatorStats(Object? value) {
     weeks: weeks,
     walls: walls,
     tips: _tips(m['tips'], weeks),
+    sales: _tips(m['sales'], weeks),
   );
 }
