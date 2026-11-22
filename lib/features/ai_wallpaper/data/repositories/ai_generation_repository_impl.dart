@@ -224,8 +224,10 @@ class AiGenerationRepositoryImpl {
   /// Saves [record] only when its Firestore doc is missing, so a report target exists. An existing doc is left as is,
   /// because a stale cached copy could clear newer fields, such as a submission link saved on another device.
   Future<void> ensureHistoryRecordSaved(AiGenerationRecord record) async {
+    // Read the owner generation first, so an account switch during the read skips the save.
+    final int generation = _generationFor(record.userId);
     final AiGenerationRecord? stored = await _fetchById(record.reportTargetFirestoreDocId).timeout(_requestTimeout);
-    if (stored == null) await saveHistoryRecord(record);
+    if (stored == null) await _saveHistoryRecord(record, generation);
   }
 
   Future<void> _saveHistoryRecord(AiGenerationRecord record, int generation) async {

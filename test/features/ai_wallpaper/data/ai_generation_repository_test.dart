@@ -218,6 +218,32 @@ void main() {
     expect(firestore.writes.single.id, 'missing');
   });
 
+  test('ai_report_target skips the save when the owner clears during the existence read', () async {
+    final Directory directory = await Directory.systemTemp.createTemp('ai_report_target_clear');
+    addTearDown(() => directory.delete(recursive: true));
+    final _GatedReadFirestoreClient firestore = _GatedReadFirestoreClient();
+    await getIt.unregister<FirestoreClient>();
+    getIt.registerSingleton<FirestoreClient>(firestore);
+    final AiGenerationRepositoryImpl repository = AiGenerationRepositoryImpl.forTest(
+      client: MockClient((_) async => http.Response(_okBody, 200)),
+      auth: _FakeAuth(),
+      localStore: DurableJsonStore('ai_report_target_clear', directory: directory),
+      requestTimeout: const Duration(seconds: 1),
+      providerRetryDelays: const <Duration>[Duration.zero, Duration.zero],
+    );
+
+    final Future<void> ensure = repository.ensureHistoryRecordSaved(
+      AiGenerationRecord.fromJson(<String, Object?>{'id': 'missing', 'userId': 'user-1'}),
+    );
+    await Future<void>.delayed(Duration.zero);
+    await repository.clearForUser('user-1');
+    firestore.gate.complete();
+    await ensure;
+
+    expect(firestore.writes, isEmpty);
+    expect(await repository.fetchLocalHistory(userId: 'user-1'), isEmpty);
+  });
+
   test('Duo request, restored history and variation preserve composition and tier', () async {
     final Directory directory = await Directory.systemTemp.createTemp('prism-ai-duo-test');
     addTearDown(() => directory.delete(recursive: true));
@@ -1180,4 +1206,20 @@ void main() {
     await historyWrite;
     expect(await repository.fetchLocalHistory(userId: 'user-1'), isEmpty);
   });
+}
+
+class _GatedReadFirestoreClient extends FakeFirestoreClient {
+  final Completer<void> gate = Completer<void>();
+
+  @override
+  Future<T?> getById<T>(
+    String collection,
+    String id,
+    T Function(Map<String, dynamic> data, String docId) map, {
+    required String sourceTag,
+    bool preferCacheFirst = false,
+  }) async {
+    await gate.future;
+    return super.getById(collection, id, map, sourceTag: sourceTag, preferCacheFirst: preferCacheFirst);
+  }
 }
