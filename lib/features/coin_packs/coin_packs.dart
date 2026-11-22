@@ -10,6 +10,9 @@ export 'domain/coin_pack.dart';
 export 'domain/coin_packs_flag.dart';
 export 'views/coin_packs_sheet.dart';
 
+/// Makes the gateway each new sheet uses. Local QA swaps in a store stub (lib/core/debug/local_qa_coin_packs.dart).
+CoinPackGateway Function() coinPackGatewayFactory = RevenueCatCoinPackGateway.new;
+
 /// Opens the "Get coins" sheet. [source] names the entry point for analytics, for example `download_gate`.
 /// [message] is the reason shown above the packs, for example the short-balance text. Does nothing when
 /// [CoinPacksFlag.available] is false.
@@ -23,7 +26,7 @@ Future<void> showCoinPacksSheet(
   await showPrismSheet<void>(
     context,
     builder: (BuildContext _) =>
-        CoinPacksSheet(source: source, message: message, gateway: gateway ?? RevenueCatCoinPackGateway()),
+        CoinPacksSheet(source: source, message: message, gateway: gateway ?? coinPackGatewayFactory()),
   );
 }
 

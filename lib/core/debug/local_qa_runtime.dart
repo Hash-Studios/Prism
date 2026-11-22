@@ -5,6 +5,7 @@ import 'package:Prism/auth/user_model.dart';
 import 'package:Prism/core/analytics/analytics_runtime.dart';
 import 'package:Prism/core/analytics/app_analytics.dart';
 import 'package:Prism/core/debug/local_qa_adapters.dart';
+import 'package:Prism/core/debug/local_qa_coin_packs.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/firestore/firestore_client.dart';
 import 'package:Prism/core/firestore/local_qa_firestore.dart';
@@ -111,6 +112,7 @@ class LocalQaRuntime {
     await _replace<PexelsWallpaperRepository>(LocalQaPexels());
     await _replace<WallhavenWallpaperRepository>(LocalQaWallhaven());
     await _replace<StartupRepository>(LocalQaStartup());
+    LocalQaCoinPacks.install();
     final settings = getIt<SettingsLocalDataSource>();
     await settings.set('onboarded_v2_new', true);
     await settings.set('onboarding_v2_interests', <String>['Nature']);
