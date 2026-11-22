@@ -6,6 +6,7 @@ import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_button.dart';
 import 'package:Prism/core/widgets/prism/prism_card.dart';
 import 'package:Prism/core/widgets/prism/prism_row.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
@@ -44,6 +45,14 @@ class BalanceCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: PrismSpace.sm),
+          if (CoinPacksFlag.available) ...<Widget>[
+            PrismButton(
+              label: context.l10n.coinPacksBuyCoins,
+              variant: PrismButtonVariant.tonal,
+              onPressed: () => showCoinPacksSheet(context, source: 'wallet'),
+            ),
+            const SizedBox(height: PrismSpace.sm),
+          ],
           Divider(height: 1, color: cs.onSurface.withValues(alpha: 0.08)),
           PrismRow(
             title: context.l10n.economyCoinsWhatYouCanDo,

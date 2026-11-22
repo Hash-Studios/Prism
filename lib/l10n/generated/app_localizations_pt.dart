@@ -16269,6 +16269,83 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get notifPushCreatorFundPaidBody => 'Veja sua parte nas estatísticas de criador.';
+
+  @override
+  String get coinPacksTitle => 'Obter moedas';
+
+  @override
+  String get coinPacksSubtitle => 'Use moedas em downloads, papéis de parede com IA, Drops e gorjetas.';
+
+  @override
+  String coinPacksCoins(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    return '$coinsString moedas';
+  }
+
+  @override
+  String coinPacksBonus(int percent) {
+    final intl.NumberFormat percentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String percentString = percentNumberFormat.format(percent);
+
+    return '+$percentString% de bônus';
+  }
+
+  @override
+  String coinPacksBuyLabel(int coins, String price) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    return 'Comprar $coinsString moedas por $price';
+  }
+
+  @override
+  String get coinPacksLoadFailed => 'Os pacotes de moedas não carregaram. Confira sua conexão e tente de novo.';
+
+  @override
+  String get coinPacksRetry => 'Tentar de novo';
+
+  @override
+  String get coinPacksEmpty => 'No momento não há pacotes de moedas à venda.';
+
+  @override
+  String get coinPacksPurchasing => 'Aguardando a loja…';
+
+  @override
+  String get coinPacksVerifying => 'Adicionando suas moedas…';
+
+  @override
+  String coinPacksSuccess(int coins, int balance) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+    final intl.NumberFormat balanceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String balanceString = balanceNumberFormat.format(balance);
+
+    return '$coinsString moedas adicionadas. Seu saldo é $balanceString.';
+  }
+
+  @override
+  String get coinPacksPending => 'Sua compra está pendente. As moedas chegam quando a loja confirmar.';
+
+  @override
+  String get coinPacksFailed =>
+      'Não conseguimos adicionar moedas desta compra. Se a loja cobrou você, fale com o suporte em Configurações.';
+
+  @override
+  String get coinPacksDone => 'Concluir';
+
+  @override
+  String get coinPacksBuyCoins => 'Comprar moedas';
+
+  @override
+  String get coinPacksEarnInRewards => 'Ganhe moedas grátis em Recompensas';
+
+  @override
+  String get coreCoinCoinPack => 'Pacote de moedas';
+
+  @override
+  String get coreCoinCoinPackRefund => 'Reembolso de pacote de moedas';
 }
 
 /// The translations for Portuguese, as used in Brazil (`pt_BR`).
@@ -32534,4 +32611,81 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
 
   @override
   String get notifPushCreatorFundPaidBody => 'Veja sua parte nas estatísticas de criador.';
+
+  @override
+  String get coinPacksTitle => 'Obter moedas';
+
+  @override
+  String get coinPacksSubtitle => 'Use moedas em downloads, papéis de parede com IA, Drops e gorjetas.';
+
+  @override
+  String coinPacksCoins(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    return '$coinsString moedas';
+  }
+
+  @override
+  String coinPacksBonus(int percent) {
+    final intl.NumberFormat percentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String percentString = percentNumberFormat.format(percent);
+
+    return '+$percentString% de bônus';
+  }
+
+  @override
+  String coinPacksBuyLabel(int coins, String price) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    return 'Comprar $coinsString moedas por $price';
+  }
+
+  @override
+  String get coinPacksLoadFailed => 'Os pacotes de moedas não carregaram. Confira sua conexão e tente de novo.';
+
+  @override
+  String get coinPacksRetry => 'Tentar de novo';
+
+  @override
+  String get coinPacksEmpty => 'No momento não há pacotes de moedas à venda.';
+
+  @override
+  String get coinPacksPurchasing => 'Aguardando a loja…';
+
+  @override
+  String get coinPacksVerifying => 'Adicionando suas moedas…';
+
+  @override
+  String coinPacksSuccess(int coins, int balance) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+    final intl.NumberFormat balanceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String balanceString = balanceNumberFormat.format(balance);
+
+    return '$coinsString moedas adicionadas. Seu saldo é $balanceString.';
+  }
+
+  @override
+  String get coinPacksPending => 'Sua compra está pendente. As moedas chegam quando a loja confirmar.';
+
+  @override
+  String get coinPacksFailed =>
+      'Não conseguimos adicionar moedas desta compra. Se a loja cobrou você, fale com o suporte em Configurações.';
+
+  @override
+  String get coinPacksDone => 'Concluir';
+
+  @override
+  String get coinPacksBuyCoins => 'Comprar moedas';
+
+  @override
+  String get coinPacksEarnInRewards => 'Ganhe moedas grátis em Recompensas';
+
+  @override
+  String get coreCoinCoinPack => 'Pacote de moedas';
+
+  @override
+  String get coreCoinCoinPackRefund => 'Reembolso de pacote de moedas';
 }

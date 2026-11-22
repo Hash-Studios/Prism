@@ -25236,6 +25236,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'See your share in Creator stats.'**
   String get notifPushCreatorFundPaidBody;
+
+  /// Title of the sheet that sells coin packs.
+  ///
+  /// In en, this message translates to:
+  /// **'Get coins'**
+  String get coinPacksTitle;
+
+  /// Short line under the coin pack sheet title.
+  ///
+  /// In en, this message translates to:
+  /// **'Spend coins on downloads, AI wallpapers, Drops and tips.'**
+  String get coinPacksSubtitle;
+
+  /// Coins in one pack.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins} coins'**
+  String coinPacksCoins(int coins);
+
+  /// Bonus coins a pack adds, as a percent.
+  ///
+  /// In en, this message translates to:
+  /// **'+{percent}% bonus'**
+  String coinPacksBonus(int percent);
+
+  /// Accessibility label of one pack row.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy {coins} coins for {price}'**
+  String coinPacksBuyLabel(int coins, String price);
+
+  /// The coin packs could not load.
+  ///
+  /// In en, this message translates to:
+  /// **'Coin packs did not load. Check your connection and try again.'**
+  String get coinPacksLoadFailed;
+
+  /// Button that loads the coin packs again.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get coinPacksRetry;
+
+  /// No coin packs are for sale now.
+  ///
+  /// In en, this message translates to:
+  /// **'No coin packs are for sale right now.'**
+  String get coinPacksEmpty;
+
+  /// The store purchase is in progress.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the store…'**
+  String get coinPacksPurchasing;
+
+  /// The server is checking the purchase and adding coins.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding your coins…'**
+  String get coinPacksVerifying;
+
+  /// Coins were added after a purchase.
+  ///
+  /// In en, this message translates to:
+  /// **'{coins} coins added. Your balance is {balance}.'**
+  String coinPacksSuccess(int coins, int balance);
+
+  /// The store has not confirmed the purchase yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Your purchase is pending. Your coins arrive when the store confirms it.'**
+  String get coinPacksPending;
+
+  /// Coins could not be added for a purchase.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not add coins for this purchase. If the store charged you, contact support in Settings.'**
+  String get coinPacksFailed;
+
+  /// Button that closes the coin pack sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get coinPacksDone;
+
+  /// Button that opens the coin pack sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy coins'**
+  String get coinPacksBuyCoins;
+
+  /// Link from the coin pack sheet to the free ways to earn coins.
+  ///
+  /// In en, this message translates to:
+  /// **'Earn coins for free in Rewards'**
+  String get coinPacksEarnInRewards;
+
+  /// Coin history label for a bought coin pack.
+  ///
+  /// In en, this message translates to:
+  /// **'Coin pack'**
+  String get coreCoinCoinPack;
+
+  /// Coin history label for a refunded coin pack.
+  ///
+  /// In en, this message translates to:
+  /// **'Coin pack refund'**
+  String get coreCoinCoinPackRefund;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -12,6 +12,7 @@ import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/home/refreshable_glint_state.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/core/widgets/prism_refresh.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/features/draw/biz/bloc/draw_bloc.j.dart';
 import 'package:Prism/features/draw/domain/entities/draw_entity.dart';
 import 'package:Prism/l10n/l10n.dart';
@@ -92,7 +93,7 @@ class DrawPage extends StatelessWidget implements AutoRouteWrapper {
       case DrawTicketOutcome.proNotEligible:
         toasts.error(l10n.economyDrawProNotEligible);
       case DrawTicketOutcome.insufficient:
-        toasts.error(l10n.economyDrawNotEnoughCoins);
+        showCoinShortfall(context, message: l10n.economyDrawNotEnoughCoins, source: 'draw');
       case DrawTicketOutcome.failed:
         toasts.error(l10n.economyDrawPurchaseFailed);
     }

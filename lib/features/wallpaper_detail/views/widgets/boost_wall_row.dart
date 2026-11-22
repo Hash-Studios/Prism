@@ -7,6 +7,7 @@ import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/toasts.dart' as toasts;
 import 'package:flutter/material.dart';
@@ -77,7 +78,7 @@ class _BoostWallRowState extends State<BoostWallRow> {
               : context.l10n.wallpaperBoostSlotsTakenUntil(_time(next, context)),
         );
       case BoostOutcome.insufficient:
-        toasts.error(context.l10n.wallpaperInsufficientCoins);
+        showCoinShortfall(context, message: context.l10n.wallpaperInsufficientCoins, source: 'boost_wall');
       case BoostOutcome.notOwner:
       case BoostOutcome.notApproved:
         toasts.error(context.l10n.wallpaperBoostOnlyApproved);

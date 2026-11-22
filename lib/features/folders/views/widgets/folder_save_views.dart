@@ -7,6 +7,7 @@ import 'package:Prism/core/wallpaper/wallpaper_source.dart';
 import 'package:Prism/core/wallpaper/wallpaper_variants.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/category_feed/domain/entities/feed_item_entity.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/features/favourite_walls/domain/entities/favourite_wall_entity.dart';
 import 'package:Prism/features/folders/biz/folder_save/folder_save_bloc.j.dart';
 import 'package:Prism/features/folders/domain/entities/folder_save_plan.dart';
@@ -160,6 +161,17 @@ class FolderSavePlanSheet extends StatelessWidget {
             variant: affordable > 0 ? PrismButtonVariant.tonal : PrismButtonVariant.primary,
             expand: true,
             onPressed: () => start(FolderSaveChoice.freeOnly),
+          ),
+        if (affordable < coins && CoinPacksFlag.available)
+          PrismButton(
+            maxLines: null,
+            label: l10n.coinPacksBuyCoins,
+            expand: true,
+            variant: PrismButtonVariant.tonal,
+            onPressed: () {
+              Navigator.of(context).pop();
+              showCoinPacksSheet(context, source: 'folder_save_all');
+            },
           ),
       ],
     ];

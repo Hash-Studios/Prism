@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:Prism/core/coins/coins_service.dart';
 import 'package:Prism/core/di/injection.dart';
 import 'package:Prism/core/platform/app_icon_channel.dart';
@@ -6,6 +8,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/core/widgets/coins/prism_coin_icon.dart';
 import 'package:Prism/core/widgets/prism/prism_ui.dart';
 import 'package:Prism/features/ads/biz/coin_gate.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/features/shop/biz/bloc/shop_bloc.j.dart';
 import 'package:Prism/features/shop/domain/shop_catalog.dart';
 import 'package:Prism/features/shop/views/widgets/shop_item_preview.dart';
@@ -89,6 +92,11 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
     final StackRouter router = context.router;
     Navigator.of(context).pop();
     router.pushPath('/rewards');
+  }
+
+  void _buyCoins() {
+    Navigator.of(context).pop();
+    showCoinPacksSheet(context, source: 'shop');
   }
 
   Future<void> _getPro() async {
@@ -203,6 +211,13 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
                 ? null
                 : () => _watchAndBuy(buyAfter: CoinsService.instance.adsRewardNow >= price - state.balance),
           ),
+        if (CoinPacksFlag.available)
+          PrismButton(
+            label: context.l10n.coinPacksBuyCoins,
+            expand: true,
+            variant: PrismButtonVariant.tonal,
+            onPressed: _buyCoins,
+          ),
         PrismButton(
           label: context.l10n.economyEarnCoins,
           expand: true,
@@ -227,7 +242,7 @@ class _ShopItemSheetState extends State<ShopItemSheet> {
         final int price = shopPriceFor(item);
         final bool owned = state.isOwned(item);
         final ShopAvailability availability = state.availability(item);
-        final int missing = (price - state.balance).clamp(0, price);
+        final int missing = math.max(0, price - state.balance);
         return PrismSheetBody(
           title: shopItemName(item, context.l10n),
           message: _message(context.l10n, state, availability, owned, missing),

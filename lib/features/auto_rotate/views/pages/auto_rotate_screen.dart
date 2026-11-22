@@ -17,6 +17,7 @@ import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_config.da
 import 'package:Prism/features/auto_rotate/domain/entities/auto_rotate_mode.dart';
 import 'package:Prism/features/auto_rotate/views/auto_rotate_entitlement.dart';
 import 'package:Prism/features/auto_rotate/views/widgets/auto_rotate_mode_confirm.dart';
+import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/features/favourite_walls/biz/bloc/favourite_walls_bloc.j.dart';
 import 'package:Prism/features/favourite_walls/views/favourite_walls_bloc_adapter.dart';
 import 'package:Prism/features/folders/domain/entities/folder_entity.dart';
@@ -346,7 +347,7 @@ class _ProPromptState extends State<_ProPrompt> {
       );
       toasts.success(context.l10n.wallpaperAutoRotatePassEnabled);
     } else if (result.insufficientBalance) {
-      toasts.error(context.l10n.wallpaperInsufficientCoins);
+      showCoinShortfall(context, message: context.l10n.wallpaperInsufficientCoins, source: 'auto_rotate');
     } else {
       toasts.error(context.l10n.wallpaperAutoRotateUnlockError);
     }

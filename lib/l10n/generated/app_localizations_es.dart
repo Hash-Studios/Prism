@@ -16092,4 +16092,81 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get notifPushCreatorFundPaidBody => 'Mira tu parte en tus estadísticas de creador.';
+
+  @override
+  String get coinPacksTitle => 'Conseguir monedas';
+
+  @override
+  String get coinPacksSubtitle => 'Usa monedas en descargas, fondos con IA, Drops y propinas.';
+
+  @override
+  String coinPacksCoins(int coins) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    return '$coinsString monedas';
+  }
+
+  @override
+  String coinPacksBonus(int percent) {
+    final intl.NumberFormat percentNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String percentString = percentNumberFormat.format(percent);
+
+    return '+$percentString% extra';
+  }
+
+  @override
+  String coinPacksBuyLabel(int coins, String price) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+
+    return 'Comprar $coinsString monedas por $price';
+  }
+
+  @override
+  String get coinPacksLoadFailed => 'Los paquetes de monedas no cargaron. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get coinPacksRetry => 'Reintentar';
+
+  @override
+  String get coinPacksEmpty => 'Ahora no hay paquetes de monedas a la venta.';
+
+  @override
+  String get coinPacksPurchasing => 'Esperando a la tienda…';
+
+  @override
+  String get coinPacksVerifying => 'Añadiendo tus monedas…';
+
+  @override
+  String coinPacksSuccess(int coins, int balance) {
+    final intl.NumberFormat coinsNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String coinsString = coinsNumberFormat.format(coins);
+    final intl.NumberFormat balanceNumberFormat = intl.NumberFormat.decimalPattern(localeName);
+    final String balanceString = balanceNumberFormat.format(balance);
+
+    return 'Se añadieron $coinsString monedas. Tu saldo es $balanceString.';
+  }
+
+  @override
+  String get coinPacksPending => 'Tu compra está pendiente. Tus monedas llegan cuando la tienda la confirme.';
+
+  @override
+  String get coinPacksFailed =>
+      'No pudimos añadir monedas por esta compra. Si la tienda te cobró, contacta con soporte en Ajustes.';
+
+  @override
+  String get coinPacksDone => 'Listo';
+
+  @override
+  String get coinPacksBuyCoins => 'Comprar monedas';
+
+  @override
+  String get coinPacksEarnInRewards => 'Gana monedas gratis en Recompensas';
+
+  @override
+  String get coreCoinCoinPack => 'Paquete de monedas';
+
+  @override
+  String get coreCoinCoinPackRefund => 'Reembolso de paquete de monedas';
 }
