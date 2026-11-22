@@ -110,14 +110,11 @@ void main() {
     });
 
     test('ignores fractional coin counts and normalizes a fractional bonus to zero like the server', () {
-      final List<CoinPackDef> packs = CoinPackDef.listFrom(
-        <Object?>[
-          <String, Object?>{'productId': 'fractional_coins', 'coins': 100.5, 'bonusPercent': 10},
-          <String, Object?>{'productId': 'fractional_bonus', 'coins': 100, 'bonusPercent': 10.5},
-          <String, Object?>{'productId': 'integer_pack', 'coins': 200, 'bonusPercent': 20},
-        ],
-        const <CoinPackDef>[],
-      );
+      final List<CoinPackDef> packs = CoinPackDef.listFrom(<Object?>[
+        <String, Object?>{'productId': 'fractional_coins', 'coins': 100.5, 'bonusPercent': 10},
+        <String, Object?>{'productId': 'fractional_bonus', 'coins': 100, 'bonusPercent': 10.5},
+        <String, Object?>{'productId': 'integer_pack', 'coins': 200, 'bonusPercent': 20},
+      ], const <CoinPackDef>[]);
 
       expect(packs.map((CoinPackDef pack) => pack.productId), <String>['fractional_bonus', 'integer_pack']);
       expect(packs.map((CoinPackDef pack) => pack.coins), <int>[100, 200]);

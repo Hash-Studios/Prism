@@ -354,6 +354,10 @@ async function withIosQaConfig(flutterArgs) {
     const target = path.join(repo, to);
     return {target, replacement: fs.readFileSync(file(from))};
   });
+  // lib/main.dart imports the gitignored lib/firebase_options.dart. Local QA never reads it, so a stub is enough; the
+  // script keeps a real file.
+  const stub = cp.spawnSync('tool/write_firebase_options_stub.sh', [], {cwd: repo, stdio: 'inherit'});
+  if (stub.status !== 0) throw Error('Could not write the lib/firebase_options.dart stub');
   // Ctrl-C goes to flutter, which exits; swapBuildFiles then restores the real files.
   const ignore = () => {};
   process.on?.('SIGINT', ignore);

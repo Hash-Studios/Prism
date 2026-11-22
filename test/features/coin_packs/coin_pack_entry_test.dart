@@ -106,9 +106,12 @@ void main() {
   });
 
   final Map<String, void Function(BuildContext)> entries = <String, void Function(BuildContext)>{
-    'gift pass': (context) =>
-        showPrismSheet<void>(context, builder: (_) => const GiftPassSheet(recipientUid: 'ana', recipientName: 'Ana')),
-    'streak details': (context) => showPrismSheet<void>(context, builder: (_) => StreakDetails(rescueService: _Rescue())),
+    'gift pass': (context) => showPrismSheet<void>(
+      context,
+      builder: (_) => const GiftPassSheet(recipientUid: 'ana', recipientName: 'Ana'),
+    ),
+    'streak details': (context) =>
+        showPrismSheet<void>(context, builder: (_) => StreakDetails(rescueService: _Rescue())),
     'daily claim': (context) => showDailyClaimSheet(
       context,
       StreakClaimResult.fromPayload(<String, dynamic>{
@@ -118,9 +121,9 @@ void main() {
         'streakDay': 1,
       }),
     ),
-    'AI generation': (context) => Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(builder: (_) => AiWallpaperTabPage(repository: _AiHistory())),
-    ),
+    'AI generation': (context) => Navigator.of(
+      context,
+    ).push<void>(MaterialPageRoute<void>(builder: (_) => AiWallpaperTabPage(repository: _AiHistory()))),
   };
   for (final entry in entries.entries) {
     testWidgets('${entry.key} offers Buy coins on a short balance', (tester) async {
