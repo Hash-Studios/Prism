@@ -6,6 +6,7 @@ import 'package:Prism/core/state/app_state.dart' as app_state;
 import 'package:Prism/features/coin_packs/domain/coin_pack.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
@@ -16,7 +17,8 @@ abstract interface class CoinPackGateway {
   Future<List<CoinPack>> loadPacks();
 
   /// Buys [pack] in the store, then asks the server to grant it. Never grants coins on the client.
-  Future<CoinPackPurchaseResult> buy(CoinPack pack);
+  /// [onVerifying] runs once the store has charged and the server check starts.
+  Future<CoinPackPurchaseResult> buy(CoinPack pack, {VoidCallback? onVerifying});
 }
 
 typedef StorePurchase = Future<String> Function(Package package);
@@ -85,7 +87,7 @@ class RevenueCatCoinPackGateway implements CoinPackGateway {
   }
 
   @override
-  Future<CoinPackPurchaseResult> buy(CoinPack pack) async {
+  Future<CoinPackPurchaseResult> buy(CoinPack pack, {VoidCallback? onVerifying}) async {
     final Package? package = pack.package;
     if (package == null) return const CoinPackFailed('no_package');
     final String owner = _currentUserId();
@@ -100,6 +102,7 @@ class RevenueCatCoinPackGateway implements CoinPackGateway {
       return CoinPackFailed('store_${code.name}');
     }
     if (transactionId.isEmpty) return const CoinPackPending();
+    onVerifying?.call();
     final CoinPackPurchaseResult result = await _confirm(transactionId, owner);
     if (_currentUserId() == owner && result is! CoinPackFailed) {
       try {
