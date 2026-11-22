@@ -64,4 +64,43 @@ void main() {
     expect(haptics, isEmpty);
     expect(calls, <String>['save', 'share', 'submit', 'refine', 'report']);
   });
+
+  for (final bool showSave in <bool>[false, true]) {
+    testWidgets('narrow large-text actions fit with showSave=$showSave', (tester) async {
+      tester.view.physicalSize = const Size(240, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: AiResultActions(
+              showSave: showSave,
+              showRefine: true,
+              canSubmit: true,
+              sharing: false,
+              applying: false,
+              onApply: () {},
+              onSave: () {},
+              onShare: () {},
+              onRefine: () {},
+              onSubmit: () {},
+              onReport: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byTooltip('Report'), findsOneWidget);
+      expect(find.byTooltip('Share'), findsOneWidget);
+      expect(find.byTooltip('Save'), showSave ? findsOneWidget : findsNothing);
+      expect(find.text('Apply'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

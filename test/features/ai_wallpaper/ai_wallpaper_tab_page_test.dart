@@ -14,6 +14,7 @@ import 'package:Prism/core/offline/offline_asset_store.dart';
 import 'package:Prism/core/persistence/data_sources/settings_local_data_source.dart';
 import 'package:Prism/core/platform/pigeon/prism_media_api.g.dart';
 import 'package:Prism/core/state/app_state.dart' as app_state;
+import 'package:Prism/core/widgets/content_report/content_report_sheet.dart';
 import 'package:Prism/core/widgets/prism_loader.dart';
 import 'package:Prism/core/widgets/prism_sheet.dart';
 import 'package:Prism/features/ai_wallpaper/data/repositories/ai_generation_repository_impl.dart';
@@ -217,6 +218,42 @@ Future<void> _openRecent(WidgetTester tester) async {
 void main() {
   setUp(AnalyticsRuntime.reset);
   tearDown(AnalyticsRuntime.reset);
+
+  testWidgets('ai_report_target retries persistence and leaves a failed target retryable', (tester) async {
+    tester.view.physicalSize = const Size(1000, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    getIt.registerSingleton<ConnectivityService>(_FakeConnectivityService());
+    addTearDown(getIt.reset);
+    app_state.prismUser = app_constants.createGuestPrismUser()
+      ..id = 'user-1'
+      ..loggedIn = true;
+    addTearDown(() => app_state.prismUser = app_constants.createGuestPrismUser());
+    final _FakeAiGenerationRepository repository = _FakeAiGenerationRepository(
+      _record(),
+      Completer<AiSubmissionMetadata>(),
+    )..failHistorySave = true;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AiWallpaperTabPage(repository: repository),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await _openRecent(tester);
+    expect(find.byType(AiResultView), findsOneWidget);
+
+    await tester.tap(find.byTooltip(AppLocalizationsEn().coreReport));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(repository.savedRecords, hasLength(1));
+    expect(find.byType(ContentReportSheetBody), findsNothing);
+
+    repository.failHistorySave = false;
+    await tester.tap(find.byTooltip(AppLocalizationsEn().coreReport));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(repository.savedRecords, hasLength(2));
+  });
 
   testWidgets('From your photo card carries the photoFit feature hint', (tester) async {
     tester.view.physicalSize = const Size(1000, 2200);

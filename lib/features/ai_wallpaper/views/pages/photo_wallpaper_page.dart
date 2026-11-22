@@ -800,8 +800,10 @@ class _PhotoWallpaperPageState extends State<PhotoWallpaperPage> {
                   icon: Icons.flag_rounded,
                   tooltip: l10n.coreReport,
                   filled: true,
-                  onPressed: () =>
-                      showContentReportSheet(context, contentType: 'photoJob', targetFirestoreDocId: done.jobId),
+                  onPressed: () {
+                    if (!_canUse(done)) return;
+                    showContentReportSheet(context, contentType: 'photoJob', targetFirestoreDocId: done.jobId);
+                  },
                 ),
               ],
             ],

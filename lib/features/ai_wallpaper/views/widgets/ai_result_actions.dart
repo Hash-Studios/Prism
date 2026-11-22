@@ -122,7 +122,12 @@ class AiResultActions extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: secondary),
+            Wrap(
+              spacing: PrismSpace.xs,
+              runSpacing: PrismSpace.xs,
+              alignment: WrapAlignment.center,
+              children: secondary.where((Widget child) => child is! SizedBox).toList(),
+            ),
             const SizedBox(height: PrismSpace.sm),
             apply,
           ],

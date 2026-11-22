@@ -1497,8 +1497,31 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
         onShare: () => _share(hero),
         onRefine: _openRefineSheet,
         onSubmit: () => _submitToCommunity(hero),
-        onReport: () => showContentReportSheet(context, contentType: 'aiGeneration', targetFirestoreDocId: hero.id),
+        onReport: () => _reportGeneration(hero),
       ),
+    );
+  }
+
+  Future<void> _reportGeneration(AiGenerationRecord record) async {
+    if (!_isLoggedIn || record.userId != app_state.prismUser.id) return;
+    final int ownerSession = CoinsService.instance.economySession;
+    bool ownsSession() =>
+        mounted &&
+        _isLoggedIn &&
+        record.userId == app_state.prismUser.id &&
+        ownerSession == CoinsService.instance.economySession;
+    try {
+      await _repository.saveHistoryRecord(record);
+    } on Object catch (error, stackTrace) {
+      logger.w('AI generation report target is not synced', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
+      if (mounted && ownsSession()) toasts.error(context.l10n.coreSomethingWentWrong);
+      return;
+    }
+    if (!mounted || !ownsSession()) return;
+    await showContentReportSheet(
+      context,
+      contentType: 'aiGeneration',
+      targetFirestoreDocId: record.reportTargetFirestoreDocId,
     );
   }
 
