@@ -38,9 +38,7 @@ class LocalQaCoinPacks {
             context,
           ),
     ];
-    return Offerings(<String, Offering>{
-      'coins': Offering('coins', '', const <String, Object>{}, packages),
-    });
+    return Offerings(<String, Offering>{'coins': Offering('coins', '', const <String, Object>{}, packages)});
   }
 
   static Future<String> _purchase(Package package) async {
@@ -48,10 +46,9 @@ class LocalQaCoinPacks {
     try {
       final HttpClientRequest request = await client.postUrl(_purchaseUrl);
       request.headers.contentType = ContentType.json;
-      request.write(jsonEncode(<String, String>{
-        'appUserId': app_state.prismUser.id,
-        'productId': package.storeProduct.identifier,
-      }));
+      request.write(
+        jsonEncode(<String, String>{'appUserId': app_state.prismUser.id, 'productId': package.storeProduct.identifier}),
+      );
       final HttpClientResponse response = await request.close();
       final Object? body = jsonDecode(await response.transform(utf8.decoder).join());
       if (response.statusCode == 409) {
