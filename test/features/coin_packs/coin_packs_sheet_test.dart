@@ -9,6 +9,7 @@ import 'package:Prism/features/coin_packs/coin_packs.dart';
 import 'package:Prism/l10n/l10n.dart';
 import 'package:Prism/theme/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_app_analytics.dart';
@@ -250,6 +251,22 @@ void main() {
     expect(find.text(_l10n.coinPacksFailed), findsOneWidget);
     expect(find.text(r'$6.99'), findsOneWidget);
     expect(_rowEnabled(tester, 'prism_coins_700'), isTrue);
+  });
+
+  testWidgets('a screen reader can buy a pack through the row tap action', (WidgetTester tester) async {
+    final SemanticsHandle semantics = tester.ensureSemantics();
+    final _FakeGateway gateway = _FakeGateway();
+    await _pumpSheet(tester, gateway);
+
+    tester.semantics.tap(find.semantics.byLabel(_l10n.coinPacksBuyLabel(330, r'$2.99')));
+    await tester.pump();
+
+    expect(gateway.buyCalls, 1);
+    final SemanticsData busyRow = tester
+        .getSemantics(find.byKey(const ValueKey<String>('coin-pack-prism_coins_100')))
+        .getSemanticsData();
+    expect(busyRow.hasAction(SemanticsAction.tap), isFalse);
+    semantics.dispose();
   });
 
   testWidgets('a second tap while purchasing does not start another buy', (WidgetTester tester) async {

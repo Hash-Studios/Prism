@@ -298,6 +298,7 @@ class _PackRow extends StatelessWidget {
       button: true,
       enabled: enabled,
       label: l10n.coinPacksBuyLabel(pack.coins, pack.priceString),
+      onTap: enabled ? onTap : null,
       excludeSemantics: true,
       child: Material(
         color: scheme.surfaceContainerHigh,

@@ -134,6 +134,8 @@ class RevenueCatCoinPackGateway implements CoinPackGateway {
       final PurchasesErrorCode code = PurchasesErrorHelper.getErrorCode(error);
       if (code == PurchasesErrorCode.purchaseCancelledError) return const CoinPackCancelled();
       if (code == PurchasesErrorCode.paymentPendingError) return _pending(owner);
+      // The store can report this after it has charged. Treat the charge as unresolved, not as a failure.
+      if (code == PurchasesErrorCode.storeProblemError) return _pending(owner);
       logger.w('Coin pack purchase failed in the store.', tag: 'CoinPacks', error: error);
       return CoinPackFailed('store_${code.name}');
     } catch (error) {

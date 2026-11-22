@@ -189,6 +189,22 @@ void main() {
       expect(balanceCalls, 1);
     });
 
+    test('a store problem may follow a charge, so it stays pending and never verifies', () async {
+      int verifyCalls = 0;
+      final RevenueCatCoinPackGateway gateway = _gateway(
+        purchase: _storeFails(PurchasesErrorCode.storeProblemError),
+        verify: (String transactionId) async {
+          verifyCalls++;
+          return _reply('granted');
+        },
+      );
+
+      final CoinPackPurchaseResult result = await gateway.buy(_pack());
+
+      expect(result, isA<CoinPackPending>());
+      expect(verifyCalls, 0);
+    });
+
     test('another store error is CoinPackFailed and never verifies', () async {
       int verifyCalls = 0;
       final RevenueCatCoinPackGateway gateway = _gateway(
