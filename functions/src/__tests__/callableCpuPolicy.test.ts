@@ -67,7 +67,7 @@ test("true admin callables retain their measured one-instance peak after all sha
 });
 
 test("callables retain their configured regions, including US-only rewarded sessions", () => {
-  const usOnly = new Set(["beginRewardedSession", "getRewardedSession", "getCreatorFundStatus"]);
+  const usOnly = new Set(["beginRewardedSession", "getRewardedSession", "getCreatorFundStatus", "verifyCoinPurchase"]);
   for (const [name, endpoint] of Object.entries(callables)) {
     assert.deepEqual(endpoint.region, usOnly.has(name) ? ["us-central1"] : ["asia-south1", "us-central1"], name);
   }
