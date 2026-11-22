@@ -66,7 +66,8 @@ class AiResultActions extends StatelessWidget {
               onPressed: sharing ? null : tap(onShare),
               filled: true,
             ),
-            if (sharing) IgnorePointer(child: const Center(child: PrismLoader(size: 22))),
+            // The Stack centres the spinner. A Center would fill the Wrap's width when the icons wrap.
+            if (sharing) const IgnorePointer(child: PrismLoader(size: 22)),
           ],
         ),
       ),

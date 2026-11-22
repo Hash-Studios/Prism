@@ -172,4 +172,40 @@ void main() {
     expect(tester.renderObject<RenderParagraph>(label).didExceedMaxLines, isFalse);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('the Share spinner keeps the wrapped icons in place', (tester) async {
+    Widget actions({required bool sharing}) => MaterialApp(
+      theme: ThemeData(platform: TargetPlatform.android),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: Center(
+          child: SizedBox(
+            width: 390,
+            child: AiResultActions(
+              showSave: true,
+              showRefine: true,
+              canSubmit: true,
+              sharing: sharing,
+              applying: false,
+              onApply: () {},
+              onSave: () {},
+              onShare: () {},
+              onRefine: () {},
+              onSubmit: () {},
+              onReport: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpWidget(actions(sharing: false));
+    final Size idleSize = tester.getSize(find.byType(AiResultActions));
+    final Offset idleReport = tester.getCenter(find.byTooltip('Report'));
+
+    await tester.pumpWidget(actions(sharing: true));
+    await tester.pump();
+    expect(tester.getSize(find.byType(AiResultActions)), idleSize);
+    expect(tester.getCenter(find.byTooltip('Report')), idleReport);
+  });
 }
