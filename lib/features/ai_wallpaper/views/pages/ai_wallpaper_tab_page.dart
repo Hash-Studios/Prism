@@ -1502,23 +1502,10 @@ class _AiWallpaperTabPageState extends State<AiWallpaperTabPage> {
     );
   }
 
-  Future<void> _reportGeneration(AiGenerationRecord record) async {
+  void _reportGeneration(AiGenerationRecord record) {
     if (!_isLoggedIn || record.userId != app_state.prismUser.id) return;
-    final int ownerSession = CoinsService.instance.economySession;
-    bool ownsSession() =>
-        mounted &&
-        _isLoggedIn &&
-        record.userId == app_state.prismUser.id &&
-        ownerSession == CoinsService.instance.economySession;
-    try {
-      await _repository.ensureHistoryRecordSaved(record);
-    } on Object catch (error, stackTrace) {
-      logger.w('AI generation report target is not synced', tag: 'ai_wallpaper', error: error, stackTrace: stackTrace);
-      if (mounted && ownsSession()) toasts.error(context.l10n.coreSomethingWentWrong);
-      return;
-    }
-    if (!mounted || !ownsSession()) return;
-    await showContentReportSheet(
+    // A result whose history save failed has no doc yet. The server answers not found, and the sheet shows its error.
+    showContentReportSheet(
       context,
       contentType: 'aiGeneration',
       targetFirestoreDocId: record.reportTargetFirestoreDocId,
