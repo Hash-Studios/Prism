@@ -376,6 +376,87 @@ void main() {
     await opening;
   });
 
+  group('before a final ATT answer', () {
+    AdConsent build(List<String> steps, Completer<bool> answer) => AdConsent(
+      requestInfoUpdate: () async => steps.add('ump-update'),
+      showFormIfRequired: () async => steps.add('ump-form'),
+      canRequestAds: () async {
+        steps.add('can-request-ads');
+        return true;
+      },
+      requestTracking: () {
+        steps.add('tracking');
+        return answer.future;
+      },
+      allowAdIdentifiers: () async => steps.add('ad-identifiers'),
+    );
+
+    test('no UMP call, no ad request check and no advertising identifier', () async {
+      final steps = <String>[];
+      final answer = Completer<bool>();
+      final consent = build(steps, answer);
+
+      final ensured = consent.ensure();
+      final shown = consent.canShow();
+      await pumpEventQueue();
+
+      expect(steps, <String>['tracking']);
+      expect(consent.nonPersonalizedAds, isTrue);
+
+      answer.complete(false);
+      expect(await ensured, isTrue);
+      expect(await shown, isTrue);
+      expect(steps, isNot(contains('ad-identifiers')), reason: 'a denial never allows the advertising identifier');
+      expect(steps.first, 'tracking');
+    });
+
+    test('allowing tracking allows the advertising identifier once, after the answer', () async {
+      final steps = <String>[];
+      final answer = Completer<bool>();
+      final consent = build(steps, answer);
+
+      final ensured = consent.ensure();
+      await pumpEventQueue();
+      expect(steps, <String>['tracking']);
+
+      answer.complete(true);
+      expect(await ensured, isTrue);
+      await consent.canShow();
+      await pumpEventQueue();
+      expect(steps.where((step) => step == 'ad-identifiers'), hasLength(1));
+      expect(steps.indexOf('ad-identifiers'), greaterThan(steps.indexOf('tracking')));
+    });
+
+    test('a timed-out answer refuses ads and allows no advertising identifier', () async {
+      final steps = <String>[];
+      final consent = AdConsent(
+        requestInfoUpdate: () async => steps.add('ump-update'),
+        showFormIfRequired: () async {},
+        canRequestAds: () async => true,
+        requestTracking: () => Completer<bool>().future,
+        allowAdIdentifiers: () async => steps.add('ad-identifiers'),
+        trackingTimeout: const Duration(milliseconds: 10),
+      );
+
+      expect(await consent.ensure(), isFalse);
+      expect(await consent.canShow(), isFalse);
+      expect(steps, isEmpty);
+    });
+
+    test('a failure to allow the advertising identifier does not block ads', () async {
+      final consent = AdConsent(
+        requestInfoUpdate: () async {},
+        showFormIfRequired: () async {},
+        canRequestAds: () async => true,
+        requestTracking: () async => true,
+        allowAdIdentifiers: () async => throw StateError('Firebase not ready'),
+      );
+
+      expect(await consent.ensure(), isTrue);
+      expect(consent.nonPersonalizedAds, isFalse);
+    });
+  });
+
   test('ads stay non-personalized until a final tracking answer', () async {
     final answer = Completer<bool>();
     var canRequestAsked = false;

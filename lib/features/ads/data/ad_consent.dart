@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/logger/logger.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -25,6 +27,7 @@ class AdConsent {
     PrivacyOptionsRequired? privacyOptionsRequired,
     ConsentStep? showPrivacyOptions,
     TrackingRequest? requestTracking,
+    ConsentStep? allowAdIdentifiers,
     this.updateTimeout = const Duration(seconds: 10),
     this.trackingTimeout = const Duration(seconds: 12),
   }) : _requestInfoUpdate = requestInfoUpdate ?? _platformRequestInfoUpdate,
@@ -32,7 +35,8 @@ class AdConsent {
        _canRequestAds = canRequestAds ?? ConsentInformation.instance.canRequestAds,
        _privacyOptionsRequired = privacyOptionsRequired ?? _platformPrivacyOptionsRequired,
        _showPrivacyOptions = showPrivacyOptions ?? _platformShowPrivacyOptions,
-       _requestTracking = requestTracking ?? _platformRequestTracking;
+       _requestTracking = requestTracking ?? _platformRequestTracking,
+       _allowAdIdentifiers = allowAdIdentifiers ?? _platformAllowAdIdentifiers;
 
   static AdConsent instance = AdConsent();
 
@@ -42,6 +46,7 @@ class AdConsent {
   final PrivacyOptionsRequired _privacyOptionsRequired;
   final ConsentStep _showPrivacyOptions;
   final TrackingRequest _requestTracking;
+  final ConsentStep _allowAdIdentifiers;
   final Duration updateTimeout;
   final Duration trackingTimeout;
 
@@ -69,10 +74,19 @@ class AdConsent {
   Future<bool> _askTracking() async {
     try {
       _trackingAllowed = await _requestTracking().timeout(trackingTimeout);
+      if (_trackingAllowed) unawaited(_allowAdIdentifiersSafely());
       return true;
     } catch (error, stackTrace) {
       logger.w('Could not ask for tracking permission.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
       return false;
+    }
+  }
+
+  Future<void> _allowAdIdentifiersSafely() async {
+    try {
+      await _allowAdIdentifiers();
+    } catch (error, stackTrace) {
+      logger.w('Could not allow ad identifiers.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -178,9 +192,22 @@ class AdConsent {
   static Future<bool> _platformRequestTracking() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return true;
     final String? status = await _trackingChannel.invokeMethod<String>('request');
+    if (kDebugMode) debugPrint('ATT status: $status');
     if (status == 'authorized') return true;
     if (status == 'denied' || status == 'restricted') return false;
     throw StateError('Tracking permission did not reach a terminal status: $status');
+  }
+
+  /// Info.plist denies Google Analytics ad storage on iOS, so it reads no advertising identifier until the user
+  /// allows tracking.
+  static Future<void> _platformAllowAdIdentifiers() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return;
+    if (!await FirebaseInit.readyFuture) return;
+    await FirebaseAnalytics.instance.setConsent(
+      adStorageConsentGranted: true,
+      adUserDataConsentGranted: true,
+      adPersonalizationSignalsConsentGranted: true,
+    );
   }
 
   static Future<bool> _platformPrivacyOptionsRequired() async =>

@@ -1,5 +1,6 @@
 import AppTrackingTransparency
 import Flutter
+import os
 import UIKit
 import UserNotifications
 import WidgetKit
@@ -13,6 +14,7 @@ import WidgetKit
     if let supportDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
       Self.prepareOfflineRoot(at: supportDirectory)
     }
+    Self.observeActivationForTracking()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
@@ -77,8 +79,6 @@ import WidgetKit
     }
   }
 
-  /// iOS shows the ATT prompt only while the app is active with no other system prompt on screen, and only once.
-  /// So ask on every activation until the user gives a final answer.
   @MainActor
   private static func installTracking(on messenger: any FlutterBinaryMessenger) {
     FlutterMethodChannel(name: "prism/tracking", binaryMessenger: messenger).setMethodCallHandler { call, result in
@@ -87,57 +87,73 @@ import WidgetKit
         return
       }
       Task { @MainActor in
-        result(Self.trackingName(await Self.requestTracking()))
-      }
-    }
-    guard trackingObserver == nil else { return }
-    trackingObserver = NotificationCenter.default.addObserver(
-      forName: UIApplication.didBecomeActiveNotification,
-      object: nil,
-      queue: .main
-    ) { _ in
-      Task { @MainActor in
-        _ = await Self.requestTracking()
+        result(Self.trackingName(await Self.requestTracking(trigger: "flutter")))
       }
     }
   }
 
-  @MainActor private static var trackingObserver: (any NSObjectProtocol)?
+  /// The app uses the UIScene life cycle, so the scene activation is the real "on screen and active" moment.
+  /// The app-level notification stays as a second trigger. Both join the same request.
+  @MainActor
+  private static func observeActivationForTracking() {
+    guard trackingObservers.isEmpty else { return }
+    let triggers: [(Notification.Name, String)] = [
+      (UIScene.didActivateNotification, "scene"),
+      (UIApplication.didBecomeActiveNotification, "app"),
+    ]
+    trackingObservers = triggers.map { name, trigger in
+      NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { _ in
+        Task { @MainActor in _ = await Self.requestTracking(trigger: trigger) }
+      }
+    }
+  }
+
+  @MainActor private static var trackingObservers: [any NSObjectProtocol] = []
   @MainActor private static var trackingRequest: Task<ATTrackingManager.AuthorizationStatus, Never>?
+  nonisolated private static let trackingLog = Logger(subsystem: "com.hash.prism", category: "ATT")
 
   @MainActor
-  private static func requestTracking() async -> ATTrackingManager.AuthorizationStatus {
+  private static func requestTracking(trigger: String) async -> ATTrackingManager.AuthorizationStatus {
     if let pending = trackingRequest { return await pending.value }
-    let request = Task { await askForTracking() }
+    let request = Task { await askForTracking(trigger: trigger) }
     trackingRequest = request
     let status = await request.value
     trackingRequest = nil
     return status
   }
 
-  /// Asks again while iOS drops requests made too early. Leaving the active state ends the attempt;
-  /// the next activation starts a new one.
+  /// iOS drops requests made too early or while another alert is up, so ask again every 250 ms while the status is
+  /// notDetermined and a scene is foreground-active. A request already on screen is not shown twice. Leaving the
+  /// foreground ends the attempt; the next activation starts a new one.
   @MainActor
-  private static func askForTracking() async -> ATTrackingManager.AuthorizationStatus {
-    for _ in 0..<40 {
-      let status = ATTrackingManager.trackingAuthorizationStatus
-      guard status == .notDetermined else { return status }
+  private static func askForTracking(trigger: String) async -> ATTrackingManager.AuthorizationStatus {
+    for attempt in 1...40 {
+      guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else {
+        return ATTrackingManager.trackingAuthorizationStatus
+      }
       do {
         try await Task.sleep(nanoseconds: 250_000_000)
       } catch {
         return ATTrackingManager.trackingAuthorizationStatus
       }
-      guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined,
-            UIApplication.shared.applicationState == .active else {
-        return ATTrackingManager.trackingAuthorizationStatus
+      let status = ATTrackingManager.trackingAuthorizationStatus
+      let scenes = UIApplication.shared.connectedScenes.map(\.activationState)
+      let ask = TrackingPrompt.shouldAsk(status: status, sceneStates: scenes)
+      if attempt == 1 || !ask {
+        trackingLog.log(
+          "\(trigger, privacy: .public) #\(attempt) status=\(trackingName(status), privacy: .public) scenes=\(scenes.map(\.rawValue), privacy: .public) ask=\(ask)"
+        )
       }
+      guard ask else { return status }
       // Read the persisted status on the next turn; early callbacks can precede the user's decision.
-      ATTrackingManager.requestTrackingAuthorization { _ in }
+      ATTrackingManager.requestTrackingAuthorization { answer in
+        trackingLog.log("callback \(trackingName(answer), privacy: .public)")
+      }
     }
     return ATTrackingManager.trackingAuthorizationStatus
   }
 
-  private static func trackingName(_ status: ATTrackingManager.AuthorizationStatus) -> String {
+  nonisolated static func trackingName(_ status: ATTrackingManager.AuthorizationStatus) -> String {
     switch status {
     case .authorized: return "authorized"
     case .denied: return "denied"
@@ -153,5 +169,13 @@ import WidgetKit
     } else {
       UIApplication.shared.applicationIconBadgeNumber = 0
     }
+  }
+}
+
+/// iOS shows the ATT alert only while the status is notDetermined and a scene is foreground-active.
+/// A request made at any other time is dropped without an alert.
+enum TrackingPrompt {
+  static func shouldAsk(status: ATTrackingManager.AuthorizationStatus, sceneStates: [UIScene.ActivationState]) -> Bool {
+    status == .notDetermined && sceneStates.contains(.foregroundActive)
   }
 }
