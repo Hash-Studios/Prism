@@ -273,6 +273,7 @@ const String _swiftChecks = r'''
     }
     async let first = channelRequest()
     async let second = channelRequest()
+    NotificationCenter.default.post(name: UIScene.didActivateNotification, object: nil)
     NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
     let answers = await [first, second]
     precondition(answers == ["authorized", "authorized"] && ATTrackingManager.requestCount == 1,
