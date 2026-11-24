@@ -7,11 +7,11 @@ class FirebaseAnalyticsProvider implements AnalyticsProvider {
   final FirebaseAnalytics _analytics;
 
   /// iOS Info.plist denies ad storage, ad user data and ad personalization by default, so Analytics reads no
-  /// advertising identifier. Call only after the user allows tracking.
-  static Future<void> allowAdConsent() => FirebaseAnalytics.instance.setConsent(
-    adStorageConsentGranted: true,
-    adUserDataConsentGranted: true,
-    adPersonalizationSignalsConsentGranted: true,
+  /// advertising identifier. Firebase keeps a granted value across launches, so set it on every final ATT answer.
+  static Future<void> setAdConsent({required bool granted}) => FirebaseAnalytics.instance.setConsent(
+    adStorageConsentGranted: granted,
+    adUserDataConsentGranted: granted,
+    adPersonalizationSignalsConsentGranted: granted,
   );
 
   @override

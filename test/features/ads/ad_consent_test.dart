@@ -388,7 +388,7 @@ void main() {
         steps.add('tracking');
         return answer.future;
       },
-      allowAdIdentifiers: () async => steps.add('ad-identifiers'),
+      allowAdIdentifiers: ({required bool allowed}) async => steps.add('ad-identifiers:$allowed'),
     );
 
     test('no UMP call, no ad request check and no advertising identifier', () async {
@@ -406,8 +406,11 @@ void main() {
       answer.complete(false);
       expect(await ensured, isTrue);
       expect(await shown, isTrue);
-      expect(steps, isNot(contains('ad-identifiers')), reason: 'a denial never allows the advertising identifier');
+      await pumpEventQueue();
       expect(steps.first, 'tracking');
+      expect(steps.where((step) => step.startsWith('ad-identifiers')), <String>[
+        'ad-identifiers:false',
+      ], reason: 'a denial sets the advertising identifier consent back to denied');
     });
 
     test('allowing tracking allows the advertising identifier once, after the answer', () async {
@@ -423,8 +426,8 @@ void main() {
       expect(await ensured, isTrue);
       await consent.canShow();
       await pumpEventQueue();
-      expect(steps.where((step) => step == 'ad-identifiers'), hasLength(1));
-      expect(steps.indexOf('ad-identifiers'), greaterThan(steps.indexOf('tracking')));
+      expect(steps.where((step) => step.startsWith('ad-identifiers')), <String>['ad-identifiers:true']);
+      expect(steps.indexOf('ad-identifiers:true'), greaterThan(steps.indexOf('tracking')));
     });
 
     test('a timed-out answer refuses ads and allows no advertising identifier', () async {
@@ -434,7 +437,7 @@ void main() {
         showFormIfRequired: () async {},
         canRequestAds: () async => true,
         requestTracking: () => Completer<bool>().future,
-        allowAdIdentifiers: () async => steps.add('ad-identifiers'),
+        allowAdIdentifiers: ({required bool allowed}) async => steps.add('ad-identifiers'),
         trackingTimeout: const Duration(milliseconds: 10),
       );
 
@@ -443,13 +446,36 @@ void main() {
       expect(steps, isEmpty);
     });
 
+    test('privacy options status is not read before the answer', () async {
+      final steps = <String>[];
+      final answer = Completer<bool>();
+      final consent = AdConsent(
+        requestInfoUpdate: () async {},
+        showFormIfRequired: () async {},
+        canRequestAds: () async => true,
+        privacyOptionsRequired: () async {
+          steps.add('ump-privacy-status');
+          return true;
+        },
+        requestTracking: () => answer.future,
+        allowAdIdentifiers: ({required bool allowed}) async {},
+      );
+
+      final required = consent.privacyOptionsRequired();
+      await pumpEventQueue();
+      expect(steps, isEmpty);
+      answer.complete(false);
+      expect(await required, isTrue);
+      expect(steps, <String>['ump-privacy-status']);
+    });
+
     test('a failure to allow the advertising identifier does not block ads', () async {
       final consent = AdConsent(
         requestInfoUpdate: () async {},
         showFormIfRequired: () async {},
         canRequestAds: () async => true,
         requestTracking: () async => true,
-        allowAdIdentifiers: () async => throw StateError('Firebase not ready'),
+        allowAdIdentifiers: ({required bool allowed}) async => throw StateError('Firebase not ready'),
       );
 
       expect(await consent.ensure(), isTrue);

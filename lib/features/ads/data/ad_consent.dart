@@ -18,6 +18,9 @@ typedef PrivacyOptionsRequired = Future<bool> Function();
 /// Throws while iOS has no final answer.
 typedef TrackingRequest = Future<bool> Function();
 
+/// Sets whether SDKs other than ads may use the advertising identifier. Runs once per final ATT answer.
+typedef AdIdentifierConsent = Future<void> Function({required bool allowed});
+
 /// Google UMP consent. Ads load only after [ensure] returns true. It never throws.
 class AdConsent {
   AdConsent({
@@ -27,7 +30,7 @@ class AdConsent {
     PrivacyOptionsRequired? privacyOptionsRequired,
     ConsentStep? showPrivacyOptions,
     TrackingRequest? requestTracking,
-    ConsentStep? allowAdIdentifiers,
+    AdIdentifierConsent? allowAdIdentifiers,
     this.updateTimeout = const Duration(seconds: 10),
     this.trackingTimeout = const Duration(seconds: 12),
   }) : _requestInfoUpdate = requestInfoUpdate ?? _platformRequestInfoUpdate,
@@ -46,7 +49,7 @@ class AdConsent {
   final PrivacyOptionsRequired _privacyOptionsRequired;
   final ConsentStep _showPrivacyOptions;
   final TrackingRequest _requestTracking;
-  final ConsentStep _allowAdIdentifiers;
+  final AdIdentifierConsent _allowAdIdentifiers;
   final Duration updateTimeout;
   final Duration trackingTimeout;
 
@@ -74,7 +77,7 @@ class AdConsent {
   Future<bool> _askTracking() async {
     try {
       _trackingAllowed = await _requestTracking().timeout(trackingTimeout);
-      if (_trackingAllowed) unawaited(_allowAdIdentifiersSafely());
+      unawaited(_allowAdIdentifiersSafely(_trackingAllowed));
       return true;
     } catch (error, stackTrace) {
       logger.w('Could not ask for tracking permission.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
@@ -82,11 +85,11 @@ class AdConsent {
     }
   }
 
-  Future<void> _allowAdIdentifiersSafely() async {
+  Future<void> _allowAdIdentifiersSafely(bool allowed) async {
     try {
-      await _allowAdIdentifiers();
+      await _allowAdIdentifiers(allowed: allowed);
     } catch (error, stackTrace) {
-      logger.w('Could not allow ad identifiers.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
+      logger.w('Could not set the ad identifier consent.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -118,6 +121,7 @@ class AdConsent {
   /// True when the user must be able to reopen the consent choices, for example in the EEA and the UK.
   Future<bool> privacyOptionsRequired() async {
     try {
+      if (!await requestTracking()) return false;
       return await _privacyOptionsRequired();
     } catch (error, stackTrace) {
       logger.w('Could not read the privacy options status.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
@@ -198,9 +202,9 @@ class AdConsent {
     throw StateError('Tracking permission did not reach a terminal status: $status');
   }
 
-  static Future<void> _platformAllowAdIdentifiers() async {
+  static Future<void> _platformAllowAdIdentifiers({required bool allowed}) async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return;
-    if (await FirebaseInit.readyFuture) await FirebaseAnalyticsProvider.allowAdConsent();
+    if (await FirebaseInit.readyFuture) await FirebaseAnalyticsProvider.setAdConsent(granted: allowed);
   }
 
   static Future<bool> _platformPrivacyOptionsRequired() async =>
