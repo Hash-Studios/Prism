@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/providers/firebase_analytics_provider.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
 import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/logger/logger.dart';
-import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -198,16 +198,9 @@ class AdConsent {
     throw StateError('Tracking permission did not reach a terminal status: $status');
   }
 
-  /// Info.plist denies Google Analytics ad storage on iOS, so it reads no advertising identifier until the user
-  /// allows tracking.
   static Future<void> _platformAllowAdIdentifiers() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return;
-    if (!await FirebaseInit.readyFuture) return;
-    await FirebaseAnalytics.instance.setConsent(
-      adStorageConsentGranted: true,
-      adUserDataConsentGranted: true,
-      adPersonalizationSignalsConsentGranted: true,
-    );
+    if (await FirebaseInit.readyFuture) await FirebaseAnalyticsProvider.allowAdConsent();
   }
 
   static Future<bool> _platformPrivacyOptionsRequired() async =>
