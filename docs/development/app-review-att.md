@@ -70,7 +70,8 @@ What changed after 379, so the request no longer depends on Flutter timing or on
   (`UIScene.didActivateNotification`) and the app activation (`UIApplication.didBecomeActiveNotification`).
 - Each request needs a `foregroundActive` scene (`TrackingPrompt.shouldAsk`). `UIApplication.applicationState` is not
   used.
-- The next request waits for the callback of the last one, so the app never calls on top of a visible alert.
+- The next request waits for the callback of the last one, or for the scene or app to lose the foreground, so the app
+  never calls on top of a visible alert.
 - Each attempt writes to the unified log (`com.hash.prism`, category `ATT`), so a device recording can be matched
   with Console.app.
 

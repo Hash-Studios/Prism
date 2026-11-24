@@ -103,12 +103,17 @@ import WidgetKit
     ]
     trackingObservers = triggers.map { name, trigger in
       NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { _ in
-        Task { @MainActor in
-          // An activation means no alert holds the app, so an earlier request can no longer be on screen.
-          trackingAnswered = trackingAsked
-          _ = await Self.requestTracking(trigger: trigger)
-        }
+        Task { @MainActor in _ = await Self.requestTracking(trigger: trigger) }
       }
+    }
+    // Losing the foreground means no alert of ours stays up for this attempt, so a request with no callback must not
+    // block the next activation. The scene and app signals can arrive far apart, so do not reset on activation.
+    for name in [UIScene.willDeactivateNotification, UIApplication.willResignActiveNotification] {
+      trackingObservers.append(
+        NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { _ in
+          Task { @MainActor in trackingAnswered = trackingAsked }
+        }
+      )
     }
   }
 

@@ -88,6 +88,7 @@ final class FlutterMethodChannel {
 final class UIScene: Sendable {
   enum ActivationState: Int, Sendable { case unattached = -1, foregroundActive, foregroundInactive, background }
   static let didActivateNotification = Notification.Name("tracking-contract-scene-active")
+  static let willDeactivateNotification = Notification.Name("tracking-contract-scene-inactive")
   let activationState: ActivationState
   init(_ activationState: ActivationState) { self.activationState = activationState }
 }
@@ -96,6 +97,7 @@ final class UIScene: Sendable {
   enum State { case active, inactive, background }
   static let shared = UIApplication()
   static let didBecomeActiveNotification = Notification.Name("tracking-contract-active")
+  static let willResignActiveNotification = Notification.Name("tracking-contract-resign")
   var applicationState = State.active
   // One window scene, as in the app's UIApplicationSceneManifest. Its state follows the app state.
   var connectedScenes: [UIScene] {
@@ -176,6 +178,13 @@ const String _swiftChecks = r'''
     }
   }
 
+  static func resignActive(_ state: UIApplication.State = .inactive) async {
+    UIApplication.shared.applicationState = state
+    NotificationCenter.default.post(name: UIScene.willDeactivateNotification, object: nil)
+    NotificationCenter.default.post(name: UIApplication.willResignActiveNotification, object: nil)
+    for _ in 0..<20 { await Task.yield() }
+  }
+
   static func becomeActive(_ name: Notification.Name = UIApplication.didBecomeActiveNotification) async {
     UIApplication.shared.applicationState = .active
     let before = TrackingClock.sleepCount
@@ -191,8 +200,8 @@ const String _swiftChecks = r'''
     installTracking(on: 0)
     installTracking(on: 1)
     observeActivationForTracking()
-    precondition(NotificationCenter.default.observerCount == 2,
-                 "One scene and one app observer; recreating the Flutter engine adds none")
+    precondition(NotificationCenter.default.observerCount == 4,
+                 "Scene and app observers for activation and deactivation; recreating the Flutter engine adds none")
 
     reset()
     ATTrackingManager.onRequest = { callback in
@@ -252,6 +261,7 @@ const String _swiftChecks = r'''
     reset()
     ATTrackingManager.onRequest = { _ in UIApplication.shared.applicationState = .inactive }
     await becomeActive()
+    await resignActive()
     await becomeActive()
     precondition(ATTrackingManager.requestCount == 2,
                  "Every activation asks again while the answer is still notDetermined")
@@ -310,8 +320,12 @@ const String _swiftChecks = r'''
       callback(.denied)
     }
     await becomeActive()
+    precondition(ATTrackingManager.requestCount == 1,
+                 "A late second activation signal must not send a request on top of the visible alert")
+    await resignActive()
+    await becomeActive()
     precondition(ATTrackingManager.requestCount == 2,
-                 "An activation means the alert is gone, so a request with no callback does not block the next one")
+                 "After the app lost the foreground, a request with no callback does not block the next one")
 
     reset()
     TrackingClock.onSleep = { throw CancellationError() }
