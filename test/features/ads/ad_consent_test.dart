@@ -446,7 +446,9 @@ void main() {
       expect(steps, isEmpty);
     });
 
-    test('privacy options status is not read before the answer', () async {
+    test('on iOS the privacy options status is read only after the answer', () async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
       final steps = <String>[];
       final answer = Completer<bool>();
       final consent = AdConsent(
@@ -457,16 +459,21 @@ void main() {
           steps.add('ump-privacy-status');
           return true;
         },
-        requestTracking: () => answer.future,
+        requestTracking: () {
+          steps.add('tracking');
+          return answer.future;
+        },
         allowAdIdentifiers: ({required bool allowed}) async {},
       );
 
-      final required = consent.privacyOptionsRequired();
-      await pumpEventQueue();
-      expect(steps, isEmpty);
+      expect(await consent.privacyOptionsRequired(), isFalse);
+      expect(steps, isEmpty, reason: 'reading the status never asks for ATT and never reads UMP first');
+
+      final ensured = consent.ensure();
       answer.complete(false);
-      expect(await required, isTrue);
-      expect(steps, <String>['ump-privacy-status']);
+      await ensured;
+      expect(await consent.privacyOptionsRequired(), isTrue);
+      expect(steps, <String>['tracking', 'ump-privacy-status']);
     });
 
     test('a failure to allow the advertising identifier does not block ads', () async {

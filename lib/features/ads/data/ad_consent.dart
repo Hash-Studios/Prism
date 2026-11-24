@@ -56,6 +56,7 @@ class AdConsent {
   Future<bool>? _pending;
   Future<bool>? _tracking;
   bool _trackingAllowed = false;
+  bool _trackingAnswered = false;
   int generation = 0;
   bool privacyOptionsOpen = false;
   final Set<void Function()> invalidationListeners = <void Function()>{};
@@ -77,6 +78,7 @@ class AdConsent {
   Future<bool> _askTracking() async {
     try {
       _trackingAllowed = await _requestTracking().timeout(trackingTimeout);
+      _trackingAnswered = true;
       unawaited(_allowAdIdentifiersSafely(_trackingAllowed));
       return true;
     } catch (error, stackTrace) {
@@ -121,7 +123,8 @@ class AdConsent {
   /// True when the user must be able to reopen the consent choices, for example in the EEA and the UK.
   Future<bool> privacyOptionsRequired() async {
     try {
-      if (!await requestTracking()) return false;
+      // On iOS, read Google's stored consent only after a final ATT answer. This never asks for ATT itself.
+      if (!_trackingAnswered && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) return false;
       return await _privacyOptionsRequired();
     } catch (error, stackTrace) {
       logger.w('Could not read the privacy options status.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
