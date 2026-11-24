@@ -103,13 +103,20 @@ import WidgetKit
     ]
     trackingObservers = triggers.map { name, trigger in
       NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { _ in
-        Task { @MainActor in _ = await Self.requestTracking(trigger: trigger) }
+        Task { @MainActor in
+          // An activation means no alert holds the app, so an earlier request can no longer be on screen.
+          trackingAnswered = trackingAsked
+          _ = await Self.requestTracking(trigger: trigger)
+        }
       }
     }
   }
 
   @MainActor private static var trackingObservers: [any NSObjectProtocol] = []
   @MainActor private static var trackingRequest: Task<ATTrackingManager.AuthorizationStatus, Never>?
+  /// Requests sent and requests whose callback came back. While they differ, the alert can be on screen.
+  @MainActor private static var trackingAsked = 0
+  @MainActor private static var trackingAnswered = 0
   nonisolated private static let trackingLog = Logger(subsystem: "com.hash.prism", category: "ATT")
 
   @MainActor
@@ -122,9 +129,9 @@ import WidgetKit
     return status
   }
 
-  /// iOS drops requests made too early or while another alert is up, so ask again every 250 ms while the status is
-  /// notDetermined and a scene is foreground-active. A request already on screen is not shown twice. Leaving the
-  /// foreground ends the attempt; the next activation starts a new one.
+  /// iOS drops requests made too early or while another alert is up: the callback then comes back with no decision.
+  /// So check every 250 ms while the status is notDetermined and a scene is foreground-active, and ask again only
+  /// when the last request came back. Leaving the foreground ends the attempt; the next activation starts a new one.
   @MainActor
   private static func askForTracking(trigger: String) async -> ATTrackingManager.AuthorizationStatus {
     for attempt in 1...40 {
@@ -145,9 +152,15 @@ import WidgetKit
         )
       }
       guard ask else { return status }
+      guard trackingAnswered == trackingAsked else { continue }
+      trackingAsked += 1
+      let request = trackingAsked
       // Read the persisted status on the next turn; early callbacks can precede the user's decision.
       ATTrackingManager.requestTrackingAuthorization { answer in
-        trackingLog.log("callback \(trackingName(answer), privacy: .public)")
+        trackingLog.log("request \(request) callback \(trackingName(answer), privacy: .public)")
+        Task { @MainActor in
+          if trackingAsked == request { trackingAnswered = request }
+        }
       }
     }
     return ATTrackingManager.trackingAuthorizationStatus

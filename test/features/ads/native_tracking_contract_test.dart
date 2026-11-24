@@ -156,6 +156,7 @@ const String _swiftChecks = r'''
     ATTrackingManager.requestSleepCounts = []
     ATTrackingManager.requestStates = []
     ATTrackingManager.onRequest = nil
+    trackingAnswered = trackingAsked
     TrackingClock.sleepCount = 0
     TrackingClock.maxSleeping = 0
     TrackingClock.onSleep = nil
@@ -298,6 +299,19 @@ const String _swiftChecks = r'''
     ATTrackingManager.onRequest = { callback in callback(.authorized) }
     await expectStatus(.notDetermined, "A callback alone cannot claim a recorded tracking decision")
     precondition(ATTrackingManager.requestCount > 0)
+
+    reset()
+    // The alert is on screen: the app stays active and the callback waits for the user.
+    ATTrackingManager.onRequest = { _ in }
+    await expectStatus(.notDetermined)
+    precondition(ATTrackingManager.requestCount == 1, "No second request while the first one is unanswered")
+    ATTrackingManager.onRequest = { callback in
+      ATTrackingManager.trackingAuthorizationStatus = .denied
+      callback(.denied)
+    }
+    await becomeActive()
+    precondition(ATTrackingManager.requestCount == 2,
+                 "An activation means the alert is gone, so a request with no callback does not block the next one")
 
     reset()
     TrackingClock.onSleep = { throw CancellationError() }
