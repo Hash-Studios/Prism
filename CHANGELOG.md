@@ -1,5 +1,10 @@
 ## Changelog
 
+### v3.36.0
+- On iPhone and iPad, Prism asks about tracking a moment after the app opens, not during setup
+- Ads use no ad identifier until you tap Allow on iPhone and iPad
+- Security and stability fixes
+
 ### v3.35.0
 - Report an AI wallpaper or a photo result if it looks wrong or harmful: tap the flag on the result
 - The action buttons on AI results now fit on small screens and with large text
