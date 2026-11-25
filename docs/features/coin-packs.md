@@ -113,7 +113,7 @@ The refund ledger row shows the full amount, so the user sees why the balance dr
 ## Guests and sandbox
 
 - Guests cannot buy. The app hides every buy entry for a guest, and the callable refuses anonymous callers.
-- Sandbox purchases grant only when `COIN_PACKS_ALLOW_SANDBOX=true` in the functions env. Production leaves it unset (default `false`). The local emulator sets it in `functions/.env.local`.
+- Sandbox purchases grant only when `COIN_PACKS_ALLOW_SANDBOX=true` in the functions env. `make functions-env` writes `false` for production, because `firebase deploy --non-interactive` refuses a param with no value, even one with a default. The local emulator sets it in `functions/.env.local`.
 - Risk: Apple App Review buys with sandbox accounts against the production backend. With sandbox off, a reviewer gets no coins. Before you submit the consumables for review, either keep the flag off for the review build (the reviewer then cannot find the packs, and Apple may ask for them), or turn sandbox on in production only for the review window. The ledger row keeps `environment`, so sandbox grants are easy to find and remove.
 
 ## App

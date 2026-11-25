@@ -323,7 +323,9 @@ functions-env:
 		v="$$(doppler secrets get $$k --plain --project $(DOPPLER_PROJECT) --config $(FUNCTIONS_DOPPLER_CONFIG))"; \
 		[ -n "$$v" ] || { echo "Doppler $(FUNCTIONS_DOPPLER_CONFIG) has no value for $$k"; exit 1; }; \
 		printf '%s=%s\n' "$$k" "$$v" >> $$out; \
-	done; echo "Wrote $$out ($(FUNCTIONS_ENV_KEYS))"
+	done; \
+	printf 'COIN_PACKS_ALLOW_SANDBOX=false\n' >> $$out; \
+	echo "Wrote $$out ($(FUNCTIONS_ENV_KEYS) COIN_PACKS_ALLOW_SANDBOX)"
 
 functions-secrets-sync:
 	@set -e; for k in $(FUNCTIONS_SECRETS); do \
