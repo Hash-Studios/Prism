@@ -17,7 +17,7 @@ the prompt".
 | Scene connects | `FlutterSceneDelegate` loads the Flutter view. Dart `main()` starts. | No data. |
 | Dart `main()` | `Firebase.initializeApp`. Google Analytics for Firebase starts and logs `first_open` and `session_start`. Info.plist sets `GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_STORAGE`, `..._AD_USER_DATA` and `..._AD_PERSONALIZATION_SIGNALS` to false, so Analytics reads no IDFA and sends nothing for ads. | No. App analytics only. |
 | Dart `main()` | Sentry starts (`sendDefaultPii = false`). Crash and performance data, no advertising identifier, no IP address. | No. |
-| First scene activation | Native ATT attempt: wait 250 ms, then ask once while the status is `notDetermined` and a scene is `foregroundActive`. Ask again only if iOS returns the request without an answer (dropped), or on the next activation. **The prompt shows here, when the scene is active. It can show over the launch screen or over the first Flutter screen (onboarding or sign-in). It is modal, so the user answers it before they can use that screen.** | n/a |
+| First scene activation | Native ATT attempt: wait 250 ms, then ask once while the status is `notDetermined` and a scene is `foregroundActive`. Ask again only if iOS returns the request without an answer (dropped), or on the next activation. **The prompt shows here, a moment after the scene becomes active. It can show over the launch screen or over the first Flutter screen (onboarding or sign-in).** | n/a |
 | First Flutter frame | `AdConsent.requestTracking()` joins the same native attempt. RevenueCat `configure` (no `collectDeviceIdentifiers`, no AdServices token). | RevenueCat: no. It keeps an anonymous app user id. |
 | After Firebase is ready | Mixpanel starts (`trackAutomaticEvents: false`). Mixpanel Swift 6 uses a random distinct id and never reads the IDFA. | No. |
 | After the final ATT answer | Google UMP `requestConsentInfoUpdate` and the consent form, then `MobileAds.initialize` and the first ad request. `GADDelayAppMeasurementInit` keeps the Google Mobile Ads SDK from starting app measurement before that. | Only after the answer. |
@@ -78,9 +78,9 @@ What changed after 379, so the request no longer depends on Flutter timing or on
 ## Notes for App Review (paste into App Store Connect)
 
 ```text
-App Tracking Transparency: Prism shows the App Tracking Transparency prompt as soon as the app is active on the
-first launch. It can show over the first screen (onboarding or sign-in), and the user must answer it before they can
-use that screen. It shows before the notification prompt and before every ad. It shows again on every
+App Tracking Transparency: Prism shows the App Tracking Transparency prompt a moment after the app becomes active
+on the first launch. It can show over the first screen (onboarding or sign-in). It shows before the notification
+prompt and before every ad. It shows again on every
 launch until the user answers.
 
 The prompt can only show when Settings > Privacy & Security > Tracking > "Allow Apps to Request to Track" is on. If
@@ -104,10 +104,10 @@ Thank you for the review. We attached a screen recording from a physical device.
 
 1. Settings > Privacy & Security > Tracking, with "Allow Apps to Request to Track" turned on.
 2. A fresh install of Prism.
-3. The App Tracking Transparency prompt as soon as the app opens, before the user can use any screen.
+3. The App Tracking Transparency prompt a moment after the app opens, over the first screen.
 4. The flow after the answer, and a second launch with no prompt.
 
-Where the prompt shows: on the first launch, as soon as the app is active, before any other alert and before any ad.
+Where the prompt shows: on the first launch, a moment after the app becomes active, before any other alert and before any ad.
 Until the user answers, it shows again every time the app becomes active.
 
 When it does not show: iOS shows the prompt only when Settings > Privacy & Security > Tracking > "Allow Apps to
