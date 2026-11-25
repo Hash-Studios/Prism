@@ -1052,6 +1052,30 @@ void main() {
       expect(find.text('Ad privacy choices'), findsNothing);
     });
 
+    testWidgets('Android shows Ad privacy choices when consent options are required', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      AdConsent.instance = AdConsent(privacyOptionsRequired: () async => true);
+
+      await pumpSettings(tester);
+      await tester.pump();
+
+      expect(find.text('Ad privacy choices'), findsOneWidget);
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testWidgets('iOS shows Ad privacy choices when Settings opens after an ATT answer', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      final consent = AdConsent(privacyOptionsRequired: () async => true, requestTracking: () async => false);
+      AdConsent.instance = consent;
+
+      expect(await consent.requestTracking(), isTrue);
+      await pumpSettings(tester);
+      await tester.pump();
+
+      expect(find.text('Ad privacy choices'), findsOneWidget);
+      debugDefaultTargetPlatformOverride = null;
+    });
+
     testWidgets('Ad privacy choices shows when required and opens the privacy options form', (tester) async {
       var shown = 0;
       AdConsent.instance = AdConsent(privacyOptionsRequired: () async => true, showPrivacyOptions: () async => shown++);

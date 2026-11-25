@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:Prism/analytics/analytics_service.dart';
 import 'package:Prism/core/analytics/events/events.dart';
+import 'package:Prism/core/analytics/providers/firebase_analytics_provider.dart';
 import 'package:Prism/core/debug/performance_probe.dart';
+import 'package:Prism/core/startup/firebase_init.dart';
 import 'package:Prism/logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -16,6 +18,9 @@ typedef PrivacyOptionsRequired = Future<bool> Function();
 /// Throws while iOS has no final answer.
 typedef TrackingRequest = Future<bool> Function();
 
+/// Sets whether SDKs other than ads may use the advertising identifier. Runs once per final ATT answer.
+typedef AdIdentifierConsent = Future<void> Function({required bool allowed});
+
 /// Google UMP consent. Ads load only after [ensure] returns true. It never throws.
 class AdConsent {
   AdConsent({
@@ -25,6 +30,7 @@ class AdConsent {
     PrivacyOptionsRequired? privacyOptionsRequired,
     ConsentStep? showPrivacyOptions,
     TrackingRequest? requestTracking,
+    AdIdentifierConsent? allowAdIdentifiers,
     this.updateTimeout = const Duration(seconds: 10),
     this.trackingTimeout = const Duration(seconds: 12),
   }) : _requestInfoUpdate = requestInfoUpdate ?? _platformRequestInfoUpdate,
@@ -32,7 +38,8 @@ class AdConsent {
        _canRequestAds = canRequestAds ?? ConsentInformation.instance.canRequestAds,
        _privacyOptionsRequired = privacyOptionsRequired ?? _platformPrivacyOptionsRequired,
        _showPrivacyOptions = showPrivacyOptions ?? _platformShowPrivacyOptions,
-       _requestTracking = requestTracking ?? _platformRequestTracking;
+       _requestTracking = requestTracking ?? _platformRequestTracking,
+       _allowAdIdentifiers = allowAdIdentifiers ?? _platformAllowAdIdentifiers;
 
   static AdConsent instance = AdConsent();
 
@@ -42,12 +49,14 @@ class AdConsent {
   final PrivacyOptionsRequired _privacyOptionsRequired;
   final ConsentStep _showPrivacyOptions;
   final TrackingRequest _requestTracking;
+  final AdIdentifierConsent _allowAdIdentifiers;
   final Duration updateTimeout;
   final Duration trackingTimeout;
 
   Future<bool>? _pending;
   Future<bool>? _tracking;
   bool _trackingAllowed = false;
+  bool _trackingAnswered = false;
   int generation = 0;
   bool privacyOptionsOpen = false;
   final Set<void Function()> invalidationListeners = <void Function()>{};
@@ -69,10 +78,20 @@ class AdConsent {
   Future<bool> _askTracking() async {
     try {
       _trackingAllowed = await _requestTracking().timeout(trackingTimeout);
+      _trackingAnswered = true;
+      unawaited(_allowAdIdentifiersSafely(_trackingAllowed));
       return true;
     } catch (error, stackTrace) {
       logger.w('Could not ask for tracking permission.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
       return false;
+    }
+  }
+
+  Future<void> _allowAdIdentifiersSafely(bool allowed) async {
+    try {
+      await _allowAdIdentifiers(allowed: allowed);
+    } catch (error, stackTrace) {
+      logger.w('Could not set the ad identifier consent.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -104,6 +123,8 @@ class AdConsent {
   /// True when the user must be able to reopen the consent choices, for example in the EEA and the UK.
   Future<bool> privacyOptionsRequired() async {
     try {
+      // On iOS, read Google's stored consent only after a final ATT answer. This never asks for ATT itself.
+      if (!_trackingAnswered && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) return false;
       return await _privacyOptionsRequired();
     } catch (error, stackTrace) {
       logger.w('Could not read the privacy options status.', tag: 'AdConsent', error: error, stackTrace: stackTrace);
@@ -178,9 +199,15 @@ class AdConsent {
   static Future<bool> _platformRequestTracking() async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return true;
     final String? status = await _trackingChannel.invokeMethod<String>('request');
+    if (kDebugMode) debugPrint('ATT status: $status');
     if (status == 'authorized') return true;
     if (status == 'denied' || status == 'restricted') return false;
     throw StateError('Tracking permission did not reach a terminal status: $status');
+  }
+
+  static Future<void> _platformAllowAdIdentifiers({required bool allowed}) async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return;
+    if (await FirebaseInit.readyFuture) await FirebaseAnalyticsProvider.setAdConsent(granted: allowed);
   }
 
   static Future<bool> _platformPrivacyOptionsRequired() async =>

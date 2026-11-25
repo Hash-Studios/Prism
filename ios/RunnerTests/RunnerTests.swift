@@ -1,11 +1,24 @@
+import AppTrackingTransparency
 import Foundation
 import Photos
 import Testing
+import UIKit
 
 @testable import Runner
 
 @MainActor
 struct RunnerTests {
+  @Test func trackingAsksOnlyWhileUndecidedAndASceneIsForegroundActive() {
+    #expect(TrackingPrompt.shouldAsk(status: .notDetermined, sceneStates: [.foregroundActive]))
+    #expect(TrackingPrompt.shouldAsk(status: .notDetermined, sceneStates: [.background, .foregroundActive]))
+    for scenes: [UIScene.ActivationState] in [[], [.foregroundInactive], [.background], [.unattached]] {
+      #expect(!TrackingPrompt.shouldAsk(status: .notDetermined, sceneStates: scenes))
+    }
+    for status in [ATTrackingManager.AuthorizationStatus.authorized, .denied, .restricted] {
+      #expect(!TrackingPrompt.shouldAsk(status: status, sceneStates: [.foregroundActive]))
+    }
+  }
+
   @Test func onlyFullPhotosAccessAllowsAlbumManagement() {
     #expect(PrismMediaHostApiImpl.canManagePhotoAlbums(with: .authorized))
     for status in [PHAuthorizationStatus.limited, .denied, .restricted, .notDetermined] {

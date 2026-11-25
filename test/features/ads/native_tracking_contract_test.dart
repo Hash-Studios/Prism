@@ -5,13 +5,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test(
-    'native ATT asks on every activation until a final answer, one request at a time',
+    'native ATT asks on every scene or app activation until a final answer, one request at a time',
     () async {
       final String delegate = File('ios/Runner/AppDelegate.swift').readAsStringSync();
       final int start = delegate.indexOf('  private static func installTracking(');
       final int end = delegate.indexOf('  private static func clearBadge()', start);
+      final int rule = delegate.indexOf('enum TrackingPrompt {');
       expect(start, greaterThanOrEqualTo(0));
       expect(end, greaterThan(start));
+      expect(rule, greaterThan(end));
       // Replace only the clock primitive. The production control flow and status mapping run unchanged.
       final String implementation = delegate
           .substring(start, end)
@@ -20,7 +22,7 @@ void main() {
       addTearDown(() => fixture.deleteSync(recursive: true));
       final File harness = File('${fixture.path}/tracking_contract.swift')
         ..writeAsStringSync(
-          '$_swiftStubs\n@MainActor enum TrackingContract {\n$implementation\n$_swiftChecks\n}\n'
+          '$_swiftStubs\n${delegate.substring(rule)}\n@MainActor enum TrackingContract {\n$implementation\n$_swiftChecks\n}\n'
           'await TrackingContract.runChecks()\n',
         );
       final Process process = await Process.start('swift', <String>[
@@ -48,6 +50,7 @@ void main() {
 
 const String _swiftStubs = r'''
 import Foundation
+import os
 
 typealias FlutterResult = (Any?) -> Void
 protocol FlutterBinaryMessenger {}
@@ -82,11 +85,28 @@ final class FlutterMethodChannel {
   }
 }
 
+final class UIScene: Sendable {
+  enum ActivationState: Int, Sendable { case unattached = -1, foregroundActive, foregroundInactive, background }
+  static let didActivateNotification = Notification.Name("tracking-contract-scene-active")
+  static let willDeactivateNotification = Notification.Name("tracking-contract-scene-inactive")
+  let activationState: ActivationState
+  init(_ activationState: ActivationState) { self.activationState = activationState }
+}
+
 @MainActor final class UIApplication {
   enum State { case active, inactive, background }
   static let shared = UIApplication()
   static let didBecomeActiveNotification = Notification.Name("tracking-contract-active")
+  static let willResignActiveNotification = Notification.Name("tracking-contract-resign")
   var applicationState = State.active
+  // One window scene, as in the app's UIApplicationSceneManifest. Its state follows the app state.
+  var connectedScenes: [UIScene] {
+    switch applicationState {
+    case .active: return [UIScene(.foregroundActive)]
+    case .inactive: return [UIScene(.foregroundInactive)]
+    case .background: return [UIScene(.background)]
+    }
+  }
 }
 
 @MainActor enum ATTrackingManager {
@@ -138,6 +158,7 @@ const String _swiftChecks = r'''
     ATTrackingManager.requestSleepCounts = []
     ATTrackingManager.requestStates = []
     ATTrackingManager.onRequest = nil
+    trackingAnswered = trackingAsked
     TrackingClock.sleepCount = 0
     TrackingClock.maxSleeping = 0
     TrackingClock.onSleep = nil
@@ -145,7 +166,7 @@ const String _swiftChecks = r'''
 
   static func expectStatus(_ expected: ATTrackingManager.AuthorizationStatus,
                            _ message: String = "Unexpected persisted tracking status") async {
-    let actual = await requestTracking()
+    let actual = await requestTracking(trigger: "test")
     precondition(actual == expected, message)
   }
 
@@ -157,10 +178,17 @@ const String _swiftChecks = r'''
     }
   }
 
-  static func becomeActive() async {
+  static func resignActive(_ state: UIApplication.State = .inactive) async {
+    UIApplication.shared.applicationState = state
+    NotificationCenter.default.post(name: UIScene.willDeactivateNotification, object: nil)
+    NotificationCenter.default.post(name: UIApplication.willResignActiveNotification, object: nil)
+    for _ in 0..<20 { await Task.yield() }
+  }
+
+  static func becomeActive(_ name: Notification.Name = UIApplication.didBecomeActiveNotification) async {
     UIApplication.shared.applicationState = .active
     let before = TrackingClock.sleepCount
-    NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+    NotificationCenter.default.post(name: name, object: nil)
     for _ in 0..<500 {
       if trackingRequest == nil && TrackingClock.sleepCount > before { return }
       await Task.yield()
@@ -168,10 +196,12 @@ const String _swiftChecks = r'''
   }
 
   static func runChecks() async {
+    observeActivationForTracking()
     installTracking(on: 0)
     installTracking(on: 1)
-    precondition(NotificationCenter.default.observerCount == 1,
-                 "Recreating the Flutter engine must not add a second ATT observer")
+    observeActivationForTracking()
+    precondition(NotificationCenter.default.observerCount == 4,
+                 "Scene and app observers for activation and deactivation; recreating the Flutter engine adds none")
 
     reset()
     ATTrackingManager.onRequest = { callback in
@@ -218,9 +248,20 @@ const String _swiftChecks = r'''
     await becomeActive()
     precondition(ATTrackingManager.requestCount == 1, "No prompt loop after a denial")
 
+    reset(.background)
+    ATTrackingManager.onRequest = { callback in
+      ATTrackingManager.trackingAuthorizationStatus = .authorized
+      callback(.authorized)
+    }
+    await becomeActive(UIScene.didActivateNotification)
+    precondition(ATTrackingManager.requestCount == 1,
+                 "A scene activation alone asks, for UIScene apps where the app-level signal is late or missing")
+    precondition(ATTrackingManager.requestStates.allSatisfy { $0 == .active })
+
     reset()
     ATTrackingManager.onRequest = { _ in UIApplication.shared.applicationState = .inactive }
     await becomeActive()
+    await resignActive()
     await becomeActive()
     precondition(ATTrackingManager.requestCount == 2,
                  "Every activation asks again while the answer is still notDetermined")
@@ -232,6 +273,7 @@ const String _swiftChecks = r'''
     }
     async let first = channelRequest()
     async let second = channelRequest()
+    NotificationCenter.default.post(name: UIScene.didActivateNotification, object: nil)
     NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
     let answers = await [first, second]
     precondition(answers == ["authorized", "authorized"] && ATTrackingManager.requestCount == 1,
@@ -268,6 +310,23 @@ const String _swiftChecks = r'''
     ATTrackingManager.onRequest = { callback in callback(.authorized) }
     await expectStatus(.notDetermined, "A callback alone cannot claim a recorded tracking decision")
     precondition(ATTrackingManager.requestCount > 0)
+
+    reset()
+    // The alert is on screen: the app stays active and the callback waits for the user.
+    ATTrackingManager.onRequest = { _ in }
+    await expectStatus(.notDetermined)
+    precondition(ATTrackingManager.requestCount == 1, "No second request while the first one is unanswered")
+    ATTrackingManager.onRequest = { callback in
+      ATTrackingManager.trackingAuthorizationStatus = .denied
+      callback(.denied)
+    }
+    await becomeActive()
+    precondition(ATTrackingManager.requestCount == 1,
+                 "A late second activation signal must not send a request on top of the visible alert")
+    await resignActive()
+    await becomeActive()
+    precondition(ATTrackingManager.requestCount == 2,
+                 "After the app lost the foreground, a request with no callback does not block the next one")
 
     reset()
     TrackingClock.onSleep = { throw CancellationError() }
