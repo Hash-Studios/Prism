@@ -17,7 +17,7 @@ the prompt".
 | Scene connects | `FlutterSceneDelegate` loads the Flutter view. Dart `main()` starts. | No data. |
 | Dart `main()` | `Firebase.initializeApp`. Google Analytics for Firebase starts and logs `first_open` and `session_start`. Info.plist sets `GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_STORAGE`, `..._AD_USER_DATA` and `..._AD_PERSONALIZATION_SIGNALS` to false, so Analytics reads no IDFA and sends nothing for ads. | No. App analytics only. |
 | Dart `main()` | Sentry starts (`sendDefaultPii = false`). Crash and performance data, no advertising identifier, no IP address. | No. |
-| First scene activation | Native ATT attempt: wait 250 ms, then ask once while the status is `notDetermined` and a scene is `foregroundActive`. Ask again only if iOS returns the request without an answer (dropped), or on the next activation. **The prompt shows here, over the launch screen, before onboarding and sign-in.** | n/a |
+| First scene activation | Native ATT attempt: wait 250 ms, then ask once while the status is `notDetermined` and a scene is `foregroundActive`. Ask again only if iOS returns the request without an answer (dropped), or on the next activation. **The prompt shows here, within about 1 s of launch, over the launch screen or the first Flutter screen, before the user can use onboarding or sign-in.** | n/a |
 | First Flutter frame | `AdConsent.requestTracking()` joins the same native attempt. RevenueCat `configure` (no `collectDeviceIdentifiers`, no AdServices token). | RevenueCat: no. It keeps an anonymous app user id. |
 | After Firebase is ready | Mixpanel starts (`trackAutomaticEvents: false`). Mixpanel Swift 6 uses a random distinct id and never reads the IDFA. | No. |
 | After the final ATT answer | Google UMP `requestConsentInfoUpdate` and the consent form, then `MobileAds.initialize` and the first ad request. `GADDelayAppMeasurementInit` keeps the Google Mobile Ads SDK from starting app measurement before that. | Only after the answer. |
@@ -40,7 +40,7 @@ Identifiers:
 | --- | --- | --- |
 | Settings > Privacy & Security > Tracking > "Allow Apps to Request to Track" is off | `denied` at once | No prompt. iOS does not let any app ask. |
 | Managed Apple Account, a child account, or a device profile (MDM) that blocks tracking | `restricted` or `denied` | No prompt. The switch is off and can be grey. |
-| The user answered before (this install) | `authorized` or `denied` | No prompt. Delete the app, or turn the toggle off and on, to ask again. |
+| The user answered before (this install) | `authorized` or `denied` | No prompt. Delete the app and install it again to ask again. |
 | Another alert is on screen (a system permission, an unanswered ATT alert left from an earlier install) | `notDetermined`, scene `foregroundInactive` | No prompt yet. The app does not ask while no scene is foreground-active. It asks when the other alert closes and the scene activates. |
 | The scene is not `foregroundActive` (Slide Over going away, app switcher, Control Center open, locked screen) | `notDetermined`, request dropped | No prompt yet. The next scene activation asks again. |
 | A request made from `application(_:didBecomeActive...)` in a UIScene app | That method never runs with scenes | Never asks. Prism does not use it; it observes the scene and app notifications. |
@@ -79,13 +79,13 @@ What changed after 379, so the request no longer depends on Flutter timing or on
 
 ```text
 App Tracking Transparency: Prism shows the App Tracking Transparency prompt as the first thing on the first launch,
-on the launch screen, before onboarding, sign-in, the notification prompt and every ad. It shows again on every
+within about 1 second, before onboarding, sign-in, the notification prompt and every ad. It shows again on every
 launch until the user answers.
 
 The prompt can only show when Settings > Privacy & Security > Tracking > "Allow Apps to Request to Track" is on. If
 that switch is off, or the device uses a managed or child account, iOS does not let any app show the prompt.
 
-To see the prompt again: delete Prism and install it again, or turn "Allow Apps to Request to Track" off and on.
+To see the prompt again: delete Prism and install it again.
 
 Before the user answers, Prism loads no ads, does not start Google's consent form, and reads no advertising
 identifier. Google Analytics has ad storage and ad personalization turned off until the user taps "Allow". If the
@@ -103,16 +103,15 @@ Thank you for the review. We attached a screen recording from a physical device.
 
 1. Settings > Privacy & Security > Tracking, with "Allow Apps to Request to Track" turned on.
 2. A fresh install of Prism.
-3. The App Tracking Transparency prompt as the first screen on launch, before onboarding and sign-in.
+3. The App Tracking Transparency prompt as the first thing on launch, before onboarding and sign-in.
 4. The flow after the answer, and a second launch with no prompt.
 
-Where the prompt shows: on the first launch, on the launch screen, before any other screen or alert. Until the user
-answers, it shows again every time the app becomes active.
+Where the prompt shows: on the first launch, within about 1 second, before any other alert and before onboarding.
+Until the user answers, it shows again every time the app becomes active.
 
 When it does not show: iOS shows the prompt only when Settings > Privacy & Security > Tracking > "Allow Apps to
 Request to Track" is on. If the switch is off, or the device has a managed or child account, iOS answers for the
-app and no app can show the prompt. To see it again, delete Prism and install it again, or turn the switch off and
-on.
+app and no app can show the prompt. To see it again, delete Prism and install it again.
 
 Data before the answer: Prism loads no ads, does not start Google's consent form, and reads no advertising
 identifier until the user answers. Google Analytics ad storage and ad personalization stay off until the user taps
@@ -128,13 +127,12 @@ Thank you.
 Use a test iPad or iPhone, not a device with data you do not want on screen. Use the build from TestFlight with a
 build number above 379. Turn off notifications banners (Focus) so nothing covers the prompt.
 
-1. Open Settings > Privacy & Security > Tracking. Turn "Allow Apps to Request to Track" on. If it was on, turn it off
-   and on again. This resets the answer for every app.
+1. Open Settings > Privacy & Security > Tracking. Turn "Allow Apps to Request to Track" on.
 2. If Prism is installed, delete it: touch and hold the icon > Remove App > Delete App.
 3. Open Control Center. Touch and hold Screen Recording. Set Microphone off. Tap Start Recording.
 4. Open Settings > Privacy & Security > Tracking. Hold the screen for 2 s so the switch is readable.
 5. Open TestFlight. Install Prism (the new build). Wait for the install to finish.
-6. Tap Open. The ATT prompt shows on the launch screen. Hold for 3 s so the prompt text is readable.
+6. Tap Open. The ATT prompt shows within about 1 s. Hold for 3 s so the prompt text is readable.
 7. Tap "Ask App Not to Track". Onboarding shows. Scroll the first screen.
 8. Swipe up to the app switcher and close Prism. Open Prism again. No prompt shows.
 9. Open Settings > Privacy & Security > Tracking. Prism is in the list with the switch off.

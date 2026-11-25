@@ -111,7 +111,8 @@ import WidgetKit
     for name in [UIScene.willDeactivateNotification, UIApplication.willResignActiveNotification] {
       trackingObservers.append(
         NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { _ in
-          Task { @MainActor in trackingAnswered = trackingAsked }
+          // Read the count now, so a request sent after this signal still waits for its own callback.
+          MainActor.assumeIsolated { trackingAnswered = trackingAsked }
         }
       )
     }
